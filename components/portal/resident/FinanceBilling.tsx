@@ -61,6 +61,7 @@ import {
 import { exportInvoicePdf } from '@/lib/pdfExport';
 import { useLanguage } from '@/lib/languageContext';
 import BillingAiAssistantDrawer from './BillingAiAssistantDrawer';
+import InvoiceExplanationModal, { InvoiceExplanationData } from './InvoiceExplanationModal';
 
 export const VNPAY_NCB_TEST_CARD = {
   bank: 'NCB',
@@ -84,6 +85,9 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
   const [selectedBillId, setSelectedBillId] = useState<string>('');
   const [showVietQrModal, setShowVietQrModal] = useState(false);
   const [showAiAssistant, setShowAiAssistant] = useState(false);
+  const [showExplainModal, setShowExplainModal] = useState(false);
+  const [explainData, setExplainData] = useState<InvoiceExplanationData | null>(null);
+  const [isExplaining, setIsExplaining] = useState(false);
   
   // VNPAY Sandbox Real API states
   const [isRedirectingVnpay, setIsRedirectingVnpay] = useState(false);
@@ -129,6 +133,29 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
       aptCode,
     });
     setIsExportingInvoicePdf(false);
+  };
+
+  const handleExplainBill = async (billId?: string) => {
+    const targetId = billId || currentBill?.id;
+    if (!targetId) return;
+    setShowExplainModal(true);
+    setIsExplaining(true);
+    setExplainData(null);
+    try {
+      const res = await fetch('/api/billing/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ billId: targetId }),
+      });
+      const json = await res.json();
+      if (json.success && json.explanation) {
+        setExplainData(json.explanation);
+      }
+    } catch (err) {
+      console.error('Explain bill error:', err);
+    } finally {
+      setIsExplaining(false);
+    }
   };
 
   const copyToClipboard = (text: string, label: string) => {
@@ -682,6 +709,17 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                   <span className="sm:hidden">{t('In')}</span>
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={() => handleExplainBill()}
+                className="px-3 sm:px-4 py-2 bg-[#1C2533] border border-[#C5A880]/80 hover:border-[#C5A880] text-[#C5A880] hover:text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow"
+                title={t('Xem AI giải thích và so sánh 3 kỳ', 'Explain Bill with AI')}
+              >
+                <Sparkles className="w-4 h-4 text-[#C5A880] shrink-0" />
+                <span className="hidden sm:inline">{t('Giải Thích Hóa Đơn', 'Explain Bill')}</span>
+                <span className="sm:hidden">{t('Giải Thích', 'Explain')}</span>
+              </button>
 
               <button
                 type="button"
@@ -1425,19 +1463,31 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                       </div>
                     </div>
 
-                    {/* Bottom comparison indicator */}
-                    <div className="pt-2 border-t border-[#222B35] flex items-center justify-between text-[10px] text-gray-400">
-                      <span>{isEn ? 'vs previous period:' : 'So kỳ trước:'}</span>
-                      {prev ? (
-                        <span className={`font-mono font-bold flex items-center gap-0.5 ${
-                          diffAmount > 0 ? 'text-amber-400' : diffAmount < 0 ? 'text-emerald-400' : 'text-gray-400'
-                        }`}>
-                          {diffAmount > 0 ? <ArrowUpRight className="w-3 h-3" /> : diffAmount < 0 ? <ArrowDownRight className="w-3 h-3" /> : null}
-                          {diffAmount > 0 ? `+${diffPercent}%` : diffAmount < 0 ? `${diffPercent}%` : '0%'}
-                        </span>
-                      ) : (
-                        <span className="font-mono text-gray-500">{isEn ? 'Initial period' : 'Kỳ đầu'}</span>
-                      )}
+                    {/* Bottom comparison indicator & AI button */}
+                    <div className="pt-2 border-t border-[#222B35] space-y-2">
+                      <div className="flex items-center justify-between text-[10px] text-gray-400">
+                        <span>{isEn ? 'vs previous period:' : 'So kỳ trước:'}</span>
+                        {prev ? (
+                          <span className={`font-mono font-bold flex items-center gap-0.5 ${
+                            diffAmount > 0 ? 'text-amber-400' : diffAmount < 0 ? 'text-emerald-400' : 'text-gray-400'
+                          }`}>
+                            {diffAmount > 0 ? <ArrowUpRight className="w-3 h-3" /> : diffAmount < 0 ? <ArrowDownRight className="w-3 h-3" /> : null}
+                            {diffAmount > 0 ? `+${diffPercent}%` : diffAmount < 0 ? `${diffPercent}%` : '0%'}
+                          </span>
+                        ) : (
+                          <span className="font-mono text-gray-500">{isEn ? 'Initial period' : 'Kỳ đầu'}</span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleExplainBill(b.id)}
+                        disabled={isExplaining}
+                        className="w-full py-1.5 px-2 bg-[#0A0E17] hover:bg-[#C5A880]/20 border border-[#C5A880]/40 text-[#C5A880] text-[10px] font-semibold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <Sparkles className="w-3 h-3 text-[#C5A880]" />
+                        <span>{isEn ? 'Explain AI (3-Mo)' : 'Giải Thích AI (3 Kỳ)'}</span>
+                      </button>
                     </div>
                   </div>
                 );
@@ -1706,6 +1756,14 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
         onClose={() => setShowAiAssistant(false)}
         aptCode={aptCode}
         residentName={residentName}
+      />
+
+      {/* A2: Modal Giải Thích Hóa Đơn AI (So sánh 3 kỳ) */}
+      <InvoiceExplanationModal
+        isOpen={showExplainModal}
+        onClose={() => setShowExplainModal(false)}
+        data={explainData}
+        isLoading={isExplaining}
       />
     </div>
   );
