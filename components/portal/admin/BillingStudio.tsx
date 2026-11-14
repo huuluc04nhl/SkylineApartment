@@ -28,6 +28,7 @@ import {
 import MeterOcrModal from './MeterOcrModal';
 import BillingAiReportModal from './BillingAiReportModal';
 import DebtReminderModal from './DebtReminderModal';
+import TowerCollectionSummaryCard from './TowerCollectionSummaryCard';
 import { 
   getBills, 
   confirmPaidByAdmin, 
@@ -338,6 +339,15 @@ export default function BillingStudio() {
           )}
         </div>
       )}
+
+      {/* B5: Tóm Tắt Kỳ Thu Theo Từng Tòa BS-07...BS-10 */}
+      <TowerCollectionSummaryCard
+        bills={bills}
+        onSelectTower={(towerCode) => {
+          setFilterType('ALL');
+          setSearchApt(towerCode);
+        }}
+      />
 
       {/* Filter Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
