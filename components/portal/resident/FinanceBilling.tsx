@@ -62,6 +62,7 @@ import { exportInvoicePdf } from '@/lib/pdfExport';
 import { useLanguage } from '@/lib/languageContext';
 import BillingAiAssistantDrawer from './BillingAiAssistantDrawer';
 import InvoiceExplanationModal, { InvoiceExplanationData } from './InvoiceExplanationModal';
+import CostForecastCard from './CostForecastCard';
 
 export const VNPAY_NCB_TEST_CARD = {
   bank: 'NCB',
@@ -1374,6 +1375,9 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                 })}
             </div>
           </div>
+
+          {/* A3: Dự Báo Chi Phí Kỳ Tới & Gợi Ý Tiết Kiệm (Ước Tính) */}
+          <CostForecastCard bills={bills} aptCode={aptCode} />
 
           {/* 3. LỊCH SỬ & XU HƯỚNG CHI TIÊU THEO KỲ HÓA ĐƠN (MONTHLY TREND & COMPARISON) */}
           <div className="p-6 bg-[#121820] border border-[#222B35] space-y-5 shadow-xl">
