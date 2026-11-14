@@ -19,14 +19,18 @@ export const KEY_DICTIONARY: Record<string, Record<Language, string>> = {
   'nav.logout': { vi: 'Đăng Xuất', en: 'Sign Out' },
   'nav.portal': { vi: 'Cổng Cư Dân', en: 'Resident Portal' },
   'nav.dashboard': { vi: 'Vào Bảng Điều Khiển', en: 'Go to Dashboard' },
-  'role.admin': { vi: 'Ban Quản Lý', en: 'Management Board' },
+  'role.admin': { vi: 'VinHomes Manager', en: 'VinHomes Manager' },
+  'Ban Quản Lý': { vi: 'VinHomes Manager', en: 'VinHomes Manager' },
+  'Ban Quản Lý Tòa Nhà': { vi: 'VinHomes Manager', en: 'VinHomes Manager' },
+  'Ban Quản Lý Skyline': { vi: 'VinHomes Manager', en: 'VinHomes Manager' },
+  'Skyline Management': { vi: 'VinHomes Manager', en: 'VinHomes Manager' },
   'role.owner': { vi: 'Chủ Hộ Căn Hộ', en: 'Apartment Owner' },
   'role.tenant': { vi: 'Người Nhà', en: 'Family Member' },
   'role.family': { vi: 'Người Nhà Căn Hộ', en: 'Family Member' },
   'role.technician': { vi: 'Kỹ Thuật Viên', en: 'Technician' },
-  'role.staff': { vi: 'Nhân Sự Ban Quản Lý', en: 'Staff' },
+  'role.staff': { vi: 'VinHomes Manager Staff', en: 'VinHomes Manager Staff' },
   'role.resident': { vi: 'Cư Dân', en: 'Resident' },
-  'ADMIN': { vi: 'Ban Quản Lý', en: 'Management Board' },
+  'ADMIN': { vi: 'VinHomes Manager', en: 'VinHomes Manager' },
   'OWNER': { vi: 'Chủ Hộ', en: 'Apartment Owner' },
   'TENANT': { vi: 'Người Nhà', en: 'Family Member' },
   'FAMILY': { vi: 'Người Nhà', en: 'Family Member' },
@@ -38,7 +42,6 @@ export const KEY_DICTIONARY: Record<string, Record<Language, string>> = {
   'Người Nhà Căn Hộ': { vi: 'Người Nhà Căn Hộ', en: 'Family Member' },
   'Thành Viên': { vi: 'Người Nhà', en: 'Family Member' },
   'Khách Thuê': { vi: 'Người Nhà', en: 'Family Member' },
-  'Ban Quản Lý': { vi: 'Ban Quản Lý', en: 'Management Board' },
   'Kỹ Thuật Viên': { vi: 'Kỹ Thuật Viên', en: 'Technician' },
   'Cư Dân': { vi: 'Cư Dân', en: 'Resident' },
   'Diễn Đàn & Biểu Quyết': { vi: 'Diễn Đàn & Biểu Quyết', en: 'Forum & Voting' },
@@ -110,8 +113,8 @@ export const KEY_DICTIONARY: Record<string, Record<Language, string>> = {
   'Đã Xác Thực Căn Cước ✓': { vi: 'Đã Xác Thực Căn Cước ✓', en: 'Citizen ID Verified ✓' },
   'Yêu Cầu Chụp Lại': { vi: 'Yêu Cầu Chụp Lại', en: 'Reshoot Required' },
   'Chưa Gửi Hồ Sơ': { vi: 'Chưa Gửi Hồ Sơ', en: 'Dossier Not Submitted' },
-  'Căn Cước (CCCD) & Khuôn Mặt': { vi: 'Căn Cước (CCCD) & Khuôn Mặt', en: 'National ID (CCCD) & Face Biometrics' },
-  'Sinh Trắc FaceID (4 Bước)': { vi: 'Sinh Trắc FaceID (4 Bước)', en: 'FaceID Biometrics (4 Steps)' },
+  'Căn Cước (CCCD) & Khuôn Mặt': { vi: 'Căn Cước (CCCD) & Khuôn Mặt', en: 'Citizen ID & Face Photo' },
+  'Sinh Trắc FaceID (4 Bước)': { vi: 'Nhận Diện Khuôn Mặt (4 Bước)', en: 'Face Recognition (4 Steps)' },
   '1. Thẻ Căn Cước Công Dân (CCCD)': { vi: '1. Thẻ Căn Cước Công Dân (CCCD)', en: '1. Citizen Identity Card (CCCD)' },
   'Đổi Ảnh Thẻ': { vi: 'Đổi Ảnh Thẻ', en: 'Change Card Photo' },
   'Chụp / Tải Ảnh Thẻ': { vi: 'Chụp / Tải Ảnh Thẻ', en: 'Capture / Upload Card' },
@@ -296,7 +299,12 @@ export const KEY_DICTIONARY: Record<string, Record<Language, string>> = {
   'Nhất trí thông qua phương án lắp đặt trạm sạc theo tiêu chuẩn an toàn PCCC': { vi: 'Nhất trí thông qua phương án lắp đặt trạm sạc theo tiêu chuẩn an toàn PCCC', en: 'Agree to approve fire-safe EV charging station installation' },
   'Đồng ý nhưng yêu cầu chuyển trạm sạc ra khu vực sân thoáng ngoài trời': { vi: 'Đồng ý nhưng yêu cầu chuyển trạm sạc ra khu vực sân thoáng ngoài trời', en: 'Agree but request moving charging station to outdoor area' },
   'Không đồng ý lắp đặt trạm sạc xe điện trong hầm': { vi: 'Không đồng ý lắp đặt trạm sạc xe điện trong hầm', en: 'Disagree with installing EV charging station in basement' },
-  'Lê Văn Kỹ Thuật': { vi: 'Lê Văn Kỹ Thuật', en: 'Le Van Ky Thuat' },
+  'Lê Quốc Tuấn': { vi: 'Lê Quốc Tuấn', en: 'Le Quoc Tuan' },
+  'Trần Đình Trọng': { vi: 'Trần Đình Trọng', en: 'Tran Dinh Trong' },
+  'Nguyễn Huy Hoàng': { vi: 'Nguyễn Huy Hoàng', en: 'Nguyen Huy Hoang' },
+  'Nguyễn Thành Đạt': { vi: 'Nguyễn Thành Đạt', en: 'Nguyen Thanh Dat' },
+  'Hoàng Thảo My': { vi: 'Hoàng Thảo My', en: 'Hoang Thao My' },
+  'Nguyễn Mai Anh': { vi: 'Nguyễn Mai Anh', en: 'Nguyen Mai Anh' },
   'Trần Quốc Bảo': { vi: 'Trần Quốc Bảo', en: 'Tran Quoc Bao' },
   'Phạm Minh Tuấn': { vi: 'Phạm Minh Tuấn', en: 'Pham Minh Tuan' },
   'Tiếp: Chìa Khóa & Điện Nước →': { vi: 'Tiếp: Chìa Khóa & Điện Nước →', en: 'Next: Keys & Utilities →' },
@@ -337,19 +345,26 @@ export const KEY_DICTIONARY: Record<string, Record<Language, string>> = {
   'Làm Sạch Dữ Liệu': { vi: 'Làm Sạch Dữ Liệu', en: 'Clear Data' },
   'Đang Xác Thực Tài Khoản...': { vi: 'Đang Xác Thực Tài Khoản...', en: 'Authenticating Account...' },
   'Đăng Nhập Hệ Thống': { vi: 'Đăng Nhập Hệ Thống', en: 'Sign In to System' },
-  'Đang đối soát sinh trắc học FaceID...': { vi: 'Đang đối soát sinh trắc học FaceID...', en: 'Verifying FaceID biometrics...' },
+  'Đang đối soát sinh trắc học FaceID...': { vi: 'Đang kiểm tra nhận diện khuôn mặt...', en: 'Checking face recognition...' },
+  'Đang kiểm tra nhận diện khuôn mặt...': { vi: 'Đang kiểm tra nhận diện khuôn mặt...', en: 'Checking face recognition...' },
   'Đang kết nối camera...': { vi: 'Đang kết nối camera...', en: 'Connecting to camera...' },
-  'Căn khuôn mặt vào khung elip': { vi: 'Căn khuôn mặt vào khung elip', en: 'Align face within oval frame' },
-  'Nhận diện sinh trắc học thành công!': { vi: 'Nhận diện sinh trắc học thành công!', en: 'Biometric recognition successful!' },
+  'Căn khuôn mặt vào khung elip': { vi: 'Căn khuôn mặt vào khung tròn', en: 'Align face within frame' },
+  'Nhận diện sinh trắc học thành công!': { vi: 'Nhận diện khuôn mặt thành công!', en: 'Face recognition successful!' },
+  'Nhận diện khuôn mặt thành công!': { vi: 'Nhận diện khuôn mặt thành công!', en: 'Face recognition successful!' },
   'Đăng Nhập Thành Công!': { vi: 'Đăng Nhập Thành Công!', en: 'Login Successful!' },
   'Đăng nhập thành công!': { vi: 'Đăng nhập thành công!', en: 'Login Successful!' },
   'Đang Xác Thực OTP...': { vi: 'Đang Xác Thực OTP...', en: 'Verifying OTP...' },
   'Xác Thực OTP & Đăng Nhập': { vi: 'Xác Thực OTP & Đăng Nhập', en: 'Verify OTP & Sign In' },
   'Xác Thực OTP &amp; Đăng Nhập': { vi: 'Xác Thực OTP & Đăng Nhập', en: 'Verify OTP & Sign In' },
-  'Đang Nhận Diện Sinh Trắc Học...': { vi: 'Đang Nhận Diện Sinh Trắc Học...', en: 'Biometric Recognition in Progress...' },
-  'Bắt Đầu Quét FaceID': { vi: 'Bắt Đầu Quét FaceID', en: 'Start FaceID Scan' },
+  'Đang Nhận Diện Sinh Trắc Học...': { vi: 'Đang Nhận Diện Khuôn Mặt...', en: 'Face Recognition in Progress...' },
+  'Đang Nhận Diện Khuôn Mặt...': { vi: 'Đang Nhận Diện Khuôn Mặt...', en: 'Face Recognition in Progress...' },
+  'Bắt Đầu Quét FaceID': { vi: 'Bắt Đầu Nhận Diện Khuôn Mặt', en: 'Start Face Recognition' },
+  'Bắt Đầu Nhận Diện Khuôn Mặt': { vi: 'Bắt Đầu Nhận Diện Khuôn Mặt', en: 'Start Face Recognition' },
   'Quét Lại Khuôn Mặt': { vi: 'Quét Lại Khuôn Mặt', en: 'Rescan Face' },
-  'Chọn Ảnh Để Quét FaceID': { vi: 'Chọn Ảnh Để Quét FaceID', en: 'Select Photo for FaceID' },
+  'Chọn Ảnh Để Quét FaceID': { vi: 'Chọn Ảnh Để Nhận Diện', en: 'Select Photo for Recognition' },
+  'Chọn Ảnh Để Nhận Diện': { vi: 'Chọn Ảnh Để Nhận Diện', en: 'Select Photo for Recognition' },
+  'Xác Thực Sinh Trắc Học Trực Tiếp': { vi: 'Nhận Diện Khuôn Mặt Trực Tiếp', en: 'Direct Face Recognition' },
+  'Nhận Diện Khuôn Mặt Trực Tiếp': { vi: 'Nhận Diện Khuôn Mặt Trực Tiếp', en: 'Direct Face Recognition' },
   'Xác thực thành công': { vi: 'Xác thực thành công', en: 'Authentication successful' },
   'Đang Đồng Bộ Dữ Liệu...': { vi: 'Đang Đồng Bộ Dữ Liệu...', en: 'Syncing Data...' },
   'Đang Đồng Bộ Dữ Liệu Căn Hộ...': { vi: 'Đang Đồng Bộ Dữ Liệu Căn Hộ...', en: 'Syncing Apartment Data...' },
@@ -435,7 +450,7 @@ export const KEY_DICTIONARY: Record<string, Record<Language, string>> = {
   'Thanh toán phí dịch vụ, điện, nước qua VietQR': { vi: 'Thanh toán phí dịch vụ, điện, nước qua VietQR', en: 'Pay utilities, electricity, water via VietQR' },
   'Chỉ dành cho Chủ Hộ': { vi: 'Chỉ dành cho Chủ Hộ', en: 'Apartment Owner Only' },
   'Báo Hỏng Kỹ Thuật': { vi: 'Báo Hỏng Kỹ Thuật', en: 'Technical Maintenance' },
-  'Gửi yêu cầu sửa chữa NKS 24/7 trực tuyến': { vi: 'Gửi yêu cầu sửa chữa NKS 24/7 trực tuyến', en: 'Submit 24/7 NKS repair requests online' },
+  'Gửi yêu cầu sửa chữa Skyline 24/7 trực tuyến': { vi: 'Gửi yêu cầu sửa chữa Skyline 24/7 trực tuyến', en: 'Submit 24/7 Skyline repair requests online' },
   'An Ninh & Ra Vào': { vi: 'An Ninh & Ra Vào', en: 'Security & Access' },
   'An Ninh &amp; Ra Vào': { vi: 'An Ninh & Ra Vào', en: 'Security & Access' },
   'Mã QR Đón Khách': { vi: 'Mã QR Đón Khách', en: 'Visitor QR Code' },
@@ -663,31 +678,31 @@ export const KEY_DICTIONARY: Record<string, Record<Language, string>> = {
   'Số CCCD (12 số):': { vi: 'Số CCCD (12 số):', en: 'Citizen ID No (12 digits):' },
   'Quê quán:': { vi: 'Quê quán:', en: 'Place of Origin:' },
   'Nơi thường trú:': { vi: 'Nơi thường trú:', en: 'Permanent Residence:' },
-  'Thu Thập Dữ Liệu Khuôn Mặt e-KYC Chuẩn Ngân Hàng': { vi: 'Thu Thập Dữ Liệu Khuôn Mặt e-KYC Chuẩn Ngân Hàng', en: 'Bank-Grade e-KYC Face Biometric Enrollment' },
-  'Chụp 4 góc đa chiều (Chính diện, Nghiêng trái, Nghiêng phải, Hơi ngẩng) để kích hoạt FaceID chính thức.': { vi: 'Chụp 4 góc đa chiều (Chính diện, Nghiêng trái, Nghiêng phải, Hơi ngẩng) để kích hoạt FaceID chính thức.', en: 'Capture 4 multi-dimensional angles (Front, Left, Right, Tilt up) for official FaceID activation.' },
+  'Thu Thập Dữ Liệu Khuôn Mặt e-KYC Chuẩn Ngân Hàng': { vi: 'Đăng Ký Khuôn Mặt Cư Dân An Toàn & Chuẩn Xác', en: 'Secure Resident Face Recognition Registration' },
+  'Chụp 4 góc đa chiều (Chính diện, Nghiêng trái, Nghiêng phải, Hơi ngẩng) để kích hoạt FaceID chính thức.': { vi: 'Chụp 4 góc mặt (Nhìn thẳng, Nghiêng trái, Nghiêng phải, Tiến lại gần) để kích hoạt mở cửa tự động.', en: 'Capture 4 face angles (Front, Left, Right, Come closer) for automatic door opening.' },
   'Đổi Góc Chụp': { vi: 'Đổi Góc Chụp', en: 'Change Angle' },
   'Xem Lại': { vi: 'Xem Lại', en: 'Review' },
-  'Đạt chuẩn e-KYC': { vi: 'Đạt chuẩn e-KYC', en: 'Meets e-KYC standards' },
+  'Đạt chuẩn e-KYC': { vi: 'Đạt chuẩn nhận diện', en: 'Meets standards' },
   'Đủ ánh sáng': { vi: 'Đủ ánh sáng', en: 'Good lighting' },
   'Không lóa': { vi: 'Không lóa', en: 'No glare' },
   'Không đeo kính râm': { vi: 'Không đeo kính râm', en: 'No sunglasses' },
   'Vui lòng căn chỉnh khuôn mặt vào giữa khung hình, giữ thẳng đầu.': { vi: 'Vui lòng căn chỉnh khuôn mặt vào giữa khung hình, giữ thẳng đầu.', en: 'Please align your face in the center of the frame and keep your head straight.' },
-  'Góc Chính Diện (0°)': { vi: 'Góc Chính Diện (0°)', en: 'Front Angle (0°)' },
-  'Nghiêng Trái (30°)': { vi: 'Nghiêng Trái (30°)', en: 'Turn Left (30°)' },
-  'Nghiêng Phải (30°)': { vi: 'Nghiêng Phải (30°)', en: 'Turn Right (30°)' },
-  'Hơi Ngẩng Nhẹ (15°)': { vi: 'Hơi Ngẩng Nhẹ (15°)', en: 'Slightly Tilt Up (15°)' },
+  'Góc Chính Diện (0°)': { vi: 'Nhìn Thẳng Vào Camera', en: 'Look Straight' },
+  'Nghiêng Trái (30°)': { vi: 'Nghiêng Sang Trái', en: 'Turn Left' },
+  'Nghiêng Phải (30°)': { vi: 'Nghiêng Sang Phải', en: 'Turn Right' },
+  'Hơi Ngẩng Nhẹ (15°)': { vi: 'Tiến Lại Gần Camera', en: 'Come Closer' },
   'Chụp Góc Này': { vi: 'Chụp Góc Này', en: 'Capture This Angle' },
   'Chụp Lại Góc Này': { vi: 'Chụp Lại Góc Này', en: 'Retake This Angle' },
-  'Bộ Sưu Tập 4 Góc Khuôn Mặt e-KYC': { vi: 'Bộ Sưu Tập 4 Góc Khuôn Mặt e-KYC', en: '4-Angle e-KYC Face Dossier' },
-  'Hoàn Tất Đăng Ký Sinh Trắc Học': { vi: 'Hoàn Tất Đăng Ký Sinh Trắc Học', en: 'Complete Biometric Enrollment' },
-  'Đang Lưu Trữ Dữ Liệu Sinh Trắc Học...': { vi: 'Đang Lưu Trữ Dữ Liệu Sinh Trắc Học...', en: 'Saving Biometric Data...' },
-  'Hồ Sơ Ảnh Chụp CCCD Thật (e-KYC)': { vi: 'Hồ Sơ Ảnh Chụp CCCD Thật (e-KYC)', en: 'Actual ID Card Dossier (e-KYC)' },
+  'Bộ Sưu Tập 4 Góc Khuôn Mặt e-KYC': { vi: '4 Góc Khuôn Mặt Cư Dân', en: '4-Angle Resident Face Photos' },
+  'Hoàn Tất Đăng Ký Sinh Trắc Học': { vi: 'Hoàn Tất Đăng Ký Khuôn Mặt', en: 'Complete Face Registration' },
+  'Đang Lưu Trữ Dữ Liệu Sinh Trắc Học...': { vi: 'Đang Lưu Thông Tin Khuôn Mặt...', en: 'Saving Face Information...' },
+  'Hồ Sơ Ảnh Chụp CCCD Thật (e-KYC)': { vi: 'Ảnh Chụp Thẻ Căn Cước Công Dân', en: 'Citizen ID Photos' },
   'Mặt Trước': { vi: 'Mặt Trước', en: 'Front Side' },
   'Mặt Sau': { vi: 'Mặt Sau', en: 'Back Side' },
-  'Tải Ảnh Chụp Thật': { vi: 'Tải Ảnh Chụp Thật', en: 'Upload Actual Photo' },
+  'Tải Ảnh Chụp Thật': { vi: 'Tải Ảnh Lên', en: 'Upload Photo' },
   'Đóng Cửa Sổ': { vi: 'Đóng Cửa Sổ', en: 'Close Window' },
-  'Chỉ hiển thị bản gốc ảnh chụp thật do cư dân cung cấp khi đăng ký e-KYC.': { vi: 'Chỉ hiển thị bản gốc ảnh chụp thật do cư dân cung cấp khi đăng ký e-KYC.', en: 'Only original photo files uploaded by resident during e-KYC registration are shown.' },
-  'Cư dân chưa tải lên ảnh chụp thật cho mặt này của thẻ Căn cước công dân. Hệ thống tuyệt đối không tự tạo ảnh giả mạo.': { vi: 'Cư dân chưa tải lên ảnh chụp thật cho mặt này của thẻ Căn cước công dân. Hệ thống tuyệt đối không tự tạo ảnh giả mạo.', en: 'Resident has not uploaded the actual photo for this side of the ID card. The system strictly does not synthesize fake images.' },
+  'Chỉ hiển thị bản gốc ảnh chụp thật do cư dân cung cấp khi đăng ký e-KYC.': { vi: 'Chỉ hiển thị ảnh chụp do cư dân cung cấp khi cập nhật hồ sơ.', en: 'Only original photos uploaded by resident are shown.' },
+  'Cư dân chưa tải lên ảnh chụp thật cho mặt này của thẻ Căn cước công dân. Hệ thống tuyệt đối không tự tạo ảnh giả mạo.': { vi: 'Cư dân chưa tải lên ảnh chụp cho mặt này của thẻ CCCD.', en: 'Resident has not uploaded a photo for this side of the ID card.' },
   'HOTLINE KỸ THUẬT 24/7': { vi: 'HOTLINE KỸ THUẬT 24/7', en: '24/7 TECHNICAL HOTLINE' },
   'Xem tất cả dịch vụ & sự cố': { vi: 'Xem tất cả dịch vụ & sự cố', en: 'View all services & issues' },
   'Thông báo hệ thống': { vi: 'Thông báo hệ thống', en: 'System notifications' },
@@ -802,7 +817,8 @@ export const KEY_DICTIONARY: Record<string, Record<Language, string>> = {
   '⏳ CHỜ THẨM ĐỊNH': { vi: '⏳ CHỜ THẨM ĐỊNH', en: '⏳ PENDING APPRAISAL' },
   'Được Chủ Hộ Bảo Lãnh': { vi: 'Được Chủ Hộ Bảo Lãnh', en: 'Owner Sponsored' },
   'Phê duyệt thành công!': { vi: 'Phê duyệt thành công!', en: 'Approval Successful!' },
-  'Đã kích hoạt sinh trắc học FaceID và nạp dữ liệu nhận diện vào Camera AI cổng Barrier và Thang máy toà nhà.': { vi: 'Đã kích hoạt sinh trắc học FaceID và nạp dữ liệu nhận diện vào Camera AI cổng Barrier và Thang máy toà nhà.', en: 'FaceID biometrics activated and recognition data loaded to AI barrier gate and building elevators.' },
+  'Đã kích hoạt sinh trắc học FaceID và nạp dữ liệu nhận diện vào Camera AI cổng Barrier và Thang máy toà nhà.': { vi: 'Đã kích hoạt nhận diện khuôn mặt mở cổng và thang máy tòa nhà.', en: 'Face recognition activated for building gates and elevators.' },
+  'Đã kích hoạt nhận diện khuôn mặt mở cổng và thang máy tòa nhà.': { vi: 'Đã kích hoạt nhận diện khuôn mặt mở cổng và thang máy tòa nhà.', en: 'Face recognition activated for building gates and elevators.' },
   'Thời gian thực': { vi: 'Thời gian thực', en: 'Real-time' },
   'Hồ Sơ Đã Bị Từ Chối / Yêu Cầu Cung Cấp Lại': { vi: 'Hồ Sơ Đã Bị Từ Chối / Yêu Cầu Cung Cấp Lại', en: 'Dossier Rejected / Resubmission Required' },
   'Lý do từ chối gửi cư dân:': { vi: 'Lý do từ chối gửi cư dân:', en: 'Rejection reason sent to resident:' },
@@ -883,12 +899,12 @@ export const KEY_DICTIONARY: Record<string, Record<Language, string>> = {
   'SĐT:': { vi: 'SĐT:', en: 'Phone:' },
   'Căn Hộ:': { vi: 'Căn Hộ:', en: 'Apartment:' },
   'hero.desc_auth': {
-    vi: 'Dự án căn hộ hạng sang SKYLINE Smart Residence tại cụm 4 chung cư The Tropical (BS-07, BS-08, BS-09, BS-10) kiến tạo chuẩn sống tự động hóa hoàn chỉnh: Định danh sinh trắc học FaceID <0.5s, giám sát an ninh Vision AI và hệ thống dự báo bảo trì thông minh.',
-    en: 'Luxury apartment project SKYLINE Smart Residence at 4 towers of The Tropical (BS-07, BS-08, BS-09, BS-10) pioneers complete automated living: FaceID biometrics <0.5s, Vision AI security monitoring, and predictive maintenance.'
+    vi: 'Dự án căn hộ hạng sang SKYLINE Smart Residence tại cụm 4 chung cư The Tropical (BS-07, BS-08, BS-09, BS-10) kiến tạo chuẩn sống tiện nghi hoàn chỉnh: Nhận diện khuôn mặt FaceID mở cửa <0.5s, an ninh thông minh và hỗ trợ cư dân 24/7.',
+    en: 'Luxury apartment project SKYLINE Smart Residence at 4 towers of The Tropical (BS-07, BS-08, BS-09, BS-10) pioneers complete modern living: FaceID access <0.5s, smart security, and 24/7 resident support.'
   },
   'hero.desc_unauth': {
-    vi: 'Dự án căn hộ hạng sang SKYLINE Smart Residence tại cụm 4 chung cư The Tropical (BS-07, BS-08, BS-09, BS-10) — định danh sinh trắc học FaceID, giám sát Vision AI và trợ lý ảo AI Concierge 24/7.',
-    en: 'Luxury apartment project SKYLINE Smart Residence at 4 towers of The Tropical (BS-07, BS-08, BS-09, BS-10) — biometric FaceID access, Vision AI security, and 24/7 AI Concierge.'
+    vi: 'Dự án căn hộ hạng sang SKYLINE Smart Residence tại cụm 4 chung cư The Tropical (BS-07, BS-08, BS-09, BS-10) — mở cửa bằng khuôn mặt FaceID, an ninh thông minh và trợ lý ảo 24/7.',
+    en: 'Luxury apartment project SKYLINE Smart Residence at 4 towers of The Tropical (BS-07, BS-08, BS-09, BS-10) — FaceID access, smart security, and 24/7 AI Concierge.'
   },
 
   // --- Facility Booking, Limits & Slot Availability ---
@@ -987,7 +1003,232 @@ export const KEY_DICTIONARY: Record<string, Record<Language, string>> = {
   'Sơ Đồ Tầng &amp; Mặt Bằng': { vi: 'Sơ Đồ Tầng & Mặt Bằng', en: 'Floor Plan & Layout' },
   'Tỷ Lệ Lấp Đầy': { vi: 'Tỷ Lệ Lấp Đầy', en: 'Occupancy Rate' },
   'Căn Hộ Đang Trống': { vi: 'Căn Hộ Đang Trống', en: 'Vacant Apartments' },
-  'Căn Hộ Đã Ở': { vi: 'Căn Hộ Đã Ở', en: 'Occupied Apartments' }
+  'Căn Hộ Đã Ở': { vi: 'Căn Hộ Đã Ở', en: 'Occupied Apartments' },
+
+  // ===========================================================================
+  // VNPAY GATEWAY & PAYMENT SYSTEM
+  // ===========================================================================
+  'Cổng Thanh Toán Quốc Gia Chuẩn PCI-DSS': { vi: 'Cổng Thanh Toán Quốc Gia Chuẩn PCI-DSS', en: 'National Payment Gateway • PCI-DSS Certified' },
+  'Bảo mật SSL 256-bit': { vi: 'Bảo mật SSL 256-bit', en: '256-bit SSL Security' },
+  'Thông Tin Đơn Hàng': { vi: 'Thông Tin Đơn Hàng', en: 'Order Details' },
+  'Đơn vị thụ hưởng:': { vi: 'Đơn vị thụ hưởng:', en: 'Beneficiary:' },
+  'Đơn vị thụ hưởng': { vi: 'Đơn vị thụ hưởng', en: 'Beneficiary' },
+  'BAN QUẢN LÝ CHUNG CƯ SKYLINE SMART RESIDENCE': { vi: 'BAN QUẢN LÝ CHUNG CƯ SKYLINE SMART RESIDENCE', en: 'SKYLINE SMART RESIDENCE MANAGEMENT BOARD' },
+  'Mã hóa đơn:': { vi: 'Mã hóa đơn:', en: 'Bill ID:' },
+  'Mã hóa đơn': { vi: 'Mã hóa đơn', en: 'Bill ID' },
+  'Căn hộ:': { vi: 'Căn hộ:', en: 'Apartment:' },
+  'Kỳ thanh toán phí:': { vi: 'Kỳ thanh toán phí:', en: 'Billing Cycle:' },
+  'Kỳ thanh toán phí': { vi: 'Kỳ thanh toán phí', en: 'Billing Cycle' },
+  'Tổng số tiền thanh toán:': { vi: 'Tổng số tiền thanh toán:', en: 'Total Amount Due:' },
+  'Tổng số tiền thanh toán': { vi: 'Tổng số tiền thanh toán', en: 'Total Amount Due' },
+  'Hủy Giao Dịch & Quay Lại': { vi: 'Hủy Giao Dịch & Quay Lại', en: 'Cancel Transaction & Return' },
+  'Hủy Giao Dịch &amp; Quay Lại': { vi: 'Hủy Giao Dịch & Quay Lại', en: 'Cancel Transaction & Return' },
+  'Thẻ ATM Nội Địa': { vi: 'Thẻ ATM Nội Địa', en: 'Domestic ATM Card' },
+  'VNPAY-QR': { vi: 'VNPAY-QR', en: 'VNPAY-QR Code' },
+  'Thẻ Quốc Tế': { vi: 'Thẻ Quốc Tế', en: 'International Card' },
+  '1. Chọn Ngân Hàng Thanh Toán:': { vi: '1. Chọn Ngân Hàng Thanh Toán:', en: '1. Select Payment Bank:' },
+  'Chọn Ngân Hàng Thanh Toán:': { vi: 'Chọn Ngân Hàng Thanh Toán:', en: 'Select Payment Bank:' },
+  'Số thẻ ngân hàng:': { vi: 'Số thẻ ngân hàng:', en: 'Bank Card Number:' },
+  'Số thẻ ngân hàng': { vi: 'Số thẻ ngân hàng', en: 'Bank Card Number' },
+  'Tên in trên thẻ (không dấu):': { vi: 'Tên in trên thẻ (không dấu):', en: 'Cardholder Name (Unaccented):' },
+  'Ngày phát hành (MM/YY):': { vi: 'Ngày phát hành (MM/YY):', en: 'Issue Date (MM/YY):' },
+  'Tiếp Tục Xác Thực Thanh Toán': { vi: 'Tiếp Tục Xác Thực Thanh Toán', en: 'Proceed to Payment Verification' },
+  'Xác Thực Mật Khẩu OTP (3D-Secure)': { vi: 'Xác Thực Mật Khẩu OTP (3D-Secure)', en: '3D-Secure OTP Verification' },
+  'đã gửi mã xác thực SMS OTP đến số điện thoại của chủ thẻ.': { vi: 'đã gửi mã xác thực SMS OTP đến số điện thoại của chủ thẻ.', en: 'has sent an SMS OTP code to your registered mobile number.' },
+  'Nhập mã OTP xác nhận:': { vi: 'Nhập mã OTP xác nhận:', en: 'Enter OTP confirmation code:' },
+  'Xác Nhận & Hoàn Tất': { vi: 'Xác Nhận & Hoàn Tất', en: 'Confirm & Complete' },
+  'Xác Nhận &amp; Hoàn Tất': { vi: 'Xác Nhận & Hoàn Tất', en: 'Confirm & Complete' },
+  'Đang Xử Lý Gạch Nợ...': { vi: 'Đang Xử Lý Gạch Nợ...', en: 'Processing Settlement...' },
+  'Quét mã qua ứng dụng Ngân hàng hoặc Ví VNPAY': { vi: 'Quét mã qua ứng dụng Ngân hàng hoặc Ví VNPAY', en: 'Scan QR code via Banking Apps or VNPAY Wallet' },
+  'Mở ứng dụng Mobile Banking của bạn, chọn tính năng QR Pay / Quét Mã và hướng camera vào mã QR ở trên để hoàn tất thanh toán.': { vi: 'Mở ứng dụng Mobile Banking của bạn, chọn tính năng QR Pay / Quét Mã và hướng camera vào mã QR ở trên để hoàn tất thanh toán.', en: 'Open your Mobile Banking app, select QR Pay / Scan QR and point camera at the QR code above to complete payment.' },
+  'Tôi Đã Quét Mã & Thanh Toán Thành Công': { vi: 'Tôi Đã Quét Mã & Thanh Toán Thành Công', en: 'I Have Scanned & Paid Successfully' },
+  'Tôi Đã Quét Mã &amp; Thanh Toán Thành Công': { vi: 'Tôi Đã Quét Mã & Thanh Toán Thành Công', en: 'I Have Scanned & Paid Successfully' },
+  'Chấp nhận các loại thẻ:': { vi: 'Chấp nhận các loại thẻ:', en: 'Accepted Cards:' },
+  'Số thẻ quốc tế:': { vi: 'Số thẻ quốc tế:', en: 'International Card Number:' },
+  'Hạn sử dụng (MM/YY):': { vi: 'Hạn sử dụng (MM/YY):', en: 'Expiration Date (MM/YY):' },
+  'Mã bảo mật (CVV/CVC):': { vi: 'Mã bảo mật (CVV/CVC):', en: 'Security Code (CVV/CVC):' },
+  'Thanh Toán Quốc Tế': { vi: 'Thanh Toán Quốc Tế', en: 'International Payment' },
+  'Cổng thanh toán điện tử VNPAY • Hợp tác cùng Skyline Smart Residence • Hotline 1900 55 55 77': { vi: 'Cổng thanh toán điện tử VNPAY • Hợp tác cùng Skyline Smart Residence • Hotline 1900 55 55 77', en: 'VNPAY Payment Gateway • In partnership with Skyline Smart Residence • Hotline 1900 55 55 77' },
+  'Đang kết nối cổng thanh toán VNPAY...': { vi: 'Đang kết nối cổng thanh toán VNPAY...', en: 'Connecting to VNPAY Payment Gateway...' },
+  'Quý khách có chắc chắn muốn hủy phiên giao dịch này không?': { vi: 'Quý khách có chắc chắn muốn hủy phiên giao dịch này không?', en: 'Are you sure you want to cancel this payment transaction?' },
+  'Lỗi xử lý xác nhận thanh toán VNPAY': { vi: 'Lỗi xử lý xác nhận thanh toán VNPAY', en: 'Error processing VNPAY payment confirmation' },
+  'Lỗi kết nối cổng thanh toán:': { vi: 'Lỗi kết nối cổng thanh toán:', en: 'Payment gateway connection error:' },
+  'Ngân hàng NCB (Test)': { vi: 'Ngân hàng NCB (Test)', en: 'NCB Bank (Test Sandbox)' },
+
+  // ===========================================================================
+  // RESIDENT FINANCE & STATEMENT TRANSPARENCY
+  // ===========================================================================
+  'Bảng Kê Chi Tiết Phí Sinh Hoạt': { vi: 'Bảng Kê Chi Tiết Phí Sinh Hoạt', en: 'Detailed Statement of Living Expenses' },
+  'khoản mục trong kỳ': { vi: 'khoản mục trong kỳ', en: 'items in period' },
+  'Khoản Mục & Diễn Giải': { vi: 'Khoản Mục & Diễn Giải', en: 'Item & Description' },
+  'Khoản Mục &amp; Diễn Giải': { vi: 'Khoản Mục & Diễn Giải', en: 'Item & Description' },
+  'Chỉ Số / Khối Lượng': { vi: 'Chỉ Số / Khối Lượng', en: 'Usage / Quantity' },
+  'Dịch vụ yêu cầu': { vi: 'Dịch vụ yêu cầu', en: 'Requested Service' },
+  'Ngày sử dụng': { vi: 'Ngày sử dụng', en: 'Date of use' },
+  'Đã bao gồm thuế GTGT và các khoản quỹ theo quy định chung cư': { vi: 'Đã bao gồm thuế GTGT và các khoản quỹ theo quy định chung cư', en: 'Includes VAT and regulatory reserve funds per apartment regulations' },
+  'Hạn chót thanh toán kỳ này:': { vi: 'Hạn chót thanh toán kỳ này:', en: 'Payment deadline for this cycle:' },
+  'Tổng Cộng Cần Thanh Toán': { vi: 'Tổng Cộng Cần Thanh Toán', en: 'Total Due' },
+  'Tổng Cộng Cần Thanh Toán:': { vi: 'Tổng Cộng Cần Thanh Toán:', en: 'Total Due:' },
+  'Minh Bạch Nguồn Tiền Thanh Toán': { vi: 'Minh Bạch Nguồn Tiền Thanh Toán', en: 'Transparent Payment Fund Allocation' },
+  'Khoản tiền đóng của căn hộ được tự động phân bổ vào từng mục tiêu cụ thể:': { vi: 'Khoản tiền đóng của căn hộ được tự động phân bổ vào từng mục tiêu cụ thể:', en: 'Your payment is automatically allocated into specific transparent funds:' },
+  'Tách Bạch Quỹ • Đúng Quy Định': { vi: 'Tách Bạch Quỹ • Đúng Quy Định', en: 'Segregated Funds • Fully Compliant' },
+  'Thu Hộ Điện & Nước': { vi: 'Thu Hộ Điện & Nước', en: 'State Utility Collection (EVN & Water)' },
+  'Thu Hộ Điện &amp; Nước': { vi: 'Thu Hộ Điện & Nước', en: 'State Utility Collection (EVN & Water)' },
+  'Chung cư chỉ thu hộ và chuyển 100% về Điện lực EVN và Cấp nước. Ban Quản Lý không giữ lại khoản này.': { vi: 'Chung cư chỉ thu hộ và chuyển 100% về Điện lực EVN và Cấp nước. Ban Quản Lý không giữ lại khoản này.', en: 'Collected on behalf and remitted 100% to EVN Power and City Water. Management keeps 0% of this fund.' },
+  'Duy Trì Tòa Nhà & Tiện Ích': { vi: 'Duy Trì Tòa Nhà & Tiện Ích', en: 'Building Operations & Resident Amenities' },
+  'Duy Trì Tòa Nhà &amp; Tiện Ích': { vi: 'Duy Trì Tòa Nhà & Tiện Ích', en: 'Building Operations & Resident Amenities' },
+  'Trực tiếp chi trả an ninh 24/7, vệ sinh sảnh, chiếu sáng công cộng, bảo trì thang máy, hồ bơi & phòng gym.': { vi: 'Trực tiếp chi trả an ninh 24/7, vệ sinh sảnh, chiếu sáng công cộng, bảo trì thang máy, hồ bơi & phòng gym.', en: 'Directly funds 24/7 security, janitorial, hallway lighting, elevators, swimming pool & gym operations.' },
+  'Quỹ Bảo Dưỡng & Mạng': { vi: 'Quỹ Bảo Dưỡng & Mạng', en: 'Maintenance Reserve & Telecom Fund' },
+  'Quỹ Bảo Dưỡng &amp; Mạng': { vi: 'Quỹ Bảo Dưỡng & Mạng', en: 'Maintenance Reserve & Telecom Fund' },
+  'Tích lũy vào tài khoản riêng để đại tu thiết bị chung (máy phát, cáp thang máy) và đường truyền cáp quang.': { vi: 'Tích lũy vào tài khoản riêng để đại tu thiết bị chung (máy phát, cáp thang máy) và đường truyền cáp quang.', en: 'Reserved in an escrow account for long-term repairs of shared assets (generators, elevator cables) and optical fiber.' },
+  'Chọn Phương Thức Thanh Toán Trực Tiếp': { vi: 'Chọn Phương Thức Thanh Toán Trực Tiếp', en: 'Select Direct Payment Option' },
+  'Thanh toán tức thời qua Cổng VNPAY quốc gia hoặc quét mã VietQR 24/7 từ mọi ứng dụng ngân hàng.': { vi: 'Thanh toán tức thời qua Cổng VNPAY quốc gia hoặc quét mã VietQR 24/7 từ mọi ứng dụng ngân hàng.', en: 'Instant payment via National VNPAY Gateway or VietQR 24/7 scan from any banking app.' },
+  'Gạch Nợ Tự Động 24/7': { vi: 'Gạch Nợ Tự Động 24/7', en: '24/7 Instant Auto-Settlement' },
+  'Thanh Toán Qua Cổng VNPAY': { vi: 'Thanh Toán Qua Cổng VNPAY', en: 'Pay via VNPAY Gateway' },
+  'Chuyển tiếp sang VNPAY • Hỗ trợ thẻ ATM nội địa, Visa/Mastercard & VNPAY-QR': { vi: 'Chuyển tiếp sang VNPAY • Hỗ trợ thẻ ATM nội địa, Visa/Mastercard & VNPAY-QR', en: 'Forward to VNPAY • Supports domestic ATM cards, Visa/Mastercard & VNPAY-QR' },
+  'Chuyển tiếp sang VNPAY • Hỗ trợ thẻ ATM nội địa, Visa/Mastercard &amp; VNPAY-QR': { vi: 'Chuyển tiếp sang VNPAY • Hỗ trợ thẻ ATM nội địa, Visa/Mastercard & VNPAY-QR', en: 'Forward to VNPAY • Supports domestic ATM cards, Visa/Mastercard & VNPAY-QR' },
+  'Đang chuyển hướng...': { vi: 'Đang chuyển hướng...', en: 'Redirecting...' },
+  'Quét Mã Chuyển Khoản VietQR 24/7': { vi: 'Quét Mã Chuyển Khoản VietQR 24/7', en: 'Scan VietQR 24/7 Instant Transfer' },
+  'Mở mã QR Napas 24/7 • Quét bằng mọi App Ngân hàng (VCB, MB, Techcombank, BIDV...)': { vi: 'Mở mã QR Napas 24/7 • Quét bằng mọi App Ngân hàng (VCB, MB, Techcombank, BIDV...)', en: 'Open Napas 24/7 QR Code • Scan with any banking app (VCB, MB, Techcombank, BIDV...)' },
+  'Hóa Đơn Đã Được Thanh Toán Hoàn Tất': { vi: 'Hóa Đơn Đã Được Thanh Toán Hoàn Tất', en: 'Invoice Has Been Fully Paid' },
+  'Phương thức:': { vi: 'Phương thức:', en: 'Method:' },
+  'Ngày nộp:': { vi: 'Ngày nộp:', en: 'Paid Date:' },
+  'Mã GD:': { vi: 'Mã GD:', en: 'Trans ID:' },
+  'Tải Biên Nhận PDF': { vi: 'Tải Biên Nhận PDF', en: 'Download PDF Receipt' },
+  'Quét Mã VietQR Napas 24/7': { vi: 'Quét Mã VietQR Napas 24/7', en: 'Scan VietQR Napas 24/7' },
+  'Sử dụng ứng dụng bất kỳ ngân hàng nào để quét mã thanh toán': { vi: 'Sử dụng ứng dụng bất kỳ ngân hàng nào để quét mã thanh toán', en: 'Use any mobile banking app to scan and pay' },
+  'Người thụ hưởng': { vi: 'Người thụ hưởng', en: 'Beneficiary' },
+  'Người thụ hưởng:': { vi: 'Người thụ hưởng:', en: 'Beneficiary:' },
+  'Nội dung CK': { vi: 'Nội dung CK', en: 'Transfer Memo' },
+  'Nội dung CK:': { vi: 'Nội dung CK:', en: 'Transfer Memo:' },
+  'Sao chép số tài khoản': { vi: 'Sao chép số tài khoản', en: 'Copy account number' },
+  'Sao chép số tiền': { vi: 'Sao chép số tiền', en: 'Copy amount' },
+  'Sao chép nội dung': { vi: 'Sao chép nội dung', en: 'Copy transfer memo' },
+  'Đã sao chép nội dung!': { vi: 'Đã sao chép nội dung!', en: 'Transfer memo copied to clipboard!' },
+  'Đã sao chép số tài khoản!': { vi: 'Đã sao chép số tài khoản!', en: 'Account number copied to clipboard!' },
+  'Đã sao chép số tiền!': { vi: 'Đã sao chép số tiền!', en: 'Amount copied to clipboard!' },
+  'Đóng Lại': { vi: 'Đóng Lại', en: 'Close' },
+  'Tôi Đã Chuyển Khoản': { vi: 'Tôi Đã Chuyển Khoản', en: 'I Have Transferred' },
+  'THANH TOÁN THÀNH CÔNG': { vi: 'THANH TOÁN THÀNH CÔNG', en: 'PAYMENT SUCCESSFUL' },
+  'Số tiền:': { vi: 'Số tiền:', en: 'Amount:' },
+  'Thời gian:': { vi: 'Thời gian:', en: 'Time:' },
+  'Tải Hóa Đơn PDF': { vi: 'Tải Hóa Đơn PDF', en: 'Download Invoice PDF' },
+  'Tự động đóng sau 7s': { vi: 'Tự động đóng sau 7s', en: 'Auto closes in 7s' },
+  'Thanh Toán VNPAY Thành Công': { vi: 'Thanh Toán VNPAY Thành Công', en: 'VNPAY Payment Successful' },
+  'Thông Báo Giao Dịch VNPAY': { vi: 'Thông Báo Giao Dịch VNPAY', en: 'VNPAY Transaction Notice' },
+  'Bảng Kê Dịch Vụ': { vi: 'Bảng Kê Dịch Vụ', en: 'Services Breakdown' },
+  'Tiền Nước Sinh Hoạt': { vi: 'Tiền Nước Sinh Hoạt', en: 'Domestic Water Usage' },
+  'Phí Quản Lý Vận Hành': { vi: 'Phí Quản Lý Vận Hành', en: 'Building Management Fee' },
+  'Cáp Quang Internet VNPT': { vi: 'Cáp Quang Internet VNPT', en: 'VNPT Fiber Internet' },
+  'Phí Sử Dụng Tiện Ích Đặt Trước': { vi: 'Phí Sử Dụng Tiện Ích Đặt Trước', en: 'Reserved Amenity Booking Fee' },
+  'Giặt Ủi & Giặt Hấp Cao Cấp': { vi: 'Giặt Ủi & Giặt Hấp Cao Cấp', en: 'Premium Laundry & Dry Cleaning' },
+  'Giặt Ủi &amp; Giặt Hấp Cao Cấp': { vi: 'Giặt Ủi & Giặt Hấp Cao Cấp', en: 'Premium Laundry & Dry Cleaning' },
+  'Giúp Việc & Dọn Dẹp Căn Hộ': { vi: 'Giúp Việc & Dọn Dẹp Căn Hộ', en: 'Housekeeping & Apartment Cleaning' },
+  'Giúp Việc &amp; Dọn Dẹp Căn Hộ': { vi: 'Giúp Việc & Dọn Dẹp Căn Hộ', en: 'Housekeeping & Apartment Cleaning' },
+  'Thuê Huấn Luyện Viên PT Bơi/Gym': { vi: 'Thuê Huấn Luyện Viên PT Bơi/Gym', en: 'Personal Trainer (PT) Gym / Swimming' },
+  'Chăm Sóc & Rửa Xe Hầm B2': { vi: 'Chăm Sóc & Rửa Xe Hầm B2', en: 'B2 Basement Car Wash & Detailing' },
+  'Chăm Sóc &amp; Rửa Xe Hầm B2': { vi: 'Chăm Sóc & Rửa Xe Hầm B2', en: 'B2 Basement Car Wash & Detailing' },
+  'Phí Dịch Vụ Cư Dân': { vi: 'Phí Dịch Vụ Cư Dân', en: 'Resident Service Fee' },
+  'Gợi Ý AI Tối Ưu Năng Lượng & Chi Phí': { vi: 'Gợi Ý AI Tối Ưu Năng Lượng & Chi Phí', en: 'AI Energy & Cost Optimization Insights' },
+  'Gợi Ý AI Tối Ưu Năng Lượng &amp; Chi Phí': { vi: 'Gợi Ý AI Tối Ưu Năng Lượng & Chi Phí', en: 'AI Energy & Cost Optimization Insights' },
+  'Tối Ưu Hóa Tiền Điện': { vi: 'Tối Ưu Hóa Tiền Điện', en: 'Electricity Cost Optimization' },
+  'Giám Sát Lưu Lượng Nước': { vi: 'Giám Sát Lưu Lượng Nước', en: 'Water Consumption Monitoring' },
+  'Ưu Đãi Cáp Quang & Dịch Vụ': { vi: 'Ưu Đãi Cáp Quang & Dịch Vụ', en: 'Fiber Internet & Service Promotions' },
+  'Ưu Đãi Cáp Quang &amp; Dịch Vụ': { vi: 'Ưu Đãi Cáp Quang & Dịch Vụ', en: 'Fiber Internet & Service Promotions' },
+
+  // ===========================================================================
+  // FACE ENROLLMENT & COMPUTER VISION
+  // ===========================================================================
+  'BƯỚC 1: NHÌN THẲNG VÀO CAMERA': { vi: 'BƯỚC 1: NHÌN THẲNG VÀO CAMERA', en: 'STEP 1: LOOK STRAIGHT INTO CAMERA' },
+  'Góc chính diện • Giữ đầu thẳng': { vi: 'Góc chính diện • Giữ đầu thẳng', en: 'Frontal View • Keep Head Level' },
+  'Vui lòng nhìn thẳng vào màn hình, giữ khuôn mặt nằm trong khung tròn.': { vi: 'Vui lòng nhìn thẳng vào màn hình, giữ khuôn mặt nằm trong khung tròn.', en: 'Please look straight at the screen, keeping your face centered in the oval frame.' },
+  'BƯỚC 2: NGHIÊNG NHẸ SANG TRÁI': { vi: 'BƯỚC 2: NGHIÊNG NHẸ SANG TRÁI', en: 'STEP 2: TILT SLIGHTLY LEFT' },
+  'Nghiêng nhẹ mặt sang bên trái': { vi: 'Nghiêng nhẹ mặt sang bên trái', en: 'Turn face slightly to the left' },
+  'Từ từ quay nhẹ mặt sang bên trái để hệ thống ghi nhận góc nghiêng.': { vi: 'Từ từ quay nhẹ mặt sang bên trái để hệ thống ghi nhận góc nghiêng.', en: 'Slowly turn your face slightly to the left for side-angle capture.' },
+  'BƯỚC 3: NGHIÊNG NHẸ SANG PHẢI': { vi: 'BƯỚC 3: NGHIÊNG NHẸ SANG PHẢI', en: 'STEP 3: TILT SLIGHTLY RIGHT' },
+  'Nghiêng nhẹ mặt sang bên phải': { vi: 'Nghiêng nhẹ mặt sang bên phải', en: 'Turn face slightly to the right' },
+  'Từ từ quay nhẹ mặt sang bên phải để hệ thống ghi nhận góc nghiêng.': { vi: 'Từ từ quay nhẹ mặt sang bên phải để hệ thống ghi nhận góc nghiêng.', en: 'Slowly turn your face slightly to the right for side-angle capture.' },
+  'BƯỚC 4: TIẾN LẠI GẦN MỘT CHÚT': { vi: 'BƯỚC 4: TIẾN LẠI GẦN MỘT CHÚT', en: 'STEP 4: MOVE A BIT CLOSER' },
+  'Khoảng cách gần hơn • Xác nhận người thật': { vi: 'Khoảng cách gần hơn • Xác nhận người thật', en: 'Closer Range • Liveness & Depth Verification' },
+  'Từ từ đưa mặt lại gần camera hơn một chút để hoàn tất nhận diện.': { vi: 'Từ từ đưa mặt lại gần camera hơn một chút để hoàn tất nhận diện.', en: 'Slowly bring your face a bit closer to the camera to complete enrollment.' },
+  'Vui lòng đưa mặt vào giữa khung hình': { vi: 'Vui lòng đưa mặt vào giữa khung hình', en: 'Please center your face inside the frame' },
+  'Bạn đang hơi xa, hãy tiến lại gần hơn': { vi: 'Bạn đang hơi xa, hãy tiến lại gần hơn', en: 'You are a bit too far, please step closer' },
+  'Bạn đang quá gần, hãy lùi ra xa một chút': { vi: 'Bạn đang quá gần, hãy lùi ra xa một chút', en: 'You are too close, please step back slightly' },
+  'Đang giữ thẳng mặt, xin giữ yên...': { vi: 'Đang giữ thẳng mặt, xin giữ yên...', en: 'Face aligned straight, please hold still...' },
+  'Mặt đang lệch sang trái, hãy nhìn thẳng vào camera': { vi: 'Mặt đang lệch sang trái, hãy nhìn thẳng vào camera', en: 'Face tilted left, please look straight ahead' },
+  'Mặt đang lệch sang phải, hãy nhìn thẳng vào camera': { vi: 'Mặt đang lệch sang phải, hãy nhìn thẳng vào camera', en: 'Face tilted right, please look straight ahead' },
+  'Mặt đang ngước lên, hãy nhìn thẳng vào camera': { vi: 'Mặt đang ngước lên, hãy nhìn thẳng vào camera', en: 'Head tilted up, please look straight into camera' },
+  'Mặt đang cúi xuống, hãy nhìn thẳng vào camera': { vi: 'Mặt đang cúi xuống, hãy nhìn thẳng vào camera', en: 'Head tilted down, please look straight into camera' },
+  'Vui lòng nhìn thẳng vào camera': { vi: 'Vui lòng nhìn thẳng vào camera', en: 'Please look straight into camera' },
+  'Góc nghiêng trái rất tốt, giữ yên...': { vi: 'Góc nghiêng trái rất tốt, giữ yên...', en: 'Left angle looking good, hold still...' },
+  'Từ từ quay nhẹ mặt sang TRÁI': { vi: 'Từ từ quay nhẹ mặt sang TRÁI', en: 'Slowly turn your face to the LEFT' },
+  'Góc nghiêng phải rất tốt, giữ yên...': { vi: 'Góc nghiêng phải rất tốt, giữ yên...', en: 'Right angle looking good, hold still...' },
+  'Từ từ quay nhẹ mặt sang PHẢI': { vi: 'Từ từ quay nhẹ mặt sang PHẢI', en: 'Slowly turn your face to the RIGHT' },
+  'Bước 4: Chuẩn bị tiến lại gần camera...': { vi: 'Bước 4: Chuẩn bị tiến lại gần camera...', en: 'Step 4: Prepare to move closer to the camera...' },
+  'Bước 2: Chuẩn bị quay nhẹ sang TRÁI...': { vi: 'Bước 2: Chuẩn bị quay nhẹ sang TRÁI...', en: 'Step 2: Prepare to turn slightly to the LEFT...' },
+  'Bước 3: Chuẩn bị quay nhẹ sang PHẢI...': { vi: 'Bước 3: Chuẩn bị quay nhẹ sang PHẢI...', en: 'Step 3: Prepare to turn slightly to the RIGHT...' },
+  'Quá gần! Vui lòng lùi ra một chút': { vi: 'Quá gần! Vui lòng lùi ra một chút', en: 'Too close! Please step back a bit' },
+  'Từ từ đưa mặt lại gần camera hơn...': { vi: 'Từ từ đưa mặt lại gần camera hơn...', en: 'Slowly bring your face closer...' },
+  'Vui lòng nhìn thẳng vào camera khi lại gần': { vi: 'Vui lòng nhìn thẳng vào camera khi lại gần', en: 'Please keep facing camera while moving closer' },
+  'Khoảng cách rất tốt, xin giữ yên...': { vi: 'Khoảng cách rất tốt, xin giữ yên...', en: 'Optimal distance achieved, hold still...' },
+  'Tự động nhận diện': { vi: 'Tự động nhận diện', en: 'Auto-Detection' },
+  'Hướng thẳng': { vi: 'Hướng thẳng', en: 'Facing Straight' },
+  'Góc trái': { vi: 'Góc trái', en: 'Left Angle' },
+  'Góc phải': { vi: 'Góc phải', en: 'Right Angle' },
+  'Tiến gần': { vi: 'Tiến gần', en: 'Move Closer' },
+  'Đang quét': { vi: 'Đang quét', en: 'Scanning' },
+  'Hơi xa • Lại gần hơn': { vi: 'Hơi xa • Lại gần hơn', en: 'Too far • Step closer' },
+  'Quá gần • Lùi ra xa': { vi: 'Quá gần • Lùi ra xa', en: 'Too close • Step back' },
+  'Tiến gần camera hơn': { vi: 'Tiến gần camera hơn', en: 'Step closer to camera' },
+  'Cự ly chuẩn': { vi: 'Cự ly chuẩn', en: 'Optimal distance' },
+  'Thử Lại Kết Nối': { vi: 'Thử Lại Kết Nối', en: 'Retry Camera Connection' },
+  'Quay Trái': { vi: 'Quay Trái', en: 'Turn Left' },
+  'Quay Phải': { vi: 'Quay Phải', en: 'Turn Right' },
+  'Lại Gần': { vi: 'Lại Gần', en: 'Move Closer' },
+  'ĐÃ LƯU: NHÌN THẲNG ✓': { vi: 'ĐÃ LƯU: NHÌN THẲNG ✓', en: 'SAVED: FRONTAL VIEW ✓' },
+  'ĐÃ LƯU: NGHIÊNG TRÁI ✓': { vi: 'ĐÃ LƯU: NGHIÊNG TRÁI ✓', en: 'SAVED: LEFT ANGLE ✓' },
+  'ĐÃ LƯU: NGHIÊNG PHẢI ✓': { vi: 'ĐÃ LƯU: NGHIÊNG PHẢI ✓', en: 'SAVED: RIGHT ANGLE ✓' },
+  'ĐÃ LƯU: TIẾN GẦN ✓': { vi: 'ĐÃ LƯU: TIẾN GẦN ✓', en: 'SAVED: CLOSER DEPTH ✓' },
+  'Tự Động: BẬT': { vi: 'Tự Động: BẬT', en: 'Auto-Capture: ON' },
+  'Tự Động: TẮT': { vi: 'Tự Động: TẮT', en: 'Auto-Capture: OFF' },
+  'Chụp Ảnh Ngay': { vi: 'Chụp Ảnh Ngay', en: 'Capture Now' },
+  '1. Thẳng': { vi: '1. Thẳng', en: '1. Straight' },
+  '2. Trái': { vi: '2. Trái', en: '2. Left' },
+  '3. Phải': { vi: '3. Phải', en: '3. Right' },
+  '4. Lại gần': { vi: '4. Lại gần', en: '4. Closer' },
+  'Hoàn Tất Chụp 4 Góc Khuôn Mặt': { vi: 'Hoàn Tất Chụp 4 Góc Khuôn Mặt', en: 'Face Enrollment Complete (4 Angles)' },
+  'Độ rõ nét & chính xác:': { vi: 'Độ rõ nét & chính xác:', en: 'Clarity & Accuracy:' },
+  'Đạt Tiêu Chuẩn Mở Cửa': { vi: 'Đạt Tiêu Chuẩn Mở Cửa', en: 'Access Control Standard Passed' },
+  'Kiểm tra người thật:': { vi: 'Kiểm tra người thật:', en: 'Liveness Check:' },
+  'Đạt chuẩn': { vi: 'Đạt chuẩn', en: 'Verified' },
+  'Đã lưu đủ 4 góc khuôn mặt': { vi: 'Đã lưu đủ 4 góc khuôn mặt', en: 'All 4 facial angles saved' },
+  'Khuôn mặt: Hợp lệ': { vi: 'Khuôn mặt: Hợp lệ', en: 'Face Biometrics: Valid' },
+  'Nhìn Thẳng': { vi: 'Nhìn Thẳng', en: 'Frontal View' },
+  'Nghiêng Trái': { vi: 'Nghiêng Trái', en: 'Left Tilt' },
+  'Nghiêng Phải': { vi: 'Nghiêng Phải', en: 'Right Tilt' },
+  'Tiến Lại Gần': { vi: 'Tiến Lại Gần', en: 'Closer Depth' },
+  'Chụp Lại': { vi: 'Chụp Lại', en: 'Retake' },
+  'Độ rõ nét:': { vi: 'Độ rõ nét:', en: 'Clarity:' },
+  'Độ tương đồng:': { vi: 'Độ tương đồng:', en: 'Similarity:' },
+  'Độ chi tiết:': { vi: 'Độ chi tiết:', en: 'Detail Depth:' },
+  'Tiện ích sau khi kích hoạt:': { vi: 'Tiện ích sau khi kích hoạt:', en: 'Benefits after activation:' },
+  'Đăng nhập nhanh trên trang chủ bằng khuôn mặt, không cần mật khẩu.': { vi: 'Đăng nhập nhanh trên trang chủ bằng khuôn mặt, không cần mật khẩu.', en: 'Instant 1-second FaceID login on homepage, no password required.' },
+  'Tự động mở cửa sảnh đón và thang máy khi bạn bước vào tòa nhà.': { vi: 'Tự động mở cửa sảnh đón và thang máy khi bạn bước vào tòa nhà.', en: 'Hands-free automated turnstile and elevator access upon entering the building.' },
+  'Hình ảnh được bảo mật an toàn, chỉ dùng cho tiện ích nội bộ chung cư.': { vi: 'Hình ảnh được bảo mật an toàn, chỉ dùng cho tiện ích nội bộ chung cư.', en: 'Biometric data is securely encrypted, strictly utilized for internal residence privileges.' },
+  'Chụp Lại Từ Đầu': { vi: 'Chụp Lại Từ Đầu', en: 'Retake All Samples' },
+  'Đang Lưu & Gửi Hồ Sơ...': { vi: 'Đang Lưu & Gửi Hồ Sơ...', en: 'Saving & Submitting Biometrics...' },
+  'Đang Lưu &amp; Gửi Hồ Sơ...': { vi: 'Đang Lưu & Gửi Hồ Sơ...', en: 'Saving & Submitting Biometrics...' },
+  'Đã Gửi Cho Chủ Hộ Xác Nhận!': { vi: 'Đã Gửi Cho Chủ Hộ Xác Nhận!', en: 'Submitted for Apartment Owner Approval!' },
+  'Đã Gửi Cho VinHomes Manager Phê Duyệt!': { vi: 'Đã Gửi Cho VinHomes Manager Phê Duyệt!', en: 'Submitted for VinHomes Manager Approval!' },
+  'Lưu & Gửi Chủ Hộ Xác Nhận': { vi: 'Lưu & Gửi Chủ Hộ Xác Nhận', en: 'Save & Submit for Owner Approval' },
+  'Lưu &amp; Gửi Chủ Hộ Xác Nhận': { vi: 'Lưu & Gửi Chủ Hộ Xác Nhận', en: 'Save & Submit for Owner Approval' },
+  'Gửi VinHomes Manager Phê Duyệt': { vi: 'Gửi VinHomes Manager Phê Duyệt', en: 'Submit for VinHomes Manager Approval' },
+  'Nhận Diện Cư Dân Skyline • An Toàn & Bảo Mật': { vi: 'Nhận Diện Cư Dân Skyline • An Toàn & Bảo Mật', en: 'Skyline Resident Biometrics • Safe & Secure' },
+  'Nhận Diện Cư Dân Skyline • An Toàn &amp; Bảo Mật': { vi: 'Nhận Diện Cư Dân Skyline • An Toàn & Bảo Mật', en: 'Skyline Resident Biometrics • Safe & Secure' },
+  'Đăng Ký Khuôn Mặt (4 Bước):': { vi: 'Đăng Ký Khuôn Mặt (4 Bước):', en: 'Face Enrollment (4 Steps):' },
+  'Người Nhà Tự Cập Nhật': { vi: 'Người Nhà Tự Cập Nhật', en: 'Family Self-Registration' },
+  'Đang chờ': { vi: 'Đang chờ', en: 'Waiting' },
+  'Trống': { vi: 'Trống', en: 'Empty' }
 };
 
 // =============================================================================
@@ -1291,7 +1532,7 @@ export function translateString(text: string, targetLang: Language): string {
       return preserveWhitespace(text, `${base} (${m[2]})`);
     }
 
-    // AI Auto Dispatch reasoning: "AI chọn Trần Văn Kỹ Thuật: Đúng chuyên môn..."
+    // AI Auto Dispatch reasoning: "AI chọn Lê Quốc Tuấn: Đúng chuyên môn..."
     m = trimmed.match(/^AI chọn\s+([^:]+):\s*(.*)$/i);
     if (m) {
       const techName = m[1].trim();
@@ -1570,36 +1811,52 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('skyline_language') as Language | null;
-        if (saved === 'en' || saved === 'vi') return saved;
-      } catch {}
+function getCookieLanguage(): Language {
+  if (typeof document !== 'undefined') {
+    const match = document.cookie.match(/(?:^|;\s*)skyline_language=([^;]+)/);
+    if (match && (match[1] === 'vi' || match[1] === 'en')) {
+      return match[1] as Language;
     }
-    return 'vi';
-  });
+    try {
+      const ls = localStorage.getItem('skyline_language');
+      if (ls === 'vi' || ls === 'en') {
+        document.cookie = 'skyline_language=' + ls + '; path=/; max-age=31536000; SameSite=Lax';
+        return ls as Language;
+      }
+    } catch {}
+  }
+  return 'vi';
+}
+
+function setCookieLanguage(lang: Language) {
+  if (typeof document !== 'undefined') {
+    document.cookie = 'skyline_language=' + lang + '; path=/; max-age=31536000; SameSite=Lax';
+    try {
+      localStorage.setItem('skyline_language', lang);
+    } catch {}
+  }
+}
+
+export function LanguageProvider({ 
+  children,
+  initialLanguage = 'vi',
+}: { 
+  children: React.ReactNode;
+  initialLanguage?: Language;
+}) {
+  // Always initialize with default 'vi' (or server-provided initialLanguage) to ensure
+  // SSR HTML matches client initial hydration identically, eliminating React hydration errors.
+  const [language, setLanguageState] = useState<Language>(initialLanguage);
   const [isMounted, setIsMounted] = useState(false);
-  const isTranslatingRef = useRef(false);
-  const originalNodesMap = useRef<WeakMap<Node, string>>(new WeakMap());
 
   useEffect(() => {
     setIsMounted(true);
-    try {
-      const saved = localStorage.getItem('skyline_language') as Language | null;
-      if (saved === 'en' || saved === 'vi') {
-        setLanguageState(saved);
-        applyDocumentLang(saved);
-      } else {
-        setLanguageState('vi');
-        applyDocumentLang('vi');
-      }
-    } catch {
-      setLanguageState('vi');
-      applyDocumentLang('vi');
+    const saved = getCookieLanguage();
+    if (saved && saved !== initialLanguage) {
+      setLanguageState(saved);
     }
-  }, []);
+    applyDocumentLang(saved);
+  }, [initialLanguage]);
 
   const applyDocumentLang = (lang: Language) => {
     if (typeof document !== 'undefined') {
@@ -1610,16 +1867,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    try {
-      localStorage.setItem('skyline_language', lang);
-    } catch {}
+    setCookieLanguage(lang);
     applyDocumentLang(lang);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('skyline_language_changed', { detail: { language: lang } }));
     }
   };
-
-
 
   const toggleLanguage = () => {
     const next = language === 'vi' ? 'en' : 'vi';
@@ -1627,7 +1880,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   };
 
   /**
-   * Direct translation helper in React components
+   * Direct translation helper in React components (Clean, safe i18n architecture)
    */
   const t = (keyOrText: string, fallback?: string): string => {
     if (!keyOrText) return fallback || '';
@@ -1657,7 +1910,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     // 2. Target English
     if (language === 'en') {
-      // If fallback is explicitly provided in English (no Vietnamese diacritics), use it
       if (fallback && !vnCharRegex.test(fallback) && !fallback.includes('.') && fallback !== trimmed) {
         return fallback;
       }
@@ -1681,228 +1933,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const viTrans = translateString(trimmed, 'vi');
     return viTrans || fallback || keyOrText;
   };
-
-  // ===========================================================================
-  // AUTOMATED HIGH-FIDELITY PROJECT-WIDE DOM TRANSLATION
-  // ===========================================================================
-  useEffect(() => {
-    if (typeof window === 'undefined' || !isMounted) return;
-
-    let debounceTimer: any = null;
-
-    const processTextNode = (node: Node) => {
-      if (!node || node.nodeType !== Node.TEXT_NODE) return;
-      const currentVal = node.nodeValue || '';
-      if (!currentVal.trim()) return;
-
-      // Ignore code, script, style, pre, svg tags
-      const parent = node.parentElement;
-      if (!parent) return;
-      const tag = parent.tagName.toLowerCase();
-      if (tag === 'script' || tag === 'style' || tag === 'code' || tag === 'pre' || tag === 'svg') {
-        return;
-      }
-
-      // Do not alter active input / textarea while typing
-      if (document.activeElement && (document.activeElement === parent || parent.contains(document.activeElement))) {
-        if (tag === 'textarea' || tag === 'input' || parent.isContentEditable) {
-          return;
-        }
-      }
-
-      // Save baseline in originalNodesMap on first encounter
-      if (!originalNodesMap.current.has(node)) {
-        originalNodesMap.current.set(node, currentVal);
-      }
-
-      const baseText = originalNodesMap.current.get(node) || currentVal;
-
-      if (language === 'en') {
-        const translated = translateString(baseText, 'en');
-        if (translated !== node.nodeValue) {
-          node.nodeValue = translated;
-        }
-      } else {
-        // Restore pristine Vietnamese
-        const viText = originalNodesMap.current.has(node) ? originalNodesMap.current.get(node)! : translateString(baseText, 'vi');
-        if (viText !== node.nodeValue) {
-          node.nodeValue = viText;
-        }
-      }
-    };
-
-    const processAttributes = (el: HTMLElement) => {
-      if (!el || !el.getAttribute) return;
-
-      // Placeholder
-      const placeholder = el.getAttribute('placeholder');
-      if (placeholder) {
-        if (language === 'en') {
-          if (!el.getAttribute('data-orig-placeholder')) {
-            const viPlaceholder = translateString(placeholder, 'vi');
-            el.setAttribute('data-orig-placeholder', viPlaceholder);
-          }
-          const basePlaceholder = el.getAttribute('data-orig-placeholder') || placeholder;
-          const translated = translateString(basePlaceholder, 'en');
-          if (translated !== placeholder) el.setAttribute('placeholder', translated);
-        } else {
-          const orig = el.getAttribute('data-orig-placeholder');
-          if (orig) el.setAttribute('placeholder', orig);
-          else {
-            const translatedBack = translateString(placeholder, 'vi');
-            el.setAttribute('placeholder', translatedBack);
-          }
-        }
-      }
-
-      // Title
-      const title = el.getAttribute('title');
-      if (title) {
-        if (language === 'en') {
-          if (!el.getAttribute('data-orig-title')) {
-            const viTitle = translateString(title, 'vi');
-            el.setAttribute('data-orig-title', viTitle);
-          }
-          const baseTitle = el.getAttribute('data-orig-title') || title;
-          const translated = translateString(baseTitle, 'en');
-          if (translated !== title) el.setAttribute('title', translated);
-        } else {
-          const orig = el.getAttribute('data-orig-title');
-          if (orig) el.setAttribute('title', orig);
-          else {
-            const translatedBack = translateString(title, 'vi');
-            el.setAttribute('title', translatedBack);
-          }
-        }
-      }
-
-      // Aria-Label
-      const ariaLabel = el.getAttribute('aria-label');
-      if (ariaLabel) {
-        if (language === 'en') {
-          if (!el.getAttribute('data-orig-aria')) {
-            const viAria = translateString(ariaLabel, 'vi');
-            el.setAttribute('data-orig-aria', viAria);
-          }
-          const baseAria = el.getAttribute('data-orig-aria') || ariaLabel;
-          const translated = translateString(baseAria, 'en');
-          if (translated !== ariaLabel) el.setAttribute('aria-label', translated);
-        } else {
-          const orig = el.getAttribute('data-orig-aria');
-          if (orig) el.setAttribute('aria-label', orig);
-          else {
-            const translatedBack = translateString(ariaLabel, 'vi');
-            el.setAttribute('aria-label', translatedBack);
-          }
-        }
-      }
-    };
-
-    const walkAndTranslate = (root: Node) => {
-      if (isTranslatingRef.current || !root) return;
-      isTranslatingRef.current = true;
-
-      try {
-        const walker = document.createTreeWalker(
-          root,
-          NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
-          null
-        );
-
-        let currentNode = walker.nextNode();
-        while (currentNode) {
-          if (currentNode.nodeType === Node.TEXT_NODE) {
-            processTextNode(currentNode);
-          } else if (currentNode.nodeType === Node.ELEMENT_NODE) {
-            processAttributes(currentNode as HTMLElement);
-          }
-          currentNode = walker.nextNode();
-        }
-      } finally {
-        isTranslatingRef.current = false;
-      }
-    };
-
-    // Scan DOM upon language switch or mount
-    walkAndTranslate(document.body);
-    // Scheduled backup walks for async hydrated data & route/tab transitions
-    const backupTimer1 = setTimeout(() => walkAndTranslate(document.body), 100);
-    const backupTimer2 = setTimeout(() => walkAndTranslate(document.body), 350);
-    const backupTimer3 = setTimeout(() => walkAndTranslate(document.body), 800);
-
-    // Dynamic Observer for Modals, Tabs, Tooltips, Accordions
-    const pendingNodes = new Set<Node>();
-
-    const processPendingQueue = () => {
-      if (isTranslatingRef.current) {
-        debounceTimer = setTimeout(processPendingQueue, 25);
-        return;
-      }
-      if (pendingNodes.size === 0) return;
-
-      const nodesToProcess = Array.from(pendingNodes);
-      pendingNodes.clear();
-
-      for (const target of nodesToProcess) {
-        if (!target.isConnected) continue;
-        if (target.nodeType === Node.TEXT_NODE) {
-          const newText = (target as Text).nodeValue || '';
-          if (newText.trim()) {
-            if (language === 'vi') {
-              originalNodesMap.current.set(target, newText);
-            } else {
-              const viBaseline = translateString(newText, 'vi');
-              originalNodesMap.current.set(target, viBaseline);
-              processTextNode(target);
-            }
-          }
-        } else if (target.nodeType === Node.ELEMENT_NODE) {
-          walkAndTranslate(target);
-        }
-      }
-    };
-
-    const observer = new MutationObserver((mutations) => {
-      if (isTranslatingRef.current) return;
-
-      for (const mutation of mutations) {
-        if (mutation.type === 'characterData' && mutation.target) {
-          pendingNodes.add(mutation.target);
-        } else if (mutation.type === 'childList') {
-          mutation.addedNodes.forEach((added) => {
-            pendingNodes.add(added);
-          });
-        }
-      }
-
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(processPendingQueue, 20);
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
-    const handleTabOrRouteTransition = () => {
-      setTimeout(() => walkAndTranslate(document.body), 60);
-      setTimeout(() => walkAndTranslate(document.body), 250);
-    };
-
-    window.addEventListener('popstate', handleTabOrRouteTransition);
-    document.addEventListener('click', handleTabOrRouteTransition, { passive: true });
-
-    return () => {
-      clearTimeout(debounceTimer);
-      clearTimeout(backupTimer1);
-      clearTimeout(backupTimer2);
-      clearTimeout(backupTimer3);
-      window.removeEventListener('popstate', handleTabOrRouteTransition);
-      document.removeEventListener('click', handleTabOrRouteTransition);
-      observer.disconnect();
-    };
-  }, [language, isMounted]);
 
   const value = useMemo(
     () => ({ 

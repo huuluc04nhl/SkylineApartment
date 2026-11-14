@@ -1,9 +1,13 @@
 import type { Metadata, Viewport } from 'next';
+import { cookies } from 'next/headers';
 import './globals.css';
 import { AuthProvider } from '@/lib/authContext';
 import { ThemeProvider } from '@/lib/themeContext';
-import { LanguageProvider } from '@/lib/languageContext';
+import { LanguageProvider, type Language } from '@/lib/languageContext';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -23,8 +27,12 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = cookies();
+  const langCookie = cookieStore.get('skyline_language')?.value;
+  const initialLanguage: Language = langCookie === 'en' ? 'en' : 'vi';
+
   return (
-    <html lang="vi" className="scroll-smooth dark">
+    <html lang={initialLanguage} className="scroll-smooth dark" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -33,8 +41,8 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen bg-[#0A0E17] dark:bg-[#0A0E17] text-[#FAFAFA] antialiased transition-colors duration-300">
-        <LanguageProvider>
+      <body className="min-h-screen bg-[#0A0E17] dark:bg-[#0A0E17] text-[#FAFAFA] antialiased transition-colors duration-300" suppressHydrationWarning>
+        <LanguageProvider initialLanguage={initialLanguage}>
           <ThemeProvider>
             <AuthProvider>
               {children}
