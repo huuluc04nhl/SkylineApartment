@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Bill, BillDetail } from '@/lib/dataStore';
 import { 
   Receipt, 
@@ -15,16 +15,25 @@ import {
   CreditCard,
   Building,
   Printer,
-  Search
+  Search,
+  PieChart,
+  Droplets,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  ShieldAlert
 } from 'lucide-react';
 import { 
   getBills, 
   confirmPaidByAdmin, 
   publishAllBills, 
+  calculateBillFundAllocation,
   SKYLINE_BANK_INFO,
   ExtendedBill 
 } from '@/lib/billingStore';
 import { useLanguage } from '@/lib/languageContext';
+import { detectBillingAnomalies, BillingAnomaly } from '@/lib/billingAnomalyEngine';
 
 export default function BillingStudio() {
   const { t, isEn, language } = useLanguage();
@@ -35,6 +44,7 @@ export default function BillingStudio() {
   const [reminderSent, setReminderSent] = useState(false);
   const [selectedDetailBill, setSelectedDetailBill] = useState<ExtendedBill | null>(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+  const [showAnomalyDetails, setShowAnomalyDetails] = useState(false);
 
   const refreshBills = () => {
     setBills(getBills());
@@ -47,13 +57,19 @@ export default function BillingStudio() {
     return () => window.removeEventListener('skyline_billing_updated', handleUpdate);
   }, []);
 
+  const anomalies: BillingAnomaly[] = useMemo(() => {
+    return detectBillingAnomalies(bills as any, bills as any);
+  }, [bills]);
+
   const displayedBills = bills.filter(b => {
     if (searchApt.trim() && !b.apt_code.toLowerCase().includes(searchApt.trim().toLowerCase()) && !b.owner_name.toLowerCase().includes(searchApt.trim().toLowerCase())) {
       return false;
     }
     if (filterType === 'UNPAID') return b.status === 'Unpaid';
     if (filterType === 'PAID') return b.status === 'Paid';
-    if (filterType === 'ANOMALY') return b.has_ai_anomaly;
+    if (filterType === 'ANOMALY') {
+      return b.has_ai_anomaly || anomalies.some(a => a.billId === b.id);
+    }
     return true;
   });
 
@@ -87,6 +103,12 @@ export default function BillingStudio() {
 
   const totalRevenue = bills.filter(b => b.status === 'Paid').reduce((sum, b) => sum + b.total_amount, 0);
   const totalUnpaid = bills.filter(b => b.status === 'Unpaid').reduce((sum, b) => sum + b.total_amount, 0);
+
+  const paidBills = bills.filter(b => b.status === 'Paid');
+  const paidAllocations = paidBills.map(b => calculateBillFundAllocation(b));
+  const totalOperationsCollected = paidAllocations.reduce((sum, a) => sum + a.operationsAmount, 0);
+  const totalUtilitiesCollected = paidAllocations.reduce((sum, a) => sum + a.stateUtilitiesAmount, 0);
+  const totalMaintenanceCollected = paidAllocations.reduce((sum, a) => sum + (a.maintenanceAmount + a.taxesAndTelecomAmount), 0);
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -139,7 +161,7 @@ export default function BillingStudio() {
         <div className="p-4 bg-[#121820] border border-emerald-500/30 space-y-1">
           <div className="text-xs text-gray-400">{t('Đã Thu', 'Collected')}</div>
           <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">
-            {totalRevenue.toLocaleString('vi-VN')} <span className="text-xs text-gray-400 font-normal">đ</span>
+            {totalRevenue.toLocaleString(isEn ? 'en-US' : 'vi-VN')} <span className="text-xs text-gray-400 font-normal">{isEn ? 'VND' : 'đ'}</span>
           </div>
           <div className="text-[11px] text-emerald-400 font-mono">
             {bills.filter(b => b.status === 'Paid').length} / {bills.length} {t('căn hộ đã nộp', 'units paid')}
@@ -149,7 +171,7 @@ export default function BillingStudio() {
         <div className="p-4 bg-[#121820] border border-amber-500/30 space-y-1">
           <div className="text-xs text-gray-400">{t('Chưa Thu', 'Outstanding')}</div>
           <div className="text-2xl font-bold font-mono text-amber-400 mt-1">
-            {totalUnpaid.toLocaleString('vi-VN')} <span className="text-xs text-gray-400 font-normal">đ</span>
+            {totalUnpaid.toLocaleString(isEn ? 'en-US' : 'vi-VN')} <span className="text-xs text-gray-400 font-normal">{isEn ? 'VND' : 'đ'}</span>
           </div>
           <div className="text-[11px] text-amber-400 font-mono">
             {bills.filter(b => b.status === 'Unpaid').length} {t('căn hộ chưa nộp', 'units unpaid')}
@@ -157,18 +179,144 @@ export default function BillingStudio() {
         </div>
       </div>
 
-      {/* Anomaly Alert Banner */}
-      {bills.some(b => b.has_ai_anomaly) && (
-        <div className="p-4 bg-red-950/40 border border-red-500/60 flex items-start gap-3 animate-fadeIn">
-          <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-          <div className="space-y-1 text-xs">
-            <div className="text-red-300 font-bold uppercase tracking-wider">
-              {t('Cảnh Báo Tiêu Thụ Bất Thường (> 50%)', 'Consumption Surge Alert (> 50%)')}
+      {/* Phân Bổ Dòng Tiền Đã Thu Của Ban Quản Lý (Minh bạch quỹ vận hành vs. thu hộ nhà nước) */}
+      <div className="p-4 bg-[#121820] border border-[#C5A880]/50 space-y-3 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#222B35] pb-2">
+          <div className="flex items-center gap-2">
+            <PieChart className="w-4 h-4 text-[#C5A880]" />
+            <h3 className="text-xs uppercase font-bold tracking-wider text-white">
+              {t('Phân Bổ Dòng Tiền Đã Thu • Minh Bạch Nguồn Tiền', 'Collected Cash Flow & Transparent Fund Split')}
+            </h3>
+          </div>
+          <span className="text-[11px] text-emerald-400 font-medium">
+            ✓ {t('Tách bạch tiền thực tế vận hành vs. tiền thu hộ nhà nước')}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="p-3 bg-[#161B22] border border-cyan-500/30 space-y-1">
+            <div className="text-[10px] text-cyan-400 uppercase font-bold tracking-wider flex items-center gap-1.5">
+              <Droplets className="w-3.5 h-3.5" /> {t('Thu Hộ Điện & Nước (Nộp EVN/Cấp Nước)')}
             </div>
-            <p className="text-gray-300 leading-relaxed">
-              {t('Chỉ số điện hoặc nước tăng đột biến so với tháng trước. Vui lòng đối soát trước khi gửi nhắc phí.', 'Electricity or water consumption spiked significantly compared to last month. Please verify before sending payment reminders.')}
+            <div className="text-lg font-bold font-mono text-white">
+              {totalUtilitiesCollected.toLocaleString('vi-VN')} đ
+            </div>
+            <p className="text-[10px] text-gray-400 leading-relaxed">
+              {t('Tiền thu hộ nộp 100% cho Điện lực & Cấp nước. Không tính vào doanh thu hoạt động của tòa nhà.')}
             </p>
           </div>
+
+          <div className="p-3 bg-[#161B22] border border-emerald-500/30 space-y-1">
+            <div className="text-[10px] text-emerald-400 uppercase font-bold tracking-wider flex items-center gap-1.5">
+              <Building className="w-3.5 h-3.5" /> {t('Quỹ Vận Hành & Tiện Ích Tòa Nhà')}
+            </div>
+            <div className="text-lg font-bold font-mono text-emerald-400">
+              {totalOperationsCollected.toLocaleString('vi-VN')} đ
+            </div>
+            <p className="text-[10px] text-gray-400 leading-relaxed">
+              {t('Nguồn tiền trực tiếp để chi trả an ninh 24/7, vệ sinh sảnh, chiếu sáng, bảo trì thang máy, hồ bơi & gym.')}
+            </p>
+          </div>
+
+          <div className="p-3 bg-[#161B22] border border-[#C5A880]/30 space-y-1">
+            <div className="text-[10px] text-[#C5A880] uppercase font-bold tracking-wider flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5" /> {t('Quỹ Bảo Dưỡng Cơ Sở Vật Chất & Mạng')}
+            </div>
+            <div className="text-lg font-bold font-mono text-[#C5A880]">
+              {totalMaintenanceCollected.toLocaleString('vi-VN')} đ
+            </div>
+            <p className="text-[10px] text-gray-400 leading-relaxed">
+              {t('Tích lũy tài khoản riêng dành cho đại tu thiết bị chung (máy phát, cáp thang máy) và cáp quang.')}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* B1: Hệ Thống Phát Hiện Bất Thường Thống Kê & Quy Tắc Lập Hóa Đơn */}
+      {anomalies.length > 0 && (
+        <div className="p-4 bg-[#140E14] border border-red-500/50 space-y-3 shadow-xl animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-red-900/50 pb-2.5">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+              <div className="text-xs font-bold uppercase tracking-wider text-red-300">
+                {t('Phát Hiện Bất Thường Khi Lập Hóa Đơn', 'Billing Anomalies Detected')} ({anomalies.length} {t('cảnh báo', 'alerts')})
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-[10px] font-mono">
+              <span className="px-2 py-0.5 bg-red-950 text-red-300 border border-red-500 font-bold">
+                {anomalies.filter(a => a.severity === 'HIGH').length} {t('Mức Cao', 'High')}
+              </span>
+              <span className="px-2 py-0.5 bg-amber-950 text-amber-300 border border-amber-500 font-bold">
+                {anomalies.filter(a => a.severity === 'MEDIUM').length} {t('Trung Bình', 'Medium')}
+              </span>
+              {anomalies.filter(a => a.severity === 'LOW').length > 0 && (
+                <span className="px-2 py-0.5 bg-blue-950 text-blue-300 border border-blue-500">
+                  {anomalies.filter(a => a.severity === 'LOW').length} {t('Thấp', 'Low')}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowAnomalyDetails(!showAnomalyDetails)}
+                className="ml-2 text-xs text-gray-300 hover:text-white underline cursor-pointer"
+              >
+                {showAnomalyDetails ? t('Thu gọn', 'Hide') : t('Xem chi tiết', 'View details')}
+              </button>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-gray-300 leading-relaxed">
+            {t(
+              'Thuật toán thống kê Z-score và quy tắc định mức phát hiện các trường hợp chỉ số giảm, tăng vọt, sai đơn giá hoặc trùng hóa đơn. Vui lòng kiểm tra và xử lý trước khi bấm phát hành.',
+              'Statistical Z-score and fee rules flagged consumption drops, surges, unit price mismatches, or duplicate bills. Review before publishing.'
+            )}
+          </p>
+
+          {/* Detailed Anomaly Cards List */}
+          {showAnomalyDetails && (
+            <div className="space-y-2 pt-2 border-t border-red-900/40 text-xs">
+              {anomalies.map((anom) => (
+                <div
+                  key={anom.id}
+                  className={`p-3 border rounded-none flex flex-col sm:flex-row sm:items-start justify-between gap-3 ${
+                    anom.severity === 'HIGH'
+                      ? 'bg-red-950/40 border-red-500/80'
+                      : anom.severity === 'MEDIUM'
+                      ? 'bg-amber-950/30 border-amber-500/70'
+                      : 'bg-[#161B22] border-blue-500/50'
+                  }`}
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-1.5 py-0.2 text-[9px] font-bold font-mono uppercase ${
+                        anom.severity === 'HIGH' ? 'bg-red-900 text-white' : anom.severity === 'MEDIUM' ? 'bg-amber-900 text-amber-200' : 'bg-blue-900 text-blue-200'
+                      }`}>
+                        {anom.severity === 'HIGH' ? t('MỨC ĐỘ CAO', 'HIGH') : anom.severity === 'MEDIUM' ? t('TRUNG BÌNH', 'MEDIUM') : t('THẤP', 'LOW')}
+                      </span>
+                      <strong className="text-white font-mono">Căn {anom.apartmentCode}</strong>
+                      <span className="text-gray-400 font-mono text-[11px]">({anom.billingMonth})</span>
+                    </div>
+                    <div className="text-gray-200 text-xs leading-snug">{anom.reason}</div>
+                    <div className="text-[11px] text-[#C5A880] flex items-center gap-1 font-medium pt-0.5">
+                      <Info className="w-3 h-3 text-[#C5A880] shrink-0" />
+                      <span><strong>{t('Gợi ý xử lý:', 'Action:')}</strong> {anom.suggestedAction}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterType('ANOMALY');
+                      setSearchApt(anom.apartmentCode);
+                    }}
+                    className="px-2.5 py-1 bg-[#1A222C] border border-[#2D3748] hover:border-[#C5A880] text-[#C5A880] hover:text-white text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap shrink-0 transition-colors"
+                  >
+                    {t('Xem Hóa Đơn', 'Filter')}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -295,7 +443,7 @@ export default function BillingStudio() {
                     </td>
                     <td className="p-3.5 text-right font-mono">
                       {serviceTotal > 0 ? (
-                        <span className="text-purple-300 font-semibold" title="Phí dịch vụ phát sinh (Giặt ủi, Giúp việc, PT, Chăm sóc xe...)">
+                        <span className="text-purple-300 font-semibold" title={isEn ? 'Incidental service charges (Laundry, Housekeeping, Personal Trainer, Car care...)' : 'Phí dịch vụ phát sinh (Giặt ủi, Giúp việc, PT, Chăm sóc xe...)'}>
                           {serviceTotal.toLocaleString('vi-VN')} đ
                         </span>
                       ) : (
@@ -390,7 +538,7 @@ export default function BillingStudio() {
           <div className="bg-[#121820] border border-[#C5A880] max-w-lg w-full p-6 space-y-4 shadow-2xl animate-fadeIn text-white">
             <div className="flex items-center justify-between border-b border-[#222B35] pb-3">
               <div>
-                <span className="text-[10px] text-[#C5A880] font-mono uppercase font-bold tracking-wider">BAN QUẢN LÝ CHUNG CƯ</span>
+                <span className="text-[10px] text-[#C5A880] font-mono uppercase font-bold tracking-wider">{isEn ? 'PROPERTY MANAGEMENT BOARD' : 'BAN QUẢN LÝ CHUNG CƯ'}</span>
                 <h3 className="font-serif text-lg font-bold text-white">
                   Chi Tiết Hóa Đơn - Căn {selectedDetailBill.apt_code}
                 </h3>
@@ -404,10 +552,10 @@ export default function BillingStudio() {
             </div>
 
             <div className="p-3 bg-[#161B22] border border-[#222B35] text-xs space-y-1">
-              <div>Chủ hộ: <strong className="text-white">{selectedDetailBill.owner_name}</strong></div>
-              <div>Kỳ thanh toán: <span className="font-mono text-white">{selectedDetailBill.billing_month}</span></div>
-              <div>Hạn nộp: <span className="font-mono text-amber-400">{new Date(selectedDetailBill.due_date).toLocaleDateString('vi-VN')}</span></div>
-              <div>Trạng thái: <strong className={selectedDetailBill.status === 'Paid' ? 'text-emerald-400' : 'text-amber-400'}>
+              <div>{isEn ? 'Owner:' : 'Chủ hộ:'} <strong className="text-white">{selectedDetailBill.owner_name}</strong></div>
+              <div>{isEn ? 'Billing period:' : 'Kỳ thanh toán:'} <span className="font-mono text-white">{selectedDetailBill.billing_month}</span></div>
+              <div>{isEn ? 'Due date:' : 'Hạn nộp:'} <span className="font-mono text-amber-400">{new Date(selectedDetailBill.due_date).toLocaleDateString(isEn ? 'en-US' : 'vi-VN')}</span></div>
+              <div>{isEn ? 'Status:' : 'Trạng thái:'} <strong className={selectedDetailBill.status === 'Paid' ? 'text-emerald-400' : 'text-amber-400'}>
                 {selectedDetailBill.status === 'Paid' ? 'Đã Thanh Toán ✓' : 'Chưa Thanh Toán'}
               </strong></div>
               {selectedDetailBill.status === 'Paid' && (
@@ -416,7 +564,7 @@ export default function BillingStudio() {
                     Thông Tin Đối Soát Giao Dịch
                   </div>
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-gray-400">Cổng thanh toán:</span>
+                    <span className="text-gray-400">{isEn ? 'Payment gateway:' : 'Cổng thanh toán:'}</span>
                     <span className="font-bold text-white">
                       {selectedDetailBill.payment_method === 'VNPAY' ? 'Cổng VNPAY (Thẻ ATM / QR)' :
                        selectedDetailBill.payment_method === 'MOMO' ? 'Ví Điện Tử MoMo (QR / Trừ ví)' :
@@ -425,13 +573,13 @@ export default function BillingStudio() {
                   </div>
                   {selectedDetailBill.transaction_ref && (
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-gray-400">Mã chuẩn chi / Giao dịch:</span>
+                      <span className="text-gray-400">{isEn ? 'Approval / Transaction code:' : 'Mã chuẩn chi / Giao dịch:'}</span>
                       <span className="font-mono font-bold text-emerald-400">{selectedDetailBill.transaction_ref}</span>
                     </div>
                   )}
                   {selectedDetailBill.paid_at && (
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-gray-400">Thời gian ghi nhận:</span>
+                      <span className="text-gray-400">{isEn ? 'Recorded time:' : 'Thời gian ghi nhận:'}</span>
                       <span className="font-mono text-gray-300">{new Date(selectedDetailBill.paid_at).toLocaleString('vi-VN')}</span>
                     </div>
                   )}
@@ -439,8 +587,37 @@ export default function BillingStudio() {
               )}
             </div>
 
+            {/* Phân bổ nguồn tiền của hóa đơn căn hộ này */}
+            {(() => {
+              const alloc = calculateBillFundAllocation(selectedDetailBill);
+              return (
+                <div className="p-3 bg-[#0D1117] border border-[#2D3748] space-y-1.5 text-xs">
+                  <div className="text-[10px] uppercase font-bold text-[#C5A880] tracking-wider flex items-center gap-1.5">
+                    <PieChart className="w-3.5 h-3.5" /> {t('Phân Bổ Nguồn Tiền Hóa Đơn Này:', 'Fund Allocation for this Bill:')}
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5 pt-1 text-[10px]">
+                    <div className="p-1.5 bg-[#121820] border border-cyan-500/30">
+                      <div className="text-cyan-400 font-bold">{alloc.stateUtilitiesPercent}%</div>
+                      <div className="text-white font-mono">{alloc.stateUtilitiesAmount.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</div>
+                      <div className="text-gray-400 text-[9px] truncate">{isEn ? 'State Utilities Collection' : 'Thu hộ Điện Nước'}</div>
+                    </div>
+                    <div className="p-1.5 bg-[#121820] border border-emerald-500/30">
+                      <div className="text-emerald-400 font-bold">{alloc.operationsPercent}%</div>
+                      <div className="text-white font-mono">{alloc.operationsAmount.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</div>
+                      <div className="text-gray-400 text-[9px] truncate">{isEn ? 'Operations Fund' : 'Quỹ Vận Hành BQL'}</div>
+                    </div>
+                    <div className="p-1.5 bg-[#121820] border border-[#C5A880]/30">
+                      <div className="text-[#C5A880] font-bold">{alloc.maintenancePercent + alloc.taxesAndTelecomPercent}%</div>
+                      <div className="text-white font-mono">{(alloc.maintenanceAmount + alloc.taxesAndTelecomAmount).toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</div>
+                      <div className="text-gray-400 text-[9px] truncate">{isEn ? 'Maintenance & Telecom' : 'Bảo Dưỡng & Mạng'}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="space-y-2 text-xs">
-              <div className="font-bold text-gray-300">Bảng Kê Chi Tiết:</div>
+              <div className="font-bold text-gray-300">{isEn ? 'Itemized Breakdown:' : 'Bảng Kê Chi Tiết:'}</div>
               <div className="divide-y divide-[#222B35] border border-[#222B35]">
                 {selectedDetailBill.details.map((d) => {
                   const isService = !['Electricity', 'Water', 'Management_Fee', 'Parking', 'Internet'].includes(d.service_type);
@@ -483,7 +660,7 @@ export default function BillingStudio() {
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-[#222B35] text-sm">
-                <span className="font-bold text-white">TỔNG CỘNG:</span>
+                <span className="font-bold text-white">{isEn ? 'TOTAL AMOUNT:' : 'TỔNG CỘNG:'}</span>
                 <span className="font-bold font-mono text-base text-[#C5A880]">
                   {selectedDetailBill.total_amount.toLocaleString('vi-VN')} đ
                 </span>
