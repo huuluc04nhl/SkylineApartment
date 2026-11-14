@@ -63,6 +63,7 @@ import { useLanguage } from '@/lib/languageContext';
 import BillingAiAssistantDrawer from './BillingAiAssistantDrawer';
 import InvoiceExplanationModal, { InvoiceExplanationData } from './InvoiceExplanationModal';
 import CostForecastCard from './CostForecastCard';
+import SmartPaymentReminderBanner from './SmartPaymentReminderBanner';
 
 export const VNPAY_NCB_TEST_CARD = {
   bank: 'NCB',
@@ -804,7 +805,14 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
       {activeTab === 'BILLING' && (
         <div className="space-y-6 animate-fadeIn">
 
-      {/* Cảnh báo rò rỉ / biến động tiêu thụ */}
+          {/* A4: Nhắc Hạn Thanh Toán Thông Minh Trong Giao Diện */}
+          <SmartPaymentReminderBanner
+            bill={currentBill}
+            onPayVnpay={handleOpenVnpaySandbox}
+            onPayVietQr={() => setShowVietQrModal(true)}
+          />
+
+          {/* Cảnh báo rò rỉ / biến động tiêu thụ */}
       {currentBill?.has_ai_anomaly && (
         <div className="p-4 bg-amber-950/40 border border-amber-500 flex items-start gap-3 animate-fadeIn">
           <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
