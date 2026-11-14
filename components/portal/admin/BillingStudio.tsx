@@ -22,8 +22,10 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
-  ShieldAlert
+  ShieldAlert,
+  Camera
 } from 'lucide-react';
+import MeterOcrModal from './MeterOcrModal';
 import { 
   getBills, 
   confirmPaidByAdmin, 
@@ -45,6 +47,7 @@ export default function BillingStudio() {
   const [selectedDetailBill, setSelectedDetailBill] = useState<ExtendedBill | null>(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
   const [showAnomalyDetails, setShowAnomalyDetails] = useState(false);
+  const [showMeterOcrModal, setShowMeterOcrModal] = useState(false);
 
   const refreshBills = () => {
     setBills(getBills());
@@ -123,7 +126,15 @@ export default function BillingStudio() {
           </h2>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => setShowMeterOcrModal(true)}
+            className="px-4 py-2 bg-[#1C2533] border border-[#C5A880]/60 hover:border-[#C5A880] text-[#C5A880] text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow cursor-pointer"
+          >
+            <Camera className="w-3.5 h-3.5 text-[#C5A880]" />
+            <span>{t('Nhập Số Bằng Ảnh (AI)', 'OCR Meter Reading')}</span>
+          </button>
+
           <button
             onClick={handlePublishAll}
             className="px-4 py-2 bg-[#C5A880] text-[#0D1117] text-xs font-bold uppercase tracking-wider hover:bg-white transition-colors shadow"
@@ -698,6 +709,16 @@ export default function BillingStudio() {
           </div>
         </div>
       )}
+
+      {/* B2: Modal Nhập Chỉ Số Bằng AI Vision */}
+      <MeterOcrModal
+        isOpen={showMeterOcrModal}
+        onClose={() => setShowMeterOcrModal(false)}
+        onSuccess={() => {
+          setActionSuccessMsg('Đã ghi nhận chỉ số công tơ vào hệ thống thành công.');
+          setTimeout(() => setActionSuccessMsg(null), 4000);
+        }}
+      />
     </div>
   );
 }
