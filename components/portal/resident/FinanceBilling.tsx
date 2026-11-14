@@ -51,21 +51,24 @@ import {
 import { 
   getBills, 
   payBill, 
-  ExtendedBill 
+  ExtendedBill,
+  calculateBillFundAllocation,
+  BillFundAllocation,
+  generateVietQrUrl,
+  SKYLINE_BANK_INFO,
+  SKYLINE_MOMO_INFO
 } from '@/lib/billingStore';
 import { exportInvoicePdf } from '@/lib/pdfExport';
 import { useLanguage } from '@/lib/languageContext';
-const VNPAY_NCB_TEST_CARD = {
+import BillingAiAssistantDrawer from './BillingAiAssistantDrawer';
+
+export const VNPAY_NCB_TEST_CARD = {
   bank: 'NCB',
   cardNumber: '9704198526191432198',
   cardHolder: 'NGUYEN VAN A',
   issueDate: '07/15',
   otp: '123456',
 };
-
-type MainGatewayType = 'VNPAY' | 'MOMO';
-type VnpayStep = 'SELECT_METHOD' | 'ATM_FORM' | 'ATM_OTP' | 'QR_SCAN' | 'APP_CONFIRM' | 'PROCESSING';
-type MomoSubChannel = 'QR' | 'WALLET';
 
 interface FinanceBillingProps {
   currentUser?: User;
@@ -74,13 +77,13 @@ interface FinanceBillingProps {
 export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
   const { t, isEn, language } = useLanguage();
   const aptCode = currentUser?.apartment_code || 'CH-06';
-  const residentName = currentUser?.full_name || (currentUser as any)?.fullname || 'Trần Hữu Lực';
-  const residentPhone = currentUser?.phone || '0364967082';
+  const residentName = currentUser?.full_name || (currentUser as any)?.fullname || 'Cư Dân';
+  const residentPhone = currentUser?.phone || '';
 
   const [bills, setBills] = useState<ExtendedBill[]>([]);
   const [selectedBillId, setSelectedBillId] = useState<string>('');
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedGateway, setSelectedGateway] = useState<MainGatewayType>('VNPAY');
+  const [showVietQrModal, setShowVietQrModal] = useState(false);
+  const [showAiAssistant, setShowAiAssistant] = useState(false);
   
   // VNPAY Sandbox Real API states
   const [isRedirectingVnpay, setIsRedirectingVnpay] = useState(false);
@@ -88,33 +91,6 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
   const [redirectBanner, setRedirectBanner] = useState<{
     type: 'success' | 'failed' | 'invalid_checksum';
     message: string;
-  } | null>(null);
-
-  // VNPAY Realistic Multi-step Flow states
-  const [vnpFlowStep, setVnpFlowStep] = useState<VnpayStep>('SELECT_METHOD');
-  const [vnpSelectedBank, setVnpSelectedBank] = useState('NCB');
-  const [vnpCardNumber, setVnpCardNumber] = useState(VNPAY_NCB_TEST_CARD.cardNumber);
-  const [vnpCardHolder, setVnpCardHolder] = useState(VNPAY_NCB_TEST_CARD.cardHolder);
-  const [vnpCardDate, setVnpCardDate] = useState(VNPAY_NCB_TEST_CARD.issueDate);
-  const [vnpOtpInput, setVnpOtpInput] = useState('');
-  const [vnpOtpError, setVnpOtpError] = useState<string | null>(null);
-  const [vnpCountdown, setVnpCountdown] = useState(899); // 14:59
-  const [otpCountdown, setOtpCountdown] = useState(120); // 120s
-  const [processingStage, setProcessingStage] = useState(1); // 1 -> 2 -> 3
-
-  // MOMO states
-  const [momoChannel, setMomoChannel] = useState<MomoSubChannel>('QR');
-  const [momoPhone, setMomoPhone] = useState(residentPhone);
-  const [momoOtp, setMomoOtp] = useState('');
-  const [momoStep, setMomoStep] = useState<'PHONE' | 'OTP'>('PHONE');
-
-  // Processing & result states
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [lastPaymentResult, setLastPaymentResult] = useState<{
-    gateway: 'VNPAY' | 'MOMO';
-    transId: string;
-    amount: number;
-    paidAt: string;
   } | null>(null);
 
   // Toast thông báo thanh toán thành công
@@ -153,31 +129,6 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
       aptCode,
     });
     setIsExportingInvoicePdf(false);
-  };
-
-  // Đếm ngược 15:00 phút của VNPAY
-  useEffect(() => {
-    if (!showPaymentModal) return;
-    const interval = setInterval(() => {
-      setVnpCountdown(prev => (prev > 0 ? prev - 1 : 899));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [showPaymentModal]);
-
-  // Đếm ngược OTP 120s
-  useEffect(() => {
-    if (vnpFlowStep !== 'ATM_OTP') return;
-    setOtpCountdown(120);
-    const interval = setInterval(() => {
-      setOtpCountdown(prev => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [vnpFlowStep]);
-
-  const formatCountdown = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   const copyToClipboard = (text: string, label: string) => {
@@ -227,13 +178,6 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
           }
           refreshBills();
           const paidAmount = amountStr ? parseFloat(amountStr) : 0;
-          setLastPaymentResult({
-            gateway: 'VNPAY',
-            transId,
-            amount: paidAmount,
-            paidAt: new Date().toLocaleString('vi-VN'),
-          });
-          setShowPaymentModal(true);
           setRedirectBanner({
             type: 'success',
             message: `Giao dịch qua Cổng VNPAY Sandbox thành công! Mã chuẩn chi: #${transId} (${bankCode}) • Số tiền: ${paidAmount.toLocaleString('vi-VN')} VNĐ. Hóa đơn căn ${aptCode} đã được tự động gạch nợ thành công!`,
@@ -301,86 +245,19 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
 
   const billAmountFormatted = currentBill ? currentBill.total_amount.toLocaleString('vi-VN') : '0';
 
-  // Xác thực OTP 3D-Secure từ Ngân hàng Quốc Dân NCB
-  const handleVerifyAtmOtp = () => {
-    if (vnpOtpInput.trim() !== '123456') {
-      setVnpOtpError('Mã OTP không chính xác! Vui lòng nhập đúng mã xác thực kiểm thử do VNPAY cấp: 123456');
-      return;
-    }
-    setVnpOtpError(null);
-    executeVnpayPayment(vnpSelectedBank, 'ATM');
-  };
-
-  // Xác nhận thanh toán trên Ứng dụng Ngân hàng (sau khi quét VNPAY-QR)
-  const handleVerifyQrInBankingApp = () => {
-    executeVnpayPayment('VNPAY_QR', 'QR');
-  };
-
-  // Tiến trình trừ tiền ngân hàng và gọi IPN gạch nợ tự động của VNPAY
-  const executeVnpayPayment = (bankCode: string, channelName: string) => {
-    setVnpFlowStep('PROCESSING');
-    setProcessingStage(1);
-
-    // Giai đoạn 1: Kết nối Ngân Hàng kiểm tra thông tin thẻ
-    setTimeout(() => {
-      setProcessingStage(2);
-    }, 1300);
-
-    // Giai đoạn 2: Trừ tiền tài khoản và VNPAY phát hành mã chuẩn chi
-    setTimeout(() => {
-      setProcessingStage(3);
-    }, 2600);
-
-    // Giai đoạn 3: Gửi gói tin IPN gạch nợ sang hệ thống Skyline Smart Residence
-    setTimeout(() => {
-      if (currentBill) {
-        const transId = `VNP${Date.now().toString().slice(-8)}`;
-        payBill(currentBill.id, 'VNPAY', transId, bankCode);
-        setLastPaymentResult({
-          gateway: 'VNPAY',
-          transId,
-          amount: currentBill.total_amount,
-          paidAt: new Date().toLocaleString('vi-VN'),
-        });
-        refreshBills();
-        setVnpFlowStep('SELECT_METHOD');
-        triggerPaymentSuccessToast(
-          transId, 
-          currentBill.total_amount, 
-          'VNPAY', 
-          `Gạch nợ tự động thành công cho Căn ${aptCode}. Mã chuẩn chi: #${transId}`
-        );
-      }
-    }, 3800);
-  };
-
-  // Xử lý thanh toán MOMO (QR hoặc Trừ ví)
-  const handlePayMomo = (channel: MomoSubChannel) => {
+  // Xác nhận đã chuyển khoản ngân hàng qua VietQR 24/7
+  const handleConfirmVietQrPaid = () => {
     if (!currentBill) return;
-    setIsProcessing(true);
-
-    setTimeout(() => {
-      const transId = `MM${Date.now().toString().slice(-8)}`;
-      const updated = payBill(currentBill.id, 'MOMO', transId, 'MOMO_WALLET');
-      setIsProcessing(false);
-
-      if (updated) {
-        setLastPaymentResult({
-          gateway: 'MOMO',
-          transId,
-          amount: currentBill.total_amount,
-          paidAt: new Date().toLocaleString('vi-VN'),
-        });
-        setMomoStep('PHONE');
-        refreshBills();
-        triggerPaymentSuccessToast(
-          transId, 
-          currentBill.total_amount, 
-          'MOMO', 
-          `Gạch nợ qua Ví điện tử MoMo thành công cho Căn ${aptCode}. Mã GD: #${transId}`
-        );
-      }
-    }, 1000);
+    const transId = `QR${Date.now().toString().slice(-8)}`;
+    payBill(currentBill.id, 'VIETQR', transId, 'BIDV');
+    refreshBills();
+    setShowVietQrModal(false);
+    triggerPaymentSuccessToast(
+      transId,
+      currentBill.total_amount,
+      'VietQR 24/7',
+      `Đã ghi nhận thanh toán chuyển khoản Căn ${aptCode}. Ban Quản Lý đã đối soát và gạch nợ thành công.`
+    );
   };
 
   // Mở Cổng thanh toán VNPAY Sandbox chính thức theo cấu hình Merchant
@@ -678,19 +555,19 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-xs uppercase tracking-wider text-emerald-400 font-sans">
-                    THANH TOÁN THÀNH CÔNG
+                    {t('THANH TOÁN THÀNH CÔNG', 'PAYMENT SUCCESSFUL')}
                   </span>
                   <span className="px-1.5 py-0.5 bg-[#005BAA]/40 border border-[#005BAA] text-[10px] font-mono text-[#4CC9F0]">
                     {paymentSuccessToast.gateway}
                   </span>
                 </div>
                 <div className="text-xs text-gray-200">
-                  {paymentSuccessToast.message || `Hóa đơn căn ${aptCode} đã được gạch nợ thành công.`}
+                  {paymentSuccessToast.message || `${t('Hóa đơn căn')} ${aptCode} ${t('đã được gạch nợ thành công.')}`}
                 </div>
                 <div className="text-[11px] font-mono text-gray-300 pt-1 space-y-0.5">
-                  <div>Mã GD: <strong className="text-[#C5A880]">#{paymentSuccessToast.transId}</strong></div>
-                  <div>Số tiền: <strong className="text-white">{paymentSuccessToast.amount.toLocaleString('vi-VN')} VNĐ</strong></div>
-                  <div className="text-[10px] text-gray-400">Thời gian: {paymentSuccessToast.paidAt}</div>
+                  <div>{t('Mã GD:', 'Trans ID:')} <strong className="text-[#C5A880]">#{paymentSuccessToast.transId}</strong></div>
+                  <div>{t('Số tiền:', 'Amount:')} <strong className="text-white">{paymentSuccessToast.amount.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {t('đ', 'VND')}</strong></div>
+                  <div className="text-[10px] text-gray-400">{t('Thời gian:', 'Time:')} {paymentSuccessToast.paidAt}</div>
                 </div>
               </div>
             </div>
@@ -710,9 +587,9 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
               className="px-3 py-1 bg-[#161B22] border border-[#C5A880] hover:bg-[#C5A880] hover:text-[#0D1117] text-[#C5A880] text-[11px] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
             >
               {isExportingInvoicePdf ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-              <span>Tải Hóa Đơn PDF</span>
+              <span>{t('Tải Hóa Đơn PDF', 'Download Invoice PDF')}</span>
             </button>
-            <span className="text-[10px] text-gray-400 italic">Tự động đóng sau 7s</span>
+            <span className="text-[10px] text-gray-400 italic">{t('Tự động đóng sau 7s', 'Auto closes in 7s')}</span>
           </div>
         </div>
       )}
@@ -732,7 +609,7 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
             )}
             <div className="space-y-1">
               <div className="font-bold uppercase tracking-wide">
-                {redirectBanner.type === 'success' ? 'Thanh Toán VNPAY Thành Công' : 'Thông Báo Giao Dịch VNPAY'}
+                {redirectBanner.type === 'success' ? t('Thanh Toán VNPAY Thành Công', 'VNPAY Payment Successful') : t('Thông Báo Giao Dịch VNPAY', 'VNPAY Transaction Notice')}
               </div>
               <p className="text-gray-200 leading-relaxed">{redirectBanner.message}</p>
             </div>
@@ -764,14 +641,16 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
             <>
               {currentBill && currentBill.status === 'Unpaid' && (
                 <button
-                  onClick={() => {
-                    setLastPaymentResult(null);
-                    setShowPaymentModal(true);
-                  }}
+                  onClick={() => handleOpenVnpaySandbox()}
+                  disabled={isRedirectingVnpay}
                   className="px-3 sm:px-4 py-2 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow"
                 >
-                  <CreditCard className="w-4 h-4 shrink-0" />
-                  <span className="hidden sm:inline">{t('Thanh Toán', 'Pay Bill')}</span>
+                  {isRedirectingVnpay ? (
+                    <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
+                  ) : (
+                    <CreditCard className="w-4 h-4 shrink-0" />
+                  )}
+                  <span className="hidden sm:inline">{isRedirectingVnpay ? t('Đang Chuyển Hướng...') : t('Thanh Toán VNPAY', 'Pay Bill')}</span>
                   <span className="sm:hidden">{t('Thanh Toán', 'Pay')}</span>
                 </button>
               )}
@@ -781,7 +660,7 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                   onClick={() => handleExportInvoicePdf(currentBill)}
                   disabled={isExportingInvoicePdf}
                   className="px-2.5 sm:px-3.5 py-2 bg-[#161B22] border border-[#2D3748] hover:border-[#C5A880] text-gray-200 text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5"
-                  title="Xuất Hóa Đơn Ra File PDF Chuẩn A4"
+                  title={isEn ? 'Export statement to standard A4 PDF' : 'Xuất Hóa Đơn Ra File PDF Chuẩn A4'}
                 >
                   {isExportingInvoicePdf ? (
                     <RefreshCw className="w-4 h-4 animate-spin text-[#C5A880] shrink-0" />
@@ -803,13 +682,24 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                   <span className="sm:hidden">{t('In')}</span>
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={() => setShowAiAssistant(true)}
+                className="px-3 sm:px-4 py-2 bg-[#1A222C] border border-[#C5A880]/80 hover:border-[#C5A880] text-[#C5A880] hover:text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow"
+                title={t('Mở Trợ Lý Hóa Đơn AI thông minh', 'Open AI Billing Assistant')}
+              >
+                <Sparkles className="w-4 h-4 text-[#C5A880] shrink-0" />
+                <span className="hidden sm:inline">{t('Hỏi Trợ Lý AI', 'AI Assistant')}</span>
+                <span className="sm:hidden">{t('AI', 'AI')}</span>
+              </button>
             </>
           ) : (
             <>
               <button
                 onClick={handleExportExpenseCsv}
                 className="px-2.5 sm:px-3.5 py-2 bg-[#161B22] border border-[#2D3748] hover:border-[#C5A880] text-gray-200 text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5"
-                title="Tải bảng tính CSV chi tiết từng hạng mục chi phí"
+                title={isEn ? 'Download CSV spreadsheet with itemized cost details' : 'Tải bảng tính CSV chi tiết từng hạng mục chi phí'}
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span className="hidden sm:inline">{t('Xuất CSV')}</span>
@@ -884,7 +774,7 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
               <Sparkles className="w-4 h-4 text-amber-400" /> Cảnh Báo Tiêu Thụ Nước Bất Thường
             </div>
             <p className="text-gray-300">
-              Hệ thống phát hiện dòng chảy liên tục khung giờ <strong>02:00 - 04:00 sáng</strong> (+115% so với tháng trước).
+              {isEn ? <>Continuous flow detected between <strong>02:00 - 04:00 AM</strong> (+115% compared to last month).</> : <>Hệ thống phát hiện dòng chảy liên tục khung giờ <strong>02:00 - 04:00 sáng</strong> (+115% so với tháng trước).</>}
               Vui lòng kiểm tra van xả bồn cầu hoặc thiết bị vệ sinh trong căn hộ để tránh phát sinh chi phí lãng phí nước sạch.
             </p>
           </div>
@@ -958,172 +848,285 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
             </div>
           </div>
 
-          {/* Breakdown Table: Tách bạch rõ 2 nhóm Phí Định Kỳ & Dịch Vụ Cư Dân */}
-          {(() => {
-            const utilityTypes = ['Electricity', 'Water', 'Management_Fee', 'Parking', 'Internet'];
-            const utilityItems = currentBill.details.filter(d => utilityTypes.includes(d.service_type));
-            const serviceItems = currentBill.details.filter(d => !utilityTypes.includes(d.service_type));
-            const utilitySubtotal = utilityItems.reduce((sum, item) => sum + item.total_line_amount, 0);
-            const serviceSubtotal = serviceItems.reduce((sum, item) => sum + item.total_line_amount, 0);
+          {/* BẢNG KÊ CHI TIẾT PHÍ SINH HOẠT TRONG KỲ */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-[#222B35] pb-2">
+              <h3 className="font-serif text-sm font-bold text-white flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-[#C5A880]" />
+                <span>{t('Bảng Kê Chi Tiết Phí Sinh Hoạt', 'Detailed Statement of Living Expenses')}</span>
+              </h3>
+              <span className="text-[11px] text-gray-400 font-mono">
+                {currentBill.details?.length || 0} {t('khoản mục trong kỳ', 'items in period')}
+              </span>
+            </div>
 
-            return (
-              <div className="space-y-4">
-                {/* 1. Nhóm Phí Sinh Hoạt Cố Định & Chỉ Số */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-gray-300 font-semibold border-b border-[#222B35] pb-1">
-                    <span className="uppercase tracking-wider text-[#C5A880] flex items-center gap-1.5">
-                      <Building className="w-3.5 h-3.5" /> 1. {t('Chi Phí Định Kỳ & Chỉ Số')} ({utilityItems.length})
-                    </span>
-                    <span className="font-mono text-gray-300">
-                      {t('Tạm tính')}: {utilitySubtotal.toLocaleString('vi-VN')} đ
-                    </span>
-                  </div>
-
-                  <div className="divide-y divide-[#222B35] border border-[#222B35] text-xs bg-[#161B22]/40">
-                    {utilityItems.map((item) => (
-                      <div key={item.id} className="p-3.5 flex items-center justify-between hover:bg-[#161B22] transition-colors">
-                        <div>
-                          <div className="font-bold text-white flex items-center gap-2">
-                            {getItemIcon(item.service_type)}
-                            <span>{getItemName(item)}</span>
-                            {item.ai_anomaly && (
-                              <span className="px-2 py-0.5 bg-red-950 border border-red-500 text-red-300 text-[10px] font-mono font-bold">
-                                {t('Biến động bất thường')}
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[11px] text-gray-400 mt-0.5 pl-5.5">
-                            {t('Chỉ số')}: <strong>{item.usage}</strong> {item.unit || (item.service_type === 'Electricity' ? 'kWh' : item.service_type === 'Water' ? 'm³' : item.service_type === 'Management_Fee' ? 'm²' : t('xe'))} • {t('Đơn giá')}: {item.unit_price?.toLocaleString('vi-VN')} đ
-                          </div>
-                          {item.anomaly_reason && (
-                            <div className="text-[10px] text-amber-400 italic mt-0.5 pl-5.5">
-                              * {item.anomaly_reason}
+            {/* Bảng kê chi phí thanh lịch, thân thiện cư dân */}
+            <div className="overflow-x-auto border border-[#222B35] bg-[#161B22]/60">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-[#222B35] bg-[#121820] text-[11px] uppercase tracking-wider text-gray-400 font-semibold">
+                    <th className="py-3 px-4">{t('Khoản Mục & Diễn Giải', 'Item & Description')}</th>
+                    <th className="py-3 px-4 text-center">{t('Chỉ Số / Khối Lượng', 'Usage / Quantity')}</th>
+                    <th className="py-3 px-4 text-right">{t('Đơn Giá', 'Unit Price')}</th>
+                    <th className="py-3 px-4 text-right">{t('Thành Tiền', 'Amount')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#222B35]">
+                  {currentBill.details.map((item) => {
+                    const isService = !['Electricity', 'Water', 'Management_Fee', 'Parking', 'Internet'].includes(item.service_type);
+                    return (
+                      <tr key={item.id} className="hover:bg-[#1A222D] transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-1.5 bg-[#0D1117] border border-[#2D3748] text-gray-300 shrink-0">
+                              {getItemIcon(item.service_type)}
                             </div>
-                          )}
-                        </div>
-                        <div className="font-mono font-bold text-sm text-white">
+                            <div>
+                              <div className="font-bold text-white flex items-center gap-2">
+                                <span>{getItemName(item)}</span>
+                                {isService && (
+                                  <span className="px-1.5 py-0.5 text-[10px] bg-purple-950/70 border border-purple-500/50 text-purple-300 font-normal">
+                                    {t('Dịch vụ yêu cầu', 'Requested')}
+                                  </span>
+                                )}
+                              </div>
+                              {item.order_date && (
+                                <div className="text-[11px] text-gray-400 mt-0.5">
+                                  {t('Ngày sử dụng')}: {item.order_date} {item.booking_ref && `• #${item.booking_ref}`}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-center text-gray-300 font-mono">
+                          <span className="font-bold text-white">{item.usage}</span>{' '}
+                          <span className="text-[11px] text-gray-400">
+                            {item.unit || (item.service_type === 'Electricity' ? 'kWh' : item.service_type === 'Water' ? 'm³' : item.service_type === 'Management_Fee' ? 'm²' : t('xe'))}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-gray-300 font-mono">
+                          {item.unit_price ? `${item.unit_price.toLocaleString('vi-VN')} đ` : '-'}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono font-bold text-sm text-white">
                           {item.total_line_amount.toLocaleString('vi-VN')} đ
-                        </div>
-                      </div>
-                    ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {/* Dòng Tổng Kết Cuối Bảng */}
+              <div className="p-4 bg-[#0D1117] border-t border-[#222B35] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="text-xs text-gray-300 font-semibold flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>{t('Đã bao gồm thuế GTGT và các khoản quỹ theo quy định chung cư')}</span>
+                  </div>
+                  <div className="text-[11px] text-gray-400">
+                    {t('Hạn chót thanh toán kỳ này:')}{' '}
+                    <span className="text-amber-400 font-mono font-semibold">
+                      {new Date(currentBill.due_date).toLocaleDateString(isEn ? 'en-US' : 'vi-VN')}
+                    </span>
                   </div>
                 </div>
 
-                {/* 2. Nhóm Dịch Vụ Cư Dân & Giá Trị Gia Tăng */}
-                {serviceItems.length > 0 ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-gray-300 font-semibold border-b border-[#222B35] pb-1">
-                      <span className="uppercase tracking-wider text-[#C5A880] flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5" /> 2. {t('Dịch Vụ Đời Sống & Tiện Ích')} ({serviceItems.length})
-                      </span>
-                      <span className="font-mono text-gray-300">
-                        {t('Tạm tính')}: {serviceSubtotal.toLocaleString('vi-VN')} đ
-                      </span>
-                    </div>
-
-                    <div className="divide-y divide-[#222B35] border border-[#222B35] text-xs bg-[#161B22]/40">
-                      {serviceItems.map((item) => (
-                        <div key={item.id} className="p-3.5 flex items-center justify-between hover:bg-[#161B22] transition-colors">
-                          <div>
-                            <div className="font-bold text-white flex items-center gap-2">
-                              {getItemIcon(item.service_type)}
-                              <span>{getItemName(item)}</span>
-                              <span className="px-1.5 py-0.5 bg-purple-950/80 border border-purple-500/60 text-purple-300 text-[10px] font-mono">
-                                {t('Dịch Vụ Cư Dân')}
-                              </span>
-                            </div>
-                            <div className="text-[11px] text-gray-400 mt-0.5 pl-5.5 flex flex-wrap items-center gap-2">
-                              <span>{t('Số lượng')}: <strong>{item.usage}</strong> {t(item.unit || 'gói')}</span>
-                              <span>•</span>
-                              <span>{t('Đơn giá')}: {item.unit_price?.toLocaleString('vi-VN')} đ</span>
-                              {item.booking_ref && (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-[#C5A880] font-mono font-semibold">#{item.booking_ref}</span>
-                                </>
-                              )}
-                              {item.order_date && (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-gray-400 font-mono">{t('Ngày')}: {item.order_date}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          <div className="font-mono font-bold text-sm text-[#C5A880]">
-                            {item.total_line_amount.toLocaleString('vi-VN')} đ
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                <div className="text-left sm:text-right">
+                  <div className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">
+                    {t('Tổng Cộng Cần Thanh Toán', 'Total Due')}:
                   </div>
-                ) : (
-                  <div className="p-3 bg-[#161B22]/40 border border-[#222B35] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-3.5 h-3.5 text-gray-500" />
-                      <span>Chưa có dịch vụ đời sống phát sinh trong kỳ này.</span>
-                    </div>
-                    <span className="text-[11px] text-gray-500 italic">Dịch vụ đặt sẽ tự động cập nhật vào đây</span>
-                  </div>
-                )}
-
-                {/* Hàng Tổng Kết Tài Chính */}
-                <div className="p-3.5 bg-[#0D1117] border border-[#2D3748] flex items-center justify-between text-xs">
-                  <div className="space-y-0.5">
-                    <span className="font-bold uppercase tracking-wider text-white">
-                      {isEn ? 'Total Payment:' : 'Tổng Cộng Thanh Toán:'}
-                    </span>
-                    <div className="text-[11px] text-gray-400">
-                      {serviceItems.length > 0 
-                        ? (isEn
-                            ? `${utilityItems.length} recurring items + ${serviceItems.length} services (Incl. 10% VAT)`
-                            : `${utilityItems.length} mục định kỳ + ${serviceItems.length} dịch vụ (Đã gồm 10% VAT)`)
-                        : (isEn
-                            ? `${utilityItems.length} recurring items (Incl. 10% VAT)`
-                            : `${utilityItems.length} mục định kỳ (Đã gồm 10% VAT)`)}
-                    </div>
-                  </div>
-                  <div className="font-serif text-xl font-bold text-[#C5A880] font-mono">
+                  <div className="font-serif text-2xl font-bold text-[#C5A880] font-mono">
                     {currentBill.total_amount.toLocaleString('vi-VN')} đ
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Minh Bạch Nguồn Tiền Thanh Toán (Phân bổ tiền đóng rõ ràng) */}
+          {(() => {
+            const allocation = calculateBillFundAllocation(currentBill);
+            return (
+              <div className="p-4 bg-[#0D1117] border border-[#C5A880]/50 space-y-3.5 shadow-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#222B35] pb-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 bg-[#1C2533] border border-[#C5A880]/70 flex items-center justify-center text-[#C5A880]">
+                      <PieChart className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-serif font-bold text-white text-sm">
+                        {t('Minh Bạch Nguồn Tiền Thanh Toán', 'Clear Payment Fund Allocation')}
+                      </h4>
+                      <p className="text-[11px] text-gray-400">
+                        {t('Khoản tiền đóng của căn hộ được tự động phân bổ vào từng mục tiêu cụ thể:', 'Your payment is automatically allocated into specific transparent funds:')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                    <span className="text-[10px] text-emerald-400 bg-emerald-950/70 border border-emerald-500/50 px-2 py-0.5 font-semibold uppercase tracking-wider">
+                      ✓ {t('Tách Bạch Quỹ • Đúng Quy Định', 'Separate Funds • Verified')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 3 Khối nguồn tiền rõ ràng */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                  {/* Túi 1: Thu hộ Điện Nước Nhà Nước */}
+                  <div className="p-3 bg-[#121820] border border-cyan-500/40 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Droplets className="w-3.5 h-3.5" /> {t('Thu Hộ Điện & Nước', 'State Utility Collection')}
+                      </span>
+                      <span className="font-mono text-cyan-400 font-bold text-xs bg-cyan-950/60 px-1.5 py-0.5 border border-cyan-500/40">
+                        {allocation.stateUtilitiesPercent}%
+                      </span>
+                    </div>
+                    <div className="font-mono text-base font-bold text-white">
+                      {allocation.stateUtilitiesAmount.toLocaleString('vi-VN')} đ
+                    </div>
+                    <p className="text-[11px] text-gray-300 leading-relaxed">
+                      {t('Chung cư chỉ thu hộ và chuyển 100% về Điện lực EVN và Cấp nước. Ban Quản Lý không giữ lại khoản này.', 'Collected on behalf and remitted 100% to EVN Power and City Water. Management keeps 0% of this fund.')}
+                    </p>
+                  </div>
+
+                  {/* Túi 2: Chi phí duy trì tòa nhà & Tiện ích cư dân */}
+                  <div className="p-3 bg-[#121820] border border-emerald-500/40 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Building className="w-3.5 h-3.5" /> {t('Duy Trì Tòa Nhà & Tiện Ích', 'Building Operations & Amenities')}
+                      </span>
+                      <span className="font-mono text-emerald-400 font-bold text-xs bg-emerald-950/60 px-1.5 py-0.5 border border-emerald-500/40">
+                        {allocation.operationsPercent}%
+                      </span>
+                    </div>
+                    <div className="font-mono text-base font-bold text-white">
+                      {allocation.operationsAmount.toLocaleString('vi-VN')} đ
+                    </div>
+                    <p className="text-[11px] text-gray-300 leading-relaxed">
+                      {t('Trực tiếp chi trả an ninh 24/7, vệ sinh sảnh, chiếu sáng công cộng, bảo trì thang máy, hồ bơi & phòng gym.', 'Directly funds 24/7 security, janitorial, hallway lighting, elevators, swimming pool & gym operations.')}
+                    </p>
+                  </div>
+
+                  {/* Túi 3: Quỹ bảo dưỡng & Cáp quang */}
+                  <div className="p-3 bg-[#121820] border border-[#C5A880]/40 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-[#C5A880] uppercase tracking-wider flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5" /> {t('Quỹ Bảo Dưỡng & Mạng', 'Maintenance Fund & Network')}
+                      </span>
+                      <span className="font-mono text-[#C5A880] font-bold text-xs bg-[#C5A880]/10 px-1.5 py-0.5 border border-[#C5A880]/40">
+                        {allocation.maintenancePercent + allocation.taxesAndTelecomPercent}%
+                      </span>
+                    </div>
+                    <div className="font-mono text-base font-bold text-white">
+                      {(allocation.maintenanceAmount + allocation.taxesAndTelecomAmount).toLocaleString('vi-VN')} đ
+                    </div>
+                    <p className="text-[11px] text-gray-300 leading-relaxed">
+                      {t('Tích lũy vào tài khoản riêng để đại tu thiết bị chung (máy phát, cáp thang máy) và đường truyền cáp quang.', 'Reserved for long-term repairs of shared assets (generators, elevator cables) and VNPT fiber connection.')}
+                    </p>
                   </div>
                 </div>
               </div>
             );
           })()}
 
-          {/* Payment Gateway Action Banner */}
-          <div className="p-4 bg-[#161B22] border border-[#2D3748] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
-            <div className="space-y-1">
-              <div className="font-bold text-white flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-[#C5A880]" /> 
-                <span>{isEn ? '24/7 Online Payment Gateway:' : 'Cổng Thanh Toán Trực Tuyến 24/7:'}</span>
+          {/* KHỐI HÀNH ĐỘNG THANH TOÁN THỰC TẾ & MINH BẠCH */}
+          {currentBill.status === 'Unpaid' ? (
+            <div className="p-5 bg-gradient-to-r from-[#121820] to-[#161B22] border border-[#C5A880]/60 space-y-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#222B35] pb-3">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-[#C5A880] flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" />
+                    <span>{t('Chọn Phương Thức Thanh Toán Trực Tiếp', 'Select Payment Option')}</span>
+                  </div>
+                  <p className="text-[11px] text-gray-300 mt-0.5">
+                    {t('Thanh toán tức thời qua Cổng VNPAY quốc gia hoặc quét mã VietQR 24/7 từ mọi ứng dụng ngân hàng.')}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-emerald-400 bg-emerald-950/80 border border-emerald-500/40 px-2 py-0.5 font-mono">
+                    ✓ {t('Gạch Nợ Tự Động 24/7')}
+                  </span>
+                </div>
               </div>
-              <div className="text-gray-400 flex items-center gap-3 pt-0.5">
-                <span className="px-2 py-0.5 bg-[#005BAA]/20 border border-[#005BAA]/50 text-[#005BAA] font-bold text-[10px]">
-                  {isEn ? 'VNPAY Gateway (ATM / Visa / QR)' : 'Cổng VNPAY (ATM / Visa / QR)'}
-                </span>
-                <span className="px-2 py-0.5 bg-[#A50064]/20 border border-[#A50064]/50 text-[#D82D8B] font-bold text-[10px]">
-                  {isEn ? 'MoMo E-Wallet' : 'Ví Điện Tử MoMo'}
-                </span>
+
+              {/* Các nút bấm thanh toán chính */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {/* Nút 1: Chuyển tiếp cổng VNPAY */}
+                <button
+                  type="button"
+                  onClick={() => handleOpenVnpaySandbox()}
+                  disabled={isRedirectingVnpay}
+                  className="p-4 bg-[#C5A880] hover:bg-[#D4BC96] text-[#0D1117] transition-all flex items-center justify-between shadow-lg group text-left cursor-pointer disabled:opacity-75"
+                >
+                  <div className="space-y-1">
+                    <div className="font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+                      {isRedirectingVnpay ? (
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#0D1117]" />
+                      ) : (
+                        <CreditCard className="w-4 h-4 text-[#0D1117]" />
+                      )}
+                      <span>{isRedirectingVnpay ? t('Đang chuyển hướng...') : t('Thanh Toán Qua Cổng VNPAY')}</span>
+                    </div>
+                    <div className="text-[11px] text-[#222B35] font-medium">
+                      {t('Chuyển tiếp sang VNPAY • Hỗ trợ thẻ ATM nội địa, Visa/Mastercard & VNPAY-QR')}
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 shrink-0 text-[#0D1117] group-hover:translate-x-0.5 transition-transform" />
+                </button>
+
+                {/* Nút 2: Quét mã VietQR 24/7 */}
+                <button
+                  type="button"
+                  onClick={() => setShowVietQrModal(true)}
+                  className="p-4 bg-[#161B22] border border-[#2D3748] hover:border-[#C5A880] text-white transition-all flex items-center justify-between shadow text-left cursor-pointer group"
+                >
+                  <div className="space-y-1">
+                    <div className="font-bold text-xs uppercase tracking-wider text-[#C5A880] flex items-center gap-2">
+                      <QrCode className="w-4 h-4" />
+                      <span>{t('Quét Mã Chuyển Khoản VietQR 24/7')}</span>
+                    </div>
+                    <div className="text-[11px] text-gray-300">
+                      {t('Mở mã QR Napas 24/7 • Quét bằng mọi App Ngân hàng (VCB, MB, Techcombank, BIDV...)')}
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 shrink-0 text-gray-400 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                </button>
               </div>
             </div>
-
-            {currentBill.status === 'Unpaid' ? (
-              <button
-                onClick={() => {
-                  setLastPaymentResult(null);
-                  setShowPaymentModal(true);
-                }}
-                className="px-4 py-2 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-colors shadow flex items-center gap-1.5 flex-shrink-0"
-              >
-                <CreditCard className="w-4 h-4" /> Thanh Toán Ngay
-              </button>
-            ) : (
-              <div className="text-emerald-400 font-mono text-xs flex items-center gap-1 font-bold">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Đã hoàn tất thanh toán hóa đơn này
+          ) : (
+            <div className="p-5 bg-[#121820] border border-emerald-500/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-serif font-bold text-white text-sm">
+                    {t('Hóa Đơn Đã Được Thanh Toán Hoàn Tất')}
+                  </h4>
+                  <p className="text-[11px] text-emerald-300 mt-0.5">
+                    {currentBill.payment_method ? `${t('Phương thức:')} ${currentBill.payment_method}` : ''}
+                    {currentBill.paid_at ? ` • ${t('Ngày nộp:')} ${new Date(currentBill.paid_at).toLocaleString('vi-VN')}` : ''}
+                    {currentBill.transaction_ref ? ` • ${t('Mã GD:')} #${currentBill.transaction_ref}` : ''}
+                  </p>
+                </div>
               </div>
-            )}
-          </div>
+
+              <button
+                type="button"
+                onClick={() => handleExportInvoicePdf(currentBill)}
+                disabled={isExportingInvoicePdf}
+                className="px-4 py-2.5 bg-[#161B22] border border-[#2D3748] hover:border-[#C5A880] text-gray-200 text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-2 self-start sm:self-auto"
+              >
+                {isExportingInvoicePdf ? (
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#C5A880]" />
+                ) : (
+                  <Download className="w-4 h-4 text-[#C5A880]" />
+                )}
+                <span>{t('Tải Biên Nhận PDF')}</span>
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="p-12 bg-[#121820] border border-[#222B35] text-center text-gray-400 text-xs">
@@ -1143,8 +1146,8 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
             {/* KPI 1 */}
             <div className="p-4 bg-[#121820] border border-[#222B35] relative overflow-hidden shadow-lg group hover:border-[#C5A880]/50 transition-all">
               <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                <span className="uppercase tracking-wider font-semibold">Tổng Chi Năm 2026</span>
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-[#C5A880]">
+                <span className="uppercase tracking-wider font-semibold">{isEn ? 'Total Spend 2026' : 'Tổng Chi Năm 2026'}</span>
+                <div className="w-8 h-8 rounded-none bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-[#C5A880]">
                   <Coins className="w-4 h-4" />
                 </div>
               </div>
@@ -1162,8 +1165,8 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
             {/* KPI 2 */}
             <div className="p-4 bg-[#121820] border border-[#222B35] relative overflow-hidden shadow-lg group hover:border-[#C5A880]/50 transition-all">
               <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                <span className="uppercase tracking-wider font-semibold">Trung Bình Tháng</span>
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <span className="uppercase tracking-wider font-semibold">{isEn ? 'Monthly Average' : 'Trung Bình Tháng'}</span>
+                <div className="w-8 h-8 rounded-none bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
                   <Activity className="w-4 h-4" />
                 </div>
               </div>
@@ -1171,16 +1174,16 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                 {avgMonthlySpend.toLocaleString('vi-VN')} đ
               </div>
               <div className="mt-2 flex items-center gap-1.5 text-[11px] text-gray-400">
-                <span className="text-cyan-400 font-mono font-bold">Chuẩn 2PN</span>
-                <span>Căn hộ 73.2 m²</span>
+                <span className="text-cyan-400 font-mono font-bold">{isEn ? 'Standard 2BR' : 'Chuẩn 2PN'}</span>
+                <span>{isEn ? 'Apartment 73.2 m²' : 'Căn hộ 73.2 m²'}</span>
               </div>
             </div>
 
             {/* KPI 3 */}
             <div className="p-4 bg-[#121820] border border-[#222B35] relative overflow-hidden shadow-lg group hover:border-[#C5A880]/50 transition-all">
               <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                <span className="uppercase tracking-wider font-semibold">Hạng Mục Cao Nhất</span>
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <span className="uppercase tracking-wider font-semibold">{isEn ? 'Highest Category' : 'Hạng Mục Cao Nhất'}</span>
+                <div className="w-8 h-8 rounded-none bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                   <Building className="w-4 h-4" />
                 </div>
               </div>
@@ -1191,15 +1194,15 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                 <span className="text-emerald-400 font-mono font-bold">
                   {highestCategory ? `${highestCategory.percent.toFixed(1)}%` : '0%'}
                 </span>
-                <span>tổng chi phí</span>
+                <span>{isEn ? 'of total spend' : 'tổng chi phí'}</span>
               </div>
             </div>
 
             {/* KPI 4 */}
             <div className="p-4 bg-[#121820] border border-[#222B35] relative overflow-hidden shadow-lg group hover:border-[#C5A880]/50 transition-all">
               <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                <span className="uppercase tracking-wider font-semibold">Thanh Toán Đúng Hạn</span>
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <span className="uppercase tracking-wider font-semibold">{isEn ? 'On-Time Payments' : 'Thanh Toán Đúng Hạn'}</span>
+                <div className="w-8 h-8 rounded-none bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
               </div>
@@ -1208,7 +1211,7 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
               </div>
               <div className="mt-2 flex items-center gap-1.5 text-[11px] text-gray-400">
                 <span className="text-amber-300 font-bold uppercase tracking-wider text-[10px]">Platinum VIP</span>
-                <span>• 0 ngày trễ</span>
+                <span>• {isEn ? '0 days overdue' : '0 ngày trễ'}</span>
               </div>
             </div>
           </div>
@@ -1256,10 +1259,10 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
             {/* Stacked visually proportioned bar of all categories */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs text-gray-400">
-                <span>Thanh phân bổ tỷ trọng tổng chi phí:</span>
-                <span className="font-mono text-gray-300">100% ({totalSpendAll.toLocaleString('vi-VN')} đ)</span>
+                <span>{isEn ? 'Expense breakdown allocation:' : 'Thanh phân bổ tỷ trọng tổng chi phí:'}</span>
+                <span className="font-mono text-gray-300">100% ({totalSpendAll.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'})</span>
               </div>
-              <div className="w-full h-3.5 bg-[#0D1117] rounded-full overflow-hidden flex border border-[#2D3748]">
+              <div className="w-full h-3.5 bg-[#0D1117] rounded-none overflow-hidden flex border border-[#2D3748]">
                 {categoryStats.map(cat => {
                   if (cat.percent <= 0) return null;
                   return (
@@ -1315,9 +1318,9 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                       </div>
 
                       {/* Progress bar */}
-                      <div className="w-full bg-[#0D1117] h-1.5 rounded-full overflow-hidden">
+                      <div className="w-full bg-[#0D1117] h-1.5 rounded-none overflow-hidden">
                         <div
-                          className="h-full rounded-full transition-all duration-500"
+                          className="h-full rounded-none transition-all duration-500"
                           style={{ width: `${Math.min(cat.percent, 100)}%`, backgroundColor: cat.color }}
                         />
                       </div>
@@ -1346,7 +1349,7 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                 </h3>
               </div>
               <div className="text-xs text-gray-400">
-                Chu kỳ: <strong className="text-white">Ngày 05 hàng tháng</strong>
+                {isEn ? 'Billing cycle:' : 'Chu kỳ:'} <strong className="text-white">{isEn ? '5th of each month' : 'Ngày 05 hàng tháng'}</strong>
               </div>
             </div>
 
@@ -1385,7 +1388,7 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                       </div>
 
                       <div className="mt-3 text-center">
-                        <div className="text-[11px] text-gray-400">Hóa đơn kỳ:</div>
+                        <div className="text-[11px] text-gray-400">{isEn ? 'Statement period:' : 'Hóa đơn kỳ:'}</div>
                         <div className="font-serif text-xl font-bold text-[#C5A880] mt-0.5">
                           {b.total_amount.toLocaleString('vi-VN')} đ
                         </div>
@@ -1397,26 +1400,26 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                           <span className="flex items-center gap-1 text-amber-400">
                             <Zap className="w-3 h-3" /> Điện:
                           </span>
-                          <span className="font-mono">{elecLine.toLocaleString('vi-VN')} đ</span>
+                          <span className="font-mono">{elecLine.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                         </div>
                         <div className="flex items-center justify-between text-gray-300">
                           <span className="flex items-center gap-1 text-cyan-400">
                             <Droplets className="w-3 h-3" /> Nước:
                           </span>
-                          <span className="font-mono">{waterLine.toLocaleString('vi-VN')} đ</span>
+                          <span className="font-mono">{waterLine.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                         </div>
                         <div className="flex items-center justify-between text-gray-300">
                           <span className="flex items-center gap-1 text-emerald-400">
                             <Building className="w-3 h-3" /> Cố định:
                           </span>
-                          <span className="font-mono">{fixedLine.toLocaleString('vi-VN')} đ</span>
+                          <span className="font-mono">{fixedLine.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                         </div>
                         {serviceLine > 0 && (
                           <div className="flex items-center justify-between text-purple-300 font-bold">
                             <span className="flex items-center gap-1">
                               <Sparkles className="w-3 h-3" /> Dịch vụ:
                             </span>
-                            <span className="font-mono">{serviceLine.toLocaleString('vi-VN')} đ</span>
+                            <span className="font-mono">{serviceLine.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                           </div>
                         )}
                       </div>
@@ -1424,7 +1427,7 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
 
                     {/* Bottom comparison indicator */}
                     <div className="pt-2 border-t border-[#222B35] flex items-center justify-between text-[10px] text-gray-400">
-                      <span>So kỳ trước:</span>
+                      <span>{isEn ? 'vs previous period:' : 'So kỳ trước:'}</span>
                       {prev ? (
                         <span className={`font-mono font-bold flex items-center gap-0.5 ${
                           diffAmount > 0 ? 'text-amber-400' : diffAmount < 0 ? 'text-emerald-400' : 'text-gray-400'
@@ -1433,7 +1436,7 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                           {diffAmount > 0 ? `+${diffPercent}%` : diffAmount < 0 ? `${diffPercent}%` : '0%'}
                         </span>
                       ) : (
-                        <span className="font-mono text-gray-500">Kỳ đầu</span>
+                        <span className="font-mono text-gray-500">{isEn ? 'Initial period' : 'Kỳ đầu'}</span>
                       )}
                     </div>
                   </div>
@@ -1447,10 +1450,10 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#222B35] pb-4">
               <div>
                 <div className="text-[10px] uppercase tracking-[0.2em] text-[#C5A880] font-semibold flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5" /> Bảng Kê Dịch Vụ
+                  <Layers className="w-3.5 h-3.5" /> {t('Bảng Kê Dịch Vụ', 'Services Breakdown')}
                 </div>
                 <h3 className="font-serif text-lg text-white font-bold mt-0.5">
-                  Chi Tiết Định Mức & Tiêu Dùng
+                  {t('Chi Tiết Định Mức & Tiêu Dùng', 'Usage Quotas & Consumption Details')}
                 </h3>
               </div>
               <div className="flex items-center gap-2 text-xs">
@@ -1459,7 +1462,7 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                   className="px-3 py-1.5 bg-[#161B22] border border-[#2D3748] hover:border-[#C5A880] text-gray-200 text-xs font-semibold transition-all flex items-center gap-1.5"
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Xuất CSV</span>
+                  <span>{t('Xuất CSV', 'Export CSV')}</span>
                 </button>
               </div>
             </div>
@@ -1533,7 +1536,7 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
             <div className="flex items-center gap-2 border-b border-[#222B35] pb-3">
               <Sparkles className="w-4 h-4 text-amber-400" />
               <h3 className="font-serif text-base text-white font-bold">
-                Gợi Ý AI Tối Ưu Năng Lượng & Chi Phí
+                {t('Gợi Ý AI Tối Ưu Năng Lượng & Chi Phí', 'AI Energy & Cost Optimization Insights')}
               </h3>
             </div>
 
@@ -1542,10 +1545,13 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
               <div className="p-4 bg-[#161B22] border border-amber-500/40 space-y-2">
                 <div className="flex items-center gap-2 text-amber-400 font-bold">
                   <Zap className="w-4 h-4" />
-                  <span>Tối Ưu Hóa Tiền Điện</span>
+                  <span>{t('Tối Ưu Hóa Tiền Điện', 'Electricity Cost Optimization')}</span>
                 </div>
                 <p className="text-gray-300 leading-relaxed text-[11px]">
-                  Mức tiêu thụ điện tháng 8 là <strong>340 kWh</strong>, cao hơn 21% so với tháng 7 do nắng nóng. Bật điều hòa ở mức <strong>26°C kết hợp quạt đối lưu</strong> có thể giúp căn hộ tiết kiệm từ <strong>120.000 - 180.000 đ/tháng</strong>.
+                  {t(
+                    'Mức tiêu thụ điện tháng 8 là 340 kWh, cao hơn 21% so với tháng 7 do nắng nóng. Bật điều hòa ở mức 26°C kết hợp quạt đối lưu có thể giúp căn hộ tiết kiệm từ 120.000 - 180.000 đ/tháng.',
+                    'August electricity usage was 340 kWh (+21% vs July). Setting AC to 26°C with ceiling fans can save 120,000 - 180,000 VND/month.'
+                  )}
                 </p>
               </div>
 
@@ -1553,10 +1559,13 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
               <div className="p-4 bg-[#161B22] border border-cyan-500/40 space-y-2">
                 <div className="flex items-center gap-2 text-cyan-400 font-bold">
                   <Droplets className="w-4 h-4" />
-                  <span>Giám Sát Lưu Lượng Nước</span>
+                  <span>{t('Giám Sát Lưu Lượng Nước', 'Water Consumption Monitoring')}</span>
                 </div>
                 <p className="text-gray-300 leading-relaxed text-[11px]">
-                  Cảm biến đồng hồ nước thông minh IoT phát hiện lưu lượng nước đêm (02:00 - 04:00) tại phòng vệ sinh master. Cư dân có thể gửi yêu cầu hỗ trợ kỹ thuật trên Portal để được kiểm tra van miễn phí.
+                  {t(
+                    'Cảm biến đồng hồ nước thông minh IoT phát hiện lưu lượng nước đêm (02:00 - 04:00) tại phòng vệ sinh master. Cư dân có thể gửi yêu cầu hỗ trợ kỹ thuật trên Portal để được kiểm tra van miễn phí.',
+                    'IoT smart meters detected overnight flow (02:00 - 04:00) in the master bathroom. Submit a ticket on the Portal for a free valve inspection.'
+                  )}
                 </p>
               </div>
 
@@ -1564,10 +1573,13 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
               <div className="p-4 bg-[#161B22] border border-teal-500/40 space-y-2">
                 <div className="flex items-center gap-2 text-teal-400 font-bold">
                   <Wifi className="w-4 h-4" />
-                  <span>Ưu Đãi Cáp Quang & Dịch Vụ</span>
+                  <span>{t('Ưu Đãi Cáp Quang & Dịch Vụ', 'Fiber Internet & Service Promotions')}</span>
                 </div>
                 <p className="text-gray-300 leading-relaxed text-[11px]">
-                  Đường truyền Internet Fiber 300Mbps hoạt động ổn định 99.98% uptime. Khi đặt kèm các dịch vụ đời sống (Giặt ủi, PT, Dọn dẹp), điểm tích lũy Skyline Rewards sẽ được hoàn trực tiếp vào kỳ hóa đơn tiếp theo.
+                  {t(
+                    'Đường truyền Internet Fiber 300Mbps hoạt động ổn định 99.98% uptime. Khi đặt kèm các dịch vụ đời sống (Giặt ủi, PT, Dọn dẹp), điểm tích lũy Skyline Rewards sẽ được hoàn trực tiếp vào kỳ hóa đơn tiếp theo.',
+                    'Fiber 300Mbps operates at 99.98% uptime. Bundling lifestyle services (Laundry, PT, Cleaning) earns Skyline Rewards credited to your next bill.'
+                  )}
                 </p>
               </div>
             </div>
@@ -1576,764 +1588,125 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL THANH TOÁN CHÍNH: VNPAY & MOMO GATEWAY                              */}
+      {/* MODAL QUÉT MÃ VIETQR NAPAS 24/7 (CHUYỂN KHOẢN TẤT CẢ NGÂN HÀNG)          */}
       {/* ========================================================================= */}
-      {showPaymentModal && currentBill && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#121820] border border-[#C5A880] max-w-lg w-full p-6 space-y-4 shadow-2xl animate-fadeIn text-white">
+      {showVietQrModal && currentBill && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#121820] border border-[#C5A880] max-w-md w-full p-6 space-y-4 shadow-2xl animate-fadeIn text-white">
             <div className="flex items-center justify-between border-b border-[#222B35] pb-3">
               <div className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-[#C5A880]" />
-                <h3 className="font-serif text-lg font-bold text-white">
-                  Cổng Thanh Toán Hóa Đơn Kỳ {currentBill.billing_month}
+                <QrCode className="w-5 h-5 text-[#C5A880]" />
+                <h3 className="font-serif text-base font-bold text-white">
+                  {t('Quét Mã VietQR Napas 24/7', 'Scan VietQR Napas 24/7')}
                 </h3>
               </div>
               <button 
-                onClick={() => setShowPaymentModal(false)}
-                className="text-gray-400 hover:text-white"
+                type="button"
+                onClick={() => setShowVietQrModal(false)}
+                className="text-gray-400 hover:text-white p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Màn hình thông báo khi thanh toán thành công */}
-            {lastPaymentResult ? (
-              <div className="p-6 bg-[#161B22] border border-emerald-500 text-center space-y-4 animate-fadeIn">
-                <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-7 h-7" />
-                </div>
+            {/* Khối hiển thị ảnh QR Napas 24/7 */}
+            <div className="p-4 bg-white rounded flex flex-col items-center justify-center text-center shadow-inner">
+              <img
+                src={generateVietQrUrl({
+                  amount: currentBill.total_amount,
+                  transferNote: `SKYLINE ${aptCode.replace(/[^A-Za-z0-9]/g, '')} ${currentBill.billing_month.replace(/[^A-Za-z0-9]/g, '')}`,
+                })}
+                alt="VietQR Napas 24/7"
+                className="w-56 h-56 object-contain"
+              />
+              <div className="mt-2 text-[11px] text-gray-700 font-medium">
+                {t('Sử dụng ứng dụng bất kỳ ngân hàng nào để quét mã thanh toán')}
+              </div>
+            </div>
 
-                <div className="space-y-1">
-                  <h4 className="font-serif text-lg font-bold text-white">Giao Dịch Thành Công!</h4>
-                  <p className="text-xs text-emerald-300">
-                    Hệ thống đã nhận phản hồi IPN từ cổng thanh toán <strong>{lastPaymentResult.gateway}</strong>.
-                  </p>
-                </div>
-
-                <div className="p-3 bg-[#121820] border border-[#2D3748] text-xs text-left space-y-1.5 font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400 font-sans">Mã giao dịch:</span>
-                    <span className="text-[#C5A880] font-bold">{lastPaymentResult.transId}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400 font-sans">Số tiền thanh toán:</span>
-                    <span className="text-white font-bold">{lastPaymentResult.amount.toLocaleString('vi-VN')} đ</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400 font-sans">Căn hộ thụ hưởng:</span>
-                    <span className="text-white">Căn {aptCode} ({residentName})</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400 font-sans">Thời gian ghi nhận:</span>
-                    <span className="text-gray-300">{lastPaymentResult.paidAt}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400 font-sans">Trạng thái gạch nợ:</span>
-                    <span className="text-emerald-400 font-bold">ĐÃ GẠCH NỢ THÀNH CÔNG ✓</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row justify-center gap-2 pt-2">
+            {/* Chi tiết tài khoản thụ hưởng có nút sao chép */}
+            <div className="p-3 bg-[#161B22] border border-[#222B35] space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">{t('Ngân hàng')}:</span>
+                <span className="font-bold text-white text-right">{SKYLINE_BANK_INFO.bankShortName} ({SKYLINE_BANK_INFO.branch})</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">{t('Số tài khoản')}:</span>
+                <div className="flex items-center gap-1.5 font-mono">
+                  <span className="font-bold text-[#C5A880]">{SKYLINE_BANK_INFO.accountNumber}</span>
                   <button
                     type="button"
-                    onClick={() => handleExportInvoicePdf(currentBill)}
-                    disabled={isExportingInvoicePdf}
-                    className="px-4 py-2.5 bg-[#1C2533] border border-[#2D3748] hover:border-[#C5A880] text-gray-200 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5"
+                    onClick={() => copyToClipboard(SKYLINE_BANK_INFO.accountNumber, 'acc')}
+                    className="p-1 hover:text-[#C5A880] text-gray-400 cursor-pointer"
+                    title={t('Sao chép số tài khoản')}
                   >
-                    {isExportingInvoicePdf ? (
-                      <RefreshCw className="w-4 h-4 animate-spin text-[#C5A880]" />
-                    ) : (
-                      <Download className="w-4 h-4 text-[#C5A880]" />
-                    )}
-                    <span>{isExportingInvoicePdf ? 'Đang Xuất PDF...' : 'Tải Hóa Đơn PDF'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowPaymentModal(false)}
-                    className="px-6 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-colors shadow"
-                  >
-                    Hoàn Tất & Đóng
+                    {copiedField === 'acc' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {/* 2 Primary Gateway Tabs: VNPAY vs MOMO */}
-                <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">{t('Người thụ hưởng')}:</span>
+                <span className="font-bold text-white text-right text-[11px]">{SKYLINE_BANK_INFO.accountHolder}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-400">{t('Số tiền')}:</span>
+                <div className="flex items-center gap-1.5 font-mono">
+                  <span className="font-bold text-white">{currentBill.total_amount.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                   <button
                     type="button"
-                    onClick={() => setSelectedGateway('VNPAY')}
-                    className={`p-3 border text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-                      selectedGateway === 'VNPAY'
-                        ? 'border-[#005BAA] bg-[#005BAA] text-white shadow-lg'
-                        : 'border-[#222B35] bg-[#161B22] text-gray-400 hover:text-white'
-                    }`}
+                    onClick={() => copyToClipboard(currentBill.total_amount.toString(), 'amount')}
+                    className="p-1 hover:text-[#C5A880] text-gray-400 cursor-pointer"
+                    title={t('Sao chép số tiền')}
                   >
-                    <CreditCard className="w-4 h-4" /> Cổng VNPAY
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedGateway('MOMO')}
-                    className={`p-3 border text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-                      selectedGateway === 'MOMO'
-                        ? 'border-[#A50064] bg-[#A50064] text-white shadow-lg'
-                        : 'border-[#222B35] bg-[#161B22] text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    <Smartphone className="w-4 h-4" /> Ví Điện Tử MoMo
+                    {copiedField === 'amount' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-
-                {/* ------------------------------------------------------------- */}
-                {/* GATEWAY 1: VNPAY GATEWAY - QUY TRÌNH THANH TOÁN ĐA BƯỚC THỰC TẾ */}
-                {/* ------------------------------------------------------------- */}
-                {selectedGateway === 'VNPAY' && (
-                  <div className="space-y-4 bg-[#161B22] p-4 border border-[#005BAA]/70 text-xs shadow-xl animate-fadeIn">
-                    {/* Header Cổng VNPAY Chuẩn */}
-                    <div className="p-3 bg-gradient-to-r from-[#005BAA]/30 via-[#161B22] to-[#ED1C24]/20 border border-[#005BAA]/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="px-2 py-1 bg-white rounded flex items-center gap-1 shadow">
-                          <span className="font-extrabold text-[#005BAA] text-sm tracking-tighter">VN</span>
-                          <span className="font-extrabold text-[#ED1C24] text-sm tracking-tighter">PAY</span>
-                        </div>
-                        <div>
-                          <div className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">CỔNG THANH TOÁN VNPAY SANDBOX</div>
-                          <div className="font-bold text-white text-xs">BAN QUẢN LÝ SKYLINE RESIDENCE</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 self-end sm:self-auto">
-                        <div className="flex items-center gap-1.5 text-[11px] text-amber-400 font-mono bg-black/40 px-2.5 py-1 border border-amber-500/30">
-                          <Clock className="w-3.5 h-3.5 animate-spin" />
-                          <span>Hết hạn: {formatCountdown(vnpCountdown)}</span>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[10px] text-gray-400">Số tiền thanh toán:</div>
-                          <div className="font-mono font-bold text-[#C5A880] text-sm">{billAmountFormatted} đ</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* BƯỚC 1: CHỌN PHƯƠNG THỨC THANH TOÁN VNPAY */}
-                    {vnpFlowStep === 'SELECT_METHOD' && (
-                      <div className="space-y-3.5 animate-fadeIn">
-                        <div className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-                          Bước 1: Chọn Phương Thức Thanh Toán VNPAY:
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {/* Lựa chọn A: Thẻ ATM Nội Địa (NCB) */}
-                          <div 
-                            onClick={() => setVnpFlowStep('ATM_FORM')}
-                            className="p-3.5 bg-[#121820] border-2 border-[#005BAA] hover:bg-[#1A2535] cursor-pointer transition-all space-y-2 group shadow-lg"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="px-2 py-0.5 bg-[#005BAA] text-white font-bold text-[9px] uppercase tracking-wider">
-                                Khuyên Dùng
-                              </span>
-                              <CreditCard className="w-5 h-5 text-[#4CC9F0] group-hover:scale-110 transition-transform" />
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-white text-sm">Thẻ ATM & Tài Khoản Ngân Hàng</h4>
-                              <p className="text-[11px] text-gray-400 mt-0.5">
-                                Thanh toán bằng thẻ nội địa NCB, Vietcombank, BIDV... qua xác thực 3D-Secure OTP.
-                              </p>
-                            </div>
-                            <div className="pt-2 border-t border-[#222B35] flex items-center justify-between text-[11px] text-[#4CC9F0] font-semibold">
-                              <span>Tiếp tục điền thẻ NCB</span>
-                              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                            </div>
-                          </div>
-
-                          {/* Lựa chọn B: VNPAY-QR */}
-                          <div 
-                            onClick={() => setVnpFlowStep('QR_SCAN')}
-                            className="p-3.5 bg-[#121820] border border-[#2D3748] hover:border-[#005BAA] hover:bg-[#1A2535] cursor-pointer transition-all space-y-2 group shadow"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="px-2 py-0.5 bg-[#222B35] text-gray-300 font-bold text-[9px] uppercase tracking-wider">
-                                Quét Nhanh
-                              </span>
-                              <QrCode className="w-5 h-5 text-[#C5A880] group-hover:scale-110 transition-transform" />
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-white text-sm">Cổng Quét Mã VNPAY-QR</h4>
-                              <p className="text-[11px] text-gray-400 mt-0.5">
-                                Quét mã trực tiếp qua 35+ ứng dụng Mobile Banking hoặc Ví VNPAY.
-                              </p>
-                            </div>
-                            <div className="pt-2 border-t border-[#222B35] flex items-center justify-between text-[11px] text-[#C5A880] font-semibold">
-                              <span>Quét mã VNPAY-QR</span>
-                              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Hộp Thông Tin Thẻ Test Do VNPAY Cấp */}
-                        <div className="p-3 bg-[#0D1117] border border-[#222B35] space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] uppercase font-bold text-[#C5A880] tracking-wider">
-                              Thông Tin Thẻ Thử Nghiệm Sandbox Được VNPAY Cấp Sẵn:
-                            </span>
-                            <span className="text-[10px] text-gray-400">Click để sao chép</span>
-                          </div>
-
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono">
-                            <div className="p-1.5 bg-[#161B22] border border-[#222B35] text-center">
-                              <div className="text-[10px] text-gray-500 font-sans">Ngân hàng:</div>
-                              <div className="font-bold text-white">NCB</div>
-                            </div>
-                            <div 
-                              onClick={() => copyToClipboard(VNPAY_NCB_TEST_CARD.cardNumber, 'card')}
-                              className="p-1.5 bg-[#161B22] border border-[#222B35] hover:border-[#005BAA] cursor-pointer text-center transition-colors"
-                              title="Click để copy số thẻ"
-                            >
-                              <div className="text-[10px] text-gray-500 font-sans">Số thẻ test:</div>
-                              <div className="font-bold text-emerald-400 flex items-center justify-center gap-1">
-                                <span>9704 1985...</span>
-                                {copiedField === 'card' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-gray-400" />}
-                              </div>
-                            </div>
-                            <div 
-                              onClick={() => copyToClipboard(VNPAY_NCB_TEST_CARD.cardHolder, 'holder')}
-                              className="p-1.5 bg-[#161B22] border border-[#222B35] hover:border-[#005BAA] cursor-pointer text-center transition-colors"
-                              title="Click để copy tên"
-                            >
-                              <div className="text-[10px] text-gray-500 font-sans">Chủ thẻ:</div>
-                              <div className="font-bold text-white flex items-center justify-center gap-1">
-                                <span>NGUYEN VAN A</span>
-                                {copiedField === 'holder' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-gray-400" />}
-                              </div>
-                            </div>
-                            <div className="p-1.5 bg-[#161B22] border border-[#222B35] text-center">
-                              <div className="text-[10px] text-gray-500 font-sans">Ngày / OTP:</div>
-                              <div className="font-bold text-[#4CC9F0]">07/15 • 123456</div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Nút mở trang sandbox ngoài */}
-                        <div className="pt-2 border-t border-[#222B35] flex items-center justify-between text-[11px]">
-                          <span className="text-gray-400">
-                            * Cổng thanh toán Sandbox bên ngoài (`sandbox.vnpayment.vn`):
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenVnpaySandbox()}
-                            disabled={isRedirectingVnpay}
-                            className="px-3 py-1 bg-[#1C2533] hover:bg-[#233144] border border-[#2D3748] hover:border-[#005BAA] text-gray-200 hover:text-white transition-colors flex items-center gap-1"
-                          >
-                            <ExternalLink className="w-3 h-3 text-[#005BAA]" />
-                            <span>Mở Trang sandbox.vnpayment.vn</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* BƯỚC 2A: FORM ĐIỀN THÔNG TIN THẺ ATM & CHỌN NGÂN HÀNG */}
-                    {vnpFlowStep === 'ATM_FORM' && (
-                      <div className="space-y-3.5 animate-fadeIn">
-                        <div className="flex items-center justify-between border-b border-[#222B35] pb-2">
-                          <span className="font-bold text-white uppercase tracking-wider text-xs">
-                            Bước 2/3: Chọn Ngân Hàng & Nhập Thông Tin Thẻ ATM
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setVnpFlowStep('SELECT_METHOD')}
-                            className="text-gray-400 hover:text-white text-[11px]"
-                          >
-                            ← Quay lại
-                          </button>
-                        </div>
-
-                        {/* Grid các Ngân hàng */}
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] text-gray-400 font-semibold">Chọn Ngân Hàng Phát Hành:</label>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            {[
-                              { code: 'NCB', name: 'NCB (Quốc Dân)', tag: 'Thẻ Test' },
-                              { code: 'VCB', name: 'Vietcombank', tag: '' },
-                              { code: 'BIDV', name: 'BIDV', tag: '' },
-                              { code: 'CTG', name: 'VietinBank', tag: '' },
-                              { code: 'TCB', name: 'Techcombank', tag: '' },
-                              { code: 'MB', name: 'MBBank', tag: '' },
-                              { code: 'VBA', name: 'Agribank', tag: '' },
-                              { code: 'ACB', name: 'ACB', tag: '' },
-                            ].map((b) => (
-                              <button
-                                key={b.code}
-                                type="button"
-                                onClick={() => setVnpSelectedBank(b.code)}
-                                className={`p-2 border text-left text-[11px] transition-all relative ${
-                                  vnpSelectedBank === b.code
-                                    ? 'border-[#005BAA] bg-[#005BAA]/20 text-white font-bold'
-                                    : 'border-[#222B35] bg-[#121820] text-gray-400 hover:text-white'
-                                }`}
-                              >
-                                <div>{b.name}</div>
-                                {b.tag && (
-                                  <span className="text-[8px] bg-amber-500 text-black px-1 font-bold absolute right-1 top-1">
-                                    {b.tag}
-                                  </span>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Form Nhập Dữ Liệu Thẻ */}
-                        <div className="p-3 bg-[#121820] border border-[#2D3748] space-y-3">
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <label className="text-[11px] text-gray-400">Số Thẻ Ngân Hàng (ATM):</label>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setVnpCardNumber(VNPAY_NCB_TEST_CARD.cardNumber);
-                                  setVnpCardHolder(VNPAY_NCB_TEST_CARD.cardHolder);
-                                  setVnpCardDate(VNPAY_NCB_TEST_CARD.issueDate);
-                                }}
-                                className="text-[10px] text-[#4CC9F0] hover:underline"
-                              >
-                                Điền nhanh thẻ test NCB
-                              </button>
-                            </div>
-                            <input
-                              type="text"
-                              value={vnpCardNumber}
-                              onChange={(e) => setVnpCardNumber(e.target.value)}
-                              placeholder="9704 1985 2619 1432 198"
-                              className="w-full bg-[#161B22] border border-[#2D3748] focus:border-[#005BAA] p-2 text-white font-mono text-xs focus:outline-none"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <label className="text-[11px] text-gray-400">Tên In Trên Thẻ (Không Dấu):</label>
-                              <input
-                                type="text"
-                                value={vnpCardHolder}
-                                onChange={(e) => setVnpCardHolder(e.target.value.toUpperCase())}
-                                placeholder="NGUYEN VAN A"
-                                className="w-full bg-[#161B22] border border-[#2D3748] focus:border-[#005BAA] p-2 text-white font-mono text-xs uppercase focus:outline-none"
-                              />
-                            </div>
-
-                            <div className="space-y-1">
-                              <label className="text-[11px] text-gray-400">Ngày Phát Hành (MM/YY):</label>
-                              <input
-                                type="text"
-                                value={vnpCardDate}
-                                onChange={(e) => setVnpCardDate(e.target.value)}
-                                placeholder="07/15"
-                                className="w-full bg-[#161B22] border border-[#2D3748] focus:border-[#005BAA] p-2 text-white font-mono text-xs focus:outline-none"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Nút Tiếp Tục Sang Màn Hình OTP */}
-                        <div className="flex gap-2 justify-end pt-1">
-                          <button
-                            type="button"
-                            onClick={() => setVnpFlowStep('SELECT_METHOD')}
-                            className="px-4 py-2 border border-gray-700 text-gray-400 hover:text-white text-xs"
-                          >
-                            Quay Lại
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (!vnpCardNumber.trim() || vnpCardNumber.length < 10) {
-                                alert('Vui lòng nhập số thẻ ngân hàng hợp lệ!');
-                                return;
-                              }
-                              setVnpFlowStep('ATM_OTP');
-                            }}
-                            className="px-6 py-2 bg-[#005BAA] hover:bg-[#004887] text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow"
-                          >
-                            Tiếp Tục Xác Thực OTP <ArrowRight className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* BƯỚC 2B: MÀN HÌNH XÁC THỰC 3D-SECURE OTP CỦA NGÂN HÀNG NCB */}
-                    {vnpFlowStep === 'ATM_OTP' && (
-                      <div className="space-y-3.5 bg-[#0D1520] p-4 border-2 border-[#005BAA] text-xs animate-fadeIn">
-                        {/* Header Ngân Hàng NCB */}
-                        <div className="border-b border-[#222B35] pb-2.5 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="px-2 py-0.5 bg-blue-900 text-white font-black text-xs">NCB</div>
-                            <div>
-                              <div className="font-bold text-white text-xs">NGÂN HÀNG TMCP QUỐC DÂN</div>
-                              <div className="text-[10px] text-[#4CC9F0] uppercase tracking-wider font-semibold">CỔNG XÁC THỰC GIAO DỊCH 3D-SECURE</div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-[10px] text-gray-400">Hiệu lực OTP: </span>
-                            <span className="font-mono text-amber-400 font-bold">{otpCountdown}s</span>
-                          </div>
-                        </div>
-
-                        {/* Thông tin đơn hàng từ phía Ngân Hàng */}
-                        <div className="p-3 bg-[#121820] border border-[#222B35] space-y-1.5 text-[11px]">
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Đơn vị thanh toán:</span>
-                            <strong className="text-white">CỔNG VNPAY - BQL SKYLINE RESIDENCE</strong>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Thẻ giao dịch:</span>
-                            <span className="font-mono text-gray-300">9704 19** **** 198 (NCB)</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Số tiền trích nợ:</span>
-                            <span className="font-mono font-bold text-emerald-400 text-xs">{billAmountFormatted} VNĐ</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">SĐT nhận OTP:</span>
-                            <span className="font-mono text-gray-300">036496****</span>
-                          </div>
-                        </div>
-
-                        {/* Ô Nhập OTP */}
-                        <div className="space-y-2 text-center py-2">
-                          <div className="text-xs text-gray-300">
-                            Nhập mã xác thực gồm <strong>6 chữ số</strong> được gửi tới điện thoại của bạn:
-                          </div>
-
-                          <div className="flex items-center justify-center gap-2">
-                            <input
-                              type="text"
-                              maxLength={6}
-                              value={vnpOtpInput}
-                              onChange={(e) => {
-                                setVnpOtpInput(e.target.value);
-                                if (vnpOtpError) setVnpOtpError(null);
-                              }}
-                              placeholder="123456"
-                              className="w-44 bg-[#161B22] border-2 border-[#005BAA] p-2 text-center text-white text-base font-mono tracking-widest focus:outline-none shadow-inner"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setVnpOtpInput('123456');
-                                if (vnpOtpError) setVnpOtpError(null);
-                              }}
-                              className="px-2.5 py-2 bg-[#1C2533] border border-gray-600 hover:border-[#005BAA] text-[10px] text-[#4CC9F0] transition-colors"
-                              title="Điền tự động OTP kiểm thử"
-                            >
-                              Điền OTP Test (123456)
-                            </button>
-                          </div>
-
-                          {vnpOtpError && (
-                            <div className="text-red-400 text-xs font-semibold animate-shake">
-                              {vnpOtpError}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="flex flex-col-reverse sm:flex-row gap-2 justify-between pt-1 border-t border-[#222B35]">
-                          <button
-                            type="button"
-                            onClick={() => setVnpFlowStep('ATM_FORM')}
-                            className="w-full sm:w-auto px-4 py-2.5 border border-gray-700 text-gray-400 hover:text-white text-xs text-center font-semibold"
-                          >
-                            Quay Lại Sửa Thẻ
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={handleVerifyAtmOtp}
-                            className="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow-lg"
-                          >
-                            <Check className="w-4 h-4" /> Xác Nhận Trừ Tiền & Thanh Toán
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* BƯỚC 2C: MÀN HÌNH QUÉT MÃ VNPAY-QR */}
-                    {vnpFlowStep === 'QR_SCAN' && (
-                      <div className="space-y-3.5 text-center py-2 animate-fadeIn">
-                        <div className="flex items-center justify-between border-b border-[#222B35] pb-2 text-left">
-                          <span className="font-bold text-white uppercase tracking-wider text-xs">
-                            Bước 2/2: Quét Mã VNPAY-QR Bằng Ứng Dụng Ngân Hàng
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setVnpFlowStep('SELECT_METHOD')}
-                            className="text-gray-400 hover:text-white text-[11px]"
-                          >
-                            ← Quay lại
-                          </button>
-                        </div>
-
-                        <div className="p-3 bg-white border-2 border-[#005BAA] inline-block shadow-xl">
-                          <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=00020101021238540010A00000072701240006970436011009031122330208QRIBFTTA5303704540725050005802VN5913SKYLINE_CH0662200816SKYLINECH06T086304`} 
-                            alt="VNPAY-QR Code" 
-                            className="w-36 h-36 object-contain mx-auto"
-                          />
-                        </div>
-
-                        <p className="text-[11px] text-gray-300 max-w-sm mx-auto">
-                          Mở ứng dụng <strong>Mobile Banking của 35+ ngân hàng</strong> (Vietcombank, BIDV, Techcombank, MB...) hoặc <strong>Ví VNPAY</strong> và chọn tính năng quét mã QR.
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={() => setVnpFlowStep('APP_CONFIRM')}
-                          className="w-full py-2.5 bg-[#005BAA] hover:bg-[#004887] text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-lg"
-                        >
-                          <Smartphone className="w-4 h-4" />
-                          <span>Mở Trình Xác Nhận Trên Ứng Dụng Mobile Banking</span>
-                        </button>
-                      </div>
-                    )}
-
-                    {/* BƯỚC 2D: MÀN HÌNH GIẢ LẬP APP NGÂN HÀNG XÁC NHẬN CHUYỂN TIỀN */}
-                    {vnpFlowStep === 'APP_CONFIRM' && (
-                      <div className="space-y-3.5 bg-[#0D1520] p-4 border border-[#2D3748] text-xs animate-fadeIn">
-                        <div className="flex items-center justify-between border-b border-[#222B35] pb-2">
-                          <div className="flex items-center gap-1.5 font-bold text-white">
-                            <Smartphone className="w-4 h-4 text-emerald-400" />
-                            <span>Ứng Dụng Mobile Banking - Xác Nhận Chuyển Tiền QR</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setVnpFlowStep('QR_SCAN')}
-                            className="text-gray-400 hover:text-white text-[11px]"
-                          >
-                            ← Đổi mã QR
-                          </button>
-                        </div>
-
-                        <div className="p-3 bg-[#121820] border border-[#222B35] space-y-2 text-[11px]">
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Người nhận:</span>
-                            <strong className="text-white">BAN QUẢN LÝ SKYLINE RESIDENCE (VNPAY)</strong>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Số tiền chuyển:</span>
-                            <strong className="font-mono text-emerald-400 text-sm">{billAmountFormatted} VNĐ</strong>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Nội dung thanh toán:</span>
-                            <span className="font-mono text-gray-300">SKYLINE {aptCode} T082026</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Tài khoản nguồn:</span>
-                            <span className="font-mono text-gray-300">0364967082 - NGUYEN HUU LUC</span>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={handleVerifyQrInBankingApp}
-                          className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-lg"
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Xác Nhận Chuyển Tiền Bằng FaceID / PIN</span>
-                        </button>
-                      </div>
-                    )}
-
-                    {/* BƯỚC 3: MÀN HÌNH XỬ LÝ GIAO DỊCH THỜI GIAN THỰC (PROCESSING) */}
-                    {vnpFlowStep === 'PROCESSING' && (
-                      <div className="p-6 bg-[#0D1520] border border-[#005BAA] space-y-4 text-center animate-fadeIn">
-                        <RefreshCw className="w-8 h-8 text-[#005BAA] animate-spin mx-auto" />
-                        <div className="space-y-1">
-                          <h4 className="font-bold text-white text-sm uppercase tracking-wider">
-                            VNPAY Đang Tiến Hành Xử Lý Giao Dịch
-                          </h4>
-                          <p className="text-[11px] text-gray-400">
-                            Vui lòng không đóng trình duyệt hoặc tải lại trang trong khi hệ thống kết nối với ngân hàng.
-                          </p>
-                        </div>
-
-                        {/* Tiến trình 3 giai đoạn */}
-                        <div className="p-3 bg-[#121820] border border-[#222B35] text-left space-y-2 text-xs font-mono">
-                          <div className={`flex items-center gap-2 ${processingStage >= 1 ? 'text-white' : 'text-gray-500'}`}>
-                            {processingStage > 1 ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                            ) : (
-                              <RefreshCw className="w-4 h-4 animate-spin text-[#005BAA] flex-shrink-0" />
-                            )}
-                            <span>1. Gửi yêu cầu xác thực sang Ngân hàng Quốc Dân NCB...</span>
-                          </div>
-
-                          <div className={`flex items-center gap-2 ${processingStage >= 2 ? 'text-white' : 'text-gray-500'}`}>
-                            {processingStage > 2 ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                            ) : processingStage === 2 ? (
-                              <RefreshCw className="w-4 h-4 animate-spin text-[#005BAA] flex-shrink-0" />
-                            ) : (
-                              <div className="w-4 h-4 rounded-full border border-gray-600 flex-shrink-0" />
-                            )}
-                            <span>2. Ngân hàng phê duyệt, trừ tiền & cấp mã chuẩn chi VNPAY...</span>
-                          </div>
-
-                          <div className={`flex items-center gap-2 ${processingStage >= 3 ? 'text-white' : 'text-gray-500'}`}>
-                            {processingStage === 3 ? (
-                              <RefreshCw className="w-4 h-4 animate-spin text-emerald-400 flex-shrink-0" />
-                            ) : (
-                              <div className="w-4 h-4 rounded-full border border-gray-600 flex-shrink-0" />
-                            )}
-                            <span>3. Gửi gói tin IPN gạch nợ sang hệ thống Chung cư Skyline...</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ------------------------------------------------------------- */}
-                {/* GATEWAY 2: MOMO E-WALLET FLOW                                 */}
-                {/* ------------------------------------------------------------- */}
-                {selectedGateway === 'MOMO' && (
-                  <div className="space-y-3.5 bg-[#161B22] p-4 border border-[#A50064]/50 text-xs">
-                    <div className="flex items-center justify-between border-b border-[#222B35] pb-2">
-                      <span className="font-bold text-[#D82D8B] uppercase tracking-wider flex items-center gap-1.5">
-                        <Smartphone className="w-4 h-4" /> Cổng Thanh Toán Ví Điện Tử MoMo
-                      </span>
-                      <span className="font-mono text-[#C5A880] font-bold text-sm">
-                        {billAmountFormatted} đ
-                      </span>
-                    </div>
-
-                    {/* MoMo Sub Channels */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setMomoChannel('QR')}
-                        className={`px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-                          momoChannel === 'QR' 
-                            ? 'bg-[#A50064] text-white' 
-                            : 'bg-[#121820] text-gray-400 border border-[#2D3748]'
-                        }`}
-                      >
-                        <QrCode className="w-3.5 h-3.5" /> Quét Mã MoMo QR
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setMomoChannel('WALLET')}
-                        className={`px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-                          momoChannel === 'WALLET' 
-                            ? 'bg-[#A50064] text-white' 
-                            : 'bg-[#121820] text-gray-400 border border-[#2D3748]'
-                        }`}
-                      >
-                        <Smartphone className="w-3.5 h-3.5" /> Trừ Ví MoMo Trực Tiếp
-                      </button>
-                    </div>
-
-                    {/* MOMO CHANNEL A: QR PAY */}
-                    {momoChannel === 'QR' && (
-                      <div className="space-y-3 text-center py-2">
-                        <div className="p-3 bg-white border-2 border-[#A50064] inline-block shadow-xl">
-                          <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=2|99|${momoPhone}|${encodeURIComponent(residentName)}|skyline@residence.vn|0|0|${currentBill.total_amount}|Thanh%20toan%20hoa%20don%20Can%20${aptCode}|transfer_myqr`} 
-                            alt="MoMo QR Code" 
-                            className="w-40 h-40 object-contain mx-auto"
-                          />
-                        </div>
-
-                        <p className="text-[11px] text-gray-300 max-w-sm mx-auto">
-                          Mở ứng dụng <strong>Ví MoMo</strong> trên điện thoại, chọn biểu tượng <strong>Quét Mã</strong> để thanh toán tức thì số tiền <strong>{billAmountFormatted} đ</strong>.
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={() => handlePayMomo('QR')}
-                          disabled={isProcessing}
-                          className="w-full py-2.5 bg-[#A50064] hover:bg-[#850050] text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 shadow-lg"
-                        >
-                          {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                          {isProcessing ? 'Đang Chờ Xác Thực Từ MoMo...' : 'Xác Nhận Đã Quét Mã Ví MoMo Thành Công'}
-                        </button>
-                      </div>
-                    )}
-
-                    {/* MOMO CHANNEL B: WALLET DEBIT */}
-                    {momoChannel === 'WALLET' && (
-                      <div className="space-y-3 pt-1">
-                        {momoStep === 'PHONE' ? (
-                          <div className="space-y-2.5">
-                            <div className="space-y-1">
-                              <label className="text-[11px] text-gray-400">Số Điện Thoại Đăng Ký Ví MoMo:</label>
-                              <input
-                                type="text"
-                                value={momoPhone}
-                                onChange={(e) => setMomoPhone(e.target.value)}
-                                placeholder="090x xxx xxx"
-                                className="w-full bg-[#121820] border border-[#2D3748] p-2 text-white text-xs font-mono focus:outline-none focus:border-[#A50064]"
-                              />
-                            </div>
-
-                            <div className="p-3 bg-[#121820] border border-[#2D3748] text-[11px] text-gray-400 space-y-1">
-                              <div>Tài khoản ví: <strong className="text-white">{residentName}</strong></div>
-                              <div>Hạn mức thanh toán: <span className="text-emerald-400 font-mono">Đủ số dư khả dụng</span></div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => setMomoStep('OTP')}
-                              className="w-full py-2.5 bg-[#A50064] hover:bg-[#850050] text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 shadow"
-                            >
-                              Gửi Yêu Cầu Thanh Toán Đến Ví MoMo <ArrowRight className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="space-y-3 bg-[#121820] p-4 border border-[#2D3748] text-center">
-                            <div className="text-xs text-gray-300">
-                              Yêu cầu thanh toán đã được gửi đến ứng dụng MoMo ({momoPhone}). Vui lòng nhập mã bảo mật OTP xác nhận:
-                            </div>
-
-                            <input
-                              type="text"
-                              maxLength={6}
-                              placeholder="Nhập 6 số (VD: 686868)"
-                              value={momoOtp}
-                              onChange={(e) => setMomoOtp(e.target.value)}
-                              className="w-48 mx-auto bg-[#161B22] border-2 border-[#A50064] p-2.5 text-center text-white text-base font-mono tracking-widest focus:outline-none"
-                            />
-
-                            <div className="flex flex-col-reverse sm:flex-row gap-2 justify-center pt-2">
-                              <button
-                                type="button"
-                                onClick={() => setMomoStep('PHONE')}
-                                className="w-full sm:w-auto px-4 py-2.5 border border-gray-700 text-xs text-gray-400 hover:text-white text-center font-semibold"
-                              >
-                                Quay Lại
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handlePayMomo('WALLET')}
-                                disabled={isProcessing}
-                                className="w-full sm:w-auto px-5 py-2.5 bg-[#A50064] hover:bg-[#850050] text-white text-xs font-bold uppercase tracking-wider transition-colors shadow flex items-center justify-center gap-1.5"
-                              >
-                                {isProcessing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                Xác Nhận Trừ Tiền Ví MoMo
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
-            )}
+              <div className="flex items-center justify-between border-t border-[#222B35] pt-2">
+                <span className="text-gray-400">{t('Nội dung CK')}:</span>
+                <div className="flex items-center gap-1.5 font-mono">
+                  <span className="font-bold text-amber-400">{`SKYLINE ${aptCode.replace(/[^A-Za-z0-9]/g, '')} ${currentBill.billing_month.replace(/[^A-Za-z0-9]/g, '')}`}</span>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(`SKYLINE ${aptCode.replace(/[^A-Za-z0-9]/g, '')} ${currentBill.billing_month.replace(/[^A-Za-z0-9]/g, '')}`, 'note')}
+                    className="p-1 hover:text-[#C5A880] text-gray-400 cursor-pointer"
+                    title={t('Sao chép nội dung')}
+                  >
+                    {copiedField === 'note' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Các nút hành động */}
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowVietQrModal(false)}
+                className="flex-1 py-2.5 border border-[#2D3748] hover:border-gray-500 text-xs font-semibold text-gray-300 hover:text-white transition-colors cursor-pointer"
+              >
+                {t('Đóng Lại', 'Close')}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmVietQrPaid}
+                className="flex-1 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-colors shadow flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Check className="w-4 h-4" />
+                <span>{t('Tôi Đã Chuyển Khoản', 'I Have Transferred')}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+      {/* A1: Trợ Lý Hóa Đơn AI Streaming Drawer */}
+      <BillingAiAssistantDrawer
+        isOpen={showAiAssistant}
+        onClose={() => setShowAiAssistant(false)}
+        aptCode={aptCode}
+        residentName={residentName}
+      />
     </div>
   );
 }
