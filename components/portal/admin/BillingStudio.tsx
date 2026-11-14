@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import MeterOcrModal from './MeterOcrModal';
 import BillingAiReportModal from './BillingAiReportModal';
+import DebtReminderModal from './DebtReminderModal';
 import { 
   getBills, 
   confirmPaidByAdmin, 
@@ -50,6 +51,8 @@ export default function BillingStudio() {
   const [showAnomalyDetails, setShowAnomalyDetails] = useState(false);
   const [showMeterOcrModal, setShowMeterOcrModal] = useState(false);
   const [showAiReportModal, setShowAiReportModal] = useState(false);
+  const [showDebtReminderModal, setShowDebtReminderModal] = useState(false);
+  const [selectedReminderBillId, setSelectedReminderBillId] = useState<string | null>(null);
 
   const refreshBills = () => {
     setBills(getBills());
@@ -89,13 +92,8 @@ export default function BillingStudio() {
   };
 
   const handleSendReminders = () => {
-    setReminderSent(true);
-    const unpaidCount = bills.filter(b => b.status === 'Unpaid').length;
-    setActionSuccessMsg(`Đã gửi nhắc phí tới ${unpaidCount} căn hộ chưa thanh toán.`);
-    setTimeout(() => {
-      setReminderSent(false);
-      setActionSuccessMsg(null);
-    }, 3500);
+    setSelectedReminderBillId(null);
+    setShowDebtReminderModal(true);
   };
 
   const handleConfirmPaid = (billId: string, aptCode: string) => {
@@ -529,6 +527,20 @@ export default function BillingStudio() {
                           {t('Chi Tiết', 'Details')}
                         </button>
 
+                        {!isPaid && (
+                          <button
+                            onClick={() => {
+                              setSelectedReminderBillId(bill.id);
+                              setShowDebtReminderModal(true);
+                            }}
+                            className="h-7 px-2 bg-[#1C2533] border border-amber-500/50 hover:border-amber-400 text-amber-300 text-[11px] font-semibold transition-colors shadow whitespace-nowrap flex items-center justify-center rounded-none cursor-pointer"
+                            title="Soạn nhắc nợ cá nhân hóa (3 mức)"
+                          >
+                            <Send className="w-3 h-3 mr-1" />
+                            {t('Nhắc Nợ', 'Remind')}
+                          </button>
+                        )}
+
                         {!isPaid ? (
                           <button 
                             onClick={() => handleConfirmPaid(bill.id, bill.apt_code)}
@@ -734,6 +746,18 @@ export default function BillingStudio() {
       <BillingAiReportModal
         isOpen={showAiReportModal}
         onClose={() => setShowAiReportModal(false)}
+      />
+
+      {/* B3: Modal Soạn Nhắc Nợ Cá Nhân Hóa (3 Mức Giọng Điệu) */}
+      <DebtReminderModal
+        isOpen={showDebtReminderModal}
+        onClose={() => setShowDebtReminderModal(false)}
+        unpaidBills={bills.filter(b => b.status === 'Unpaid')}
+        selectedBillId={selectedReminderBillId}
+        onSentSuccess={(bId) => {
+          setActionSuccessMsg(`Đã duyệt & gửi thông báo nhắc nợ thành công.`);
+          setTimeout(() => setActionSuccessMsg(null), 4000);
+        }}
       />
     </div>
   );
