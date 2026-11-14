@@ -26,6 +26,7 @@ import {
   Camera
 } from 'lucide-react';
 import MeterOcrModal from './MeterOcrModal';
+import BillingAiReportModal from './BillingAiReportModal';
 import { 
   getBills, 
   confirmPaidByAdmin, 
@@ -48,6 +49,7 @@ export default function BillingStudio() {
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
   const [showAnomalyDetails, setShowAnomalyDetails] = useState(false);
   const [showMeterOcrModal, setShowMeterOcrModal] = useState(false);
+  const [showAiReportModal, setShowAiReportModal] = useState(false);
 
   const refreshBills = () => {
     setBills(getBills());
@@ -127,6 +129,14 @@ export default function BillingStudio() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => setShowAiReportModal(true)}
+            className="px-4 py-2 bg-[#1C2533] border border-cyan-500/60 hover:border-cyan-400 text-cyan-300 text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>{t('Hỏi Báo Cáo AI', 'Ask AI Report')}</span>
+          </button>
+
           <button
             onClick={() => setShowMeterOcrModal(true)}
             className="px-4 py-2 bg-[#1C2533] border border-[#C5A880]/60 hover:border-[#C5A880] text-[#C5A880] text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow cursor-pointer"
@@ -718,6 +728,12 @@ export default function BillingStudio() {
           setActionSuccessMsg('Đã ghi nhận chỉ số công tơ vào hệ thống thành công.');
           setTimeout(() => setActionSuccessMsg(null), 4000);
         }}
+      />
+
+      {/* B4: Modal Báo Cáo Ngôn Ngữ Tự Nhiên & Tool Calling */}
+      <BillingAiReportModal
+        isOpen={showAiReportModal}
+        onClose={() => setShowAiReportModal(false)}
       />
     </div>
   );
