@@ -133,19 +133,21 @@ export function generateVietQrUrl(params: {
 }
 
 export function billRecordToExtendedBill(rec: BillRecord): ExtendedBill {
+  const aptCode = String(rec.apartment_code || '').trim();
+  const billingMonth = String(rec.billing_month || '').trim();
   return {
     id: rec.id,
-    apartment_id: `apt-${rec.apartment_code.toLowerCase()}`,
-    apt_code: rec.apartment_code,
-    owner_name: rec.owner_name,
-    billing_month: rec.billing_month,
+    apartment_id: `apt-${aptCode.toLowerCase()}`,
+    apt_code: aptCode,
+    owner_name: rec.owner_name || '',
+    billing_month: billingMonth,
     due_date: rec.due_date,
     total_amount: rec.total_amount,
     status: rec.status,
     status_color: rec.status === 'Paid' ? '#16A34A' : rec.status === 'Overdue' ? '#DC2626' : '#D97706',
     payment_qr_url: rec.payment_qr_url || generateVietQrUrl({
       amount: rec.total_amount,
-      transferNote: `SKYLINE ${rec.apartment_code} ${rec.billing_month.replace(/\s+/g, '')}`,
+      transferNote: `SKYLINE ${aptCode} ${billingMonth.replace(/\s+/g, '')}`,
     }),
     invoice_pdf_url: rec.invoice_pdf_url || '#',
     has_ai_anomaly: rec.has_ai_anomaly || false,

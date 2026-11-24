@@ -149,10 +149,12 @@ export function detectBillingAnomalies(
     }
 
     // B. Kiểm tra SAI ĐƠN GIÁ (Incorrect Unit Price)
-    details.forEach(d => {
+    details.forEach((d, idx) => {
+      if (!d) return;
+      const detailId = d.id || `${bill.id}-detail-${idx}`;
       if (d.service_type === 'Management_Fee' && d.unit_price && d.unit_price !== STANDARD_FEE_RATES.MANAGEMENT_FEE_PER_M2) {
         anomalies.push({
-          id: `anom-rate-mgmt-${d.id}`,
+          id: `anom-rate-mgmt-${detailId}`,
           billId: bill.id,
           apartmentCode: aptCode,
           billingMonth: month,
@@ -168,7 +170,7 @@ export function detectBillingAnomalies(
 
       if (d.service_type === 'Water' && d.unit_price && Math.abs(d.unit_price - STANDARD_FEE_RATES.WATER_RATE_PER_M3) > 1000) {
         anomalies.push({
-          id: `anom-rate-water-${d.id}`,
+          id: `anom-rate-water-${detailId}`,
           billId: bill.id,
           apartmentCode: aptCode,
           billingMonth: month,

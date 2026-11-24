@@ -36,10 +36,10 @@ export default function HeaderNav({ onOpenLogin }: HeaderNavProps) {
         <nav suppressHydrationWarning className={`hidden lg:flex items-center gap-5 xl:gap-8 text-[11px] xl:text-[12px] uppercase tracking-[0.14em] xl:tracking-[0.18em] font-medium transition-colors whitespace-nowrap ${
           isDark ? 'text-gray-300' : 'text-gray-700'
         }`}>
-          <a href="#concept" suppressHydrationWarning className={`whitespace-nowrap transition-colors ${isDark ? 'hover:text-[#C5A880]' : 'hover:text-[#9E8057]'}`}>{t('nav.about', 'Tổng Quan')}</a>
-          <a href="#floorplans" suppressHydrationWarning className={`whitespace-nowrap transition-colors ${isDark ? 'hover:text-[#C5A880]' : 'hover:text-[#9E8057]'}`}>{t('nav.apartments', 'Mặt Bằng Căn Hộ')}</a>
-          <a href="#amenities" suppressHydrationWarning className={`whitespace-nowrap transition-colors ${isDark ? 'hover:text-[#C5A880]' : 'hover:text-[#9E8057]'}`}>{t('nav.amenities', 'Tiện Ích 5 Sao')}</a>
-          <a href="#smart-tech" suppressHydrationWarning className={`whitespace-nowrap transition-colors ${isDark ? 'hover:text-[#C5A880]' : 'hover:text-[#9E8057]'}`}>{t('nav.services', 'Lõi Công Nghệ AI')}</a>
+          <a href="#concept" suppressHydrationWarning className={`whitespace-nowrap transition-colors ${isDark ? 'hover:text-[#C5A880]' : 'hover:text-[#9E8057]'}`}><span suppressHydrationWarning>{t('nav.about', 'Tổng Quan')}</span></a>
+          <a href="#floorplans" suppressHydrationWarning className={`whitespace-nowrap transition-colors ${isDark ? 'hover:text-[#C5A880]' : 'hover:text-[#9E8057]'}`}><span suppressHydrationWarning>{t('nav.apartments', 'Mặt Bằng Căn Hộ')}</span></a>
+          <a href="#amenities" suppressHydrationWarning className={`whitespace-nowrap transition-colors ${isDark ? 'hover:text-[#C5A880]' : 'hover:text-[#9E8057]'}`}><span suppressHydrationWarning>{t('nav.amenities', 'Tiện Ích 5 Sao')}</span></a>
+          <a href="#smart-tech" suppressHydrationWarning className={`whitespace-nowrap transition-colors ${isDark ? 'hover:text-[#C5A880]' : 'hover:text-[#9E8057]'}`}><span suppressHydrationWarning>{t('nav.services', 'Lõi Công Nghệ AI')}</span></a>
         </nav>
 
         {/* Action Controls & Authentication */}
@@ -178,10 +178,10 @@ export default function HeaderNav({ onOpenLogin }: HeaderNavProps) {
           <nav suppressHydrationWarning className={`flex flex-col space-y-3 text-[13px] uppercase tracking-[0.15em] font-medium ${
             isDark ? 'text-gray-300' : 'text-gray-700'
           }`}>
-            <a href="#concept" suppressHydrationWarning onClick={() => setMobileMenuOpen(false)} className="py-1">{t('nav.about', 'Tổng Quan')}</a>
-            <a href="#floorplans" suppressHydrationWarning onClick={() => setMobileMenuOpen(false)} className="py-1">{t('nav.apartments', 'Mặt Bằng Căn Hộ')}</a>
-            <a href="#amenities" suppressHydrationWarning onClick={() => setMobileMenuOpen(false)} className="py-1">{t('nav.amenities', 'Tiện Ích 5 Sao')}</a>
-            <a href="#smart-tech" suppressHydrationWarning onClick={() => setMobileMenuOpen(false)} className="py-1">{t('nav.services', 'Lõi Công Nghệ AI')}</a>
+            <a href="#concept" suppressHydrationWarning onClick={() => setMobileMenuOpen(false)} className="py-1"><span suppressHydrationWarning>{t('nav.about', 'Tổng Quan')}</span></a>
+            <a href="#floorplans" suppressHydrationWarning onClick={() => setMobileMenuOpen(false)} className="py-1"><span suppressHydrationWarning>{t('nav.apartments', 'Mặt Bằng Căn Hộ')}</span></a>
+            <a href="#amenities" suppressHydrationWarning onClick={() => setMobileMenuOpen(false)} className="py-1"><span suppressHydrationWarning>{t('nav.amenities', 'Tiện Ích 5 Sao')}</span></a>
+            <a href="#smart-tech" suppressHydrationWarning onClick={() => setMobileMenuOpen(false)} className="py-1"><span suppressHydrationWarning>{t('nav.services', 'Lõi Công Nghệ AI')}</span></a>
           </nav>
 
           <div className={`pt-4 border-t ${isDark ? 'border-[#222B35]' : 'border-gray-200'}`}>

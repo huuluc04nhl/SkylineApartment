@@ -71,7 +71,10 @@ export default function BillingStudio() {
   }, [bills]);
 
   const displayedBills = bills.filter(b => {
-    if (searchApt.trim() && !b.apt_code.toLowerCase().includes(searchApt.trim().toLowerCase()) && !b.owner_name.toLowerCase().includes(searchApt.trim().toLowerCase())) {
+    const apt = String(b.apt_code || (b as any).apartment_code || '').toLowerCase();
+    const owner = String(b.owner_name || '').toLowerCase();
+    const search = searchApt.trim().toLowerCase();
+    if (search && !apt.includes(search) && !owner.includes(search)) {
       return false;
     }
     if (filterType === 'UNPAID') return b.status === 'Unpaid';
