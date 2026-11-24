@@ -6,6 +6,7 @@ import {
   ChevronRight, Building2, Trees, Waves, Eye,
   ShoppingBag, HeartPulse, Anchor, ZoomIn, ZoomOut, RotateCcw
 } from 'lucide-react';
+import { useLanguage } from '@/lib/languageContext';
 
 interface MacroCitySvgModelProps {
   selectedBlock: string;
@@ -26,6 +27,7 @@ export default function MacroCitySvgModel({
   hideHeader = false,
   showPinsOverride
 }: MacroCitySvgModelProps) {
+  const { t, isEn } = useLanguage();
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>('SOLARI');
@@ -145,9 +147,9 @@ export default function MacroCitySvgModel({
         <div className="px-3 py-1.5 bg-[#0A0F17] border-b border-[#1E293B] flex items-center justify-between gap-2 text-xs font-mono shrink-0">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-pulse" />
-            <span className="text-gray-400 text-[11px]">Đại Đô Thị:</span>
+            <span className="text-gray-400 text-[11px]">{t('Đại Đô Thị:', 'Metropolis:')}</span>
             <span className="px-2 py-0.5 bg-[#141E2D] border border-[#23354C] text-[#C5A880] font-bold text-[11px]">
-              271 ha • 10 Phân Khu Trọng Điểm
+              {t('271 ha • 10 Phân Khu Trọng Điểm', '271 ha • 10 Key Subdivisions')}
             </span>
           </div>
 
@@ -162,17 +164,17 @@ export default function MacroCitySvgModel({
                   ? 'bg-[#182638] border-[#3B82F6] text-cyan-300'
                   : 'bg-[#0E1520] border-[#222E3E] text-gray-400 hover:text-white'
               }`}
-              title="Bật/tắt ghim phân khu"
+              title={t('Bật/tắt ghim phân khu', 'Toggle subdivision pins')}
             >
               <Eye className="w-3 h-3" />
-              <span className="hidden sm:inline">Lớp Phủ</span>
+              <span className="hidden sm:inline">{t('Lớp Phủ', 'Overlay')}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setZoomLevel(prev => Math.max(0.7, Number((prev - 0.15).toFixed(2))))}
               className="p-1 bg-[#121A26] hover:bg-[#1A2637] border border-[#223247] text-gray-300 hover:text-white"
-              title="Thu nhỏ"
+              title={t('Thu nhỏ', 'Zoom out')}
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
@@ -180,7 +182,7 @@ export default function MacroCitySvgModel({
               type="button"
               onClick={() => setZoomLevel(1)}
               className="px-2 py-0.5 bg-[#090D14] border border-[#223247] text-[#C5A880] text-[11px] min-w-[48px] text-center hover:bg-[#121A26]"
-              title="Mặc định 100%"
+              title={t('Mặc định 100%', 'Default 100%')}
             >
               {Math.round(zoomLevel * 100)}%
             </button>
@@ -188,7 +190,7 @@ export default function MacroCitySvgModel({
               type="button"
               onClick={() => setZoomLevel(prev => Math.min(2.0, Number((prev + 0.15).toFixed(2))))}
               className="p-1 bg-[#121A26] hover:bg-[#1A2637] border border-[#223247] text-gray-300 hover:text-white"
-              title="Phóng to"
+              title={t('Phóng to', 'Zoom in')}
             >
               <ZoomIn className="w-3.5 h-3.5" />
             </button>
@@ -198,7 +200,7 @@ export default function MacroCitySvgModel({
                 type="button"
                 onClick={onOpenZoomModal}
                 className="p-1 bg-[#121A26] hover:bg-[#C5A880] hover:text-black border border-[#223247] text-gray-300 transition-all ml-0.5"
-                title="Phóng to toàn màn hình"
+                title={t('Phóng to toàn màn hình', 'Fullscreen view')}
               >
                 <Maximize2 className="w-3.5 h-3.5" />
               </button>
@@ -327,7 +329,7 @@ export default function MacroCitySvgModel({
 
         {/* Hướng dẫn thao tác */}
         <div className="absolute bottom-2 right-2 px-2 py-1 bg-[#0A0F17]/85 border border-[#1E2B3C] text-[10px] font-mono text-gray-400 backdrop-blur-sm pointer-events-none hidden sm:block">
-          Nhấn The Beverly Solari để mở 23 tiện ích The Tropical
+          {t('Nhấn The Beverly Solari để mở 23 tiện ích The Tropical', 'Click The Beverly Solari to open 23 The Tropical amenities')}
         </div>
       </div>
 
@@ -336,10 +338,10 @@ export default function MacroCitySvgModel({
         <div className="flex items-center justify-between">
           <div className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-[#C5A880]" />
-            <span>DANH SÁCH 10 TÂM ĐIỂM ĐẠI ĐÔ THỊ VINHOMES GRAND PARK</span>
+            <span>{t('DANH SÁCH 10 TÂM ĐIỂM ĐẠI ĐÔ THỊ VINHOMES GRAND PARK', '10 KEY LANDMARKS OF VINHOMES GRAND PARK')}</span>
           </div>
           <span className="text-[10px] text-[#C5A880] font-mono">
-            Quy mô: 271 ha • 44.000 căn hộ
+            {t('Quy mô: 271 ha • 44.000 căn hộ', 'Scale: 271 ha • 44,000 apartments')}
           </span>
         </div>
 

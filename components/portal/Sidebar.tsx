@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { UserRole, User as UserType } from '@/lib/dataStore';
 import { getUserApiAvatar, formatApiAvatarUrl } from '@/lib/avatarHelper';
-import { nksGetUserInfo } from '@/lib/nksApiClient';
+import { skylineGetUserInfo } from '@/lib/skylineApiClient';
 import { useLanguage } from '@/lib/languageContext';
 
 interface SidebarProps {
@@ -103,7 +103,7 @@ export default function Sidebar({
   isOpenMobile = false,
   onCloseMobile
 }: SidebarProps) {
-  const { t, language } = useLanguage();
+  const { t, language, isEn } = useLanguage();
   const role = currentUser.role;
   const [liveAvatar, setLiveAvatar] = useState<string>(() => getUserApiAvatar(currentUser));
 
@@ -111,8 +111,8 @@ export default function Sidebar({
     // 1. Initial sync from currentUser
     setLiveAvatar(getUserApiAvatar(currentUser));
 
-    // 2. Fetch live data from NKS API endpoint
-    nksGetUserInfo().then((apiUser) => {
+    // 2. Fetch live data from Skyline API endpoint
+    skylineGetUserInfo().then((apiUser) => {
       if (apiUser?.avatar_url || apiUser?.avatar) {
         setLiveAvatar(formatApiAvatarUrl(apiUser.avatar_url || apiUser.avatar));
       }
@@ -216,7 +216,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="group hidden md:flex absolute -right-3.5 top-5 z-50 w-7 h-7 rounded-full bg-[#121820] border-2 border-[#C5A880] text-[#C5A880] hover:bg-[#C5A880] hover:text-[#0D1117] shadow-[0_2px_12px_rgba(0,0,0,0.85)] items-center justify-center transition-all duration-200 cursor-pointer transform hover:scale-110"
+            className="group hidden md:flex absolute -right-3.5 top-5 z-50 w-7 h-7 rounded-none bg-[#121820] border-2 border-[#C5A880] text-[#C5A880] hover:bg-[#C5A880] hover:text-[#0D1117] shadow-[0_2px_12px_rgba(0,0,0,0.85)] items-center justify-center transition-all duration-200 cursor-pointer transform hover:scale-110"
             title={collapsed ? 'Mở rộng Menu (Hamburger Bị Cắn 🍔)' : 'Thu gọn Menu (Hamburger Nguyên Vẹn 🍔)'}
             aria-label="Toggle Sidebar Hamburger"
           >
@@ -238,7 +238,7 @@ export default function Sidebar({
                     src={liveAvatar || getUserApiAvatar(currentUser)}
                     alt="Avatar"
                     onError={(e) => {
-                      e.currentTarget.src = 'https://data.nks.vn/storage/users/default.png';
+                      e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=1C2533&color=C5A880&bold=true';
                     }}
                     className="w-10 h-10 object-cover border border-[#C5A880]/70 rounded-none shadow-md"
                   />
@@ -249,8 +249,8 @@ export default function Sidebar({
                   <div className="text-xs font-semibold text-white truncate max-w-[170px] leading-tight" title={currentUser.full_name || (currentUser as any)?.fullname || 'Cư Dân SKYLINE'}>
                     {currentUser.full_name || (currentUser as any)?.fullname || 'Cư Dân SKYLINE'}
                   </div>
-                  <div className="text-[10px] text-[#C5A880] font-mono uppercase font-bold tracking-wider mt-0.5 truncate" title={role === 'ADMIN' ? t('role.admin', 'Ban Quản Lý') : `${t('Căn')} ${currentUser.apartment_code || 'CH-06'} (${t(role)})`}>
-                    {role === 'ADMIN' ? t('role.admin', 'Ban Quản Lý') : `${t('Căn')} ${currentUser.apartment_code || 'CH-06'} (${t(role)})`}
+                  <div className="text-[10px] text-[#C5A880] font-mono uppercase font-bold tracking-wider mt-0.5 truncate" title={role === 'ADMIN' ? 'VinHomes Manager' : `${t('Căn')} ${currentUser.apartment_code || 'CH-06'} (${t(role)})`}>
+                    {role === 'ADMIN' ? 'VinHomes Manager' : `${t('Căn')} ${currentUser.apartment_code || 'CH-06'} (${t(role)})`}
                   </div>
                 </div>
               </div>
@@ -261,7 +261,7 @@ export default function Sidebar({
                     src={liveAvatar || getUserApiAvatar(currentUser)}
                     alt="Avatar"
                     onError={(e) => {
-                      e.currentTarget.src = 'https://data.nks.vn/storage/users/default.png';
+                      e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=1C2533&color=C5A880&bold=true';
                     }}
                     className="w-9 h-9 object-cover border border-[#C5A880] rounded-none shadow-md"
                   />
@@ -271,7 +271,7 @@ export default function Sidebar({
                 {/* Flyout Tooltip when collapsed on Avatar */}
                 <div className="fixed left-20 top-20 ml-2 px-3 py-2 bg-[#0D1117] text-white text-xs whitespace-nowrap border border-[#C5A880] shadow-2xl z-50 pointer-events-none hidden group-hover:block animate-fadeIn rounded-none">
                   <div className="font-bold text-white">{currentUser.full_name || t('Cư Dân', 'Resident')}</div>
-                  <div className="text-[10px] text-[#C5A880] font-mono">{role === 'ADMIN' ? t('role.admin', 'Ban Quản Lý') : `${t('Căn')} ${currentUser.apartment_code || 'CH-06'}`}</div>
+                  <div className="text-[10px] text-[#C5A880] font-mono">{role === 'ADMIN' ? 'VinHomes Manager' : `${t('Căn')} ${currentUser.apartment_code || 'CH-06'}`}</div>
                 </div>
               </div>
             )}
@@ -282,7 +282,7 @@ export default function Sidebar({
                 type="button"
                 onClick={onCloseMobile}
                 className="text-gray-400 hover:text-white p-1.5 bg-[#161B22] border border-gray-700 hover:border-gray-500 active:scale-95 transition-all"
-                aria-label="Đóng menu"
+                aria-label={isEn ? 'Close menu' : 'Đóng menu'}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -295,7 +295,7 @@ export default function Sidebar({
           <nav className="flex-1 p-2 space-y-1.5 overflow-y-auto overflow-x-hidden">
             {!collapsed && (
               <div className="px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] text-gray-400 font-semibold truncate">
-                {role === 'ADMIN' ? t('role.admin', 'Management Board') : t('Phân Hệ Cư Dân', 'Resident Portal')}
+                {role === 'ADMIN' ? 'VinHomes Manager' : t('Phân Hệ Cư Dân', 'Resident Portal')}
               </div>
             )}
 

@@ -1,59 +1,53 @@
 /**
- * SKYLINE SMART RESIDENCE - NKS API AVATAR HELPER
+ * SKYLINE SMART RESIDENCE - USER AVATAR HELPER
  * Ensures all avatar displays across Sidebar, Topbar Dropdown, Profile, and Modals
- * strictly resolve and format 100% official NKS API avatar URLs.
+ * strictly resolve clean, high-taste avatar URLs.
  */
 
-export function formatApiAvatarUrl(rawAvatar?: string | null): string {
+export function formatApiAvatarUrl(rawAvatar?: string | null, name: string = 'Skyline'): string {
   if (!rawAvatar || typeof rawAvatar !== 'string') {
-    return 'https://data.nks.vn/storage/users/default.png';
+    const initials = encodeURIComponent((name || 'Skyline').slice(0, 2).toUpperCase());
+    return `https://ui-avatars.com/api/?name=${initials}&background=1C2533&color=C5A880&bold=true`;
   }
 
   const trimmed = rawAvatar.trim();
   if (!trimmed) {
-    return 'https://data.nks.vn/storage/users/default.png';
+    const initials = encodeURIComponent((name || 'Skyline').slice(0, 2).toUpperCase());
+    return `https://ui-avatars.com/api/?name=${initials}&background=1C2533&color=C5A880&bold=true`;
   }
 
-  // Base64 data image from FaceID scan
+  // Base64 data image from FaceID scan or upload
   if (trimmed.startsWith('data:image/')) {
     return trimmed;
   }
 
-  // Normalize double slashes often returned by NKS API (https://data.nks.vn//storage/...)
-  let cleaned = trimmed.replace(/data\.nks\.vn\/\/+/g, 'data.nks.vn/');
-
-  // Format relative paths
-  if (cleaned.startsWith('storage/')) {
-    cleaned = `https://data.nks.vn/${cleaned}`;
-  } else if (cleaned.startsWith('/storage/')) {
-    cleaned = `https://data.nks.vn${cleaned}`;
-  } else if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
-    cleaned = `https://data.nks.vn/${cleaned}`;
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
   }
 
-  // Ensure no duplicate slashes in URL path after protocol
-  cleaned = cleaned.replace(/([^:])\/{2,}/g, '$1/');
+  return trimmed;
+}
 
-  return cleaned;
+const avatarMemoryCache = new Map<string, string>();
+
+export function setUserApiAvatarCache(userKey: string, url: string): void {
+  if (userKey && url) avatarMemoryCache.set(userKey, url);
 }
 
 /**
- * Get user avatar prioritizing live API fields and local session overrides
+ * Get user avatar prioritizing live API fields and memory overrides
  */
 export function getUserApiAvatar(user?: any): string {
   if (!user) {
-    return 'https://data.nks.vn/storage/users/default.png';
+    return formatApiAvatarUrl(null, 'Skyline');
   }
 
   const userKey = user.phone || user.email || user.username || user.id || '';
 
-  if (typeof window !== 'undefined' && userKey) {
-    const cached = localStorage.getItem('skyline_user_avatar_' + userKey);
-    if (cached) {
-      return formatApiAvatarUrl(cached);
-    }
+  if (userKey && avatarMemoryCache.has(userKey)) {
+    return formatApiAvatarUrl(avatarMemoryCache.get(userKey)!, user.full_name || user.fullname);
   }
 
   const candidate = user.avatar_url || user.avatar || user.avatarUrl;
-  return formatApiAvatarUrl(candidate);
+  return formatApiAvatarUrl(candidate, user.full_name || user.fullname || user.name || 'Skyline');
 }

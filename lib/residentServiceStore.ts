@@ -73,7 +73,6 @@ export interface ServiceBooking {
   createdAt: string;
 }
 
-const STORAGE_KEY = 'skyline_resident_services_v1';
 
 export const RESIDENT_SERVICES_CATALOG: ResidentServiceItem[] = [
   // 1. GIẶT ỦI & GIẶT HẤP
@@ -407,6 +406,18 @@ export const RESIDENT_SERVICES_CATALOG: ResidentServiceItem[] = [
 // Danh sách đơn đặt dịch vụ ban đầu hoàn toàn sạch, không có dữ liệu ảo/mẫu
 const INITIAL_DEMO_BOOKINGS: ServiceBooking[] = [];
 
+declare global {
+  // eslint-disable-next-line no-var
+  var __SKYLINE_RESIDENT_BOOKINGS: ServiceBooking[] | undefined;
+}
+
+function getBookingsStore(): ServiceBooking[] {
+  if (!globalThis.__SKYLINE_RESIDENT_BOOKINGS) {
+    globalThis.__SKYLINE_RESIDENT_BOOKINGS = [];
+  }
+  return globalThis.__SKYLINE_RESIDENT_BOOKINGS;
+}
+
 function notifyServicesUpdated() {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('skyline_services_updated'));
@@ -414,24 +425,12 @@ function notifyServicesUpdated() {
 }
 
 /**
- * Lấy toàn bộ danh sách đơn đặt dịch vụ thực tế
+ * Lấy toàn bộ danh sách đơn đặt dịch vụ thực tế (In-Memory Store - Không localStorage)
  */
 export function getResidentBookings(aptCode?: string): ServiceBooking[] {
-  let list: ServiceBooking[] = [];
-  if (typeof window !== 'undefined') {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          // Lọc bỏ bất kỳ dữ liệu mẫu nào nếu có trong cache
-          list = parsed.filter(b => b && b.bookingCode && !b.bookingCode.includes('LAUN-1201') && !b.bookingCode.includes('PTSW-1202'));
-        }
-      }
-    } catch {
-      list = [];
-    }
-  }
+  let list = getBookingsStore().filter(
+    b => b && b.bookingCode && !b.bookingCode.includes('LAUN-1201') && !b.bookingCode.includes('PTSW-1202')
+  );
 
   if (aptCode) {
     const clean = aptCode.trim().toUpperCase();
@@ -441,13 +440,11 @@ export function getResidentBookings(aptCode?: string): ServiceBooking[] {
 }
 
 /**
- * Lưu danh sách đơn đặt dịch vụ
+ * Lưu danh sách đơn đặt dịch vụ vào In-Memory Store
  */
 export function saveResidentBookings(bookings: ServiceBooking[]): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
-    notifyServicesUpdated();
-  }
+  globalThis.__SKYLINE_RESIDENT_BOOKINGS = bookings;
+  notifyServicesUpdated();
 }
 
 /**

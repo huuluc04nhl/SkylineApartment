@@ -52,7 +52,7 @@ export default function LanguageSwitcher({
   variant = 'floating' 
 }: LanguageSwitcherProps) {
   const pathname = usePathname();
-  const { language, setLanguage, isMounted } = useLanguage();
+  const { language, setLanguage, isMounted, isEn } = useLanguage();
 
   if (!isMounted) return null;
   if (variant === 'floating' && pathname?.startsWith('/portal')) return null;
@@ -72,8 +72,8 @@ export default function LanguageSwitcher({
               ? 'bg-[#1C2533] border border-[#C5A880] shadow-[0_0_12px_rgba(197,168,128,0.25)] opacity-100'
               : 'opacity-50 hover:opacity-100 hover:bg-[#141B24] border border-transparent'
           }`}
-          title="Tiếng Việt"
-          aria-label="Chuyển sang Tiếng Việt"
+          title={isEn ? 'Vietnamese' : 'Tiếng Việt'}
+          aria-label={isEn ? 'Switch to Vietnamese' : 'Chuyển sang Tiếng Việt'}
         >
           <FlagVietnam className="w-5 h-3.5 sm:w-6 sm:h-4" />
         </button>
@@ -107,8 +107,8 @@ export default function LanguageSwitcher({
             ? 'bg-[#1C2533] border border-[#C5A880] shadow-sm opacity-100'
             : 'opacity-50 hover:opacity-100 hover:bg-[#161D26] border border-transparent'
         }`}
-        title="Tiếng Việt"
-        aria-label="Tiếng Việt"
+        title={isEn ? 'Vietnamese' : 'Tiếng Việt'}
+        aria-label={isEn ? 'Vietnamese' : 'Tiếng Việt'}
       >
         <FlagVietnam className="w-4 h-2.5 sm:w-5 sm:h-3.5" />
       </button>

@@ -194,7 +194,7 @@ export function generateSuggestedAdminReply(
   aptCode?: string,
   engineerName?: string
 ): string {
-  // Tách phần nội dung chính (bỏ metadata NKS như "• Khu vực: ... • Mức độ: ...")
+  // Tách phần nội dung chính (bỏ metadata như "• Khu vực: ... • Mức độ: ...")
   const cleanContent = (content || '').split('•')[0].trim();
   const text = `${service || ''} ${cleanContent} ${content || ''}`.toLowerCase();
 

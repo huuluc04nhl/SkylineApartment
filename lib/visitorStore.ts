@@ -12,6 +12,9 @@
  * - Cleaned: No AI voice synthesis, no elevator destination locking.
  */
 
+import { skylineDb } from './db';
+import { VisitorPassRecord, VisitorGateLogRecord } from './db/schema';
+
 export type PassEntryType = 'SINGLE' | 'MULTI';
 export type VisitorPassStatus = 'ACTIVE' | 'CHECKED_IN' | 'COMPLETED' | 'EXPIRED';
 
@@ -72,6 +75,7 @@ export interface VerificationScanResult {
 
 export interface GateAuditLog {
   id: string;
+  passId?: string;
   timestamp: string;
   apartmentCode: string;
   hostName?: string;
@@ -80,6 +84,8 @@ export interface GateAuditLog {
   action: 'SCAN' | 'CHECK_IN' | 'CHECK_OUT';
   result: 'VALID' | 'INVALID' | 'EXPIRED';
   note: string;
+  checkpoint?: string;
+  notes?: string;
 }
 
 // In-memory global store
@@ -89,6 +95,55 @@ declare global {
 }
 
 const globalScope = (typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : {}) as any;
+
+/**
+ * Định dạng nội dung hiển thị sang trọng, lịch sự, dễ đọc khi khách hoặc lễ tân quét mã QR
+ * Thay thế hoàn toàn chuỗi JSON thô kệch bằng thẻ mời điện tử chuẩn Skyline Smart Residence
+ */
+export function formatVisitorPassQrText(params: {
+  id: string;
+  apartmentCode: string;
+  towerName?: string;
+  hostName?: string;
+  hostPhone?: string;
+  visitorName: string;
+  phoneNumber?: string;
+  licensePlate?: string;
+  validHours?: number;
+  validUntil?: string;
+  pinCode: string;
+}): string {
+  const exp = params.validUntil ? new Date(params.validUntil) : new Date(Date.now() + 4 * 3600 * 1000);
+  const expTime = exp.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const expDate = exp.toLocaleDateString('vi-VN');
+  const tower = params.towerName || 'Tropical BS-07';
+  const hours = params.validHours || 4;
+
+  const lines = [
+    '✨ SKYLINE SMART RESIDENCE ✨',
+    '📋 THƯ MỜI ĐÓN KHÁCH ĐIỆN TỬ',
+    '━━━━━━━━━━━━━━━━━━━━',
+    `👤 Khách thăm: ${params.visitorName || 'Quý Khách'}`,
+  ];
+
+  if (params.phoneNumber) {
+    lines.push(`📞 Số điện thoại: ${params.phoneNumber}`);
+  }
+  if (params.licensePlate) {
+    lines.push(`🚗 Biển số xe: ${params.licensePlate}`);
+  }
+
+  lines.push(`🏢 Điểm đến: Căn hộ ${params.apartmentCode} • ${tower}`);
+  lines.push(`🏠 Chủ hộ bảo lãnh: ${params.hostName || 'Chủ hộ'}${params.hostPhone ? ` (${params.hostPhone})` : ''}`);
+  lines.push('━━━━━━━━━━━━━━━━━━━━');
+  lines.push(`🔑 MÃ PIN LỄ TÂN: ${params.pinCode}`);
+  lines.push(`⏳ Hiệu lực đến: ${expTime} ngày ${expDate} (${hours} giờ)`);
+  lines.push(`Mã thẻ vé: ${params.id}`);
+  lines.push('━━━━━━━━━━━━━━━━━━━━');
+  lines.push('👉 Quý khách vui lòng xuất trình nội dung này hoặc đọc mã PIN tại Sảnh Lễ Tân / Bốt An Ninh tòa nhà để được hướng dẫn lên căn hộ.');
+
+  return lines.join('\n');
+}
 
 // Danh sách thẻ khách thăm tiêu chuẩn theo dữ liệu căn hộ thực tế (Căn CH-06, Tòa Tropical BS-07, Chủ hộ Trần Hữu Lực)
 const INITIAL_SAMPLE_PASSES: GeneratedVisitorPass[] = [
@@ -107,18 +162,18 @@ const INITIAL_SAMPLE_PASSES: GeneratedVisitorPass[] = [
     validHours: 8,
     createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
     validUntil: new Date(Date.now() + 6 * 3600 * 1000).toISOString(),
-    qrData: JSON.stringify({
-      skyline_pass: true,
-      passId: 'SKY-PASS-8492',
-      aptCode: 'CH-06',
-      tower: 'Tropical BS-07',
+    qrData: formatVisitorPassQrText({
+      id: 'SKY-PASS-8492',
+      apartmentCode: 'CH-06',
+      towerName: 'Tropical BS-07',
       hostName: 'Trần Hữu Lực',
       hostPhone: '0364967082',
       visitorName: 'Trần Quốc Bảo',
-      phone: '0903123456',
-      plate: '51G-888.88',
-      expiresAt: Date.now() + 6 * 3600 * 1000,
-      pin: '849201'
+      phoneNumber: '0903123456',
+      licensePlate: '51G-888.88',
+      validHours: 8,
+      validUntil: new Date(Date.now() + 6 * 3600 * 1000).toISOString(),
+      pinCode: '849201',
     }),
     pinCode: '849201',
     note: 'Khách đối tác công việc lên căn CH-06 (Tòa BS-07)',
@@ -140,18 +195,18 @@ const INITIAL_SAMPLE_PASSES: GeneratedVisitorPass[] = [
     validHours: 4,
     createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
     validUntil: new Date(Date.now() + 3.5 * 3600 * 1000).toISOString(),
-    qrData: JSON.stringify({
-      skyline_pass: true,
-      passId: 'SKY-PASS-6521',
-      aptCode: 'CH-06',
-      tower: 'Tropical BS-07',
+    qrData: formatVisitorPassQrText({
+      id: 'SKY-PASS-6521',
+      apartmentCode: 'CH-06',
+      towerName: 'Tropical BS-07',
       hostName: 'Trần Hữu Lực',
       hostPhone: '0364967082',
       visitorName: 'Phạm Minh Tuấn',
-      phone: '0918765432',
-      plate: '59P1-999.99',
-      expiresAt: Date.now() + 3.5 * 3600 * 1000,
-      pin: '652190'
+      phoneNumber: '0918765432',
+      licensePlate: '59P1-999.99',
+      validHours: 4,
+      validUntil: new Date(Date.now() + 3.5 * 3600 * 1000).toISOString(),
+      pinCode: '652190',
     }),
     pinCode: '652190',
     note: 'Bạn bè đến thăm gia đình',
@@ -163,203 +218,131 @@ const INITIAL_SAMPLE_PASSES: GeneratedVisitorPass[] = [
 const DUMMY_PASS_IDS = new Set(['SKY-PASS-9102', 'SKY-PASS-8754', 'SKY-PASS-7312', 'SKY-PASS-6021']);
 
 export function getPassRegistry(): Map<string, GeneratedVisitorPass> {
-  if (!globalScope.__SKYLINE_VISITOR_PASSES_MAP) {
-    globalScope.__SKYLINE_VISITOR_PASSES_MAP = new Map<string, GeneratedVisitorPass>();
-    let loadedList: GeneratedVisitorPass[] = [];
-
-    // Hydrate from localStorage if in browser
-    if (typeof window !== 'undefined' && window.localStorage) {
-      try {
-        const stored = localStorage.getItem('__skyline_visitor_passes');
-        if (stored) {
-          const raw = JSON.parse(stored);
-          if (Array.isArray(raw)) {
-            // Lọc bỏ toàn bộ thẻ ảo cũ hoặc thẻ căn 12A05 / 12A5 cũ
-            loadedList = raw.filter((p: any) => p && !DUMMY_PASS_IDS.has(p.id) && p.apartmentCode !== '12A05' && p.apartmentCode !== '12A5');
-            if (loadedList.length === 0) {
-              loadedList = [...INITIAL_SAMPLE_PASSES];
-            }
-            localStorage.setItem('__skyline_visitor_passes', JSON.stringify(loadedList));
-          }
-        } else {
-          loadedList = [...INITIAL_SAMPLE_PASSES];
-          localStorage.setItem('__skyline_visitor_passes', JSON.stringify(loadedList));
-        }
-      } catch (e) {
-        loadedList = [...INITIAL_SAMPLE_PASSES];
-      }
-    } else {
-      loadedList = [...INITIAL_SAMPLE_PASSES];
-    }
-
-    loadedList.forEach((p) => {
-      globalScope.__SKYLINE_VISITOR_PASSES_MAP!.set(p.id, p);
-      globalScope.__SKYLINE_VISITOR_PASSES_MAP!.set(p.qrData, p);
-      if (p.pinCode) globalScope.__SKYLINE_VISITOR_PASSES_MAP!.set(p.pinCode, p);
-    });
-  }
-  return globalScope.__SKYLINE_VISITOR_PASSES_MAP!;
+  const map = new Map<string, GeneratedVisitorPass>();
+  const records = skylineDb.visitorPasses.find();
+  records.forEach((r) => {
+    const pass: GeneratedVisitorPass = {
+      id: r.id,
+      apartmentCode: r.apartment_code,
+      hostName: r.host_name,
+      hostPhone: r.host_phone || '',
+      towerName: r.tower_name,
+      visitorName: r.visitor_name,
+      phoneNumber: r.phone_number,
+      licensePlate: r.license_plate,
+      entryType: r.entry_type,
+      purpose: r.purpose,
+      purposeLabel: r.purpose_label,
+      validHours: r.valid_hours,
+      createdAt: r.created_at || new Date().toISOString(),
+      validUntil: r.valid_until,
+      qrData: r.qr_data,
+      pinCode: r.pin_code,
+      note: r.note,
+      status: r.status,
+      checkedInAt: r.checked_in_at,
+      checkedOutAt: r.checked_out_at,
+    };
+    map.set(pass.id, pass);
+    map.set(pass.qrData, pass);
+    if (pass.pinCode) map.set(pass.pinCode, pass);
+  });
+  return map;
 }
 
 export function savePassToRegistry(pass: GeneratedVisitorPass) {
-  const reg = getPassRegistry();
-  reg.set(pass.id, pass);
-  reg.set(pass.qrData, pass);
-  if (pass.pinCode) reg.set(pass.pinCode, pass);
-
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      const stored = localStorage.getItem('__skyline_visitor_passes');
-      const list: GeneratedVisitorPass[] = stored ? JSON.parse(stored) : [];
-      const filtered = list.filter((p) => p.id !== pass.id);
-      filtered.unshift(pass);
-      localStorage.setItem('__skyline_visitor_passes', JSON.stringify(filtered.slice(0, 100)));
-    } catch (e) {
-      // Ignore storage error
-    }
+  const rec: VisitorPassRecord = {
+    id: pass.id,
+    apartment_code: pass.apartmentCode,
+    host_name: pass.hostName,
+    host_phone: pass.hostPhone,
+    tower_name: pass.towerName,
+    visitor_name: pass.visitorName,
+    phone_number: pass.phoneNumber,
+    license_plate: pass.licensePlate,
+    entry_type: pass.entryType,
+    purpose: pass.purpose,
+    purpose_label: pass.purposeLabel,
+    valid_hours: pass.validHours,
+    qr_data: pass.qrData,
+    pin_code: pass.pinCode,
+    note: pass.note,
+    status: pass.status,
+    valid_until: pass.validUntil,
+    checked_in_at: pass.checkedInAt,
+    checked_out_at: pass.checkedOutAt,
+    created_at: pass.createdAt,
+  };
+  const existing = skylineDb.visitorPasses.findById(pass.id);
+  if (existing) {
+    skylineDb.visitorPasses.update(pass.id, rec);
+  } else {
+    skylineDb.visitorPasses.insert(rec);
   }
-}
-
-export function deleteVisitorPass(passId: string): boolean {
-  const reg = getPassRegistry();
-  const target = reg.get(passId);
-  if (!target) return false;
-
-  reg.delete(target.id);
-  reg.delete(target.qrData);
-  if (target.pinCode) reg.delete(target.pinCode);
-
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      const stored = localStorage.getItem('__skyline_visitor_passes');
-      if (stored) {
-        const list: GeneratedVisitorPass[] = JSON.parse(stored);
-        const filtered = list.filter((p) => p.id !== passId);
-        localStorage.setItem('__skyline_visitor_passes', JSON.stringify(filtered));
-      }
-    } catch (e) {
-      // Ignore
-    }
-  }
-  return true;
 }
 
 export function getAllVisitorPasses(): GeneratedVisitorPass[] {
   const reg = getPassRegistry();
-  const seenIds = new Set<string>();
-  const passes: GeneratedVisitorPass[] = [];
-
-  reg.forEach((pass) => {
-    if (!seenIds.has(pass.id)) {
-      seenIds.add(pass.id);
-      // Auto update status if expired
-      const now = Date.now();
-      const isExpired = now > new Date(pass.validUntil).getTime();
-      if (isExpired && pass.status === 'ACTIVE') {
-        pass.status = 'EXPIRED';
-      }
-      passes.push(pass);
+  const seen = new Set<string>();
+  const list: GeneratedVisitorPass[] = [];
+  reg.forEach(p => {
+    if (!seen.has(p.id)) {
+      seen.add(p.id);
+      list.push(p);
     }
   });
-
-  return passes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return list;
 }
 
-// Danh sách nhật ký tiếp đón ban đầu gắn liền với Căn CH-06 (Chủ hộ Trần Hữu Lực - Tòa BS-07)
-const INITIAL_SAMPLE_LOGS: GateAuditLog[] = [
-  {
-    id: 'LOG-INIT-1',
-    timestamp: '10:15 02/10/2026',
-    apartmentCode: 'CH-06',
-    hostName: 'Trần Hữu Lực',
-    visitorName: 'Trần Quốc Bảo',
-    licensePlate: '51G-888.88',
-    action: 'CHECK_IN',
-    result: 'VALID',
-    note: 'Mời khách vào tòa nhà lên Căn CH-06 (Tòa BS-07) qua Sảnh Tiếp Tân Tầng 1'
-  },
-  {
-    id: 'LOG-INIT-2',
-    timestamp: '09:45 02/10/2026',
-    apartmentCode: 'CH-06',
-    hostName: 'Trần Hữu Lực',
-    visitorName: 'Phạm Minh Tuấn',
-    licensePlate: '59P1-999.99',
-    action: 'SCAN',
-    result: 'VALID',
-    note: 'Chủ hộ tạo mã đón khách [Phạm Minh Tuấn] thời hạn 4 giờ'
-  }
-];
-
-// Danh sách các ID log ảo cũ cần làm sạch
-const DUMMY_LOG_IDS = new Set(['LOG-1726115700-101', 'LOG-1726110900-102', 'LOG-1726108200-103', 'LOG-1726106400-104']);
+export function deleteVisitorPass(passId: string): boolean {
+  return skylineDb.visitorPasses.delete(passId);
+}
 
 export function getGateAuditLogs(): GateAuditLog[] {
-  if (!globalScope.__SKYLINE_VISITOR_LOGS) {
-    globalScope.__SKYLINE_VISITOR_LOGS = [];
-    let loadedLogs: GateAuditLog[] = [];
-    if (typeof window !== 'undefined' && window.localStorage) {
-      try {
-        const stored = localStorage.getItem('__skyline_visitor_logs');
-        if (stored) {
-          const raw = JSON.parse(stored);
-          if (Array.isArray(raw)) {
-            // Lọc bỏ toàn bộ logs ảo cũ hoặc logs gắn với căn 12A05 / 12A5 cũ
-            loadedLogs = raw.filter((log: any) => log && !DUMMY_LOG_IDS.has(log.id) && log.apartmentCode !== '12A05' && log.apartmentCode !== '12A5');
-            if (loadedLogs.length === 0) {
-              loadedLogs = [...INITIAL_SAMPLE_LOGS];
-            }
-            localStorage.setItem('__skyline_visitor_logs', JSON.stringify(loadedLogs));
-          }
-        } else {
-          loadedLogs = [...INITIAL_SAMPLE_LOGS];
-          localStorage.setItem('__skyline_visitor_logs', JSON.stringify(loadedLogs));
-        }
-      } catch (e) {
-        loadedLogs = [...INITIAL_SAMPLE_LOGS];
-      }
-    } else {
-      loadedLogs = [...INITIAL_SAMPLE_LOGS];
-    }
-
-    globalScope.__SKYLINE_VISITOR_LOGS = loadedLogs;
-  }
-  return globalScope.__SKYLINE_VISITOR_LOGS!;
+  return skylineDb.visitorGateLogs.find().map(r => ({
+    id: r.id,
+    passId: r.pass_id,
+    timestamp: r.created_at || r.timestamp || new Date().toISOString(),
+    apartmentCode: r.apartment_code,
+    hostName: r.host_name,
+    visitorName: r.visitor_name,
+    licensePlate: r.license_plate,
+    action: r.action as any,
+    result: (r.result === 'DENIED' ? 'INVALID' : r.result) as any,
+    note: r.note || r.notes || '',
+    checkpoint: r.checkpoint,
+    notes: r.note || r.notes || '',
+  }));
 }
 
-// Hàm dọn dẹp toàn bộ dữ liệu khách thăm (cho phép BQL reset dữ liệu sạch sẽ)
+// Hàm dọn dẹp toàn bộ dữ liệu khách thăm
 export function clearAllVisitorData(): void {
-  if (globalScope.__SKYLINE_VISITOR_PASSES_MAP) {
-    globalScope.__SKYLINE_VISITOR_PASSES_MAP.clear();
-  }
-  globalScope.__SKYLINE_VISITOR_LOGS = [];
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      localStorage.removeItem('__skyline_visitor_passes');
-      localStorage.removeItem('__skyline_visitor_logs');
-    } catch (e) {
-      // Ignore
-    }
-  }
+  const allPasses = skylineDb.visitorPasses.find();
+  allPasses.forEach(p => skylineDb.visitorPasses.delete(p.id));
+  const allLogs = skylineDb.visitorGateLogs.find();
+  allLogs.forEach(l => skylineDb.visitorGateLogs.delete(l.id));
 }
 
 export function addGateAuditLog(log: Omit<GateAuditLog, 'id'>): GateAuditLog {
-  const newLog: GateAuditLog = {
-    id: `LOG-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+  const newId = `LOG-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
+  const rec: VisitorGateLogRecord = {
+    id: newId,
+    pass_id: log.passId,
+    apartment_code: log.apartmentCode,
+    host_name: log.hostName,
+    visitor_name: log.visitorName,
+    license_plate: log.licensePlate,
+    action: log.action as any,
+    result: log.result as any,
+    checkpoint: log.checkpoint,
+    note: log.note || log.notes || '',
+    created_at: log.timestamp || new Date().toISOString(),
+  };
+  skylineDb.visitorGateLogs.insert(rec);
+  return {
+    id: newId,
     ...log
   };
-  const current = getGateAuditLogs();
-  const updated = [newLog, ...current.slice(0, 99)];
-  globalScope.__SKYLINE_VISITOR_LOGS = updated;
-
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      localStorage.setItem('__skyline_visitor_logs', JSON.stringify(updated));
-    } catch (e) {
-      // Ignore storage error
-    }
-  }
-  return newLog;
 }
 
 /**
@@ -393,24 +376,20 @@ export function generateVisitorPassToken(params: {
   const passId = `SKY-PASS-${Math.floor(1000 + Math.random() * 9000)}`;
   const resolvedEntryType: PassEntryType = params.entryType || 'MULTI';
 
-  const signature = Math.abs(hashCode(`${aptCode}_${passId}_${expiresAt}_${resolvedEntryType}`)).toString(36).toUpperCase();
-  
-  // Compact JSON Payload in QR Code
-  const qrPayload = {
-    skyline_pass: true,
-    passId,
-    aptCode,
-    tower: towerName,
+  // Định dạng nội dung hiển thị thanh lịch, dễ nhìn khi khách hoặc lễ tân quét mã QR
+  const qrData = formatVisitorPassQrText({
+    id: passId,
+    apartmentCode: aptCode,
+    towerName,
     hostName,
     hostPhone,
     visitorName,
-    phone,
-    plate,
-    expiresAt,
-    pin: randomPin,
-    sig: signature
-  };
-  const qrData = JSON.stringify(qrPayload);
+    phoneNumber: phone,
+    licensePlate: plate,
+    validHours: hours,
+    validUntil: new Date(expiresAt).toISOString(),
+    pinCode: randomPin,
+  });
 
   const pass: GeneratedVisitorPass = {
     id: passId,
@@ -469,7 +448,11 @@ export function verifyVisitorQr(qrInput: string, checkpoint: string = 'Sảnh L�
     };
   }
 
-  // 1. Try parsing if raw is JSON string
+  // 1. Trích xuất passId và PIN từ URL hoặc văn bản định dạng thẻ mời
+  const passIdMatch = raw.match(/SKY-PASS-\d+/i) || raw.match(/[?&]id=(SKY-PASS-[^&]+)/i);
+  const pinMatch = raw.match(/(?:PIN|MÃ PIN).*?(\d{6})/i) || raw.match(/[?&]pin=(\d{6})/i) || (raw.length === 6 && /^\d{6}$/.test(raw) ? [raw, raw] : null);
+
+  // 2. Tương thích ngược: Phân tích nếu là chuỗi JSON
   let parsedFromJson: any = null;
   if (raw.startsWith('{') && raw.endsWith('}')) {
     try {
@@ -485,8 +468,20 @@ export function verifyVisitorQr(qrInput: string, checkpoint: string = 'Sảnh L�
   const registry = getPassRegistry();
   let matchedPass: GeneratedVisitorPass | undefined = undefined;
 
-  // Search by JSON passId, or exact match in registry
-  if (parsedFromJson?.passId) {
+  // Tra cứu theo passId trích xuất
+  if (passIdMatch) {
+    const extractedId = (passIdMatch[1] || passIdMatch[0]).toUpperCase();
+    matchedPass = registry.get(extractedId);
+  }
+
+  // Tra cứu theo PIN trích xuất
+  if (!matchedPass && pinMatch) {
+    const extractedPin = pinMatch[1] || pinMatch[0];
+    matchedPass = registry.get(extractedPin);
+  }
+
+  // Tra cứu theo JSON passId
+  if (!matchedPass && parsedFromJson?.passId) {
     matchedPass = registry.get(parsedFromJson.passId);
   }
 
@@ -494,7 +489,7 @@ export function verifyVisitorQr(qrInput: string, checkpoint: string = 'Sảnh L�
     matchedPass = registry.get(raw);
   }
 
-  // Search by loop
+  // Quét vòng lặp đối chiếu
   if (!matchedPass) {
     registry.forEach((pass) => {
       if (!matchedPass) {
@@ -627,6 +622,42 @@ export function verifyVisitorQr(qrInput: string, checkpoint: string = 'Sảnh L�
       qrData: raw,
       pinCode: parsedFromJson.pin || '123456',
       status: isExpired ? 'EXPIRED' : 'ACTIVE',
+    };
+    savePassToRegistry(reconstructedPass);
+
+    return verifyVisitorQr(reconstructedPass.id, checkpoint);
+  }
+
+  // 3. Tự động phục hồi thẻ từ định dạng văn bản thẻ mời (nếu quét từ client khác chưa sync)
+  if (passIdMatch || raw.includes('THƯ MỜI ĐÓN KHÁCH') || raw.includes('SKYLINE SMART RESIDENCE')) {
+    const guestMatch = raw.match(/Khách thăm:\s*([^\n\r]+)/i) || raw.match(/Kính gửi Quý khách:\s*([^\n\r]+)/i) || raw.match(/Khách:\s*([^\n\r]+)/i);
+    const aptMatch = raw.match(/Căn hộ\s*([A-Za-z0-9-]+)/i) || raw.match(/Căn\s*([A-Za-z0-9-]+)/i);
+    const hostMatch = raw.match(/Chủ hộ bảo lãnh:\s*([^\n\r(]+)/i) || raw.match(/Chủ hộ:\s*([^\n\r(]+)/i);
+    const phoneMatch = raw.match(/Số điện thoại:\s*([0-9. -]+)/i) || raw.match(/SĐT khách:\s*([0-9. -]+)/i);
+    const plateMatch = raw.match(/Biển số xe?:\s*([^\n\r]+)/i);
+
+    const aptCode = aptMatch ? aptMatch[1].trim() : 'CH-06';
+    const extractedId = passIdMatch ? (passIdMatch[1] || passIdMatch[0]).toUpperCase() : `SKY-PASS-${Math.floor(1000 + Math.random() * 9000)}`;
+    const extractedPin = pinMatch ? (pinMatch[1] || pinMatch[0]) : '849201';
+
+    const reconstructedPass: GeneratedVisitorPass = {
+      id: extractedId,
+      apartmentCode: aptCode,
+      hostName: hostMatch ? hostMatch[1].trim() : `Chủ hộ Căn ${aptCode}`,
+      hostPhone: '0364967082',
+      towerName: 'Tropical BS-07',
+      visitorName: guestMatch ? guestMatch[1].trim() : 'Khách Thăm Nhà',
+      phoneNumber: phoneMatch ? phoneMatch[1].trim() : '',
+      licensePlate: plateMatch ? plateMatch[1].trim().toUpperCase() : '',
+      entryType: 'MULTI',
+      purpose: 'VISITOR',
+      purposeLabel: 'Khách Thăm Căn Hộ',
+      validHours: 4,
+      createdAt: new Date(now).toISOString(),
+      validUntil: new Date(now + 4 * 3600 * 1000).toISOString(),
+      qrData: raw,
+      pinCode: extractedPin,
+      status: 'ACTIVE',
     };
     savePassToRegistry(reconstructedPass);
 

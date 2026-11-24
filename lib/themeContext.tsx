@@ -13,26 +13,31 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+function getCookieTheme(): Theme {
+  if (typeof document !== 'undefined') {
+    const match = document.cookie.match(/(?:^|;\s*)skyline_theme=([^;]+)/);
+    if (match && (match[1] === 'dark' || match[1] === 'light')) {
+      return match[1] as Theme;
+    }
+  }
+  return 'dark';
+}
+
+function setCookieTheme(t: Theme) {
+  if (typeof document !== 'undefined') {
+    document.cookie = 'skyline_theme=' + t + '; path=/; max-age=31536000';
+  }
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('dark');
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    try {
-      const saved = localStorage.getItem('skyline_theme') as Theme | null;
-      if (saved === 'light' || saved === 'dark') {
-        setThemeState(saved);
-        applyTheme(saved);
-      } else {
-        // Mặc định giao diện Tối (Dark Luxury)
-        setThemeState('dark');
-        applyTheme('dark');
-      }
-    } catch {
-      setThemeState('dark');
-      applyTheme('dark');
-    }
+    const saved = getCookieTheme();
+    setThemeState(saved);
+    applyTheme(saved);
   }, []);
 
   const applyTheme = (t: Theme) => {
@@ -50,9 +55,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = (t: Theme) => {
     setThemeState(t);
-    try {
-      localStorage.setItem('skyline_theme', t);
-    } catch {}
+    setCookieTheme(t);
     applyTheme(t);
   };
 

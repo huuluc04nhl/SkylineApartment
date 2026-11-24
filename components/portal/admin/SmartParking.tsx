@@ -33,6 +33,7 @@ import {
   ApartmentUnit 
 } from '@/lib/apartmentStore';
 import { useLanguage } from '@/lib/languageContext';
+import ConfirmDeleteModal from '@/components/portal/shared/ConfirmDeleteModal';
 
 interface RegisteredVehicleWithUnit extends ApartmentVehicle {
   aptCode: string;
@@ -69,6 +70,7 @@ export default function SmartParking() {
 
   // Selected Slot for detail panel
   const [selectedSlotCode, setSelectedSlotCode] = useState<string | null>(null);
+  const [revokeVehicleTarget, setRevokeVehicleTarget] = useState<{ aptCode: string; vehicleId: string; plate: string } | null>(null);
 
   // Waitlist Queue State
   const [waitlist, setWaitlist] = useState<ParkingWaitlistEntry[]>([]);
@@ -98,16 +100,6 @@ export default function SmartParking() {
       }
     } catch {
       setApartments([]);
-    }
-
-    try {
-      const rawWait = localStorage.getItem(WAITLIST_STORAGE_KEY);
-      if (rawWait) {
-        const parsed = JSON.parse(rawWait);
-        if (Array.isArray(parsed)) setWaitlist(parsed);
-      }
-    } catch (e) {
-      console.warn('Load parking waitlist error:', e);
     }
   }, []);
 
@@ -203,9 +195,6 @@ export default function SmartParking() {
 
   const saveWaitlistState = (newList: ParkingWaitlistEntry[]) => {
     setWaitlist(newList);
-    try {
-      localStorage.setItem(WAITLIST_STORAGE_KEY, JSON.stringify(newList));
-    } catch {}
   };
 
   const activeApartmentUnit = useMemo(() => {
@@ -220,7 +209,7 @@ export default function SmartParking() {
     );
   }, [activeApartmentUnit]);
 
-  // Genuinely declared resident vehicles from NKS API / Apartment Store
+  // Genuinely declared resident vehicles from Database / Apartment Store
   const detectedResidentVehicles = useMemo(() => {
     if (!regAptCode || !activeApartmentUnit || !hasResident) return [];
 
@@ -235,7 +224,7 @@ export default function SmartParking() {
 
     const seenPlates = new Set<string>();
 
-    // 1. Existing vehicles on the apartment unit (from NKS API / Apartment Store)
+    // 1. Existing vehicles on the apartment unit (from Database / Apartment Store)
     if (activeApartmentUnit.vehicles && activeApartmentUnit.vehicles.length > 0) {
       activeApartmentUnit.vehicles.forEach(v => {
         const clean = v.plate.trim().toUpperCase();
@@ -253,7 +242,7 @@ export default function SmartParking() {
       });
     }
 
-    // 2. Family members with declared license plate (from NKS API / Apartment Store)
+    // 2. Family members with declared license plate (from Database / Apartment Store)
     if (activeApartmentUnit.members && activeApartmentUnit.members.length > 0) {
       activeApartmentUnit.members.forEach(m => {
         if (m.licensePlate) {
@@ -511,11 +500,12 @@ export default function SmartParking() {
 
   // Handler: Revoke Vehicle
   const handleRevokeVehicle = (aptCode: string, vehicleId: string, plate: string) => {
-    const confirmText = isEn
-      ? `Are you sure you want to revoke vehicle ${plate} of apartment ${aptCode}?`
-      : `Bạn có chắc chắn muốn thu hồi và xóa thẻ xe ${plate} của căn hộ ${aptCode}?`;
-    if (!window.confirm(confirmText)) return;
+    setRevokeVehicleTarget({ aptCode, vehicleId, plate });
+  };
 
+  const confirmRevokeVehicle = () => {
+    if (!revokeVehicleTarget) return;
+    const { aptCode, vehicleId } = revokeVehicleTarget;
     const ok = removeApartmentVehicle(aptCode, vehicleId);
     if (ok) {
       const refreshed = getApartmentUnits();
@@ -524,6 +514,7 @@ export default function SmartParking() {
         setSelectedSlotCode(null);
       }
     }
+    setRevokeVehicleTarget(null);
   };
 
   // Filtered vehicles
@@ -1629,6 +1620,19 @@ export default function SmartParking() {
           </div>
         </div>
       )}
+      {/* Confirm Revoke Vehicle Modal */}
+      <ConfirmDeleteModal
+        isOpen={!!revokeVehicleTarget}
+        onClose={() => setRevokeVehicleTarget(null)}
+        onConfirm={confirmRevokeVehicle}
+        title={isEn ? 'Revoke Vehicle & Parking Pass' : 'Thu Hồi Thẻ Xe & Slot Đỗ Xe'}
+        message={isEn 
+          ? `Confirm revoking vehicle and parking permit for unit ${revokeVehicleTarget?.aptCode}? Automatic barrier access will be disabled.`
+          : `Xác nhận thu hồi và xóa thẻ đỗ xe của căn hộ ${revokeVehicleTarget?.aptCode}? Thẻ RFID và nhận diện biển số tại barie hầm xe sẽ bị hủy ngay lập tức.`
+        }
+        itemCode={revokeVehicleTarget?.plate}
+        itemName={revokeVehicleTarget ? `Căn hộ ${revokeVehicleTarget.aptCode}` : undefined}
+      />
     </div>
   );
 }

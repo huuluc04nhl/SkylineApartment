@@ -34,6 +34,7 @@ interface AddApartmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (newUnit: ApartmentUnit) => void;
+  currentBlock?: 'BS-07' | 'BS-08' | 'BS-09' | 'BS-10';
 }
 
 type TabType = 'ARCHITECTURE' | 'IOT_TECHNICAL' | 'FINANCE_LEGAL';
@@ -41,16 +42,17 @@ type TabType = 'ARCHITECTURE' | 'IOT_TECHNICAL' | 'FINANCE_LEGAL';
 export default function AddApartmentModal({
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
+  currentBlock = 'BS-07'
 }: AddApartmentModalProps) {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   // Tab điều hướng form
   const [activeTab, setActiveTab] = useState<TabType>('ARCHITECTURE');
 
   // 1. Kiến trúc & Vị trí
   const [floor, setFloor] = useState<number>(12);
   const [unitSlot, setUnitSlot] = useState<string>('06');
-  const [code, setCode] = useState<string>('12A06');
+  const [code, setCode] = useState<string>('12-CH-06');
   const [towerSide, setTowerSide] = useState<'LEFT' | 'RIGHT'>('LEFT');
   const [type, setType] = useState<ApartmentType>('2PN');
   const [area, setArea] = useState<number>(78.5);
@@ -100,7 +102,7 @@ export default function AddApartmentModal({
     setFloor(newFloor);
     const slot = newSlot !== undefined ? newSlot : unitSlot;
     const floorPrefix = newFloor < 10 ? `0${newFloor}` : `${newFloor}`;
-    const generatedCode = newFloor === 25 ? `25PH-${slot}` : `${floorPrefix}A${slot}`;
+    const generatedCode = `${floorPrefix}-CH-${slot}`;
     setCode(generatedCode);
     setElectricMeterId(`EM-${generatedCode}-IoT`);
     setWaterMeterId(`WM-${generatedCode}-SKY`);
@@ -168,8 +170,8 @@ export default function AddApartmentModal({
 
     const newUnit: ApartmentUnit = {
       code: cleanCode,
-      tower: 'A',
-      towerName: 'Chung Cư Skyline',
+      tower: (currentBlock === 'BS-09' || currentBlock === 'BS-10') ? 'B' : 'A',
+      towerName: `The Tropical ${currentBlock}`,
       floor: Number(floor),
       type,
       typeLabel,
@@ -196,7 +198,7 @@ export default function AddApartmentModal({
       handoverProtocol: {
         protocolCode: `BBBG-SKYLINE-${cleanCode}`,
         handoverDate: new Date().toLocaleDateString('vi-VN'),
-        handoverOfficer: 'Ban Quản Lý Chung Cư Skyline',
+        handoverOfficer: 'VinHomes Manager',
         keysCount: Number(keysCount),
         cardsCount: Number(cardsCount),
         initialElectricMeter: Number(initialElectric),
@@ -315,14 +317,14 @@ export default function AddApartmentModal({
               {/* Chung cư & Tầng & Số căn */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-3 bg-[#121822] border border-[#222B35]">
                 <div>
-                  <label className="block text-gray-400 mb-1">Chung Cư:</label>
+                  <label className="block text-gray-400 mb-1">{isEn ? 'Building:' : 'Chung Cư:'}</label>
                   <div className="px-3 py-2 bg-[#161F2C] border border-[#2B394E] text-[#C5A880] font-bold text-xs">
                     Chung Cư Skyline (25 Tầng)
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Chọn Tầng (1-25):</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Select Floor (1-25):' : 'Chọn Tầng (1-25):'}</label>
                   <select
                     value={floor}
                     onChange={(e) => handleFloorChange(Number(e.target.value))}
@@ -337,14 +339,14 @@ export default function AddApartmentModal({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Vị Trí Căn Trên Sàn:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Unit Slot on Floor:' : 'Vị Trí Căn Trên Sàn:'}</label>
                   <select
                     value={unitSlot}
                     onChange={(e) => handleSlotChange(e.target.value)}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   >
                     {['01', '02', '03', '04', '05', '06', '07', '08'].map(s => (
-                      <option key={s} value={s}>Căn số {s}</option>
+                      <option key={s} value={s}>{isEn ? `Unit #${s}` : `Căn số ${s}`}</option>
                     ))}
                   </select>
                 </div>
@@ -371,7 +373,7 @@ export default function AddApartmentModal({
 
               {/* Loại hình căn hộ (4 nút chọn nhanh) */}
               <div className="space-y-1.5">
-                <label className="block text-gray-300 font-semibold">Loại Hình Căn Hộ Chuẩn:</label>
+                <label className="block text-gray-300 font-semibold">{isEn ? 'Standard Layout Type:' : 'Loại Hình Căn Hộ Chuẩn:'}</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { id: '1PN', label: '1PN - 1WC', area: '52 m²', price: '3.20 tỷ' },
@@ -399,7 +401,7 @@ export default function AddApartmentModal({
               {/* Diện tích & Cơ cấu phòng */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Diện Tích Thông Thủy (m²):</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Carpet Area (m²):' : 'Diện Tích Thông Thủy (m²):'}</label>
                   <input
                     type="number"
                     step="0.1"
@@ -411,7 +413,7 @@ export default function AddApartmentModal({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Diện Tích Tim Tường (m²):</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Built-up Area (m²):' : 'Diện Tích Tim Tường (m²):'}</label>
                   <input
                     type="number"
                     step="0.1"
@@ -423,7 +425,7 @@ export default function AddApartmentModal({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Số Phòng Ngủ:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Bedrooms:' : 'Số Phòng Ngủ:'}</label>
                   <input
                     type="number"
                     min="1"
@@ -435,7 +437,7 @@ export default function AddApartmentModal({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Số Phòng Vệ Sinh:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Bathrooms:' : 'Số Phòng Vệ Sinh:'}</label>
                   <input
                     type="number"
                     min="1"
@@ -450,44 +452,44 @@ export default function AddApartmentModal({
               {/* Hướng & Tầm nhìn */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Hướng Ban Công Chính:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Main Balcony Orientation:' : 'Hướng Ban Công Chính:'}</label>
                   <select
                     value={direction}
                     onChange={(e) => setDirection(e.target.value)}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   >
-                    <option value="Đông Nam">Đông Nam (Đón gió mát, view sông)</option>
-                    <option value="Đông Bắc">Đông Bắc (Nắng sớm dịu mát)</option>
-                    <option value="Tây Nam">Tây Nam (Ấm áp, view thành phố)</option>
-                    <option value="Tây Bắc">Tây Bắc (View công viên nội khu)</option>
-                    <option value="Chính Nam">Chính Nam</option>
-                    <option value="Chính Bắc">Chính Bắc</option>
+                    <option value="Đông Nam">{isEn ? 'Southeast (Cool breeze, river view)' : 'Đông Nam (Đón gió mát, view sông)'}</option>
+                    <option value="Đông Bắc">{isEn ? 'Northeast (Gentle morning sun)' : 'Đông Bắc (Nắng sớm dịu mát)'}</option>
+                    <option value="Tây Nam">{isEn ? 'Southwest (Warm sun, city view)' : 'Tây Nam (Ấm áp, view thành phố)'}</option>
+                    <option value="Tây Bắc">{isEn ? 'Northwest (Internal park view)' : 'Tây Bắc (View công viên nội khu)'}</option>
+                    <option value="Chính Nam">{isEn ? 'South' : 'Chính Nam'}</option>
+                    <option value="Chính Bắc">{isEn ? 'North' : 'Chính Bắc'}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Hướng Cửa Chính (Phong Thủy):</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Main Door Orientation (Feng Shui):' : 'Hướng Cửa Chính (Phong Thủy):'}</label>
                   <select
                     value={mainDoorDirection}
                     onChange={(e) => setMainDoorDirection(e.target.value)}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   >
-                    <option value="Tây Bắc">Tây Bắc</option>
-                    <option value="Tây Nam">Tây Nam</option>
-                    <option value="Đông Bắc">Đông Bắc</option>
-                    <option value="Đông Nam">Đông Nam</option>
-                    <option value="Chính Nam">Chính Nam</option>
-                    <option value="Chính Bắc">Chính Bắc</option>
+                    <option value="Tây Bắc">{isEn ? 'Northwest' : 'Tây Bắc'}</option>
+                    <option value="Tây Nam">{isEn ? 'Southwest' : 'Tây Nam'}</option>
+                    <option value="Đông Bắc">{isEn ? 'Northeast' : 'Đông Bắc'}</option>
+                    <option value="Đông Nam">{isEn ? 'Southeast' : 'Đông Nam'}</option>
+                    <option value="Chính Nam">{isEn ? 'South' : 'Chính Nam'}</option>
+                    <option value="Chính Bắc">{isEn ? 'North' : 'Chính Bắc'}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Tầm Nhìn (View):</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Landscape View:' : 'Tầm Nhìn (View):'}</label>
                   <input
                     type="text"
                     value={viewDescription}
                     onChange={(e) => setViewDescription(e.target.value)}
-                    placeholder="VD: View Sông Sài Gòn, Landmark 81..."
+                    placeholder={isEn ? 'e.g. Saigon River View, City Skyline...' : 'VD: View Sông Sài Gòn, Landmark 81...'}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   />
                 </div>
@@ -517,7 +519,7 @@ export default function AddApartmentModal({
                     <Zap className="w-3.5 h-3.5 text-amber-400" /> Đồng Hồ Điện Tử Thông Minh
                   </div>
                   <div>
-                    <label className="block text-gray-400 text-[10.5px] mb-1">Mã Thiết Bị IoT (Electric Meter ID):</label>
+                    <label className="block text-gray-400 text-[10.5px] mb-1">{isEn ? 'Electric Meter ID (IoT):' : 'Mã Thiết Bị IoT (Electric Meter ID):'}</label>
                     <input
                       type="text"
                       value={electricMeterId}
@@ -526,7 +528,7 @@ export default function AddApartmentModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-400 text-[10.5px] mb-1">Chỉ Số Khởi Điểm Nghiệm Thu (kWh):</label>
+                    <label className="block text-gray-400 text-[10.5px] mb-1">{isEn ? 'Initial Electric Meter Reading (kWh):' : 'Chỉ Số Khởi Điểm Nghiệm Thu (kWh):'}</label>
                     <input
                       type="number"
                       step="0.1"
@@ -543,7 +545,7 @@ export default function AddApartmentModal({
                     <Droplets className="w-3.5 h-3.5 text-cyan-400" /> Đồng Hồ Nước Sinh Hoạt IoT
                   </div>
                   <div>
-                    <label className="block text-gray-400 text-[10.5px] mb-1">Mã Thiết Bị IoT (Water Meter ID):</label>
+                    <label className="block text-gray-400 text-[10.5px] mb-1">{isEn ? 'Water Meter ID (IoT):' : 'Mã Thiết Bị IoT (Water Meter ID):'}</label>
                     <input
                       type="text"
                       value={waterMeterId}
@@ -552,7 +554,7 @@ export default function AddApartmentModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-400 text-[10.5px] mb-1">Chỉ Số Nước Khởi Điểm (m³):</label>
+                    <label className="block text-gray-400 text-[10.5px] mb-1">{isEn ? 'Initial Water Meter Reading (m³):' : 'Chỉ Số Nước Khởi Điểm (m³):'}</label>
                     <input
                       type="number"
                       step="0.1"
@@ -578,7 +580,7 @@ export default function AddApartmentModal({
                       onChange={(e) => setHasSprinkler(e.target.checked)}
                       className="accent-[#C5A880]"
                     />
-                    <span className="text-gray-200">Đầu Phun Sprinkler Tự Động</span>
+                    <span className="text-gray-200">{isEn ? 'Auto Fire Sprinklers' : 'Đầu Phun Sprinkler Tự Động'}</span>
                   </label>
 
                   <label className="p-2 bg-[#161F2C] border border-[#26354A] flex items-center gap-2 cursor-pointer">
@@ -588,7 +590,7 @@ export default function AddApartmentModal({
                       onChange={(e) => setHasSmokeSensor(e.target.checked)}
                       className="accent-[#C5A880]"
                     />
-                    <span className="text-gray-200">Cảm Biến Khói Thông Minh</span>
+                    <span className="text-gray-200">{isEn ? 'Smart Smoke Sensor' : 'Cảm Biến Khói Thông Minh'}</span>
                   </label>
 
                   <label className="p-2 bg-[#161F2C] border border-[#26354A] flex items-center gap-2 cursor-pointer">
@@ -598,7 +600,7 @@ export default function AddApartmentModal({
                       onChange={(e) => setHasIntercom(e.target.checked)}
                       className="accent-[#C5A880]"
                     />
-                    <span className="text-gray-200">Chuông Hình Video Intercom</span>
+                    <span className="text-gray-200">{isEn ? 'Smart Video Intercom' : 'Chuông Hình Video Intercom'}</span>
                   </label>
                 </div>
               </div>
@@ -613,7 +615,7 @@ export default function AddApartmentModal({
               {/* Định giá bán & Cho thuê */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-[#121822] border border-[#222B35]">
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Giá Bán CĐT (Tỷ VNĐ):</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Developer Listing Price (Billion VND):' : 'Giá Bán CĐT (Tỷ VNĐ):'}</label>
                   <input
                     type="number"
                     step="0.05"
@@ -625,7 +627,7 @@ export default function AddApartmentModal({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Giá Cho Thuê Tham Chiếu (VNĐ/tháng):</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Reference Rental Price (VND/month):' : 'Giá Cho Thuê Tham Chiếu (VNĐ/tháng):'}</label>
                   <input
                     type="number"
                     step="500000"
@@ -639,30 +641,30 @@ export default function AddApartmentModal({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Phí Quản Lý Chung Cư (Dự kiến):</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Estimated Management Fee:' : 'Phí Quản Lý Chung Cư (Dự kiến):'}</label>
                   <div className="px-3 py-2 bg-[#161F2C] border border-[#2B394E] text-amber-300 font-bold text-xs">
                     {new Intl.NumberFormat('vi-VN').format(calculatedMonthlyFee)} đ/tháng
                   </div>
-                  <div className="text-[9.5px] text-gray-400 mt-1">Đơn giá: 18.000 đ/m² thông thủy</div>
+                  <div className="text-[9.5px] text-gray-400 mt-1">{isEn ? 'Unit rate: 18,000 VND/m² carpet area' : 'Đơn giá: 18.000 đ/m² thông thủy'}</div>
                 </div>
               </div>
 
               {/* Pháp lý & Bàn giao chìa khóa */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Pháp Lý Sở Hữu:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Ownership Title:' : 'Pháp Lý Sở Hữu:'}</label>
                   <select
                     value={legalStatus}
                     onChange={(e) => setLegalStatus(e.target.value as any)}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   >
-                    <option value="Sổ hồng lâu dài">Sổ hồng lâu dài (Vĩnh viễn)</option>
-                    <option value="Hợp đồng mua bán SPA">Hợp đồng mua bán SPA</option>
+                    <option value="Sổ hồng lâu dài">{isEn ? 'Long-term Pink Book Ownership' : 'Sổ hồng lâu dài (Vĩnh viễn)'}</option>
+                    <option value="Hợp đồng mua bán SPA">{isEn ? 'Sales & Purchase Agreement (SPA)' : 'Hợp đồng mua bán SPA'}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Số Chìa Khóa Cơ:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Physical Keys Count:' : 'Số Chìa Khóa Cơ:'}</label>
                   <input
                     type="number"
                     min="1"
@@ -674,7 +676,7 @@ export default function AddApartmentModal({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Số Thẻ Thang Máy Phân Tầng:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Elevator Keycards:' : 'Số Thẻ Thang Máy Phân Tầng:'}</label>
                   <input
                     type="number"
                     min="1"
@@ -689,40 +691,40 @@ export default function AddApartmentModal({
               {/* Tiêu chuẩn hoàn thiện & Trạng thái khởi tạo */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Tiêu Chuẩn Hoàn Thiện:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Finishing Standard:' : 'Tiêu Chuẩn Hoàn Thiện:'}</label>
                   <select
                     value={finishingStandard}
                     onChange={(e) => setFinishingStandard(e.target.value)}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   >
-                    <option value="Hoàn thiện cao cấp Full nội thất 5 sao">Hoàn thiện cao cấp Full nội thất 5 sao</option>
-                    <option value="Hoàn thiện liền tường cao cấp (Bếp & WC)">Hoàn thiện liền tường cao cấp (Bếp & WC)</option>
-                    <option value="Bàn giao thô (Tự do thiết kế)">Bàn giao thô (Tự do thiết kế)</option>
+                    <option value="Hoàn thiện cao cấp Full nội thất 5 sao">{isEn ? 'Luxury 5-Star Fully Furnished' : 'Hoàn thiện cao cấp Full nội thất 5 sao'}</option>
+                    <option value="Hoàn thiện liền tường cao cấp (Bếp & WC)">{isEn ? 'Semi-furnished (Kitchen & Bath)' : 'Hoàn thiện liền tường cao cấp (Bếp & WC)'}</option>
+                    <option value="Bàn giao thô (Tự do thiết kế)">{isEn ? 'Bare Shell (Custom Interior)' : 'Bàn giao thô (Tự do thiết kế)'}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">Trạng Thái Khởi Tạo:</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Initial Unit Status:' : 'Trạng Thái Khởi Tạo:'}</label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as any)}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   >
-                    <option value="VACANT">Căn Hộ Trống (Sẵn sàng bàn giao)</option>
-                    <option value="MAINTENANCE">Đang Nghiệm Thu Kỹ Thuật / Bảo Trì</option>
-                    <option value="HANDOVER_PENDING">Chờ Bàn Giao Cư Dân</option>
+                    <option value="VACANT">{isEn ? 'Vacant (Ready for Handover)' : 'Căn Hộ Trống (Sẵn sàng bàn giao)'}</option>
+                    <option value="MAINTENANCE">{isEn ? 'Under Technical Review / Maintenance' : 'Đang Nghiệm Thu Kỹ Thuật / Bảo Trì'}</option>
+                    <option value="HANDOVER_PENDING">{isEn ? 'Pending Resident Handover' : 'Chờ Bàn Giao Cư Dân'}</option>
                   </select>
                 </div>
               </div>
 
               {/* Ghi chú mô tả */}
               <div>
-                <label className="block text-gray-300 font-semibold mb-1">Ghi Chú Kỹ Thuật / Mô Tả Căn Hộ:</label>
+                <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Technical Notes / Unit Description:' : 'Ghi Chú Kỹ Thuật / Mô Tả Căn Hộ:'}</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
-                  placeholder="Ghi chú chi tiết về trang thiết bị nội thất, tầm view hoặc các lưu ý bảo dưỡng..."
+                  placeholder={isEn ? 'Detailed notes on appliances, view, or maintenance guidelines...' : 'Ghi chú chi tiết về trang thiết bị nội thất, tầm view hoặc các lưu ý bảo dưỡng...'}
                   className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                 />
               </div>
@@ -753,7 +755,7 @@ export default function AddApartmentModal({
                 className="w-full sm:w-auto px-6 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-lg"
               >
                 <Plus className="w-4 h-4" />
-                <span>Lưu Căn Hộ Mới</span>
+                <span>{isEn ? 'Save New Apartment' : 'Lưu Căn Hộ Mới'}</span>
               </button>
             </div>
           </div>

@@ -85,6 +85,8 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
 
   const [bills, setBills] = useState<ExtendedBill[]>([]);
   const [selectedBillId, setSelectedBillId] = useState<string>('');
+  const [cycleMode, setCycleMode] = useState<'MONTH' | 'QUARTER'>('MONTH');
+  const [selectedQuarterId, setSelectedQuarterId] = useState<string>('Q4_2026');
   const [showVietQrModal, setShowVietQrModal] = useState(false);
   const [showAiAssistant, setShowAiAssistant] = useState(false);
   const [showExplainModal, setShowExplainModal] = useState(false);
@@ -358,6 +360,112 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
   const sortedBills = [...bills].sort((a, b) => {
     return new Date(a.created_at || a.due_date || '').getTime() - new Date(b.created_at || b.due_date || '').getTime();
   });
+
+  // Hóa đơn sắp xếp mới nhất lên trước
+  const newestBillsFirst = [...bills].sort((a, b) => {
+    return new Date(b.created_at || b.due_date || '').getTime() - new Date(a.created_at || a.due_date || '').getTime();
+  });
+
+  // Dữ liệu các Quý trong năm 2026 (Quý 4/2026 hiện tại)
+  const quarters = [
+    {
+      id: 'Q4_2026',
+      name: 'Quý 4/2026',
+      periodText: 'Tháng 10 - Tháng 12/2026',
+      status: 'Active',
+      months: [
+        {
+          name: 'Tháng 10/2026',
+          bill: bills.find(b => b.billing_month.includes('10/2026')),
+          status: 'Paid',
+          amount: 2410000,
+          paidDate: '25/10/2026',
+          method: 'VNPAY',
+        },
+        {
+          name: 'Tháng 11/2026',
+          bill: bills.find(b => b.billing_month.includes('11/2026')),
+          status: 'Unpaid',
+          amount: 2485000,
+          dueDate: '30/11/2026',
+          method: null,
+        },
+        {
+          name: 'Tháng 12/2026',
+          bill: null,
+          status: 'Estimated',
+          amount: 2450000,
+          dueDate: '30/12/2026',
+          method: null,
+        },
+      ],
+      totalEstimate: 7345000,
+      paidAmount: 2410000,
+      remainingAmount: 4935000,
+      discountPrepay: 113400, // Tiết kiệm 5% phí QL
+      prepayTotal: 4821600,
+    },
+    {
+      id: 'Q3_2026',
+      name: 'Quý 3/2026',
+      periodText: 'Tháng 07 - Tháng 09/2026',
+      status: 'Settled',
+      months: [
+        {
+          name: 'Tháng 07/2026',
+          bill: bills.find(b => b.billing_month.includes('07/2026')),
+          status: 'Paid',
+          amount: 2370000,
+          paidDate: '28/07/2026',
+          method: 'VNPAY',
+        },
+        {
+          name: 'Tháng 08/2026',
+          bill: bills.find(b => b.billing_month.includes('08/2026')),
+          status: 'Paid',
+          amount: 2505000,
+          paidDate: '28/08/2026',
+          method: 'VNPAY',
+        },
+        {
+          name: 'Tháng 09/2026',
+          bill: bills.find(b => b.billing_month.includes('09/2026')),
+          status: 'Paid',
+          amount: 2380000,
+          paidDate: '22/09/2026',
+          method: 'VIETQR',
+        },
+      ],
+      totalEstimate: 7255000,
+      paidAmount: 7255000,
+      remainingAmount: 0,
+      discountPrepay: 0,
+      prepayTotal: 0,
+    },
+    {
+      id: 'Q2_2026',
+      name: 'Quý 2/2026',
+      periodText: 'Tháng 04 - Tháng 06/2026',
+      status: 'Settled',
+      months: [
+        {
+          name: 'Tháng 06/2026',
+          bill: bills.find(b => b.billing_month.includes('06/2026')),
+          status: 'Paid',
+          amount: 2320000,
+          paidDate: '25/06/2026',
+          method: 'VIETQR',
+        },
+      ],
+      totalEstimate: 2320000,
+      paidAmount: 2320000,
+      remainingAmount: 0,
+      discountPrepay: 0,
+      prepayTotal: 0,
+    },
+  ];
+
+  const currentQuarter = quarters.find(q => q.id === selectedQuarterId) || quarters[0];
 
   // Tổng hợp dữ liệu thống kê chi tiêu
   const totalSpendAll = bills.reduce((sum, b) => sum + (b.total_amount || 0), 0);
@@ -668,22 +776,6 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {activeTab === 'BILLING' ? (
             <>
-              {currentBill && currentBill.status === 'Unpaid' && (
-                <button
-                  onClick={() => handleOpenVnpaySandbox()}
-                  disabled={isRedirectingVnpay}
-                  className="px-3 sm:px-4 py-2 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow"
-                >
-                  {isRedirectingVnpay ? (
-                    <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
-                  ) : (
-                    <CreditCard className="w-4 h-4 shrink-0" />
-                  )}
-                  <span className="hidden sm:inline">{isRedirectingVnpay ? t('Đang Chuyển Hướng...') : t('Thanh Toán VNPAY', 'Pay Bill')}</span>
-                  <span className="sm:hidden">{t('Thanh Toán', 'Pay')}</span>
-                </button>
-              )}
-
               {currentBill && (
                 <button
                   onClick={() => handleExportInvoicePdf(currentBill)}
@@ -828,30 +920,279 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
         </div>
       )}
 
-      {/* Selector nếu có nhiều kỳ hóa đơn */}
-      {bills.length > 1 && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-gray-400">{t('Chọn kỳ thanh toán:')}</span>
-          <div className="flex items-center gap-2">
-            {bills.map(b => (
+      {/* Segmented Cycle Selector: Theo Tháng vs Theo Quý */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#222B35] pb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-[#0D1117] p-1 border border-[#222B35]">
+            <button
+              type="button"
+              onClick={() => setCycleMode('MONTH')}
+              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${
+                cycleMode === 'MONTH'
+                  ? 'bg-[#C5A880] text-[#0D1117] shadow-sm'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>{t('Đóng Phí Theo Tháng')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCycleMode('QUARTER')}
+              className={`px-3 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${
+                cycleMode === 'QUARTER'
+                  ? 'bg-[#C5A880] text-[#0D1117] shadow-sm'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>{t('Đóng Phí Theo Quý')}</span>
+              <span className="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[9px] font-mono font-bold">
+                -5%
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic Pills based on cycleMode */}
+        {cycleMode === 'MONTH' ? (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            {newestBillsFirst.map(b => (
               <button
                 key={b.id}
                 onClick={() => setSelectedBillId(b.id)}
-                className={`px-3 py-1.5 text-xs font-mono transition-all ${
+                className={`px-3 py-1.5 text-xs font-mono transition-all flex items-center gap-1.5 shrink-0 ${
                   (currentBill?.id === b.id)
                     ? 'bg-[#C5A880] text-[#0D1117] font-bold shadow'
                     : 'bg-[#161B22] border border-[#2D3748] text-gray-300 hover:text-white'
                 }`}
               >
-                {t(b.billing_month)} ({b.status === 'Paid' ? t('Đã thanh toán ✓') : t('Chưa thanh toán')})
+                <span>{t(b.billing_month)}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 border ${
+                  b.status === 'Paid'
+                    ? (currentBill?.id === b.id ? 'border-[#0D1117] text-[#0D1117]' : 'border-emerald-500/50 text-emerald-400 bg-emerald-950/40')
+                    : (currentBill?.id === b.id ? 'border-[#0D1117] bg-[#0D1117] text-amber-300 font-bold' : 'border-amber-500/50 text-amber-300 bg-amber-950/40')
+                }`}>
+                  {b.status === 'Paid' ? t('Đã nộp ✓') : t('Chờ nộp')}
+                </span>
               </button>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            {quarters.map(q => (
+              <button
+                key={q.id}
+                onClick={() => setSelectedQuarterId(q.id)}
+                className={`px-3 py-1.5 text-xs font-mono transition-all flex items-center gap-1.5 shrink-0 ${
+                  selectedQuarterId === q.id
+                    ? 'bg-[#C5A880] text-[#0D1117] font-bold shadow'
+                    : 'bg-[#161B22] border border-[#2D3748] text-gray-300 hover:text-white'
+                }`}
+              >
+                <span>{q.name}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 border ${
+                  q.status === 'Active'
+                    ? (selectedQuarterId === q.id ? 'border-[#0D1117] bg-[#0D1117] text-amber-300 font-bold' : 'border-amber-500/50 text-amber-300 bg-amber-950/40')
+                    : (selectedQuarterId === q.id ? 'border-[#0D1117] text-[#0D1117]' : 'border-emerald-500/50 text-emerald-400 bg-emerald-950/40')
+                }`}>
+                  {q.status === 'Active' ? t('Kỳ Hiện Tại') : t('Đã Quyết Toán ✓')}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
-      {/* Bill Overview Card */}
-      {currentBill ? (
+      {cycleMode === 'QUARTER' ? (
+        <div className="p-6 bg-[#121820] border border-[#222B35] space-y-6 shadow-xl animate-fadeIn">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222B35] pb-4">
+            <div>
+              <div className="text-xs text-gray-400">{t('Quyết toán theo quý:')} <strong className="text-white">{currentQuarter.name} ({currentQuarter.periodText})</strong></div>
+              <div className="text-xs text-gray-400 mt-0.5">
+                {t('Phân kỳ quản lý:')} <strong className="text-emerald-400">{currentQuarter.status === 'Active' ? t('Đang Mở Thu Phí Kỳ Tháng 11/2026') : t('Đã Quyết Toán Đầy Đủ 100%')}</strong>
+              </div>
+              <div className="text-[11px] text-gray-400 mt-0.5">
+                {t('Chính sách ưu đãi:')} <strong className="text-gray-200">{t('Chiết khấu 5% Phí Quản Lý Vận Hành khi thanh toán trước theo quý')}</strong>
+              </div>
+            </div>
+
+            <div className="text-left sm:text-right">
+              <div className="text-xs uppercase tracking-wider text-gray-400">{t('Tổng Chi Phí Cả Quý')}</div>
+              <div className="font-serif text-3xl font-bold text-[#C5A880]">
+                {currentQuarter.totalEstimate.toLocaleString('vi-VN')} đ
+              </div>
+              <div className="mt-1 flex items-center justify-start sm:justify-end gap-2">
+                <span className={`px-2.5 py-0.5 text-[10px] uppercase font-bold font-mono ${
+                  currentQuarter.status === 'Active'
+                    ? 'bg-amber-950 text-amber-300 border border-amber-600'
+                    : 'bg-emerald-950 text-emerald-300 border border-emerald-500'
+                }`}>
+                  {currentQuarter.status === 'Active' ? t('Đang Mở Thu Phí') : t('✓ Đã Quyết Toán')}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3 Metric Cards for the Quarter */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-3.5 bg-[#0D1117] border border-[#222B35]">
+              <div className="text-[11px] text-gray-400 uppercase tracking-wider">{t('Tổng Nghĩa Vụ Quý')}</div>
+              <div className="font-mono text-lg font-bold text-white mt-1">
+                {currentQuarter.totalEstimate.toLocaleString('vi-VN')} đ
+              </div>
+              <div className="text-[10px] text-gray-400 mt-0.5">{currentQuarter.months.length} {t('kỳ hàng tháng')}</div>
+            </div>
+
+            <div className="p-3.5 bg-[#0D1117] border border-emerald-500/30">
+              <div className="text-[11px] text-emerald-400 uppercase tracking-wider">{t('Đã Quyết Toán')}</div>
+              <div className="font-mono text-lg font-bold text-emerald-400 mt-1">
+                {currentQuarter.paidAmount.toLocaleString('vi-VN')} đ
+              </div>
+              <div className="text-[10px] text-gray-400 mt-0.5">
+                {Math.round((currentQuarter.paidAmount / currentQuarter.totalEstimate) * 100)}% {t('tiến độ quý')}
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-[#0D1117] border border-amber-500/30">
+              <div className="text-[11px] text-amber-400 uppercase tracking-wider">{t('Còn Phải Nộp')}</div>
+              <div className="font-mono text-lg font-bold text-amber-400 mt-1">
+                {currentQuarter.remainingAmount.toLocaleString('vi-VN')} đ
+              </div>
+              <div className="text-[10px] text-gray-400 mt-0.5">
+                {currentQuarter.remainingAmount > 0 ? t('Bao gồm Tháng 11 đến hạn') : t('Không có dư nợ')}
+              </div>
+            </div>
+          </div>
+
+          {/* Bảng Kê Các Tháng Trong Quý */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-[#222B35] pb-2">
+              <h3 className="font-serif text-sm font-bold text-white flex items-center gap-2">
+                <CalendarDays className="w-4 h-4 text-[#C5A880]" />
+                <span>{t('Tiến Độ Các Kỳ Tháng Trong Quý')}</span>
+              </h3>
+              <span className="text-[11px] text-gray-400 font-mono">
+                {currentQuarter.periodText}
+              </span>
+            </div>
+
+            <div className="overflow-x-auto border border-[#222B35] bg-[#161B22]/60">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-[#222B35] bg-[#121820] text-[11px] uppercase tracking-wider text-gray-400 font-semibold">
+                    <th className="py-3 px-4">{t('Kỳ Tháng')}</th>
+                    <th className="py-3 px-4">{t('Trạng Thái')}</th>
+                    <th className="py-3 px-4">{t('Ngày Ghi Nhận / Hạn Nộp')}</th>
+                    <th className="py-3 px-4 text-right">{t('Số Tiền')}</th>
+                    <th className="py-3 px-4 text-right">{t('Thao Tác')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#222B35]">
+                  {currentQuarter.months.map((m, idx) => (
+                    <tr key={idx} className="hover:bg-[#1A222D] transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-white flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 text-[#C5A880]" />
+                        <span>{t(m.name)}</span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`px-2 py-0.5 text-[10px] uppercase font-bold font-mono border ${
+                          m.status === 'Paid'
+                            ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50'
+                            : m.status === 'Unpaid'
+                            ? 'bg-amber-950/70 text-amber-300 border-amber-500/50'
+                            : 'bg-gray-800 text-gray-400 border-gray-700'
+                        }`}>
+                          {m.status === 'Paid' ? t('Đã Nộp ✓') : m.status === 'Unpaid' ? t('Chờ Thanh Toán') : t('Ước Tính')}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-gray-300 font-mono text-[11px]">
+                        {m.paidDate ? `${t('Đã nộp:')} ${m.paidDate} (${m.method})` : m.dueDate ? `${t('Hạn nộp:')} ${m.dueDate}` : (m as any).note || '-'}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-white">
+                        {m.amount.toLocaleString('vi-VN')} đ
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        {m.status === 'Unpaid' && m.bill && (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedBillId(m.bill!.id);
+                                setCycleMode('MONTH');
+                              }}
+                              className="px-2.5 py-1 bg-[#C5A880] text-[#0D1117] hover:bg-white text-[10px] font-bold uppercase tracking-wider"
+                            >
+                              {t('Xem & Thanh Toán')}
+                            </button>
+                          </div>
+                        )}
+                        {m.status === 'Paid' && m.bill && (
+                          <button
+                            type="button"
+                            onClick={() => handleExportInvoicePdf(m.bill!)}
+                            className="px-2.5 py-1 bg-[#161B22] border border-[#2D3748] hover:border-[#C5A880] text-[#C5A880] text-[10px] font-mono flex items-center gap-1 ml-auto"
+                          >
+                            <Download className="w-3 h-3" />
+                            <span>PDF</span>
+                          </button>
+                        )}
+                        {m.status === 'Estimated' && (
+                          <span className="text-[10px] text-gray-400 italic">{t('Kỳ tiếp theo')}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Platinum Resident Incentive Banner for Active Quarter */}
+          {currentQuarter.id === 'Q4_2026' && currentQuarter.remainingAmount > 0 && (
+            <div className="p-4 bg-gradient-to-r from-[#121820] to-[#1C2533] border border-[#C5A880] space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-amber-500/20 text-[#C5A880] border border-[#C5A880]/50 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-wider text-[#C5A880]">
+                      {t('Đặc Quyền Skyline Platinum: Đóng Phí Trọn Quý 4')}
+                    </div>
+                    <p className="text-[11px] text-gray-300 mt-0.5">
+                      {t('Thanh toán trước trọn gói Quý 4 nhận ngay chiết khấu 5% Phí Quản Lý Vận Hành. Tổng tiết kiệm:')}{' '}
+                      <strong className="text-emerald-400 font-mono">113.400 đ</strong>. {t('Số tiền sau ưu đãi:')}{' '}
+                      <strong className="text-[#C5A880] font-mono">4.821.600 đ</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenVnpaySandbox()}
+                    className="px-3.5 py-2 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow cursor-pointer"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>{t('Thanh Toán Tháng 11 (2.485k)')}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowVietQrModal(true)}
+                    className="px-3.5 py-2 bg-[#161B22] border border-[#C5A880] hover:bg-[#C5A880] hover:text-[#0D1117] text-[#C5A880] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                    <span>{t('Gói Trọn Quý 4 (-5%)')}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : currentBill ? (
         <div className="p-6 bg-[#121820] border border-[#222B35] space-y-6 shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222B35] pb-4">
             <div>
@@ -1180,6 +1521,9 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
           Căn hộ hiện chưa có hóa đơn nào được phát hành.
         </div>
       )}
+
+      {/* A3: Dự Báo Chi Phí Kỳ Tới & Gợi Ý Tiết Kiệm Năng Lượng */}
+      <CostForecastCard bills={bills} aptCode={aptCode} />
       </div>
       )}
 
@@ -1205,7 +1549,11 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
                 <span className="text-emerald-400 font-mono font-bold flex items-center">
                   <CheckCheck className="w-3.5 h-3.5 mr-0.5" /> {bills.length} kỳ
                 </span>
-                <span>(T05 - T08/2026)</span>
+                <span>
+                  {sortedBills.length > 0
+                    ? `(${sortedBills[0].billing_month.replace('Tháng ', 'T')} - ${sortedBills[sortedBills.length - 1].billing_month.replace('Tháng ', 'T')})`
+                    : '(Năm 2026)'}
+                </span>
               </div>
             </div>
 

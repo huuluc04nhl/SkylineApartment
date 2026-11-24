@@ -204,7 +204,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [selectedArea, setSelectedArea] = useState<string>('Gian bếp');
   const [urgencyLevel, setUrgencyLevel] = useState<'HIGH' | 'NORMAL'>('HIGH');
-  const [preferredTime, setPreferredTime] = useState<string>('Càng sớm càng tốt (< 30 phút)');
+  const [preferredTime, setPreferredTime] = useState<string>(PREFERRED_TIME_SLOTS[0]);
   const [contactPhone, setContactPhone] = useState<string>(residentPhone);
 
   useEffect(() => {
@@ -256,7 +256,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
 
   useEffect(() => {
     refreshTicketList();
-    // Đồng bộ trực tiếp từ NKS API ngầm khi mở tab
+    // Đồng bộ trực tiếp từ Skyline API ngầm khi mở tab
     syncTicketsWithServer(aptCode, residentPhone).then(() => {
       refreshTicketList();
     });
@@ -466,10 +466,10 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
       setAiImageAnalysis(null);
       setSelectedPresetId(null);
       setShowCreateForm(false);
-      const ticketDisplayId = newTicket?.nks_id ? `#${newTicket.nks_id}` : (newTicket?.id ? `#${newTicket.id}` : '');
+      const ticketDisplayId = newTicket?.id ? `#${newTicket.id}` : '';
       
       if (ticketPurpose === 'FEEDBACK') {
-        setCreatedSuccessMsg(`Ban Quản Lý đã tiếp nhận ý kiến / phản ánh ${ticketDisplayId} và sẽ liên hệ phản hồi Quý cư dân sớm nhất!`);
+        setCreatedSuccessMsg(`VinHomes Manager đã tiếp nhận ý kiến / phản ánh ${ticketDisplayId} và sẽ liên hệ phản hồi Quý cư dân sớm nhất!`);
       } else {
         const techName = newTicket?.assigned_technician;
         setCreatedSuccessMsg(
@@ -540,7 +540,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                   : 'Đã Tiếp Nhận Phiếu (BQL Phản Hồi)'}
               </span>
               <span className="text-[11px] text-[#C5A880] font-mono">
-                #{createdTicketResult.nks_id || createdTicketResult.id} • Căn {createdTicketResult.apt_code}
+                #{createdTicketResult.id} • Căn {createdTicketResult.apt_code}
               </span>
             </div>
             <button
@@ -558,7 +558,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                 <Wrench className="w-4 h-4 text-[#C5A880] flex-shrink-0" />
                 <div>
                   <div className="font-bold text-white text-xs flex items-center gap-2">
-                    <span>{createdTicketResult.assigned_technician || 'KTV Ca Trực Skyline'}</span>
+                    <span>{createdTicketResult.assigned_technician || (isEn ? 'Skyline On-Duty Tech' : 'KTV Ca Trực Skyline')}</span>
                     <span className="text-[10px] px-1.5 py-0.2 bg-emerald-950 text-emerald-300 border border-emerald-500/40">
                       Có mặt trong {createdTicketResult.scheduled_time || '30 - 45 phút'}
                     </span>
@@ -589,7 +589,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
           ) : (
             <div className="p-3 bg-rose-950/20 border border-rose-500/30 text-xs text-gray-300 flex items-start gap-2">
               <Clock className="w-3.5 h-3.5 text-rose-400 flex-shrink-0 mt-0.5" />
-              <span>Phiếu phản ánh đã được gửi tới Ban Quản Lý. BQL sẽ xác minh thông tin và gửi phản hồi / đáp lại cho Quý cư dân trong thời gian sớm nhất.</span>
+              <span>{isEn ? 'Your feedback has been sent to Skyline Property Management. We will verify and respond to you as soon as possible.' : 'Phiếu phản ánh đã được gửi tới VinHomes Manager. Ban quản lý sẽ xác minh thông tin và gửi phản hồi / đáp lại cho Quý cư dân trong thời gian sớm nhất.'}</span>
             </div>
           )}
         </div>
@@ -637,8 +637,8 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
               }`}
             >
               <Wrench className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline">Báo Hỏng Sửa Chữa (Kỹ Thuật)</span>
-              <span className="sm:hidden">Báo Hỏng KTV</span>
+              <span className="hidden sm:inline">{isEn ? 'Repair Request (Maintenance)' : 'Báo Hỏng Sửa Chữa (Kỹ Thuật)'}</span>
+              <span className="sm:hidden">{isEn ? 'Repair' : 'Báo Hỏng KTV'}</span>
             </button>
             <button
               type="button"
@@ -650,8 +650,8 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
               }`}
             >
               <MessageSquare className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline">Góp Ý &amp; Khiếu Nại (BQL)</span>
-              <span className="sm:hidden">Góp Ý BQL</span>
+              <span className="hidden sm:inline">{isEn ? 'Resident Feedback & Complaints' : 'Góp Ý & Khiếu Nại (BQL)'}</span>
+              <span className="sm:hidden">{isEn ? 'Feedback' : 'Góp Ý BQL'}</span>
             </button>
           </div>
 
@@ -663,7 +663,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                 <span className="flex items-center gap-1 text-amber-300 font-medium">
                   <Zap className="w-3.5 h-3.5 text-amber-400" /> Gợi ý sự cố phổ biến:
                 </span>
-                <span className="text-[10px] text-gray-500">Chạm để tự động điền</span>
+                <span className="text-[10px] text-gray-500">{isEn ? 'Tap to auto-fill' : 'Chạm để tự động điền'}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 w-full">
                 {COMMON_REPAIR_PRESETS.map((p) => {
@@ -700,7 +700,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                 <span className="flex items-center gap-1 text-rose-300 font-medium">
                   <MessageSquare className="w-3.5 h-3.5 text-rose-400" /> Chọn nhanh chủ đề góp ý:
                 </span>
-                <span className="text-[10px] text-gray-500">Chạm để chọn nội dung</span>
+                <span className="text-[10px] text-gray-500">{isEn ? 'Tap to select topic' : 'Chạm để chọn nội dung'}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 w-full">
                 {[
@@ -811,7 +811,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                   <span className="flex items-center gap-1">
                     <Phone className="w-3 h-3 text-[#C5A880]" /> {isEn ? 'On-site contact phone:' : 'SĐT người ở nhà:'}
                   </span>
-                  <span className="text-[10px] text-gray-400 font-mono">10 số</span>
+                  <span className="text-[10px] text-gray-400 font-mono">{isEn ? '10 digits' : '10 số'}</span>
                 </label>
                 <input
                   type="tel"
@@ -835,7 +835,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
             <div className="flex items-center justify-between flex-wrap gap-1">
               <label className="text-xs text-gray-300 font-medium flex items-center gap-1.5">
                 {ticketPurpose === 'FEEDBACK'
-                  ? (isEn ? 'Feedback / Report content to Management:' : 'Nội dung góp ý / phản ánh gửi Ban Quản Lý:')
+                  ? (isEn ? 'Feedback / Report content to VinHomes Manager:' : 'Nội dung góp ý / phản ánh gửi VinHomes Manager:')
                   : (isEn ? 'Describe the issue or damage:' : 'Mô tả hiện tượng hư hỏng sự cố:')}
               </label>
 
@@ -895,7 +895,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                     type="button"
                     onClick={() => { setAttachedImageBase64(''); setAiImageAnalysis(null); }}
                     className="text-gray-400 hover:text-rose-400 text-xs px-1"
-                    title="Gỡ ảnh"
+                    title={isEn ? 'Remove image' : 'Gỡ ảnh'}
                   >
                     ✕
                   </button>
@@ -907,7 +907,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
             {isAnalyzingImage && (
               <div className="w-full mt-2 p-2.5 bg-[#0F1824] border border-sky-500/40 flex items-center gap-2 text-xs text-sky-300 animate-pulse">
                 <Bot className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
-                <span>Đang xem ảnh và đưa ra nhận xét cho bạn...</span>
+                <span>{isEn ? 'Analyzing image and generating suggestions...' : 'Đang xem ảnh và đưa ra nhận xét cho bạn...'}</span>
               </div>
             )}
             {!isAnalyzingImage && aiImageAnalysis && (
@@ -920,7 +920,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
               }`}>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <Bot className="w-3.5 h-3.5 text-sky-400" />
-                  <span className="text-sky-300 font-semibold">Nhận xét từ AI</span>
+                  <span className="text-sky-300 font-semibold">{isEn ? 'AI Analysis' : 'Nhận xét từ AI'}</span>
                   <span className={`px-1.5 py-px text-[10px] font-bold ${
                     aiImageAnalysis.severity === 'HIGH' ? 'bg-rose-900 text-rose-200' :
                     aiImageAnalysis.severity === 'MEDIUM' ? 'bg-amber-900 text-amber-200' :
@@ -963,7 +963,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                 ) : ticketPurpose === 'FEEDBACK' ? (
                   <>
                     <Send className="w-3.5 h-3.5" />
-                    Gửi Ban Quản Lý
+                    Gửi VinHomes Manager
                   </>
                 ) : (
                   <>
@@ -992,7 +992,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
           {/* Ticket Selector if multiple resolved tickets with photos */}
           {comparisonTickets.length > 1 && (
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-gray-400">Xem phiếu:</span>
+              <span className="text-gray-400">{isEn ? 'View ticket:' : 'Xem phiếu:'}</span>
               <select
                 value={activeComparisonTicket?.id || ''}
                 onChange={(e) => setSelectedComparisonTicketId(e.target.value)}
@@ -1015,7 +1015,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
               {/* After Image (Full background) */}
               <img
                 src={activeComparisonTicket.after_image}
-                alt="Sau khi sửa"
+                alt={isEn ? 'After repair' : 'Sau khi sửa'}
                 className="absolute inset-0 w-full h-full object-cover"
               />
               <div className="absolute top-3 right-3 bg-emerald-950/90 border border-emerald-500 text-emerald-300 px-2.5 py-1 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider z-10 shadow-lg">
@@ -1029,7 +1029,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
               >
                 <img
                   src={activeComparisonTicket.before_image}
-                  alt="Hiện trạng lúc báo"
+                  alt={isEn ? 'Initial issue report' : 'Hiện trạng lúc báo'}
                   className="absolute inset-0 w-full h-full object-cover"
                 />
                 <div className="absolute top-3 left-3 bg-red-950/90 border border-red-500 text-red-300 px-2.5 py-1 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider z-10 shadow-lg">
@@ -1065,9 +1065,9 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-gray-400 gap-2">
-              <span>* Kéo thanh trượt ngang để đối chiếu chất lượng thi công trước và sau của kỹ thuật viên.</span>
+              <span>*{isEn ? ' Drag the horizontal slider to compare before and after repair quality.' : ' Kéo thanh trượt ngang để đối chiếu chất lượng thi công trước và sau của kỹ thuật viên.'}</span>
               <div className="flex items-center gap-3">
-                <span className="font-mono text-[#C5A880]">Mã phiếu: {activeComparisonTicket.id}</span>
+                <span className="font-mono text-[#C5A880]">{isEn ? 'Ticket ID:' : 'Mã phiếu:'} {activeComparisonTicket.id}</span>
                 {activeComparisonTicket.resolution_notes && (
                   <span className="text-gray-300 italic">"{activeComparisonTicket.resolution_notes}"</span>
                 )}
@@ -1079,7 +1079,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
             <div className="w-10 h-10 rounded-none bg-[#1C2533] border border-[#2D3748] text-[#C5A880] flex items-center justify-center mx-auto">
               <Sliders className="w-5 h-5" />
             </div>
-            <div className="text-xs text-gray-300 font-semibold">Chưa có phiếu sửa chữa nào được nghiệm thu kèm hình ảnh</div>
+            <div className="text-xs text-gray-300 font-semibold">{isEn ? 'No completed repair tickets with verification photos yet' : 'Chưa có phiếu sửa chữa nào được nghiệm thu kèm hình ảnh'}</div>
             <p className="text-[11px] text-gray-500 max-w-md mx-auto leading-relaxed">
               Công cụ đối chiếu hình ảnh Trước / Sau sẽ tự động kích hoạt ngay khi Kỹ thuật viên hoàn tất sửa chữa và tải lên ảnh nghiệm thu thực tế cho phiếu sự cố của căn hộ.
             </p>
@@ -1092,7 +1092,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
         {/* Header & Sync */}
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs uppercase tracking-wider text-gray-400 font-semibold border-b border-[#222B35] pb-2">
           <div className="flex items-center gap-2">
-            <span>Danh Sách Yêu Cầu {aptCode ? `Căn Hộ ${aptCode}` : residentName} ({tickets.length})</span>
+            <span>{isEn ? `Requests List ${aptCode ? `Unit ${aptCode}` : residentName} (${tickets.length})` : `Danh Sách Yêu Cầu ${aptCode ? `Căn Hộ ${aptCode}` : residentName} (${tickets.length})`}</span>
             <span className="px-2 py-0.5 bg-emerald-950/80 border border-emerald-500/40 text-emerald-400 text-[10px] font-medium flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Kết Nối Trực Tuyến
@@ -1175,7 +1175,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-[#C5A880] font-bold text-sm">
-                        {t.nks_id ? `#${t.nks_id}` : `#${t.id.replace('TICK-', '')}`}
+                        #{t.id.replace('TICK-', '')}
                       </span>
                       
                       {isFeedback ? (
@@ -1277,7 +1277,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                           ) : (
                             <>
                               <BadgeCheck className="w-3.5 h-3.5 text-rose-400" />
-                              {isEn ? `Official response from ${t.admin_replied_by || 'Skyline Management'}:` : `Phản hồi chính thức từ ${t.admin_replied_by || 'Ban Quản Lý Skyline'}:`}
+                              {isEn ? `Official response from ${t.admin_replied_by || 'VinHomes Manager'}:` : `Phản hồi chính thức từ ${t.admin_replied_by || 'VinHomes Manager'}:`}
                             </>
                           )}
                         </div>
@@ -1293,7 +1293,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                     ) : (
                       <div className="p-2.5 bg-[#161B22] border border-[#222B35] text-[11px] text-gray-400 flex items-center gap-2">
                         <Clock className="w-3.5 h-3.5 text-amber-400" />
-                        <span>{isEn ? 'Management is verifying on-site before providing official written response.' : 'Ban Quản Lý đang xác minh và kiểm tra hiện trường để gửi văn bản phản hồi.'}</span>
+                        <span>{isEn ? 'VinHomes Manager is verifying on-site before providing official written response.' : 'VinHomes Manager đang xác minh và kiểm tra hiện trường để gửi văn bản phản hồi.'}</span>
                       </div>
                     )
                   )}
@@ -1306,7 +1306,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                           <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
                             <img 
                               src={t.before_image} 
-                              alt="Ảnh lúc báo" 
+                              alt={isEn ? 'Report photo' : 'Ảnh lúc báo'} 
                               className="w-10 h-10 object-cover border border-red-500/40 rounded-none"
                             />
                             <span>{isEn ? 'Report Photo' : 'Ảnh hiện trường'}</span>
@@ -1316,7 +1316,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                           <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
                             <img 
                               src={t.after_image} 
-                              alt="Ảnh nghiệm thu" 
+                              alt={isEn ? 'Completion photo' : 'Ảnh nghiệm thu'} 
                               className="w-10 h-10 object-cover border border-emerald-500/40 rounded-none"
                             />
                             <span className="text-emerald-400 font-medium">{isEn ? 'Inspection Photo' : 'Ảnh nghiệm thu'}</span>
@@ -1385,7 +1385,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                     {isFeedback ? (
                       <span className="text-rose-300 font-medium flex items-center gap-1.5">
                         <MessageSquare className="w-3 h-3 text-rose-400" />
-                        {isEn ? 'Customer Service & Management handling and responding' : 'Chuyên viên CSKH & Ban Quản Lý chịu trách nhiệm thụ lý và phản hồi'}
+                        {isEn ? 'Customer Service & VinHomes Manager handling and responding' : 'Chuyên viên CSKH & VinHomes Manager chịu trách nhiệm thụ lý và phản hồi'}
                       </span>
                     ) : (
                       <>
@@ -1393,7 +1393,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                           <span>
                             {isEn ? 'Responsible Technician:' : 'Kỹ thuật viên phụ trách:'} {' '}
                             <strong className="text-white">
-                              {t.assigned_technician || (isEn ? 'Management dispatching...' : 'Ban Quản Lý đang điều phối')}
+                              {t.assigned_technician || (isEn ? 'VinHomes Manager dispatching...' : 'VinHomes Manager đang điều phối')}
                             </strong>
                           </span>
 
@@ -1430,7 +1430,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
             <div className="flex items-center justify-between border-b border-[#222B35] pb-3">
               <div className="flex items-center gap-2 text-white font-serif font-bold">
                 <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                <span>Đánh Giá Chất Lượng Dịch Vụ Kỹ Thuật</span>
+                <span>{isEn ? 'Rate Technical Service Quality' : 'Đánh Giá Chất Lượng Dịch Vụ Kỹ Thuật'}</span>
               </div>
               <button 
                 onClick={() => setRatingModalTicket(null)}
@@ -1441,13 +1441,13 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
             </div>
 
             <div className="p-3 bg-[#161B22] border border-[#222B35] text-xs space-y-1">
-              <div>Phiếu xử lý: <strong className="text-[#C5A880] font-mono">{ratingModalTicket.id}</strong></div>
-              <div>Kỹ thuật viên: <strong className="text-white">{ratingModalTicket.assigned_technician || 'Kỹ thuật viên chung cư'}</strong></div>
+              <div>{isEn ? 'Ticket ID:' : 'Phiếu xử lý:'} <strong className="text-[#C5A880] font-mono">{ratingModalTicket.id}</strong></div>
+              <div>{isEn ? 'Technician:' : 'Kỹ thuật viên:'} <strong className="text-white">{ratingModalTicket.assigned_technician || (isEn ? 'Building Technician' : 'Kỹ thuật viên chung cư')}</strong></div>
             </div>
 
             {/* Interactive Stars */}
             <div className="space-y-1 text-center py-2">
-              <div className="text-xs text-gray-300">Quý cư dân hài lòng với thái độ và kết quả sửa chữa chứ?</div>
+              <div className="text-xs text-gray-300">{isEn ? 'Are you satisfied with the technician service and repair outcome?' : 'Quý cư dân hài lòng với thái độ và kết quả sửa chữa chứ?'}</div>
               <div className="flex items-center justify-center gap-2 pt-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -1475,12 +1475,12 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-gray-300">Ý kiến nhận xét thêm (Tùy chọn):</label>
+              <label className="text-xs text-gray-300">{isEn ? 'Additional feedback (Optional):' : 'Ý kiến nhận xét thêm (Tùy chọn):'}</label>
               <textarea
                 rows={2}
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
-                placeholder="VD: Kỹ thuật viên rất chu đáo, dọn dẹp sạch sẽ sau khi sửa..."
+                placeholder={isEn ? 'e.g. Technician was very polite, cleaned up nicely after repair...' : 'VD: Kỹ thuật viên rất chu đáo, dọn dẹp sạch sẽ sau khi sửa...'}
                 className="w-full bg-[#161B22] border border-[#2D3748] text-xs text-white p-2.5 focus:outline-none focus:border-[#C5A880]"
               />
             </div>
@@ -1492,7 +1492,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
                 className="w-full py-3 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-colors shadow-lg rounded-none cursor-pointer flex items-center justify-center gap-2 active:scale-95"
               >
                 <Star className="w-4 h-4 fill-current" />
-                <span>Gửi Đánh Giá Dịch Vụ</span>
+                <span>{isEn ? 'Submit Service Review' : 'Gửi Đánh Giá Dịch Vụ'}</span>
               </button>
             </div>
           </div>

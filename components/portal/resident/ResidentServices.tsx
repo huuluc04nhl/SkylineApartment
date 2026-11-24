@@ -45,6 +45,7 @@ import {
   Bus
 } from 'lucide-react';
 import { useLanguage } from '@/lib/languageContext';
+import ConfirmDeleteModal from '@/components/portal/shared/ConfirmDeleteModal';
 
 interface ResidentServicesProps {
   currentUser: User;
@@ -74,6 +75,7 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
   const [notes, setNotes] = useState<string>('');
   const [paymentChoice, setPaymentChoice] = useState<'ADD_TO_BILL' | 'PAY_NOW'>('ADD_TO_BILL');
   const [bookingSuccessMsg, setBookingSuccessMsg] = useState<string | null>(null);
+  const [cancelBookingTargetId, setCancelBookingTargetId] = useState<string | null>(null);
 
   const refreshBookings = () => {
     const list = getResidentBookings(aptCode);
@@ -130,10 +132,14 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
   };
 
   const handleCancel = (bookingId: string) => {
-    if (confirm('Bạn có chắc chắn muốn hủy đơn dịch vụ này không?')) {
-      cancelResidentBooking(bookingId);
-      refreshBookings();
-    }
+    setCancelBookingTargetId(bookingId);
+  };
+
+  const confirmCancelBooking = () => {
+    if (!cancelBookingTargetId) return;
+    cancelResidentBooking(cancelBookingTargetId);
+    refreshBookings();
+    setCancelBookingTargetId(null);
   };
 
   return (
@@ -165,8 +171,8 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden sm:inline">Danh Mục Dịch Vụ</span>
-            <span className="sm:hidden truncate">Dịch Vụ</span> <span>(7)</span>
+            <span className="hidden sm:inline">{isEn ? 'Services Catalog' : 'Danh Mục Dịch Vụ'}</span>
+            <span className="sm:hidden truncate">{isEn ? 'Services' : 'Dịch Vụ'}</span> <span>(7)</span>
           </button>
 
           <button
@@ -178,8 +184,8 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
             }`}
           >
             <History className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden sm:inline">Lịch Sử &amp; Đơn Hàng</span>
-            <span className="sm:hidden truncate">Lịch Sử</span> <span>({bookings.length})</span>
+            <span className="hidden sm:inline">{isEn ? 'Order History' : 'Lịch Sử & Đơn Hàng'}</span>
+            <span className="sm:hidden truncate">{isEn ? 'History' : 'Lịch Sử'}</span> <span>({bookings.length})</span>
           </button>
         </div>
       </div>
@@ -354,8 +360,8 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
                     {/* Package Options */}
                     <div className="space-y-2.5">
                       <div className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold flex items-center justify-between">
-                        <span>Bảng Giá Gói Dịch Vụ:</span>
-                        <span className="text-[10px] text-[#C5A880] font-normal">Đã gồm VAT & Phí dịch vụ</span>
+                        <span>{isEn ? 'Service Package Pricing:' : 'Bảng Giá Gói Dịch Vụ:'}</span>
+                        <span className="text-[10px] text-[#C5A880] font-normal">{isEn ? 'VAT & service fee included' : 'Đã gồm VAT & Phí dịch vụ'}</span>
                       </div>
 
                       <div className="divide-y divide-[#222B35] border border-[#222B35] bg-[#161B22]/60">
@@ -387,7 +393,7 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
                                 onClick={() => handleOpenBooking(service, pkg)}
                                 className="h-8 sm:h-auto px-3 sm:px-2.5 py-1 bg-[#121820] hover:bg-[#C5A880] text-gray-200 hover:text-[#0D1117] border border-[#2D3748] hover:border-[#C5A880] text-xs sm:text-[10.5px] font-bold transition-all flex items-center gap-1 shadow-sm active:scale-95"
                               >
-                                <span>Đặt Gói Này</span> <ChevronRight className="w-3 h-3 shrink-0" />
+                                <span>{isEn ? 'Book This Package' : 'Đặt Gói Này'}</span> <ChevronRight className="w-3 h-3 shrink-0" />
                               </button>
                             </div>
                           </div>
@@ -418,14 +424,14 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
       {activeTab === 'HISTORY' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between text-xs text-gray-400 pb-2 border-b border-[#222B35]">
-            <span>Danh sách đơn đặt dịch vụ của Căn hộ <strong className="text-white font-mono">{aptCode}</strong></span>
-            <span className="font-mono text-[#C5A880]">Tổng cộng: {bookings.length} đơn</span>
+            <span>{isEn ? 'Service booking orders for Unit' : 'Danh sách đơn đặt dịch vụ của Căn hộ'} <strong className="text-white font-mono">{aptCode}</strong></span>
+            <span className="font-mono text-[#C5A880]">{isEn ? 'Total:' : 'Tổng cộng:'} {bookings.length} {isEn ? 'orders' : 'đơn'}</span>
           </div>
 
           {bookings.length === 0 ? (
             <div className="p-12 text-center bg-[#121820] border border-[#222B35] space-y-3">
               <History className="w-10 h-10 text-gray-500 mx-auto" />
-              <div className="text-white font-serif text-lg font-bold">Chưa Có Đơn Đặt Dịch Vụ Nào</div>
+              <div className="text-white font-serif text-lg font-bold">{isEn ? 'No Service Bookings Yet' : 'Chưa Có Đơn Đặt Dịch Vụ Nào'}</div>
               <p className="text-xs text-gray-400 max-w-md mx-auto">
                 Quý cư dân chưa đặt dịch vụ nào trong hệ thống. Hãy chọn các dịch vụ tiện ích như Giặt ủi, Dọn dẹp nhà hay Thuê PT thể thao để trải nghiệm cuộc sống tiện nghi.
               </p>
@@ -484,28 +490,28 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
                   {/* Booking Details Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs bg-[#161B22]/50 p-3 border border-[#222B35]">
                     <div>
-                      <span className="text-gray-400 block text-[11px]">Thời gian hẹn:</span>
+                      <span className="text-gray-400 block text-[11px]">{isEn ? 'Scheduled time:' : 'Thời gian hẹn:'}</span>
                       <strong className="text-white font-mono">
                         {b.scheduledTimeSlot} • {new Date(b.scheduledDate).toLocaleDateString('vi-VN')}
                       </strong>
                     </div>
 
                     <div>
-                      <span className="text-gray-400 block text-[11px]">Khối lượng:</span>
+                      <span className="text-gray-400 block text-[11px]">{isEn ? 'Quantity / Volume:' : 'Khối lượng:'}</span>
                       <strong className="text-white">
                         {b.quantity} {b.unit} × {b.unitPrice.toLocaleString('vi-VN')} đ
                       </strong>
                     </div>
 
                     <div>
-                      <span className="text-gray-400 block text-[11px]">Tổng chi phí:</span>
+                      <span className="text-gray-400 block text-[11px]">{isEn ? 'Total fee:' : 'Tổng chi phí:'}</span>
                       <strong className="text-[#C5A880] font-mono text-sm">
                         {b.totalPrice.toLocaleString('vi-VN')} đ
                       </strong>
                     </div>
 
                     <div>
-                      <span className="text-gray-400 block text-[11px]">Nhân viên phụ trách:</span>
+                      <span className="text-gray-400 block text-[11px]">{isEn ? 'Assigned staff:' : 'Nhân viên phụ trách:'}</span>
                       <strong className="text-gray-200">
                         {b.assignedStaff || 'Đội Dịch Vụ BQL'}
                       </strong>
@@ -563,7 +569,7 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
             <div className="space-y-4 text-xs">
               {/* Package Selector */}
               <div className="space-y-1.5">
-                <label className="text-gray-300 font-semibold block">Chọn Gói Dịch Vụ:</label>
+                <label className="text-gray-300 font-semibold block">{isEn ? 'Select Service Package:' : 'Chọn Gói Dịch Vụ:'}</label>
                 <div className="grid grid-cols-1 gap-2">
                   {selectedService.packages.map((pkg) => (
                     <div
@@ -630,7 +636,7 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
 
                 {/* Date Picker */}
                 <div className="space-y-1.5">
-                  <label className="text-gray-300 font-semibold block">Ngày Phục Vụ:</label>
+                  <label className="text-gray-300 font-semibold block">{isEn ? 'Service Date:' : 'Ngày Phục Vụ:'}</label>
                   <input
                     type="date"
                     value={scheduledDate}
@@ -642,7 +648,7 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
 
               {/* Time Slot Picker */}
               <div className="space-y-1.5">
-                <label className="text-gray-300 font-semibold block">Khung Giờ Phục Vụ / Đón Đồ:</label>
+                <label className="text-gray-300 font-semibold block">{isEn ? 'Service / Pickup Time Window:' : 'Khung Giờ Phục Vụ / Đón Đồ:'}</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {[
                     '08:00 - 09:30',
@@ -670,19 +676,19 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
 
               {/* Notes */}
               <div className="space-y-1.5">
-                <label className="text-gray-300 font-semibold block">Yêu Cầu Đặc Biệt / Ghi Chú:</label>
+                <label className="text-gray-300 font-semibold block">{isEn ? 'Special Instructions / Notes:' : 'Yêu Cầu Đặc Biệt / Ghi Chú:'}</label>
                 <textarea
                   rows={2}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Ví dụ: Nhận đồ tại cửa căn hộ CH-06, có veston đắt tiền cần giặt khô gấp..."
+                  placeholder={isEn ? 'e.g. Pickup at unit CH-06 door, delicate suits need gentle dry cleaning...' : 'Ví dụ: Nhận đồ tại cửa căn hộ CH-06, có veston đắt tiền cần giặt khô gấp...'}
                   className="w-full p-2.5 bg-[#0D1117] border border-[#2D3748] text-white focus:outline-none focus:border-[#C5A880] text-xs resize-none"
                 />
               </div>
 
               {/* Payment Method Selector */}
               <div className="space-y-2 pt-2 border-t border-[#222B35]">
-                <label className="text-gray-300 font-semibold block">Hình Thức Thanh Toán:</label>
+                <label className="text-gray-300 font-semibold block">{isEn ? 'Payment Method:' : 'Hình Thức Thanh Toán:'}</label>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Option 1: ADD_TO_BILL */}
@@ -696,7 +702,7 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
                   >
                     <div className="font-bold text-white flex items-center gap-1.5">
                       <Receipt className="w-3.5 h-3.5 text-[#C5A880]" />
-                      <span>Gộp Vào Hóa Đơn Tháng</span>
+                      <span>{isEn ? 'Add to Monthly Bill' : 'Gộp Vào Hóa Đơn Tháng'}</span>
                     </div>
                     <p className="text-[10px] text-gray-400">
                       Tự động ghi nhận vào hóa đơn Căn {aptCode}. Thanh toán tập trung 1 lần qua VNPAY / VietQR cuối tháng.
@@ -714,7 +720,7 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
                   >
                     <div className="font-bold text-white flex items-center gap-1.5">
                       <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Thanh Toán Trực Tiếp</span>
+                      <span>{isEn ? 'Direct Payment' : 'Thanh Toán Trực Tiếp'}</span>
                     </div>
                     <p className="text-[10px] text-gray-400">
                       Thanh toán tiền mặt cho nhân viên hoặc quét QR tại chỗ khi nghiệm thu dịch vụ.
@@ -726,7 +732,7 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
               {/* Price Breakdown */}
               <div className="p-3.5 bg-[#0D1117] border border-[#2D3748] flex items-center justify-between">
                 <div>
-                  <span className="text-gray-400 text-[11px] block">Tổng Chi Phí Dịch Vụ:</span>
+                  <span className="text-gray-400 text-[11px] block">{isEn ? 'Total Service Fee:' : 'Tổng Chi Phí Dịch Vụ:'}</span>
                   <span className="text-gray-300 font-mono text-xs">
                     {quantity} {selectedPackage.unit} × {selectedPackage.unitPrice.toLocaleString('vi-VN')} đ
                   </span>
@@ -750,7 +756,7 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
                 onClick={() => setSelectedService(null)}
                 className="h-10 sm:h-9 px-4 border border-gray-700 hover:border-gray-500 text-gray-300 text-xs transition-colors flex items-center justify-center active:scale-95"
               >
-                <span>Hủy Bỏ</span>
+                <span>{isEn ? 'Cancel' : 'Hủy Bỏ'}</span>
               </button>
 
               <button
@@ -759,12 +765,21 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
                 className="h-10 sm:h-9 px-5 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-colors shadow-lg flex items-center justify-center gap-1.5 active:scale-95 truncate"
               >
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span className="truncate">Xác Nhận Đặt Lịch</span>
+                <span className="truncate">{isEn ? 'Confirm Booking' : 'Xác Nhận Đặt Lịch'}</span>
               </button>
             </div>
           </div>
         </div>
       )}
+      {/* Confirm Cancel Booking Modal */}
+      <ConfirmDeleteModal
+        isOpen={!!cancelBookingTargetId}
+        onClose={() => setCancelBookingTargetId(null)}
+        onConfirm={confirmCancelBooking}
+        title={isEn ? 'Cancel Resident Service Order' : 'Hủy Đơn Đặt Dịch Vụ Cư Dân'}
+        message="Bạn có chắc chắn muốn hủy đơn dịch vụ này không? Khung giờ đã đăng ký sẽ được mở lại cho các cư dân khác trong tòa nhà."
+        itemCode={cancelBookingTargetId ? `#${cancelBookingTargetId}` : undefined}
+      />
     </div>
   );
 }

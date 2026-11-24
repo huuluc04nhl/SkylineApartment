@@ -19,7 +19,8 @@ import {
   ShieldCheck,
   AlertCircle
 } from 'lucide-react';
-import { nksUpdateAvatar } from '@/lib/nksApiClient';
+import { skylineUpdateAvatar } from '@/lib/skylineApiClient';
+import { useLanguage } from '@/lib/languageContext';
 
 interface AvatarEditorModalProps {
   isOpen: boolean;
@@ -29,10 +30,10 @@ interface AvatarEditorModalProps {
 }
 
 const PRESET_AVATARS = [
-  'https://data.nks.vn/storage/users/202609021654232258.jpg',
-  'https://data.nks.vn/storage/users/202607191405195335.jpg',
-  'https://data.nks.vn/storage/users/202608301345022366.jpg',
-  'https://data.nks.vn/storage/users/default.png',
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80',
 ];
 
 type FilterType = 'normal' | 'bright' | 'warm' | 'cool' | 'grayscale';
@@ -43,6 +44,7 @@ export default function AvatarEditorModal({
   currentAvatarUrl,
   onAvatarUpdated,
 }: AvatarEditorModalProps) {
+  const { t, isEn } = useLanguage();
   // Source image
   const [sourceImage, setSourceImage] = useState<string | null>(null);
   const [activeSourceTab, setActiveSourceTab] = useState<'UPLOAD' | 'CAMERA' | 'PRESET'>('UPLOAD');
@@ -320,7 +322,7 @@ export default function AvatarEditorModal({
     setScale((prev) => Math.min(Math.max(0.4, prev + delta), 4));
   };
 
-  // Export cropped circle image and update to NKS API
+  // Export cropped circle image and update to Skyline API
   const handleApplyAndSave = async () => {
     const previewCanvas = previewCanvasRef.current;
     if (!previewCanvas) return;
@@ -332,8 +334,8 @@ export default function AvatarEditorModal({
       // Export high quality PNG/JPEG (512x512)
       const croppedBase64 = previewCanvas.toDataURL('image/png', 0.95);
 
-      // Call live NKS updateAvatar API
-      const res = await nksUpdateAvatar(croppedBase64);
+      // Call live Skyline updateAvatar API
+      const res = await skylineUpdateAvatar(croppedBase64);
       if (res.success) {
         const finalUrl = res.avatar_url || croppedBase64;
         onAvatarUpdated(finalUrl);
@@ -356,25 +358,26 @@ export default function AvatarEditorModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-fadeIn">
-      <div className="bg-[#121820] border border-[#C5A880]/60 rounded-xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-[#121820] border border-[#C5A880]/60 rounded-none w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 bg-[#161D26] border-b border-[#222B35] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#C5A880]/20 border border-[#C5A880] flex items-center justify-center text-[#C5A880]">
+            <div className="w-8 h-8 rounded-none bg-[#C5A880]/20 border border-[#C5A880] flex items-center justify-center text-[#C5A880]">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
               <h3 className="font-serif font-bold text-white text-base">
-                Chỉnh Sửa & Tùy Biến Ảnh Đại Diện (Avatar Studio)
+                {t('Chỉnh Sửa & Tùy Biến Ảnh Đại Diện (Avatar Studio)', 'Avatar Studio & Portrait Customization')}
               </h3>
               <p className="text-[11px] text-gray-400">
-                Tự do xoay, phóng to, kéo căn chỉnh khuôn mặt chuẩn nhận diện e-KYC Skyline
+                {t('Tự do xoay, phóng to, kéo căn chỉnh khuôn mặt chuẩn nhận diện e-KYC Skyline', 'Rotate, zoom, and adjust alignment for Skyline e-KYC compliance')}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-[#222B35] transition-colors"
+            className="p-1.5 rounded-none text-gray-400 hover:text-white hover:bg-[#222B35] transition-colors cursor-pointer"
+            aria-label={t('Đóng', 'Close')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -389,52 +392,52 @@ export default function AvatarEditorModal({
                 setActiveSourceTab('UPLOAD');
                 stopCamera();
               }}
-              className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-all ${
+              className={`px-4 py-2 text-xs font-bold rounded-none flex items-center gap-2 transition-all cursor-pointer ${
                 activeSourceTab === 'UPLOAD'
                   ? 'bg-[#C5A880] text-[#0D1117]'
                   : 'text-gray-400 hover:text-white hover:bg-[#1C2533]'
               }`}
             >
-              <Upload className="w-3.5 h-3.5" /> Tải Ảnh Từ Máy
+              <Upload className="w-3.5 h-3.5" /> {t('Tải Ảnh Từ Máy', 'Upload Photo')}
             </button>
             <button
               onClick={() => {
                 setActiveSourceTab('CAMERA');
                 startCamera();
               }}
-              className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-all ${
+              className={`px-4 py-2 text-xs font-bold rounded-none flex items-center gap-2 transition-all cursor-pointer ${
                 activeSourceTab === 'CAMERA'
                   ? 'bg-[#C5A880] text-[#0D1117]'
                   : 'text-gray-400 hover:text-white hover:bg-[#1C2533]'
               }`}
             >
-              <Camera className="w-3.5 h-3.5" /> Chụp Bằng Camera
+              <Camera className="w-3.5 h-3.5" /> {t('Chụp Bằng Camera', 'Use Camera')}
             </button>
             <button
               onClick={() => {
                 setActiveSourceTab('PRESET');
                 stopCamera();
               }}
-              className={`px-4 py-2 text-xs font-bold rounded-lg flex items-center gap-2 transition-all ${
+              className={`px-4 py-2 text-xs font-bold rounded-none flex items-center gap-2 transition-all cursor-pointer ${
                 activeSourceTab === 'PRESET'
                   ? 'bg-[#C5A880] text-[#0D1117]'
                   : 'text-gray-400 hover:text-white hover:bg-[#1C2533]'
               }`}
             >
-              <ImageIcon className="w-3.5 h-3.5" /> Bộ Sưu Tập Cư Dân VIP
+              <ImageIcon className="w-3.5 h-3.5" /> {t('Bộ Sưu Tập Cư Dân VIP', 'VIP Resident Gallery')}
             </button>
           </div>
 
           {/* Camera View Mode */}
           {activeSourceTab === 'CAMERA' && (
-            <div className="p-6 bg-[#0E131A] border border-[#222B35] rounded-xl flex flex-col items-center justify-center space-y-4">
+            <div className="p-6 bg-[#0E131A] border border-[#222B35] rounded-none flex flex-col items-center justify-center space-y-4">
               {cameraError ? (
-                <div className="p-4 bg-rose-950/60 border border-rose-500/50 text-rose-300 text-xs flex items-center gap-2 rounded-lg">
+                <div className="p-4 bg-rose-950/60 border border-rose-500/50 text-rose-300 text-xs flex items-center gap-2 rounded-none">
                   <AlertCircle className="w-4 h-4" />
                   <span>{cameraError}</span>
                 </div>
               ) : (
-                <div className="relative w-72 h-72 rounded-full overflow-hidden border-4 border-[#C5A880] shadow-2xl bg-black">
+                <div className="relative w-72 h-72 rounded-none overflow-hidden border-4 border-[#C5A880] shadow-2xl bg-black">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -442,7 +445,7 @@ export default function AvatarEditorModal({
                     muted
                     className="w-full h-full object-cover scale-x-[-1]"
                   />
-                  <div className="absolute inset-0 border border-white/30 rounded-full pointer-events-none" />
+                  <div className="absolute inset-0 border border-white/30 rounded-none pointer-events-none" />
                 </div>
               )}
 
@@ -450,15 +453,15 @@ export default function AvatarEditorModal({
                 <button
                   onClick={capturePhoto}
                   disabled={!isCameraActive}
-                  className="px-6 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] font-bold text-xs uppercase tracking-wider rounded-lg shadow-lg flex items-center gap-2 transition-all disabled:opacity-50"
+                  className="px-6 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] font-bold text-xs uppercase tracking-wider rounded-none shadow-lg flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  <Camera className="w-4 h-4" /> Chụp Ảnh Này
+                  <Camera className="w-4 h-4" /> {t('Chụp Ảnh Này', 'Capture This Photo')}
                 </button>
                 <button
                   onClick={startCamera}
-                  className="px-4 py-2.5 bg-[#1C2533] text-gray-300 hover:text-white text-xs font-bold rounded-lg border border-gray-700 flex items-center gap-1.5"
+                  className="px-4 py-2.5 bg-[#1C2533] text-gray-300 hover:text-white text-xs font-bold rounded-none border border-gray-700 flex items-center gap-1.5 cursor-pointer"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" /> Khởi Động Lại
+                  <RefreshCw className="w-3.5 h-3.5" /> {t('Khởi Động Lại', 'Restart Camera')}
                 </button>
               </div>
             </div>
@@ -466,9 +469,9 @@ export default function AvatarEditorModal({
 
           {/* Preset Avatars View */}
           {activeSourceTab === 'PRESET' && (
-            <div className="p-4 bg-[#0E131A] border border-[#222B35] rounded-xl space-y-3">
+            <div className="p-4 bg-[#0E131A] border border-[#222B35] rounded-none space-y-3">
               <p className="text-xs text-gray-400">
-                Chọn một ảnh mẫu chuẩn phong cách Skyline Smart Residence:
+                {t('Chọn một ảnh mẫu chuẩn phong cách Skyline Smart Residence:', 'Choose a curated avatar for Skyline Smart Residence:')}
               </p>
               <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
                 {PRESET_AVATARS.map((url, idx) => (
@@ -480,7 +483,7 @@ export default function AvatarEditorModal({
                       resetTransforms();
                       setActiveSourceTab('UPLOAD');
                     }}
-                    className={`relative aspect-square rounded-full overflow-hidden border-2 transition-all hover:scale-105 ${
+                    className={`relative aspect-square rounded-none overflow-hidden border-2 transition-all hover:scale-105 cursor-pointer ${
                       sourceImage === url ? 'border-[#C5A880] ring-2 ring-[#C5A880]' : 'border-gray-700'
                     }`}
                   >
@@ -496,7 +499,7 @@ export default function AvatarEditorModal({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               {/* Left Column: Interactive Canvas Editor */}
               <div className="lg:col-span-2 space-y-3">
-                <div className="relative bg-[#0A0E14] border border-[#222B35] rounded-xl overflow-hidden flex items-center justify-center min-h-[340px]">
+                <div className="relative bg-[#0A0E14] border border-[#222B35] rounded-none overflow-hidden flex items-center justify-center min-h-[340px]">
                   <canvas
                     ref={canvasRef}
                     width={420}
@@ -507,13 +510,13 @@ export default function AvatarEditorModal({
                     onMouseLeave={handleMouseUp}
                     onWheel={handleWheel}
                     className="cursor-move max-w-full h-auto select-none"
-                    title="Kéo chuột để di chuyển • Lăn chuột để phóng to/thu nhỏ"
+                    title={t('Kéo chuột để di chuyển • Lăn chuột để phóng to/thu nhỏ', 'Drag to reposition • Scroll to zoom')}
                   />
 
                   {/* Drag Hint Overlay */}
-                  <div className="absolute bottom-2.5 left-2.5 px-2.5 py-1 bg-black/70 backdrop-blur text-[10px] text-gray-300 rounded border border-white/10 flex items-center gap-1.5 pointer-events-none">
+                  <div className="absolute bottom-2.5 left-2.5 px-2.5 py-1 bg-black/70 backdrop-blur text-[10px] text-gray-300 rounded-none border border-white/10 flex items-center gap-1.5 pointer-events-none">
                     <Move className="w-3 h-3 text-[#C5A880]" />
-                    <span>Giữ & Kéo để căn chỉnh • Lăn chuột để Zoom</span>
+                    <span>{t('Giữ & Kéo để căn chỉnh • Lăn chuột để Zoom', 'Drag to pan • Scroll to Zoom')}</span>
                   </div>
 
                   {/* Hidden File Input */}
@@ -531,36 +534,36 @@ export default function AvatarEditorModal({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 bg-[#1C2533] hover:bg-[#C5A880] hover:text-[#0D1117] border border-gray-700 hover:border-[#C5A880] text-xs font-bold text-white transition-all rounded flex items-center gap-2"
+                    className="px-4 py-2 bg-[#1C2533] hover:bg-[#C5A880] hover:text-[#0D1117] border border-gray-700 hover:border-[#C5A880] text-xs font-bold text-white transition-all rounded-none flex items-center gap-2 cursor-pointer"
                   >
-                    <Upload className="w-3.5 h-3.5" /> Chọn File Ảnh Khác
+                    <Upload className="w-3.5 h-3.5" /> {t('Chọn File Ảnh Khác', 'Choose Another File')}
                   </button>
                   <button
                     type="button"
                     onClick={resetTransforms}
-                    className="px-3 py-2 bg-[#161D26] hover:bg-[#222B35] text-gray-400 hover:text-white text-xs rounded border border-gray-700 flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-2 bg-[#161D26] hover:bg-[#222B35] text-gray-400 hover:text-white text-xs rounded-none border border-gray-700 flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <RefreshCw className="w-3 h-3" /> Đặt Lại Căn Chỉnh
+                    <RefreshCw className="w-3 h-3" /> {t('Đặt Lại Căn Chỉnh', 'Reset Alignment')}
                   </button>
                 </div>
               </div>
 
               {/* Right Column: Controls & Result Preview */}
-              <div className="space-y-4 bg-[#161D26] p-4 border border-[#222B35] rounded-xl flex flex-col justify-between">
+              <div className="space-y-4 bg-[#161D26] p-4 border border-[#222B35] rounded-none flex flex-col justify-between">
                 <div className="space-y-4">
-                  {/* Live Final Result Circle Preview */}
-                  <div className="flex flex-col items-center justify-center p-3 bg-[#0E131A] rounded-lg border border-[#222B35]">
+                  {/* Live Final Result Preview */}
+                  <div className="flex flex-col items-center justify-center p-3 bg-[#0E131A] rounded-none border border-[#222B35]">
                     <span className="text-[10px] uppercase font-mono font-bold text-gray-400 mb-2">
-                      Xem Trước Kết Quả Chuẩn e-KYC:
+                      {t('Xem Trước Kết Quả Chuẩn e-KYC:', 'e-KYC Compliant Preview:')}
                     </span>
                     <div className="relative">
                       <canvas
                         ref={previewCanvasRef}
                         width={128}
                         height={128}
-                        className="w-28 h-28 rounded-full border-2 border-[#C5A880] shadow-xl bg-black"
+                        className="w-28 h-28 rounded-none border-2 border-[#C5A880] shadow-xl bg-black"
                       />
-                      <span className="absolute -bottom-1 -right-1 p-1 bg-[#C5A880] text-[#0D1117] rounded-full shadow">
+                      <span className="absolute -bottom-1 -right-1 p-1 bg-[#C5A880] text-[#0D1117] rounded-none shadow">
                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                       </span>
                     </div>
@@ -570,7 +573,7 @@ export default function AvatarEditorModal({
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs text-gray-300 font-semibold">
                       <span className="flex items-center gap-1.5">
-                        <ZoomIn className="w-3.5 h-3.5 text-[#C5A880]" /> Phóng To / Thu Nhỏ:
+                        <ZoomIn className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Phóng To / Thu Nhỏ:', 'Zoom In / Out:')}
                       </span>
                       <span className="font-mono text-[#C5A880] text-[11px]">{Math.round(scale * 100)}%</span>
                     </div>
@@ -578,7 +581,7 @@ export default function AvatarEditorModal({
                       <button
                         type="button"
                         onClick={() => setScale((prev) => Math.max(0.4, prev - 0.1))}
-                        className="p-1.5 bg-[#222B35] hover:bg-gray-700 rounded text-white"
+                        className="p-1.5 bg-[#222B35] hover:bg-gray-700 rounded-none text-white cursor-pointer"
                       >
                         <ZoomOut className="w-3.5 h-3.5" />
                       </button>
@@ -594,7 +597,7 @@ export default function AvatarEditorModal({
                       <button
                         type="button"
                         onClick={() => setScale((prev) => Math.min(3.0, prev + 0.1))}
-                        className="p-1.5 bg-[#222B35] hover:bg-gray-700 rounded text-white"
+                        className="p-1.5 bg-[#222B35] hover:bg-gray-700 rounded-none text-white cursor-pointer"
                       >
                         <ZoomIn className="w-3.5 h-3.5" />
                       </button>
@@ -604,26 +607,26 @@ export default function AvatarEditorModal({
                   {/* 2. Rotate & Flip Buttons */}
                   <div className="space-y-1.5">
                     <label className="text-xs text-gray-300 font-semibold flex items-center gap-1.5">
-                      <RotateCw className="w-3.5 h-3.5 text-[#C5A880]" /> Xoay & Lật Ảnh:
+                      <RotateCw className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Xoay & Lật Ảnh:', 'Rotate & Flip:')}
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => setRotation((prev) => (prev + 90) % 360)}
-                        className="p-2 bg-[#1C2533] hover:bg-[#222B35] text-xs font-semibold text-gray-200 border border-gray-700 rounded flex items-center justify-center gap-1.5 transition-colors"
+                        className="p-2 bg-[#1C2533] hover:bg-[#222B35] text-xs font-semibold text-gray-200 border border-gray-700 rounded-none flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       >
-                        <RotateCw className="w-3.5 h-3.5 text-[#C5A880]" /> Xoay 90°
+                        <RotateCw className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Xoay 90°', 'Rotate 90°')}
                       </button>
                       <button
                         type="button"
                         onClick={() => setFlipHorizontal((prev) => !prev)}
-                        className={`p-2 text-xs font-semibold border rounded flex items-center justify-center gap-1.5 transition-colors ${
+                        className={`p-2 text-xs font-semibold border rounded-none flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                           flipHorizontal
                             ? 'bg-[#C5A880] text-[#0D1117] border-[#C5A880]'
                             : 'bg-[#1C2533] hover:bg-[#222B35] text-gray-200 border-gray-700'
                         }`}
                       >
-                        <FlipHorizontal className="w-3.5 h-3.5" /> Lật Ngang
+                        <FlipHorizontal className="w-3.5 h-3.5" /> {t('Lật Ngang', 'Flip')}
                       </button>
                     </div>
                   </div>
@@ -631,23 +634,23 @@ export default function AvatarEditorModal({
                   {/* 3. Color Preset Filters */}
                   <div className="space-y-1.5">
                     <label className="text-xs text-gray-300 font-semibold flex items-center gap-1.5">
-                      <Sliders className="w-3.5 h-3.5 text-[#C5A880]" /> Bộ Lọc Màu Sắc:
+                      <Sliders className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Bộ Lọc Màu Sắc:', 'Color Filters:')}
                     </label>
                     <div className="grid grid-cols-3 gap-1.5 text-[10px]">
                       {(
                         [
-                          { id: 'normal', name: 'Tự Nhiên' },
-                          { id: 'bright', name: 'Tươi Sáng' },
-                          { id: 'warm', name: 'Ấm Áp' },
-                          { id: 'cool', name: 'Mát Mẻ' },
-                          { id: 'grayscale', name: 'Trắng Đen' },
+                          { id: 'normal', name: t('Tự Nhiên', 'Natural') },
+                          { id: 'bright', name: t('Tươi Sáng', 'Bright') },
+                          { id: 'warm', name: t('Ấm Áp', 'Warm') },
+                          { id: 'cool', name: t('Mát Mẻ', 'Cool') },
+                          { id: 'grayscale', name: t('Trắng Đen', 'B&W') },
                         ] as const
                       ).map((item) => (
                         <button
                           key={item.id}
                           type="button"
                           onClick={() => setFilter(item.id)}
-                          className={`py-1.5 px-2 font-semibold rounded border transition-colors ${
+                          className={`py-1.5 px-2 font-semibold rounded-none border transition-colors cursor-pointer ${
                             filter === item.id
                               ? 'bg-[#C5A880] text-[#0D1117] border-[#C5A880]'
                               : 'bg-[#0E131A] text-gray-300 border-gray-700 hover:border-gray-500'
@@ -662,13 +665,13 @@ export default function AvatarEditorModal({
 
                 {/* Status Messages */}
                 {saveSuccess && (
-                  <div className="p-3 bg-emerald-950/70 border border-emerald-500/50 text-emerald-300 text-xs flex items-center gap-2 rounded animate-fadeIn">
+                  <div className="p-3 bg-emerald-950/70 border border-emerald-500/50 text-emerald-300 text-xs flex items-center gap-2 rounded-none animate-fadeIn">
                     <Check className="w-4 h-4 flex-shrink-0" />
-                    <span>Đã cập nhật ảnh đại diện thành công!</span>
+                    <span>{t('Đã cập nhật ảnh đại diện thành công!', 'Avatar updated successfully!')}</span>
                   </div>
                 )}
                 {saveError && (
-                  <div className="p-3 bg-rose-950/70 border border-rose-500/50 text-rose-300 text-xs flex items-center gap-2 rounded animate-fadeIn">
+                  <div className="p-3 bg-rose-950/70 border border-rose-500/50 text-rose-300 text-xs flex items-center gap-2 rounded-none animate-fadeIn">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     <span>{saveError}</span>
                   </div>
@@ -682,7 +685,7 @@ export default function AvatarEditorModal({
         <div className="px-4 sm:px-6 py-3.5 bg-[#161D26] border-t border-[#222B35] flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-[11px] text-gray-400">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span className="truncate">Đồng bộ tức thì với Cổng ra vào tự động & Căn hộ thông minh</span>
+            <span className="truncate">{t('Đồng bộ tức thì với Cổng ra vào tự động & Căn hộ thông minh', 'Instantly synced with automated gates & smart apartment')}</span>
           </div>
 
           <button
@@ -692,7 +695,7 @@ export default function AvatarEditorModal({
             className="w-full sm:w-auto px-7 py-3 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider rounded-none shadow-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer active:scale-95"
           >
             {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 stroke-[3]" />}
-            <span>{isSaving ? 'Đang Lưu...' : 'Cắt & Lưu Ảnh Đại Diện'}</span>
+            <span>{isSaving ? t('Đang Lưu...', 'Saving...') : t('Cắt & Lưu Ảnh Đại Diện', 'Crop & Save Avatar')}</span>
           </button>
         </div>
       </div>

@@ -88,7 +88,8 @@ export default function EditApartmentModal({
       description: description.trim()
     };
 
-    const ok = updateApartmentUnit(unit.code, patch);
+    const blockCodeMatch = unit.towerName?.match(/BS-\d+/)?.[0] || 'BS-07';
+    const ok = updateApartmentUnit(unit.code, patch, blockCodeMatch);
     if (!ok) {
       setError('Không thể cập nhật thông tin căn hộ. Vui lòng thử lại.');
       return;
@@ -104,7 +105,8 @@ export default function EditApartmentModal({
       return;
     }
 
-    const ok = deleteApartmentUnit(unit.code);
+    const blockCodeMatch = unit.towerName?.match(/BS-\d+/)?.[0] || 'BS-07';
+    const ok = deleteApartmentUnit(unit.code, blockCodeMatch);
     if (!ok) {
       setError('Không thể xóa căn hộ.');
       return;

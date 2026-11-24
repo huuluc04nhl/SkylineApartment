@@ -61,7 +61,7 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                 ) : (
                   <>
                     Nơi Chuẩn Mực Kiến Trúc Gặp Gỡ <br />
-                    <span className="italic text-[#C5A880] font-light">Trí Tuệ Nhân Tạo 4.0</span>
+                    <span className="italic text-[#C5A880] font-light">{isEn ? 'Artificial Intelligence 4.0' : 'Trí Tuệ Nhân Tạo 4.0'}</span>
                   </>
                 )}
               </h1>
@@ -72,14 +72,14 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                 {isEn ? (
                   <>
                     Luxury apartment project <strong>SKYLINE Smart Residence</strong> at 4 towers of{' '}
-                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> — biometric FaceID access, 
-                    Vision AI security, and 24/7 AI Concierge.
+                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> — smart FaceID door access, 
+                    intelligent security, and 24/7 resident assistance.
                   </>
                 ) : (
                   <>
                     Dự án căn hộ hạng sang <strong>SKYLINE Smart Residence</strong> tại cụm 4 chung cư{' '}
-                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> — định danh sinh trắc học FaceID, 
-                    giám sát Vision AI và trợ lý ảo AI Concierge 24/7.
+                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> — mở cửa nhanh bằng khuôn mặt FaceID, 
+                    an ninh thông minh và hỗ trợ cư dân 24/7.
                   </>
                 )}
               </p>
@@ -157,7 +157,7 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                   <iframe
                     className="absolute inset-0 w-full h-full border-0"
                     src="https://www.youtube.com/embed/NjkWg9gaHfE?autoplay=1&mute=1&controls=1&loop=1&playlist=NjkWg9gaHfE&rel=0&modestbranding=1&iv_load_policy=3"
-                    title="Thước phim thực tế Cụm Chung Cư The Tropical - Beverly Solari"
+                    title={isEn ? 'Official showcase video of The Tropical - Beverly Solari Complex' : 'Thước phim thực tế Cụm Chung Cư The Tropical - Beverly Solari'}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
                     style={{ border: 'none', outline: 'none' }}
@@ -200,7 +200,7 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                 ) : (
                   <>
                     Nơi Chuẩn Mực Kiến Trúc Gặp Gỡ <br />
-                    <span className="italic text-[#C5A880] font-light">Trí Tuệ Nhân Tạo 4.0</span>
+                    <span className="italic text-[#C5A880] font-light">{isEn ? 'Artificial Intelligence 4.0' : 'Trí Tuệ Nhân Tạo 4.0'}</span>
                   </>
                 )}
               </h1>
@@ -211,15 +211,14 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                 {isEn ? (
                   <>
                     Luxury apartment project <strong>SKYLINE Smart Residence</strong> at 4 towers of{' '}
-                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> pioneers complete automated living: 
-                    biometric FaceID access &lt;0.5s, Vision AI security monitoring, and predictive maintenance.
+                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> pioneers complete modern living: 
+                    smart FaceID access &lt;0.5s, intelligent security, and 24/7 resident support.
                   </>
                 ) : (
                   <>
                     Dự án căn hộ hạng sang <strong>SKYLINE Smart Residence</strong> tại cụm 4 chung cư{' '}
-                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> kiến tạo chuẩn sống tự động hóa 
-                    hoàn chỉnh: Định danh sinh trắc học FaceID &lt;0.5s, giám sát an ninh Vision AI và hệ thống 
-                    dự báo bảo trì thông minh.
+                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> kiến tạo chuẩn sống tiện nghi 
+                    hoàn chỉnh: Mở cửa bằng khuôn mặt FaceID &lt;0.5s, an ninh thông minh và hỗ trợ cư dân chu đáo.
                   </>
                 )}
               </p>
@@ -238,7 +237,7 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                 >
                   <LayoutDashboard className="w-4 h-4 shrink-0" />
                   {currentUser.role === 'ADMIN' 
-                    ? t('Vào Bảng Quản Trị Ban Quản Lý', 'Go to Management Dashboard') 
+                    ? t('Vào Bảng Quản Trị VinHomes Manager', 'Go to VinHomes Manager Dashboard') 
                     : currentUser.role === 'TECHNICIAN' 
                     ? t('Vào Bảng Việc Kỹ Thuật', 'Go to Technician Board') 
                     : t('Vào Bảng Điều Khiển Căn Hộ', 'Go to Resident Portal')}
@@ -300,7 +299,7 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                     <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('Vai trò:', 'Role:')}</span>
                     <span className="font-semibold text-right text-xs text-[#C5A880]">
                       {currentUser.role === 'ADMIN' 
-                        ? t('Ban Quản Lý Chung Cư', 'Apartment Management Board') 
+                        ? 'VinHomes Manager' 
                         : currentUser.role === 'TECHNICIAN' 
                         ? t('Kỹ Thuật Viên', 'Technician') 
                         : `${t('Chủ Hộ Căn', 'Apartment Owner')} ${currentUser.apartment_code || 'CH-06'}`}
@@ -328,7 +327,7 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                   >
                     <LayoutDashboard className="w-4 h-4" />
                     {currentUser.role === 'ADMIN' 
-                      ? t('Vào Bảng Quản Trị Ban Quản Lý', 'Go to Management Dashboard') 
+                      ? t('Vào Bảng Quản Trị VinHomes Manager', 'Go to VinHomes Manager Dashboard') 
                       : currentUser.role === 'TECHNICIAN' 
                       ? t('Vào Bảng Việc Kỹ Thuật', 'Go to Technician Board') 
                       : t('Vào Bảng Điều Khiển Căn Hộ', 'Go to Resident Portal')}

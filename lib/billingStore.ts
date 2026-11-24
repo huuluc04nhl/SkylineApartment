@@ -1,13 +1,16 @@
 /**
  * Skyline Smart Residence - Centralized Billing & Payment Store
+ * Pure In-Database Architecture. Single Source of Truth from skylineDb.
+ * Zero LocalStorage. Zero External Mock APIs.
  * 
- * Quản trị dữ liệu hóa đơn sinh hoạt 2 chiều thực tế giữa Ban Quản Lý và Cư Dân:
- * - Tạo và phát hành hóa đơn theo căn hộ
+ * - Quản trị dữ liệu hóa đơn sinh hoạt 2 chiều thực tế giữa Ban Quản Lý và Cư Dân
  * - Sinh mã VietQR chuẩn Napas247 tự động điền số tài khoản, số tiền và nội dung chuyển khoản
  * - Đồng bộ trạng thái gạch nợ thời gian thực (Unpaid -> Paid)
  */
 
-import { Bill, BillDetail, DEMO_BILLS } from './dataStore';
+import { Bill, BillDetail } from './dataStore';
+import { skylineDb } from './db';
+import { BillRecord } from './db/schema';
 
 export interface ExtendedBill extends Bill {
   payment_method?: 'VNPAY' | 'MOMO' | 'VIETQR' | 'BANK_TRANSFER';
@@ -16,22 +19,99 @@ export interface ExtendedBill extends Bill {
   bank_code?: string;
 }
 
-const BILLS_STORAGE_KEY = 'skyline_bills_v5';
+/**
+ * Bóc tách nguồn tiền thanh toán minh bạch (Quỹ vận hành, Quỹ bảo dưỡng, Tiền điện nước thu hộ nhà nước, Thuế)
+ */
+export interface BillFundAllocation {
+  totalAmount: number;
+  operationsAmount: number;
+  operationsPercent: number;
+  operationsItems: Array<{ name: string; amount: number }>;
+  stateUtilitiesAmount: number;
+  stateUtilitiesPercent: number;
+  stateUtilitiesItems: Array<{ name: string; amount: number }>;
+  maintenanceAmount: number;
+  maintenancePercent: number;
+  taxesAndTelecomAmount: number;
+  taxesAndTelecomPercent: number;
+}
+
+export function calculateBillFundAllocation(bill: ExtendedBill | Bill): BillFundAllocation {
+  const details = bill?.details || [];
+  const total = bill?.total_amount || 0;
+
+  let rawOperations = 0;
+  const operationsItems: Array<{ name: string; amount: number }> = [];
+  let stateUtilitiesAmount = 0;
+  const stateUtilitiesItems: Array<{ name: string; amount: number }> = [];
+  let taxesAndTelecomAmount = 0;
+
+  details.forEach((d) => {
+    const amt = d.total_line_amount || 0;
+    const type = d.service_type;
+    const name = d.service_name || (
+      type === 'Electricity' ? 'Tiền Điện Sinh Hoạt' :
+      type === 'Water' ? 'Tiền Nước Sinh Hoạt' :
+      type === 'Management_Fee' ? 'Phí Quản Lý Vận Hành' :
+      type === 'Parking' ? 'Phí Gửi Xe Căn Hộ' :
+      type === 'Internet' ? 'Cáp Quang Internet VNPT' : 'Dịch Vụ Tiện Ích'
+    );
+
+    if (type === 'Electricity' || type === 'Water') {
+      stateUtilitiesAmount += amt;
+      stateUtilitiesItems.push({
+        name: type === 'Electricity' ? 'Tiền Điện Sinh Hoạt (Nộp Điện Lực EVN)' : 'Tiền Nước Sinh Hoạt (Nộp Cấp Nước)',
+        amount: amt,
+      });
+    } else if (type === 'Internet') {
+      taxesAndTelecomAmount += amt;
+    } else {
+      rawOperations += amt;
+      operationsItems.push({
+        name,
+        amount: amt,
+      });
+    }
+  });
+
+  const maintenanceAmount = Math.round(rawOperations * 0.12);
+  const operationsAmount = Math.max(0, rawOperations - maintenanceAmount);
+  const safeTotal = total > 0 ? total : 1;
+
+  const opsPct = Math.round((operationsAmount / safeTotal) * 100);
+  const utilPct = Math.round((stateUtilitiesAmount / safeTotal) * 100);
+  const maintPct = Math.round((maintenanceAmount / safeTotal) * 100);
+  const taxPct = Math.max(0, 100 - opsPct - utilPct - maintPct);
+
+  return {
+    totalAmount: total,
+    operationsAmount,
+    operationsPercent: opsPct,
+    operationsItems,
+    stateUtilitiesAmount,
+    stateUtilitiesPercent: utilPct,
+    stateUtilitiesItems,
+    maintenanceAmount,
+    maintenancePercent: maintPct,
+    taxesAndTelecomAmount,
+    taxesAndTelecomPercent: taxPct,
+  };
+}
 
 // Cấu hình tài khoản ngân hàng Ban Quản Lý Tòa Nhà Skyline (BIDV)
 export const SKYLINE_BANK_INFO = {
   bankName: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV)',
   bankShortName: 'BIDV',
   bankBin: 'BIDV', // BIDV Napas BIN
-  accountNumber: '0364967082',
-  accountHolder: 'NGUYEN HUU LUC',
+  accountNumber: '124000088899',
+  accountHolder: 'BAN QUAN LY TOA NHA SKYLINE APARTMENT',
   branch: 'Chi nhánh TP. Hồ Chí Minh',
 };
 
-// Cấu hình ví điện tử MoMo
+// Cấu hình ví điện tử MoMo Ban Quản Lý
 export const SKYLINE_MOMO_INFO = {
-  phoneNumber: '0364967082',
-  receiverName: 'NGUYEN HUU LUC',
+  phoneNumber: '19008888',
+  receiverName: 'BAN QUAN LY SKYLINE APARTMENT',
 };
 
 /**
@@ -52,9 +132,43 @@ export function generateVietQrUrl(params: {
   return `https://img.vietqr.io/image/${bin}-${acc}-compact2.png?amount=${amount}&addInfo=${note}&accountName=${accountName}`;
 }
 
-export const INITIAL_BILLS: Bill[] = [
-  ...DEMO_BILLS,
-];
+export function billRecordToExtendedBill(rec: BillRecord): ExtendedBill {
+  return {
+    id: rec.id,
+    apartment_id: `apt-${rec.apartment_code.toLowerCase()}`,
+    apt_code: rec.apartment_code,
+    owner_name: rec.owner_name,
+    billing_month: rec.billing_month,
+    due_date: rec.due_date,
+    total_amount: rec.total_amount,
+    status: rec.status,
+    status_color: rec.status === 'Paid' ? '#16A34A' : rec.status === 'Overdue' ? '#DC2626' : '#D97706',
+    payment_qr_url: rec.payment_qr_url || generateVietQrUrl({
+      amount: rec.total_amount,
+      transferNote: `SKYLINE ${rec.apartment_code} ${rec.billing_month.replace(/\s+/g, '')}`,
+    }),
+    invoice_pdf_url: rec.invoice_pdf_url || '#',
+    has_ai_anomaly: rec.has_ai_anomaly || false,
+    created_at: '2026-08-05T08:00:00',
+    details: (rec.details || []).map(d => ({
+      id: d.id,
+      bill_id: d.bill_id || rec.id,
+      service_type: (d.service_type as any) || 'Other',
+      service_name: d.service_name,
+      usage: d.usage,
+      unit: d.unit,
+      unit_price: d.unit_price,
+      total_line_amount: d.total_line_amount,
+      ai_anomaly: d.ai_anomaly,
+      anomaly_reason: d.anomaly_reason
+    })),
+    payment_method: rec.payment_method || undefined,
+    transaction_ref: rec.transaction_ref || undefined,
+    paid_at: rec.paid_at || undefined
+  };
+}
+
+export const INITIAL_BILLS: ExtendedBill[] = skylineDb.bills.find().map(billRecordToExtendedBill);
 
 function notifyBillingUpdated() {
   if (typeof window !== 'undefined') {
@@ -63,124 +177,74 @@ function notifyBillingUpdated() {
 }
 
 /**
- * Lấy toàn bộ danh sách hóa đơn
+ * Lấy danh sách hóa đơn từ skylineDb
  */
-let serverMemoryBills: ExtendedBill[] = [...INITIAL_BILLS];
-
 export function getBills(aptCode?: string, overrideOwnerName?: string): ExtendedBill[] {
-  let allBills: ExtendedBill[] = serverMemoryBills;
-  if (typeof window !== 'undefined') {
-    try {
-      // Dọn dẹp cache cũ chứa dữ liệu ảo
-      localStorage.removeItem('skyline_bills_v1');
-      localStorage.removeItem('skyline_bills_v2');
-      localStorage.removeItem('skyline_bills_v3');
-      localStorage.removeItem('skyline_bills_v4');
-
-      const raw = localStorage.getItem(BILLS_STORAGE_KEY);
-      if (!raw) {
-        localStorage.setItem(BILLS_STORAGE_KEY, JSON.stringify(INITIAL_BILLS));
-        allBills = INITIAL_BILLS;
-      } else {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Lọc bỏ triệt để các hóa đơn ảo, chuẩn hóa mã căn sang CH-06 và làm sạch chi tiết
-          allBills = parsed
-            .filter((b: ExtendedBill) => 
-              b.id !== 'bill-2026-08-08a02' && 
-              b.id !== 'bill-2026-08-18a01' &&
-              b.id !== 'bill-2026-06-ch06' &&
-              b.id !== 'bill-2026-05-ch06' &&
-              b.id !== 'bill-2026-06-12a05' &&
-              b.id !== 'bill-2026-05-12a05'
-            )
-            .map((bill: ExtendedBill) => {
-              const normalizedApt = (bill.apt_code === '12A05' || bill.apt_code === 'CH-06') ? 'CH-06' : bill.apt_code;
-              const normalizedId = bill.id ? bill.id.replace('12a05', 'ch06') : bill.id;
-              const cleanDetails = (bill.details || [])
-                .filter((d: any) => 
-                  d.id !== 'bd-5' && d.id !== 'bd-6' && 
-                  d.booking_ref !== 'SRV-LAUN-1201' && d.booking_ref !== 'SRV-PTSW-1202'
-                )
-                .map((d: any) => ({
-                  ...d,
-                  ai_anomaly: false,
-                  anomaly_reason: undefined,
-                }));
-              const cleanTotal = cleanDetails.reduce((s: number, d: any) => s + (d.total_line_amount || 0), 0);
-              return {
-                ...bill,
-                id: normalizedId,
-                apt_code: normalizedApt,
-                has_ai_anomaly: false,
-                total_amount: cleanTotal > 0 ? cleanTotal : bill.total_amount,
-                details: cleanDetails,
-              };
-            });
-
-          // Đảm bảo các hóa đơn chuẩn luôn hiện diện
-          const existingIds = new Set(allBills.map(b => b.id));
-          for (const initBill of INITIAL_BILLS) {
-            if (!existingIds.has(initBill.id)) {
-              allBills.push(initBill);
-            }
-          }
-          localStorage.setItem(BILLS_STORAGE_KEY, JSON.stringify(allBills));
-        } else {
-          allBills = INITIAL_BILLS;
-          localStorage.setItem(BILLS_STORAGE_KEY, JSON.stringify(INITIAL_BILLS));
-        }
-      }
-    } catch {
-      allBills = INITIAL_BILLS;
-    }
-  }
-
-  // Đồng bộ tên chủ hộ thực tế nếu được truyền vào
-  if (overrideOwnerName && overrideOwnerName.trim()) {
-    allBills = allBills.map(b => {
-      const bCode = b.apt_code.trim().toUpperCase();
-      const isTarget = aptCode && (
-        bCode === aptCode.trim().toUpperCase() || 
-        ((bCode === 'CH-06' || bCode === '12A05') && (aptCode.toUpperCase() === 'CH-06' || aptCode.toUpperCase() === '12A05'))
-      );
-      if (isTarget) {
-        return { ...b, owner_name: overrideOwnerName.trim() };
-      }
-      return b;
-    });
-  }
+  let records = skylineDb.bills.find();
 
   if (aptCode) {
-    const clean = aptCode.trim().toUpperCase();
-    const isOwnerTarget = clean === 'CH-06' || clean === '12A05' || clean.endsWith('CH-06');
-    return allBills.filter(b => {
-      const bCode = b.apt_code.trim().toUpperCase();
-      if (isOwnerTarget) {
-        return bCode === 'CH-06' || bCode === '12A05' || bCode.endsWith('CH-06');
-      }
-      return bCode === clean;
-    });
+    const cleanApt = aptCode.trim().toUpperCase();
+    records = records.filter(b => (b.apartment_code || '').trim().toUpperCase() === cleanApt);
   }
+
+  let allBills = records.map(billRecordToExtendedBill);
+
+  if (overrideOwnerName && overrideOwnerName.trim()) {
+    allBills = allBills.map(b => ({
+      ...b,
+      owner_name: overrideOwnerName.trim()
+    }));
+  }
+
   return allBills;
 }
 
-/**
- * Lấy chi tiết hóa đơn theo ID
- */
 export function getBillById(id: string): ExtendedBill | undefined {
-  return getBills().find(b => b.id === id);
+  const rec = skylineDb.bills.findById(id);
+  return rec ? billRecordToExtendedBill(rec) : undefined;
 }
 
 /**
- * Lưu danh sách hóa đơn
+ * Lưu danh sách hóa đơn vào skylineDb
  */
 export function saveBills(bills: ExtendedBill[]): void {
-  serverMemoryBills = bills;
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(BILLS_STORAGE_KEY, JSON.stringify(bills));
-    notifyBillingUpdated();
-  }
+  bills.forEach(b => {
+    const existing = skylineDb.bills.findById(b.id);
+    const rec: BillRecord = {
+      id: b.id,
+      apartment_code: b.apt_code,
+      owner_name: b.owner_name,
+      billing_month: b.billing_month,
+      due_date: b.due_date,
+      total_amount: b.total_amount,
+      status: b.status as any,
+      payment_method: b.payment_method || null,
+      transaction_ref: b.transaction_ref || null,
+      paid_at: b.paid_at || null,
+      payment_qr_url: b.payment_qr_url,
+      invoice_pdf_url: b.invoice_pdf_url,
+      has_ai_anomaly: b.has_ai_anomaly,
+      details: b.details.map(d => ({
+        id: d.id,
+        bill_id: d.bill_id,
+        service_type: d.service_type,
+        service_name: d.service_name || '',
+        usage: d.usage || 0,
+        unit: d.unit || '',
+        unit_price: d.unit_price || 0,
+        total_line_amount: d.total_line_amount || 0,
+        ai_anomaly: !!d.ai_anomaly,
+        anomaly_reason: d.anomaly_reason
+      }))
+    };
+
+    if (existing) {
+      skylineDb.bills.update(b.id, rec);
+    } else {
+      skylineDb.bills.insert(rec);
+    }
+  });
+  notifyBillingUpdated();
 }
 
 /**
@@ -192,119 +256,96 @@ export function payBill(
   transactionRef?: string,
   bankCode?: string
 ): ExtendedBill | null {
-  const allBills = getBills();
-  let updatedBill: ExtendedBill | null = null;
+  const existing = skylineDb.bills.findById(billId);
+  if (!existing) return null;
 
-  const nextList = allBills.map(b => {
-    if (b.id === billId) {
-      const transId = transactionRef || (method === 'VNPAY' 
-        ? `VNP${Date.now().toString().slice(-8)}` 
-        : `MM${Date.now().toString().slice(-8)}`);
+  const transId = transactionRef || (method === 'VNPAY' 
+    ? `VNP${Date.now().toString().slice(-8)}` 
+    : `MM${Date.now().toString().slice(-8)}`);
 
-      updatedBill = {
-        ...b,
-        status: 'Paid' as const,
-        status_color: '#16A34A',
-        payment_method: method,
-        transaction_ref: transId,
-        paid_at: new Date().toISOString(),
-        bank_code: bankCode || (method === 'VNPAY' ? 'VNPAY_GATEWAY' : 'MOMO_WALLET'),
-      };
-      return updatedBill;
-    }
-    return b;
+  const updatedRec = skylineDb.bills.update(billId, {
+    status: 'Paid',
+    payment_method: method,
+    transaction_ref: transId,
+    paid_at: new Date().toISOString(),
   });
 
-  if (updatedBill) {
-    saveBills(nextList);
-  }
-
-  return updatedBill;
+  notifyBillingUpdated();
+  return updatedRec ? billRecordToExtendedBill(updatedRec) : null;
 }
 
 /**
  * Ban Quản Lý duyệt gạch nợ sau khi kế toán kiểm tra tài khoản
  */
 export function confirmPaidByAdmin(billId: string, notes?: string): ExtendedBill | null {
-  const allBills = getBills();
-  let target: ExtendedBill | null = null;
+  const existing = skylineDb.bills.findById(billId);
+  if (!existing) return null;
 
-  const nextList = allBills.map(b => {
-    if (b.id === billId) {
-      target = {
-        ...b,
-        status: 'Paid' as const,
-        status_color: '#16A34A',
-        payment_method: 'BANK_TRANSFER',
-        transaction_ref: `BQL-REC-${Date.now().toString().slice(-6)}`,
-        paid_at: new Date().toISOString(),
-      };
-      return target;
-    }
-    return b;
+  const transRef = `BQL-REC-${Date.now().toString().slice(-6)}`;
+  const updatedRec = skylineDb.bills.update(billId, {
+    status: 'Paid',
+    payment_method: 'BANK_TRANSFER',
+    transaction_ref: transRef,
+    paid_at: new Date().toISOString()
   });
 
-  if (target) {
-    saveBills(nextList);
-  }
-
-  return target;
+  notifyBillingUpdated();
+  return updatedRec ? billRecordToExtendedBill(updatedRec) : null;
 }
 
 /**
  * Ban Quản Lý phát hành hóa đơn đồng loạt kỳ mới
  */
 export function publishAllBills(): void {
-  const allBills = getBills();
-  const nextList = allBills.map(b => {
-    if (b.status === 'Draft') {
-      return { ...b, status: 'Unpaid' as const, status_color: '#D97706' };
-    }
-    return b;
+  const drafts = skylineDb.bills.find(b => b.status === 'Draft');
+  drafts.forEach(d => {
+    skylineDb.bills.update(d.id, { status: 'Unpaid' });
   });
-  saveBills(nextList);
+  notifyBillingUpdated();
 }
 
 /**
- * Thêm một mục chi phí dịch vụ phát sinh (Giặt ủi, Giúp việc, PT, Chăm sóc xe) vào hóa đơn chưa thanh toán của căn hộ
+ * Thêm một mục chi phí dịch vụ phát sinh vào hóa đơn chưa thanh toán của căn hộ
  */
 export function addServiceChargeToBill(
   aptCode: string,
   serviceDetail: Omit<BillDetail, 'id' | 'bill_id'>
 ): ExtendedBill | null {
-  const allBills = getBills();
   const cleanApt = aptCode.trim().toUpperCase();
 
   // Tìm hóa đơn chưa thanh toán (Unpaid) của căn hộ, nếu không có thì lấy hóa đơn gần nhất
-  let targetBill = allBills.find(b => b.apt_code.trim().toUpperCase() === cleanApt && b.status === 'Unpaid');
-  if (!targetBill) {
-    targetBill = allBills.find(b => b.apt_code.trim().toUpperCase() === cleanApt);
+  let targetRec = skylineDb.bills.findOne(b => b.apartment_code.trim().toUpperCase() === cleanApt && b.status === 'Unpaid');
+  if (!targetRec) {
+    targetRec = skylineDb.bills.findOne(b => b.apartment_code.trim().toUpperCase() === cleanApt);
   }
-  if (!targetBill) return null;
+  if (!targetRec) return null;
 
   const newDetailId = `bd-srv-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const newDetail: BillDetail = {
-    ...serviceDetail,
+  const newDetail = {
     id: newDetailId,
-    bill_id: targetBill.id,
+    bill_id: targetRec.id,
+    service_type: serviceDetail.service_type,
+    service_name: serviceDetail.service_name || '',
+    usage: serviceDetail.usage || 1,
+    unit: serviceDetail.unit || 'lần',
+    unit_price: serviceDetail.unit_price || serviceDetail.total_line_amount || 0,
+    total_line_amount: serviceDetail.total_line_amount || 0,
+    ai_anomaly: false,
+    anomaly_reason: undefined
   };
 
-  const updatedDetails = [...targetBill.details, newDetail];
+  const updatedDetails = [...(targetRec.details || []), newDetail];
   const newTotal = updatedDetails.reduce((sum, d) => sum + (d.total_line_amount || 0), 0);
 
-  const updatedBill: ExtendedBill = {
-    ...targetBill,
+  const updatedRec = skylineDb.bills.update(targetRec.id, {
     total_amount: newTotal,
+    details: updatedDetails,
     payment_qr_url: generateVietQrUrl({
       amount: newTotal,
-      transferNote: `SKYLINE ${cleanApt} ${targetBill.billing_month.replace(/\s+/g, '')}`,
+      transferNote: `SKYLINE ${cleanApt} ${targetRec.billing_month.replace(/\s+/g, '')}`,
     }),
-    details: updatedDetails,
-  };
+  });
 
-  const nextList = allBills.map(b => b.id === targetBill!.id ? updatedBill : b);
-  saveBills(nextList);
-
-  return updatedBill;
+  notifyBillingUpdated();
+  return updatedRec ? billRecordToExtendedBill(updatedRec) : null;
 }
-

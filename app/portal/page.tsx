@@ -66,8 +66,6 @@ function PortalContent() {
       const urlParams = new URLSearchParams(window.location.search);
       const tabParam = urlParams.get('tab');
       if (tabParam) return tabParam;
-      const saved = localStorage.getItem('skyline_portal_active_tab');
-      if (saved) return saved;
     }
     return 'resident-home';
   });
@@ -75,9 +73,6 @@ function PortalContent() {
   const setActiveModule = (modId: string) => {
     setActiveModuleState(modId);
     if (typeof window !== 'undefined') {
-      const userKey = currentUser?.id || currentUser?.username || 'user';
-      localStorage.setItem('skyline_portal_active_tab', modId);
-      localStorage.setItem(`skyline_portal_active_tab_${userKey}`, modId);
       const url = new URL(window.location.href);
       if (url.searchParams.get('tab') !== modId) {
         url.searchParams.set('tab', modId);
@@ -107,14 +102,7 @@ function PortalContent() {
         return;
       }
 
-      // If no tab in URL query, restore last active tab from localStorage
-      if (!tabParam && typeof window !== 'undefined') {
-        const savedTab = localStorage.getItem(`skyline_portal_active_tab_${userKey}`) 
-          || localStorage.getItem('skyline_portal_active_tab');
-        if (savedTab) {
-          tabParam = savedTab;
-        }
-      }
+      // If no tab in URL query, default will be selected based on role
 
       // Aliases for seamless linking
       if (tabParam === 'finance' || tabParam === 'billing' || tabParam === 'resident-billing') {
@@ -204,10 +192,6 @@ function PortalContent() {
   }
 
   const handleLogout = async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('skyline_portal_active_tab');
-      localStorage.removeItem('skyline_profile_subtab');
-    }
     await logout();
     router.push('/');
   };

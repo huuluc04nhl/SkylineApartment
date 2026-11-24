@@ -43,8 +43,8 @@ export default function AmenitiesSection() {
             isDark ? 'text-gray-300' : 'text-gray-600'
           }`}>
             {t(
-              'Từ hồ bơi vô cực tầng chân mây đến khu BBQ panoramic — toàn bộ 8 đại tiện ích vận hành tự động 24/7, ra vào bằng FaceID sinh trắc học, không cần vé giấy.',
-              'From rooftop infinity pools to panoramic BBQ zones — all 8 signature amenities operate automatically 24/7 with biometric FaceID access, ticket-free.'
+              'Từ hồ bơi vô cực tầng chân mây đến khu BBQ panoramic — toàn bộ 8 đại tiện ích vận hành 24/7, ra vào nhanh chóng bằng nhận diện khuôn mặt FaceID, không cần vé giấy.',
+              'From rooftop infinity pools to panoramic BBQ zones — all 8 signature amenities operate 24/7 with seamless FaceID access, ticket-free.'
             )}
           </p>
         </div>
@@ -126,7 +126,7 @@ export default function AmenitiesSection() {
           <p className={`text-sm font-light max-w-xl leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
             {isEn ? (
               <>
-                Residents of 4 towers <strong className={isDark ? 'text-white' : 'text-gray-900'}>The Tropical (BS-07 → BS-10)</strong> access all facilities seamlessly via smart resident passes and automatic biometric FaceID scan.
+                Residents of 4 towers <strong className={isDark ? 'text-white' : 'text-gray-900'}>The Tropical (BS-07 → BS-10)</strong> access all facilities seamlessly via smart resident passes and automatic FaceID scan.
               </>
             ) : (
               <>

@@ -18,6 +18,7 @@ import {
 import { getApartmentUnits } from '@/lib/apartmentStore';
 import { getAllVisitorPasses, getGateAuditLogs } from '@/lib/visitorStore';
 import { getBills } from '@/lib/billingStore';
+import { useLanguage } from '@/lib/languageContext';
 
 // Cấu trúc dữ liệu phân tầng an ninh và cảnh báo BMS
 interface FloorThreatData {
@@ -175,6 +176,7 @@ const FLOOR_THREAT_DATABASE: Record<string, FloorThreatData> = {
 };
 
 export default function AdminDashboard() {
+  const { t, isEn } = useLanguage();
   const [selectedFloor, setSelectedFloor] = useState<'B2' | 'B1' | 'L1' | '20' | '30' | '34'>('B1');
   const [selectedThreatId, setSelectedThreatId] = useState<string>('T-B1-01');
   const [isEmergencyActive, setIsEmergencyActive] = useState(false);
@@ -186,12 +188,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      setCurrentTimeStr(now.toLocaleTimeString('vi-VN', { hour12: false }) + ' • ' + now.toLocaleDateString('vi-VN'));
+      setCurrentTimeStr(now.toLocaleTimeString(isEn ? 'en-US' : 'vi-VN', { hour12: false }) + ' • ' + now.toLocaleDateString(isEn ? 'en-US' : 'vi-VN'));
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isEn]);
 
   // Lấy dữ liệu thật từ apartmentStore & visitorStore
   const apartments = useMemo(() => {
@@ -269,7 +271,7 @@ export default function AdminDashboard() {
   const activeThreat = currentFloorData.threats.find(t => t.id === selectedThreatId) || currentFloorData.threats[0];
 
   const handleDispatchSecurity = () => {
-    setDispatchStatus(`Đã điều động bảo vệ tới ${currentFloorData.floorName}.`);
+    setDispatchStatus(isEn ? `Security team dispatched to ${currentFloorData.floorName}.` : `Đã điều động bảo vệ tới ${currentFloorData.floorName}.`);
     setTimeout(() => setDispatchStatus(null), 3500);
   };
 
@@ -281,12 +283,12 @@ export default function AdminDashboard() {
         <div>
           <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[#C5A880] font-mono font-bold">
             <Radio className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-            <span>TRUNG TÂM VẬN HÀNH BMS</span>
+            <span>{t('TRUNG TÂM VẬN HÀNH BMS', 'BMS OPERATIONS COMMAND')}</span>
           </div>
           <h1 className="font-serif text-xl sm:text-2xl font-bold text-white mt-0.5 tracking-wide flex items-center gap-2.5">
-            <span>Giám Sát Vận Hành</span>
+            <span>{t('Giám Sát Vận Hành', 'Operations Monitoring')}</span>
             <span className="text-[10px] px-2 py-0.5 bg-emerald-950/80 text-emerald-300 border border-emerald-500/80 font-mono font-normal">
-              TRỰC TUYẾN
+              {t('TRỰC TUYẾN', 'ONLINE')}
             </span>
           </h1>
         </div>
@@ -294,7 +296,7 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2 font-mono text-xs">
           <div className="px-3 py-1.5 bg-[#16202D] border border-[#2B394E] text-gray-300 flex items-center gap-2">
             <Clock className="w-3.5 h-3.5 text-[#C5A880]" />
-            <span>{currentTimeStr || 'Đang cập nhật...'}</span>
+            <span>{currentTimeStr || t('Đang cập nhật...', 'Updating...')}</span>
           </div>
           <button 
             type="button"
@@ -306,7 +308,7 @@ export default function AdminDashboard() {
             }`}
           >
             <Flame className="w-3.5 h-3.5" />
-            <span>{isEmergencyActive ? 'BÁO ĐỘNG BẬT' : 'DIỄN TẬP PCCC'}</span>
+            <span>{isEmergencyActive ? t('BÁO ĐỘNG BẬT', 'ALARM ACTIVE') : t('DIỄN TẬP PCCC', 'FIRE DRILL')}</span>
           </button>
         </div>
       </div>
@@ -316,68 +318,68 @@ export default function AdminDashboard() {
         {/* KPI 1: Doanh thu thực thu */}
         <div className="p-3.5 bg-[#121820] border border-[#222B35] space-y-1.5 hover:border-[#C5A880]/60 transition-all shadow">
           <div className="flex items-center justify-between text-xs text-gray-400">
-            <span className="font-semibold">Doanh Thu Đã Thu</span>
+            <span className="font-semibold">{t('Doanh Thu Đã Thu', 'Collected Revenue')}</span>
             <Receipt className="w-4 h-4 text-[#C5A880]" />
           </div>
           <div className="font-serif text-2xl text-white font-bold tracking-wide">
-            {totalPaidRevenue.toLocaleString('vi-VN')} <span className="text-xs font-sans text-gray-400 font-normal">đ</span>
+            {totalPaidRevenue.toLocaleString(isEn ? 'en-US' : 'vi-VN')} <span className="text-xs font-sans text-gray-400 font-normal">{isEn ? 'VND' : 'đ'}</span>
           </div>
           <div className="text-[11px] text-emerald-400 flex items-center justify-between font-mono pt-1 border-t border-[#1C2533]">
-            <span>Đã thu {bills.filter(b => b.status === 'Paid').length}/{bills.length} căn</span>
-            <span className="text-gray-400">Đạt {collectionRate}%</span>
+            <span>{t('Đã thu', 'Collected')} {bills.filter(b => b.status === 'Paid').length}/{bills.length} {t('căn', 'units')}</span>
+            <span className="text-gray-400">{t('Đạt', 'Rate')} {collectionRate}%</span>
           </div>
         </div>
 
         {/* KPI 2: Tỷ lệ lấp đầy */}
         <div className="p-3.5 bg-[#121820] border border-[#222B35] space-y-1.5 hover:border-[#C5A880]/60 transition-all shadow">
           <div className="flex items-center justify-between text-xs text-gray-400">
-            <span className="font-semibold">Tỷ Lệ Lấp Đầy</span>
+            <span className="font-semibold">{t('Tỷ Lệ Lấp Đầy', 'Occupancy Rate')}</span>
             <Building className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="font-serif text-2xl text-white font-bold tracking-wide flex items-baseline gap-2">
             <span>{occupiedPct}%</span>
-            <span className="text-xs font-sans text-gray-400 font-normal">/ {totalUnits} Căn</span>
+            <span className="text-xs font-sans text-gray-400 font-normal">/ {totalUnits} {t('Căn', 'Units')}</span>
           </div>
           <div className="w-full bg-[#1C2533] h-1.5 flex overflow-hidden">
-            <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${occupiedPct}%` }} title={`Đã ở: ${occupiedUnits}`} />
-            <div className="bg-amber-400 h-full transition-all duration-500" style={{ width: `${maintPct}%` }} title={`Nghiệm thu: ${maintenanceUnits}`} />
-            <div className="bg-gray-600 h-full transition-all duration-500" style={{ width: `${vacantPct}%` }} title={`Trống: ${vacantUnits}`} />
+            <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${occupiedPct}%` }} title={`${t('Đã ở', 'Occupied')}: ${occupiedUnits}`} />
+            <div className="bg-amber-400 h-full transition-all duration-500" style={{ width: `${maintPct}%` }} title={`${t('Nghiệm thu', 'Handover')}: ${maintenanceUnits}`} />
+            <div className="bg-gray-600 h-full transition-all duration-500" style={{ width: `${vacantPct}%` }} title={`${t('Trống', 'Vacant')}: ${vacantUnits}`} />
           </div>
           <div className="text-[10.5px] text-gray-400 flex items-center justify-between font-mono pt-0.5 border-t border-[#1C2533]">
-            <span className="text-emerald-400">● {occupiedUnits} Ở</span>
-            <span className="text-amber-400">● {maintenanceUnits} Bàn Giao</span>
-            <span className="text-gray-400">● {vacantUnits} Trống</span>
+            <span className="text-emerald-400">● {occupiedUnits} {t('Ở', 'Occ')}</span>
+            <span className="text-amber-400">● {maintenanceUnits} {t('Bàn Giao', 'Handover')}</span>
+            <span className="text-gray-400">● {vacantUnits} {t('Trống', 'Vacant')}</span>
           </div>
         </div>
 
         {/* KPI 3: Khách thăm */}
         <div className="p-3.5 bg-[#121820] border border-[#222B35] space-y-1.5 hover:border-[#C5A880]/60 transition-all shadow">
           <div className="flex items-center justify-between text-xs text-gray-400">
-            <span className="font-semibold">Khách Thăm Chung Cư</span>
+            <span className="font-semibold">{t('Khách Thăm Chung Cư', 'Building Visitors')}</span>
             <ShieldCheck className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="font-serif text-2xl text-white font-bold tracking-wide flex items-baseline gap-2">
-            <span>{visitorPasses.length} Thẻ</span>
-            <span className="text-xs font-sans text-gray-400 font-normal">• {auditLogs.length} Lượt Quét</span>
+            <span>{visitorPasses.length} {t('Thẻ', 'Passes')}</span>
+            <span className="text-xs font-sans text-gray-400 font-normal">• {auditLogs.length} {t('Lượt Quét', 'Scans')}</span>
           </div>
           <div className="text-[11px] text-cyan-400 flex items-center justify-between font-mono pt-1 border-t border-[#1C2533]">
-            <span>Đang hoạt động</span>
-            <span className="text-gray-400">Cổng L1 & B1</span>
+            <span>{t('Đang hoạt động', 'Active now')}</span>
+            <span className="text-gray-400">{t('Cổng L1 & B1', 'Gate L1 & B1')}</span>
           </div>
         </div>
 
         {/* KPI 4: Phương tiện */}
         <div className="p-3.5 bg-[#121820] border border-[#222B35] space-y-1.5 hover:border-[#C5A880]/60 transition-all shadow">
           <div className="flex items-center justify-between text-xs text-gray-400">
-            <span className="font-semibold">Phương Tiện Cư Dân</span>
+            <span className="font-semibold">{t('Phương Tiện Cư Dân', 'Resident Vehicles')}</span>
             <Car className="w-4 h-4 text-[#C5A880]" />
           </div>
           <div className="font-serif text-2xl text-white font-bold tracking-wide">
-            {registeredCars + registeredMotos} <span className="text-xs font-sans text-gray-400 font-normal">Xe Đăng Ký</span>
+            {registeredCars + registeredMotos} <span className="text-xs font-sans text-gray-400 font-normal">{t('Xe Đăng Ký', 'Vehicles')}</span>
           </div>
           <div className="text-[11px] text-emerald-400 flex items-center justify-between font-mono pt-1 border-t border-[#1C2533]">
-            <span>● {registeredCars} Ô tô</span>
-            <span>● {registeredMotos} Xe máy</span>
+            <span>● {registeredCars} {t('Ô tô', 'Cars')}</span>
+            <span>● {registeredMotos} {t('Xe máy', 'Bikes')}</span>
           </div>
         </div>
       </div>
@@ -392,7 +394,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-[#222B35] pb-2.5">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-white">
               <Radio className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-              <span>SƠ ĐỒ PHÂN TẦNG BMS</span>
+              <span>{t('SƠ ĐỒ PHÂN TẦNG BMS', 'BMS FLOOR MAP')}</span>
             </div>
 
             {/* Switch tầng: B2, B1, L1, 20, 30, 34 */}
@@ -419,7 +421,7 @@ export default function AdminDashboard() {
                         : 'bg-transparent text-gray-300 border-transparent hover:bg-[#1E2C3D] hover:text-white'
                     }`}
                   >
-                    <span>{fl === 'L1' ? 'Tầng 1' : fl === 'B1' ? 'Hầm B1' : fl === 'B2' ? 'Hầm B2' : fl === '34' ? 'Tầng 34' : `Tầng ${fl}`}</span>
+                    <span>{fl === 'L1' ? t('Tầng 1', 'Floor 1') : fl === 'B1' ? t('Hầm B1', 'Basement B1') : fl === 'B2' ? t('Hầm B2', 'Basement B2') : fl === '34' ? t('Tầng 34', 'Floor 34') : `${t('Tầng', 'Floor')} ${fl}`}</span>
                     {isCrit && (
                       <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
                     )}
@@ -436,7 +438,14 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between px-3 py-1.5 bg-[#141C28] border border-[#243244] text-xs font-mono">
             <div className="flex items-center gap-2 truncate">
               <Building className="w-3.5 h-3.5 text-[#C5A880] shrink-0" />
-              <span className="text-white font-bold truncate">{currentFloorData.floorName}</span>
+              <span className="text-white font-bold truncate">
+                {selectedFloor === 'B2' ? (isEn ? 'Basement B2 • Pump Station & Fire Tank' : currentFloorData.floorName)
+                  : selectedFloor === 'B1' ? (isEn ? 'Basement B1 • Parking & Transformer' : currentFloorData.floorName)
+                  : selectedFloor === 'L1' ? (isEn ? 'Floor 1 • Grand Lobby & Reception' : currentFloorData.floorName)
+                  : selectedFloor === '20' ? (isEn ? 'Floor 20 • Fire Refuge Area' : currentFloorData.floorName)
+                  : selectedFloor === '30' ? (isEn ? 'Floor 30 • Residential Corridor' : currentFloorData.floorName)
+                  : (isEn ? 'Floor 34 • Elevator Motor & Rooftop' : currentFloorData.floorName)}
+              </span>
             </div>
             <span className={`px-2 py-0.5 text-[9px] font-bold shrink-0 border ${
               currentFloorData.threatLevel === 'CRITICAL'
@@ -445,7 +454,7 @@ export default function AdminDashboard() {
                 ? 'bg-amber-950 text-amber-300 border-amber-500'
                 : 'bg-emerald-950 text-emerald-300 border-emerald-500'
             }`}>
-              {currentFloorData.threatLevel === 'CRITICAL' ? 'NGUY HIỂM' : currentFloorData.threatLevel === 'WARNING' ? 'CẢNH BÁO' : 'BÌNH THƯỜNG'}
+              {currentFloorData.threatLevel === 'CRITICAL' ? t('NGUY HIỂM', 'CRITICAL') : currentFloorData.threatLevel === 'WARNING' ? t('CẢNH BÁO', 'WARNING') : t('BÌNH THƯỜNG', 'NORMAL')}
             </span>
           </div>
 
@@ -462,32 +471,32 @@ export default function AdminDashboard() {
             <div className="relative z-10 w-[96%] h-[92%] border border-gray-800/80 bg-[#0A0F17]/95 p-2 flex flex-col justify-between shadow-xl">
               {/* Header sơ đồ sàn */}
               <div className="flex justify-between items-center text-[9px] font-mono text-gray-400 border-b border-gray-800/60 pb-1">
-                <span className="text-[#C5A880] font-bold">MẶT BẰNG SÀN • {selectedFloor}</span>
-                <span className="text-gray-400">{currentFloorData.activeNodes} Cảm Biến Hoạt Động</span>
+                <span className="text-[#C5A880] font-bold">{t('MẶT BẰNG SÀN', 'FLOOR BLUEPRINT')} • {selectedFloor}</span>
+                <span className="text-gray-400">{currentFloorData.activeNodes} {t('Cảm Biến Hoạt Động', 'Active Sensors')}</span>
               </div>
 
               {/* Các phân khu kiến trúc */}
               <div className="relative flex-1 my-1">
                 <div className="absolute top-1 left-2 px-1.5 py-0.5 border border-dashed border-emerald-700/50 bg-[#0E1722]/40 text-[8px] font-mono text-emerald-400/80 pointer-events-none">
-                  THANG BỘ 01
+                  {t('THANG BỘ 01', 'STAIRWELL 01')}
                 </div>
 
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 py-1.5 border border-[#2B3B4F] bg-[#111924]/80 text-center shadow pointer-events-none">
                   <div className="font-bold text-gray-200 text-[8.5px] tracking-wide flex items-center justify-center gap-1">
-                    <Sliders className="w-2.5 h-2.5 text-[#C5A880]" /> LÕI THANG MÁY
+                    <Sliders className="w-2.5 h-2.5 text-[#C5A880]" /> {t('LÕI THANG MÁY', 'ELEVATOR CORE')}
                   </div>
                 </div>
 
                 <div className="absolute bottom-1 right-2 px-1.5 py-0.5 border border-dashed border-emerald-700/50 bg-[#0E1722]/40 text-[8px] font-mono text-emerald-400/80 pointer-events-none">
-                  THANG BỘ 02
+                  {t('THANG BỘ 02', 'STAIRWELL 02')}
                 </div>
 
                 <div className="absolute top-1 right-2 px-1.5 py-0.5 border border-dashed border-gray-700/50 bg-[#0E1722]/40 text-[8px] font-mono text-gray-400/80 pointer-events-none">
-                  HỌNG PCCC
+                  {t('HỌNG PCCC', 'FIRE HYDRANT')}
                 </div>
 
                 <div className="absolute bottom-1 left-2 px-1.5 py-0.5 border border-dashed border-gray-700/50 bg-[#0E1722]/40 text-[8px] font-mono text-gray-400/80 pointer-events-none">
-                  TRỤC M&E
+                  {t('TRỤC M&E', 'MEP SHAFT')}
                 </div>
 
                 {/* Các điểm radar cảnh báo */}
@@ -537,9 +546,9 @@ export default function AdminDashboard() {
 
               {/* Status Footer Legend Bar */}
               <div className="flex justify-between items-center text-[8px] text-gray-400 font-mono pt-1 border-t border-gray-800/60">
-                <span className="text-emerald-400">● Hệ thống an toàn</span>
-                <span className="text-amber-400">● Điểm cảnh báo T1/T2</span>
-                <span className="text-cyan-400">● BMS kết nối trực tiếp</span>
+                <span className="text-emerald-400">● {t('Hệ thống an toàn', 'Safe System')}</span>
+                <span className="text-amber-400">● {t('Điểm cảnh báo T1/T2', 'Warning Point T1/T2')}</span>
+                <span className="text-cyan-400">● {t('BMS kết nối trực tiếp', 'Direct BMS connection')}</span>
               </div>
             </div>
           </div>
@@ -551,7 +560,7 @@ export default function AdminDashboard() {
             {/* Header Camera */}
             <div className="flex items-center justify-between border-b border-[#222B35] pb-2">
               <span className="text-xs uppercase tracking-wider text-[#C5A880] font-mono font-bold flex items-center gap-1.5">
-                <Eye className="w-3.5 h-3.5" /> CAMERA AN NINH LIVE
+                <Eye className="w-3.5 h-3.5" /> {t('CAMERA AN NINH LIVE', 'LIVE SECURITY CAM')}
               </span>
               <span className="px-1.5 py-0.5 bg-red-950/80 border border-red-500 text-red-300 text-[9px] font-mono font-bold">
                 AI: {(activeThreat.confidence * 100).toFixed(0)}%
@@ -576,16 +585,16 @@ export default function AdminDashboard() {
             {/* Thông số chi tiết cảnh báo - Tinh gọn, rõ ràng */}
             <div className="space-y-1.5 text-xs text-gray-300 bg-[#131A26] p-2.5 border border-[#222B35] font-mono">
               <div className="flex justify-between items-start gap-2">
-                <span className="text-gray-400 shrink-0">Sự việc:</span>
-                <strong className="text-red-400 font-semibold text-right truncate">{activeThreat.title}</strong>
+                <span className="text-gray-400 shrink-0">{t('Sự việc:', 'Event:')}</span>
+                <strong className="text-red-400 font-semibold text-right truncate">{t(activeThreat.title)}</strong>
               </div>
               <div className="flex justify-between items-start gap-2">
-                <span className="text-gray-400 shrink-0">Vị trí:</span>
-                <span className="text-white text-right truncate">{activeThreat.location}</span>
+                <span className="text-gray-400 shrink-0">{t('Vị trí:', 'Location:')}</span>
+                <span className="text-white text-right truncate">{t(activeThreat.location)}</span>
               </div>
               <div className="flex justify-between items-start gap-2">
-                <span className="text-gray-400 shrink-0">Xử lý:</span>
-                <span className="text-emerald-300 text-right truncate">{activeThreat.actionHint}</span>
+                <span className="text-gray-400 shrink-0">{t('Xử lý:', 'Response:')}</span>
+                <span className="text-emerald-300 text-right truncate">{t(activeThreat.actionHint)}</span>
               </div>
             </div>
 
@@ -609,7 +618,7 @@ export default function AdminDashboard() {
               }`}
             >
               <Flame className="w-3.5 h-3.5" />
-              <span>{isEmergencyActive ? 'Tắt Báo Động' : 'Báo Động Khẩn Cấp'}</span>
+              <span>{isEmergencyActive ? t('Tắt Báo Động', 'Dismiss Alarm') : t('Báo Động Khẩn Cấp', 'Emergency Alarm')}</span>
             </button>
 
             <button 
@@ -618,7 +627,7 @@ export default function AdminDashboard() {
               className="w-full py-2 bg-[#1C2533] hover:bg-[#C5A880] text-gray-200 hover:text-[#0D1117] border border-gray-700 hover:border-[#C5A880] text-xs uppercase tracking-wider font-bold transition-colors flex items-center justify-center gap-2"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Điều Động Bảo Vệ</span>
+              <span>{t('Điều Động Bảo Vệ', 'Dispatch Security')}</span>
             </button>
           </div>
         </div>
@@ -630,11 +639,11 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between text-xs text-gray-400 border-b border-[#1E293B] pb-1.5">
           <div className="flex items-center gap-2 font-bold text-white text-xs">
             <Activity className="w-3.5 h-3.5 text-[#C5A880]" />
-            <span>NHẬT KÝ SỰ KIỆN VẬN HÀNH</span>
+            <span>{t('NHẬT KÝ SỰ KIỆN VẬN HÀNH', 'OPERATIONS EVENT LOG')}</span>
           </div>
           <span className="text-[10px] text-emerald-400 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Trực tiếp
+            {t('Trực tiếp', 'Live')}
           </span>
         </div>
 
@@ -644,22 +653,22 @@ export default function AdminDashboard() {
             {
               time: '01:00',
               type: 'FaceID T1',
-              text: 'Xác thực thành công - Cư dân Căn CH-06 mở thang máy',
-              badge: 'BÌNH THƯỜNG',
+              text: t('Xác thực thành công - Cư dân Căn CH-06 mở thang máy', 'Verification success - Resident Unit CH-06 calls elevator'),
+              badge: t('BÌNH THƯỜNG', 'NORMAL'),
               badgeColor: 'text-emerald-400 border-emerald-800/80 bg-emerald-950/40'
             },
             {
               time: '00:52',
               type: 'Barrier B1',
-              text: 'Mở tự động - Xe ô tô 51K-889.99 vào hầm',
-              badge: 'HỢP LỆ',
+              text: t('Mở tự động - Xe ô tô 51K-889.99 vào hầm', 'Auto gate open - Car 51K-889.99 enters basement'),
+              badge: t('HỢP LỆ', 'VALID'),
               badgeColor: 'text-cyan-400 border-cyan-800/80 bg-cyan-950/40'
             },
             {
               time: '00:45',
               type: 'Trạm Bơm B2',
-              text: 'Áp suất duy trì ổn định 6.2 bar (Bể 94%)',
-              badge: 'CHUẨN',
+              text: t('Áp suất duy trì ổn định 6.2 bar (Bể 94%)', 'Pressure maintained stably at 6.2 bar (Tank 94%)'),
+              badge: t('CHUẨN', 'OPTIMAL'),
               badgeColor: 'text-blue-400 border-blue-800/80 bg-blue-950/40'
             }
           ].map((item, idx) => (

@@ -1,15 +1,44 @@
 import { NextResponse } from 'next/server';
 import { 
   generateVisitorPassToken, 
-  verifyVisitorQr 
+  verifyVisitorQr,
+  getPassRegistry,
+  getAllVisitorPasses,
+  checkInVisitorPass,
+  checkOutVisitorPass
 } from '@/lib/visitorStore';
 
 /**
- * GET /api/nks/visitor
- * Returns a health check and verification instructions.
- * (No persistent guest lists stored to preserve resident privacy).
+ * GET /api/visitor
+ * Lookup visitor pass by id or pin, or return health check.
  */
 export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id') || searchParams.get('passId');
+  const pin = searchParams.get('pin');
+
+  if (id || pin) {
+    const registry = getPassRegistry();
+    let pass = id ? registry.get(id) : undefined;
+    if (!pass && pin) pass = registry.get(pin);
+    if (!pass) {
+      const all = getAllVisitorPasses();
+      pass = all.find(p => p.id === id || p.pinCode === pin);
+    }
+
+    if (pass) {
+      return NextResponse.json({
+        success: true,
+        pass,
+      });
+    }
+
+    return NextResponse.json({
+      success: false,
+      message: 'Không tìm thấy thông tin thẻ khách thăm hợp lệ.',
+    }, { status: 404 });
+  }
+
   return NextResponse.json({
     success: true,
     message: 'Skyline Secure Visitor Access Gateway (Zero-Dossier Privacy Enabled)',
@@ -17,8 +46,8 @@ export async function GET(request: Request) {
 }
 
 /**
- * POST /api/nks/visitor
- * Generate ephemeral token or verify scanned QR code at barrier.
+ * POST /api/visitor
+ * Generate ephemeral token, verify scanned QR code, or check-in/out.
  */
 export async function POST(request: Request) {
   try {
@@ -29,7 +58,7 @@ export async function POST(request: Request) {
     if (action === 'GENERATE' || action === 'CREATE') {
       const { apartmentCode, visitorName, phoneNumber, licensePlate, entryType, validHours, note } = body;
       const pass = generateVisitorPassToken({
-        apartmentCode: (apartmentCode === '12A05' || apartmentCode === '12A5' || !apartmentCode) ? 'CH-06' : apartmentCode,
+        apartmentCode: apartmentCode || 'CH-06',
         visitorName: visitorName || 'Khách Thăm Nhà',
         phoneNumber,
         licensePlate,
@@ -53,6 +82,34 @@ export async function POST(request: Request) {
         success: true,
         ...result,
       });
+    }
+
+    // 3. Confirm Check-In
+    if (action === 'CHECK_IN') {
+      const { passId } = body;
+      const updated = checkInVisitorPass(passId);
+      if (updated) {
+        return NextResponse.json({
+          success: true,
+          message: 'Đã check-in đón khách thành công.',
+          pass: updated
+        });
+      }
+      return NextResponse.json({ success: false, message: 'Không tìm thấy mã thẻ khách' }, { status: 404 });
+    }
+
+    // 4. Confirm Check-Out
+    if (action === 'CHECK_OUT') {
+      const { passId } = body;
+      const updated = checkOutVisitorPass(passId);
+      if (updated) {
+        return NextResponse.json({
+          success: true,
+          message: 'Đã ghi nhận khách rời tòa nhà.',
+          pass: updated
+        });
+      }
+      return NextResponse.json({ success: false, message: 'Không tìm thấy mã thẻ khách' }, { status: 404 });
     }
 
     return NextResponse.json({ success: false, message: 'Hành động không hợp lệ' }, { status: 400 });

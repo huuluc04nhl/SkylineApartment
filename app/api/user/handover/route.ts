@@ -3,7 +3,7 @@ import { registerNewOwnerUser, getUserStore } from '@/lib/userStore';
 import { assignApartmentResident, ApartmentHandoverProtocol, ApartmentResidentOwner } from '@/lib/apartmentStore';
 
 /**
- * POST /api/nks/user/handover
+ * POST /api/user/handover
  * API Cấp tài khoản Cư Dân & Bàn Giao Căn Hộ Chính Thức (BQL Handover Provisioning)
  */
 export async function POST(req: Request) {
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
     const finalProtocol: ApartmentHandoverProtocol = {
       protocolCode,
       handoverDate: handoverProtocol?.handoverDate || todayStr,
-      handoverOfficer: handoverProtocol?.handoverOfficer || 'Ban Quản Lý Skyline Smart Residence',
+      handoverOfficer: handoverProtocol?.handoverOfficer || 'VinHomes Manager',
       keysCount: Number(handoverProtocol?.keysCount) || 3,
       cardsCount: Number(handoverProtocol?.cardsCount) || 2,
       initialElectricMeter: Number(handoverProtocol?.initialElectricMeter) || 0,

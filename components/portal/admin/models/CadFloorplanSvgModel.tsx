@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Layers, Maximize2, Sparkles, Star, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { ApartmentUnit } from '@/lib/apartmentStore';
 import { CAD_FLOOR_UNITS_CONFIG } from '../AdminBuildingApartmentManager';
+import { useLanguage } from '@/lib/languageContext';
 
 interface CadFloorplanSvgModelProps {
   selectedFloor: number;
@@ -24,6 +25,7 @@ export default function CadFloorplanSvgModel({
   onOpenZoomModal,
   statusFilter = 'ALL'
 }: CadFloorplanSvgModelProps) {
+  const { t, isEn } = useLanguage();
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [hoveredUnitCode, setHoveredUnitCode] = useState<string | null>(null);
 
@@ -71,7 +73,7 @@ export default function CadFloorplanSvgModel({
             type="button"
             onClick={() => setZoomLevel(prev => Math.max(0.8, Number((prev - 0.2).toFixed(1))))}
             className="w-6 h-6 flex items-center justify-center bg-[#121A26] hover:bg-[#1A2637] border border-[#223247] text-gray-300 hover:text-white text-xs transition-all"
-            title="Thu nhỏ"
+            title={t('Thu nhỏ', 'Zoom out')}
           >
             -
           </button>
@@ -82,7 +84,7 @@ export default function CadFloorplanSvgModel({
             type="button"
             onClick={() => setZoomLevel(prev => Math.min(2.0, Number((prev + 0.2).toFixed(1))))}
             className="w-6 h-6 flex items-center justify-center bg-[#121A26] hover:bg-[#1A2637] border border-[#223247] text-gray-300 hover:text-white text-xs transition-all"
-            title="Phóng to"
+            title={t('Phóng to', 'Zoom in')}
           >
             +
           </button>
@@ -117,27 +119,27 @@ export default function CadFloorplanSvgModel({
               <rect x="0" y="0" width="45" height="50" rx="2" fill="#0F2038" stroke="#38BDF8" strokeWidth="1.5" />
               <line x1="5" y1="5" x2="40" y2="45" stroke="#38BDF8" strokeWidth="1" strokeOpacity="0.5" />
               <line x1="40" y1="5" x2="5" y2="45" stroke="#38BDF8" strokeWidth="1" strokeOpacity="0.5" />
-              <text x="22" y="30" fill="#BAE6FD" fontSize="8" fontFamily="monospace" textAnchor="middle">THANG {i + 1}</text>
+              <text x="22" y="30" fill="#BAE6FD" fontSize="8" fontFamily="monospace" textAnchor="middle">{t('THANG', 'LIFT')} {i + 1}</text>
             </g>
           ))}
 
           {/* Thang bộ thoát hiểm 1 & 2 */}
           <g transform="translate(645, 215)">
             <rect x="0" y="0" width="45" height="50" fill="#1C1917" stroke="#EA580C" strokeWidth="1.5" />
-            <text x="22" y="28" fill="#FDBA74" fontSize="8" fontFamily="monospace" textAnchor="middle">THANG BỘ 1</text>
+            <text x="22" y="28" fill="#FDBA74" fontSize="8" fontFamily="monospace" textAnchor="middle">{t('THANG BỘ 1', 'STAIR 1')}</text>
           </g>
           <g transform="translate(360, 280)">
             <rect x="0" y="0" width="45" height="50" fill="#1C1917" stroke="#EA580C" strokeWidth="1.5" />
-            <text x="22" y="28" fill="#FDBA74" fontSize="8" fontFamily="monospace" textAnchor="middle">THANG BỘ 2</text>
+            <text x="22" y="28" fill="#FDBA74" fontSize="8" fontFamily="monospace" textAnchor="middle">{t('THANG BỘ 2', 'STAIR 2')}</text>
           </g>
 
           {/* Phòng kỹ thuật rác & Hộp gen MEP */}
           <rect x="420" y="280" width="70" height="50" fill="#0C1E34" stroke="#64748B" strokeWidth="1" />
-          <text x="455" y="308" fill="#94A3B8" fontSize="8" fontFamily="monospace" textAnchor="middle">PHÒNG RÁC</text>
+          <text x="455" y="308" fill="#94A3B8" fontSize="8" fontFamily="monospace" textAnchor="middle">{t('PHÒNG RÁC', 'REFUSE ROOM')}</text>
 
           {/* Hành lang thông khí 1.8m */}
           <rect x="500" y="280" width="190" height="50" fill="#0D1F36" stroke="#38BDF8" strokeWidth="1" strokeDasharray="3 3" />
-          <text x="595" y="308" fill="#7DD3FC" fontSize="9" fontFamily="monospace" textAnchor="middle">HÀNH LANG TRUNG TÂM (1.8m)</text>
+          <text x="595" y="308" fill="#7DD3FC" fontSize="9" fontFamily="monospace" textAnchor="middle">{t('HÀNH LANG TRUNG TÂM (1.8m)', 'CENTRAL CORRIDOR (1.8m)')}</text>
 
           {/* 2. TỰ VẼ 21 CĂN HỘ TRÊN MẶT SÀN CAD */}
           {CAD_FLOOR_UNITS_CONFIG.map(cfg => {
@@ -268,7 +270,7 @@ export default function CadFloorplanSvgModel({
                     fontWeight="bold"
                     textAnchor="middle"
                   >
-                    {isOccupied ? 'CÓ CƯ DÂN' : isMaintenance ? 'NGHIỆM THU' : 'CĂN TRỐNG'}
+                    {isOccupied ? t('CÓ CƯ DÂN', 'OCCUPIED') : isMaintenance ? t('NGHIỆM THU', 'INSPECTION') : t('CĂN TRỐNG', 'VACANT')}
                   </text>
                 </g>
               </g>
@@ -278,14 +280,14 @@ export default function CadFloorplanSvgModel({
 
         {/* Chú giải góc bản vẽ */}
         <div className="absolute bottom-3 left-3 bg-[#08101A]/95 border border-[#1E293B] p-2.5 text-[10.5px] font-mono text-gray-400 backdrop-blur-md">
-          <div className="text-[#C5A880] font-bold">MẶT BẰNG 21 CĂN HỘ CHUNG CƯ {selectedBlock}:</div>
+          <div className="text-[#C5A880] font-bold">{t('MẶT BẰNG 21 CĂN HỘ CHUNG CƯ', 'FLOOR PLAN 21 UNITS')} {selectedBlock}:</div>
           <div className="flex items-center gap-2 mt-1">
             <span className="w-2.5 h-2.5 bg-[#38BDF8] inline-block" />
-            <span>Đang Chọn</span>
+            <span>{t('Đang Chọn', 'Selected')}</span>
             <span className="w-2.5 h-2.5 bg-[#065F46] inline-block ml-2" />
-            <span>Đã Có Cư Dân</span>
+            <span>{t('Đã Có Cư Dân', 'Occupied')}</span>
             <span className="w-2.5 h-2.5 bg-[#1E293B] inline-block ml-2" />
-            <span>Căn Trống</span>
+            <span>{t('Căn Trống', 'Vacant')}</span>
           </div>
         </div>
       </div>

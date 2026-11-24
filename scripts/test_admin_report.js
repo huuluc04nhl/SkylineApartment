@@ -51,3 +51,4 @@ assert.strictEqual(top2[1].apartment_code, 'CH-06', 'Second debtor must be CH-06
 console.log('✅ Test 3: Top debtors sorting PASSED');
 
 console.log('🎉 ALL 3 B4 ADMIN REPORT TESTS PASSED!');
+

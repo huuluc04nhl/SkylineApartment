@@ -7,6 +7,8 @@
  */
 
 import { UserRole } from './dataStore';
+import { skylineDb } from './db';
+import { CommunityPostRecord } from './db/schema';
 
 export type PostCategory = 'ANNOUNCEMENT' | 'VOTING' | 'MARKETPLACE' | 'DISCUSSION';
 
@@ -150,48 +152,65 @@ export function analyzePostWithAi(text: string): {
 /**
  * Lấy toàn bộ danh sách bài viết diễn đàn thực tế
  */
+export function communityRecordToPost(r: CommunityPostRecord): CommunityPost {
+  return {
+    id: r.id,
+    title: r.title,
+    content: r.content,
+    authorName: r.author_name,
+    authorRole: r.author_role as any,
+    aptCode: r.apt_code,
+    avatarUrl: r.avatar_url,
+    category: (r.category === 'Thông báo' ? 'ANNOUNCEMENT' : r.category === 'Biểu quyết' ? 'VOTING' : r.category === 'Rao vặt' ? 'MARKETPLACE' : 'DISCUSSION') as any,
+    tags: r.tags || [],
+    isPinned: r.is_pinned || false,
+    likes: [],
+    comments: [],
+    aiModeration: (r.ai_moderation === 'Toxic' ? 'Toxic' : r.ai_moderation === 'Warning' ? 'Warning' : 'Clean'),
+    aiSentiment: r.ai_sentiment || 0.8,
+    aiSentimentLabel: r.ai_sentiment > 0.6 ? 'Tích cực' : r.ai_sentiment < 0 ? 'Bức xúc' : 'Trung lập',
+    createdAt: r.created_at
+  };
+}
+
+let inMemoryCommunityPosts: CommunityPost[] = skylineDb.communityPosts.find().map(communityRecordToPost);
+
 export function getCommunityPosts(): CommunityPost[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    localStorage.removeItem('skyline_community_posts_v1');
-    localStorage.removeItem('skyline_community_posts_v2');
-    localStorage.removeItem('skyline_community_posts_clean_v3');
-
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed.map((post: CommunityPost) => {
-        if (!post.poll) return post;
-        const voters = Array.isArray(post.poll.voters) ? post.poll.voters : [];
-        return {
-          ...post,
-          poll: {
-            ...post.poll,
-            options: (post.poll.options || []).map(opt => ({
-              ...opt,
-              votes: voters.filter(v => v.optionId === opt.id).length,
-            })),
-          },
-        };
-      });
-    }
-    return [];
-  } catch {
-    return [];
+  if (inMemoryCommunityPosts.length === 0) {
+    inMemoryCommunityPosts = skylineDb.communityPosts.find().map(communityRecordToPost);
   }
+  return inMemoryCommunityPosts;
 }
 
 function saveCommunityPosts(posts: CommunityPost[]) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+  inMemoryCommunityPosts = [...posts];
+  posts.forEach(p => {
+    const existing = skylineDb.communityPosts.findById(p.id);
+    const rec: CommunityPostRecord = {
+      id: p.id,
+      author_name: p.authorName,
+      author_role: p.authorRole,
+      apt_code: p.aptCode,
+      avatar_url: p.avatarUrl,
+      title: p.title,
+      content: p.content,
+      category: p.category === 'ANNOUNCEMENT' ? 'Thông báo' : p.category === 'VOTING' ? 'Biểu quyết' : p.category === 'MARKETPLACE' ? 'Rao vặt' : 'Cộng đồng',
+      ai_moderation: p.aiModeration,
+      ai_sentiment: p.aiSentiment,
+      tags: p.tags,
+      likes: p.likes.length,
+      comments_count: p.comments.length,
+      is_pinned: p.isPinned,
+      created_at: p.createdAt
+    };
+    if (existing) {
+      skylineDb.communityPosts.update(p.id, rec);
+    } else {
+      skylineDb.communityPosts.insert(rec);
+    }
+  });
+  if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: posts }));
-  } catch (e) {
-    console.error('Failed to save community posts', e);
   }
 }
 

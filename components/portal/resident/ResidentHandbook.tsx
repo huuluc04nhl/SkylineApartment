@@ -137,7 +137,7 @@ const HANDBOOK_SECTIONS: HandbookSection[] = [
           'Buổi tối & Đêm (sau 17:00 đến 08:00 sáng): Tuyệt đối không thực hiện khoan cắt, đục phá tường.',
           'Thứ 7, Chủ Nhật & Các ngày Lễ Tết: CẤM TUYỆT ĐỐI mọi hoạt động khoan tường, gõ búa, cắt gạch thi công.'
         ],
-        importantNotice: 'Mọi hoạt động sửa chữa, cải tạo nội thất căn hộ cần nộp bản vẽ thi công và ký quỹ an toàn kỹ thuật với Ban Quản Lý trước khi tiến hành.'
+        importantNotice: 'Mọi hoạt động sửa chữa, cải tạo nội thất căn hộ cần nộp bản vẽ thi công và ký quỹ an toàn kỹ thuật với VinHomes Manager trước khi tiến hành.'
       },
       {
         heading: 'Nội Quy Tiếng Ồn Sinh Hoạt & Âm Thanh',
@@ -299,10 +299,10 @@ export default function ResidentHandbook({ currentUser, onNavigate }: ResidentHa
       if (data.reply) {
         setAiAnswer(data.reply);
       } else {
-        setAiAnswer(isEn ? 'The AI system is currently busy. Please check the regulation cards below or call Management Hotline 1900 8899.' : 'Dạ hiện tại hệ thống kết nối AI đang bận. Quý cư dân có thể tra cứu nhanh các thẻ bên dưới hoặc gọi hotline Ban Quản Lý 1900 8899 ạ!');
+        setAiAnswer(isEn ? 'The AI system is currently busy. Please check the regulation cards below or call VinHomes Manager Hotline 1900 8899.' : 'Dạ hiện tại hệ thống kết nối AI đang bận. Quý cư dân có thể tra cứu nhanh các thẻ bên dưới hoặc gọi hotline VinHomes Manager 1900 8899 ạ!');
       }
     } catch (e) {
-      setAiAnswer(isEn ? 'The AI system is currently busy. Please check the regulation cards below or call Management Hotline 1900 8899.' : 'Dạ hiện tại hệ thống kết nối AI đang bận. Quý cư dân có thể tra cứu nhanh các thẻ bên dưới hoặc gọi hotline Ban Quản Lý 1900 8899 ạ!');
+      setAiAnswer(isEn ? 'The AI system is currently busy. Please check the regulation cards below or call VinHomes Manager Hotline 1900 8899.' : 'Dạ hiện tại hệ thống kết nối AI đang bận. Quý cư dân có thể tra cứu nhanh các thẻ bên dưới hoặc gọi hotline VinHomes Manager 1900 8899 ạ!');
     } finally {
       setIsAiLoading(false);
     }
@@ -320,11 +320,11 @@ export default function ResidentHandbook({ currentUser, onNavigate }: ResidentHa
             Cẩm Nang & Nội Quy Chung Cư
           </h2>
           <p className="text-xs text-gray-300 mt-1.5 flex items-center gap-2 font-mono">
-            <span>Căn hộ: CH-06</span>
+            <span>{isEn ? 'Unit: CH-06' : 'Căn hộ: CH-06'}</span>
             <span className="text-gray-500">•</span>
-            <span className="text-[#C5A880]">Chung cư BS-07 (Tầng 30)</span>
+            <span className="text-[#C5A880]">{isEn ? 'Tower BS-07 (Floor 30)' : 'Chung cư BS-07 (Tầng 30)'}</span>
             <span className="text-gray-500">•</span>
-            <span className="text-emerald-400">Hiệu lực BQL 2026 ✓</span>
+            <span className="text-emerald-400">{isEn ? 'Management Policy 2026 ✓' : 'Hiệu lực BQL 2026 ✓'}</span>
           </p>
         </div>
 
@@ -333,18 +333,18 @@ export default function ResidentHandbook({ currentUser, onNavigate }: ResidentHa
           <a
             href="tel:19008899"
             className="px-3.5 py-2 bg-[#0D1117] hover:bg-[#1C2533] border border-[#C5A880]/60 text-[#C5A880] text-xs font-bold font-mono transition-all flex items-center gap-2 shadow"
-            title="Gọi ngay tổng đài Ban Quản Lý"
+            title={isEn ? 'Call Management Hotline' : 'Gọi ngay tổng đài VinHomes Manager'}
           >
             <PhoneCall className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            <span>BQL: 1900 8899</span>
+            <span>VinHomes Manager: 1900 8899</span>
           </a>
           <a
             href="tel:02873009988"
             className="px-3.5 py-2 bg-[#0D1117] hover:bg-[#1C2533] border border-sky-500/40 text-sky-400 text-xs font-bold font-mono transition-all flex items-center gap-2 shadow"
-            title="Gọi kỹ sư trực tầng 30 chung cư BS-07"
+            title={isEn ? 'Call on-duty engineer Tower BS-07' : 'Gọi kỹ sư trực tầng 30 chung cư BS-07'}
           >
             <Zap className="w-3.5 h-3.5 text-sky-400" />
-            <span>Kỹ Thuật: 028 7300 9988</span>
+            <span>{isEn ? 'Technical Support: 028 7300 9988' : 'Kỹ Thuật: 028 7300 9988'}</span>
           </a>
         </div>
       </div>

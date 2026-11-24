@@ -525,17 +525,17 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
         <div className="space-y-1">
           <div className="text-[11px] uppercase tracking-[0.2em] text-[#C5A880] font-bold flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#C5A880]" />
-            <span>Tiện Ích Cư Dân • Căn {aptCode}</span>
+            <span>{isEn ? 'Resident Amenities • Unit' : 'Tiện Ích Cư Dân • Căn'} {aptCode}</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-serif font-bold text-white flex items-center gap-2">
-            <span>Tiện Ích Nội Khu</span>
+            <span>{isEn ? 'Internal Amenities' : 'Tiện Ích Nội Khu'}</span>
           </h2>
           <p className="text-xs text-gray-400 font-mono flex flex-wrap items-center gap-2">
-            <span>Chủ Hộ: <strong className="text-white">{userName}</strong></span>
+            <span>{isEn ? 'Host Resident:' : 'Chủ Hộ:'} <strong className="text-white">{userName}</strong></span>
             <span className="text-gray-600">•</span>
-            <span className="text-emerald-400">Gym, Bể bơi, Sân Malibu: Miễn phí Cư Dân</span>
+            <span className="text-emerald-400">{isEn ? 'Gym, Pool, Malibu Court: Free for Residents' : 'Gym, Bể bơi, Sân Malibu: Miễn phí Cư Dân'}</span>
             <span className="text-gray-600">•</span>
-            <span>Mở cổng 0.28s</span>
+            <span>{isEn ? 'Fast gate unlock 0.28s' : 'Mở cổng 0.28s'}</span>
           </p>
         </div>
 
@@ -544,8 +544,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
           <div className="h-11 px-3 bg-[#0D1117] border border-[#2A374A] rounded-none text-xs flex items-center justify-center gap-2 sm:gap-2.5 truncate">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <div className="leading-tight truncate">
-              <div className="text-[9px] uppercase tracking-wider text-gray-400 font-mono truncate">Hạn Mức BBQ Tháng</div>
-              <div className="font-mono font-bold text-[#C5A880] text-xs truncate">{quota.remaining} / {quota.max} lượt</div>
+              <div className="text-[9px] uppercase tracking-wider text-gray-400 font-mono truncate">{isEn ? 'Monthly BBQ Quota' : 'Hạn Mức BBQ Tháng'}</div>
+              <div className="font-mono font-bold text-[#C5A880] text-xs truncate">{quota.remaining} / {quota.max} {isEn ? 'turns' : 'lượt'}</div>
             </div>
           </div>
 
@@ -555,7 +555,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
             className="h-11 px-3 sm:px-4 bg-[#1A2332] hover:bg-[#253247] border border-[#C5A880]/50 hover:border-[#C5A880] text-white text-xs font-bold uppercase rounded-none transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 truncate"
           >
             <CreditCard className="w-4 h-4 text-[#C5A880] shrink-0" />
-            <span className="truncate">Thẻ Cư Dân 3D</span>
+            <span className="truncate">{isEn ? '3D Resident Card' : 'Thẻ Cư Dân 3D'}</span>
           </button>
         </div>
       </div>
@@ -575,7 +575,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
           }`}
         >
           <DoorOpen className="w-4 h-4" />
-          <span><span className="sm:hidden">Tiện Ích</span><span className="hidden sm:inline">1. Danh Mục Tiện Ích</span> ({amenitiesList.length})</span>
+          <span><span className="sm:hidden">{isEn ? 'Amenities' : 'Tiện Ích'}</span><span className="hidden sm:inline">{isEn ? '1. Amenities Catalog' : '1. Danh Mục Tiện Ích'}</span> ({amenitiesList.length})</span>
         </button>
 
         {/* Chức năng 2 */}
@@ -589,7 +589,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
           }`}
         >
           <CalendarCheck className="w-4 h-4" />
-          <span><span className="sm:hidden">Đặt Chỗ</span><span className="hidden sm:inline">2. Đặt Chỗ & Vé Vào</span> ({bookings.filter(b => b.status === 'CONFIRMED').length})</span>
+          <span><span className="sm:hidden">{isEn ? 'Bookings' : 'Đặt Chỗ'}</span><span className="hidden sm:inline">{isEn ? '2. Bookings & Passes' : '2. Đặt Chỗ & Vé Vào'}</span> ({bookings.filter(b => b.status === 'CONFIRMED').length})</span>
         </button>
 
         {/* Chức năng 3 */}
@@ -603,7 +603,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
           }`}
         >
           <History className="w-4 h-4" />
-          <span><span className="sm:hidden">Lịch Sử</span><span className="hidden sm:inline">3. Nhật Ký Ra Vào</span> ({accessLogs.length})</span>
+          <span><span className="sm:hidden">{isEn ? 'History' : 'Lịch Sử'}</span><span className="hidden sm:inline">{isEn ? '3. Access Log' : '3. Nhật Ký Ra Vào'}</span> ({accessLogs.length})</span>
         </button>
       </div>
 
@@ -748,7 +748,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                           className="w-full h-10 px-3 bg-gradient-to-r from-[#C5A880] to-[#E2D4BF] hover:from-[#d5b991] hover:to-white text-[#0D1117] text-xs font-bold uppercase rounded-none transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
                         >
                           <DoorOpen className="w-4 h-4 shrink-0" />
-                          <span className="truncate">Vào Cửa Tiện Ích (Check-in)</span>
+                          <span className="truncate">{isEn ? 'Check-in Amenity' : 'Vào Cửa Tiện Ích (Check-in)'}</span>
                         </button>
                       ) : (
                         <button
@@ -760,7 +760,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                           className="w-full h-10 px-3 bg-[#1A2332] hover:bg-[#253247] border border-amber-500/50 hover:border-amber-400 text-amber-300 text-xs font-bold uppercase rounded-none transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
                         >
                           <CalendarCheck className="w-4 h-4 text-amber-400 shrink-0" />
-                          <span className="truncate">Đăng Ký Đặt Lịch Giữ Chỗ</span>
+                          <span className="truncate">{isEn ? 'Book Amenity Slot' : 'Đăng Ký Đặt Lịch Giữ Chỗ'}</span>
                         </button>
                       )}
                     </div>
@@ -1136,7 +1136,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
               <div className="flex items-center justify-between border-b border-[#222B35] pb-2.5">
                 <div className="text-xs uppercase tracking-wider text-[#C5A880] font-bold flex items-center gap-2">
                   <QrCode className="w-4 h-4" /> 
-                  <span>Ví Vé Điện Tử Tiện Ích Căn Hộ {aptCode} ({bookings.length} Vé)</span>
+                  <span>{isEn ? `Digital Passes Wallet Unit ${aptCode} (${bookings.length} Passes)` : `Ví Vé Điện Tử Tiện Ích Căn Hộ ${aptCode} (${bookings.length} Vé)`}</span>
                 </div>
                 <div className="text-[11px] text-gray-400 font-mono">
                   Quét vé tại cổng tiện ích
@@ -1148,7 +1148,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                   <div className="w-10 h-10 rounded-none bg-[#161D26] border border-[#2A374A] flex items-center justify-center mx-auto text-gray-400">
                     <Calendar className="w-5 h-5 text-[#C5A880]" />
                   </div>
-                  <div className="text-xs font-bold text-white">Chưa có vé đặt chỗ nào</div>
+                  <div className="text-xs font-bold text-white">{isEn ? 'No booking passes yet' : 'Chưa có vé đặt chỗ nào'}</div>
                   <div className="text-[11px] text-gray-400 max-w-sm mx-auto leading-relaxed">
                     Hãy điền thông tin bên trái để đăng ký Phòng xông hơi VIP hoặc Vườn tiệc nướng BBQ Panoramic cho gia đình.
                   </div>
@@ -1191,7 +1191,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                                   👑 TIỆN ÍCH VIP • {b.durationHours ? `${b.durationHours} TIẾNG` : 'THEO CA'}
                                 </span>
                                 <span className="text-[10px] text-gray-300 font-mono">
-                                  Đã giữ chỗ: <strong className="text-[#C5A880]">{(b.depositAmount || 1000000).toLocaleString('vi-VN')} đ</strong>
+                                  {isEn ? 'Reserved deposit:' : 'Đã giữ chỗ:'} <strong className="text-[#C5A880]">{(b.depositAmount || 1000000).toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</strong>
                                 </span>
                               </div>
                             )}
@@ -1211,7 +1211,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                         {/* Mã QR & Code Strip */}
                         <div className="p-2.5 bg-[#161D26] border border-[#222B35] rounded-none flex items-center justify-between gap-3">
                           <div className="space-y-0.5">
-                            <div className="text-[9px] text-gray-400 uppercase font-mono">Mã Vé Điện Tử Check-in:</div>
+                            <div className="text-[9px] text-gray-400 uppercase font-mono">{isEn ? 'Digital Pass Check-in Code:' : 'Mã Vé Điện Tử Check-in:'}</div>
                             <div className="text-sm font-mono font-bold text-[#C5A880]">{b.ticketCode}</div>
                             <div className="text-[10px] text-gray-400">
                               {isCancelled ? 'Vé này đã được hủy và thanh lý' : 'Xuất trình tại đầu đọc mã QR cổng vào tiện ích'}
@@ -1234,12 +1234,12 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                               {b.refundRate && b.refundRate > 0 ? (
                                 <span className="text-emerald-400 flex items-center gap-1">
                                   <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Đã hoàn tiền {b.refundRate}% (+{(b.refundAmount || 0).toLocaleString('vi-VN')} đ)</span>
+                                  <span>{isEn ? `Refunded ${b.refundRate}% (+${(b.refundAmount || 0).toLocaleString('en-US')} VND)` : `Đã hoàn tiền ${b.refundRate}% (+${(b.refundAmount || 0).toLocaleString('vi-VN')} đ)`}</span>
                                 </span>
                               ) : (
                                 <span className="text-gray-400 flex items-center gap-1">
                                   <XCircle className="w-3.5 h-3.5 text-gray-500" />
-                                  <span>Không áp dụng hoàn tiền</span>
+                                  <span>{isEn ? 'No refund applicable' : 'Không áp dụng hoàn tiền'}</span>
                                 </span>
                               )}
                             </div>
@@ -1261,7 +1261,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                                 className="w-full sm:w-auto h-9 px-3 bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 text-red-300 text-xs font-semibold rounded-none transition-colors flex items-center justify-center gap-1.5 shadow-sm active:scale-95 truncate"
                               >
                                 <RotateCcw className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                                <span className="truncate">Hủy Lịch &amp; Hoàn Tiền</span>
+                                <span className="truncate">{isEn ? 'Cancel & Refund' : 'Hủy Lịch & Hoàn Tiền'}</span>
                               </button>
 
                               <button
@@ -1270,7 +1270,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                                 className="w-full sm:w-auto h-9 px-3.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-none transition-colors flex items-center justify-center gap-1.5 shadow active:scale-95 truncate"
                               >
                                 <DoorOpen className="w-3.5 h-3.5 shrink-0" /> 
-                                <span className="truncate">Quẹt Vé Vào Cổng Ngay</span>
+                                <span className="truncate">{isEn ? 'Scan Gate Pass Now' : 'Quẹt Vé Vào Cổng Ngay'}</span>
                               </button>
                             </>
                           ) : (
@@ -1298,7 +1298,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
             <div>
               <div className="text-xs uppercase tracking-wider text-[#C5A880] font-bold flex items-center gap-2">
                 <History className="w-4 h-4" />
-                <span>Nhật Ký Ra Vào Tiện Ích Thời Gian Thực Căn Hộ {aptCode}</span>
+                <span>{isEn ? `Real-Time Facility Access Log Unit ${aptCode}` : `Nhật Ký Ra Vào Tiện Ích Thời Gian Thực Căn Hộ ${aptCode}`}</span>
               </div>
               <div className="text-[11px] text-gray-400 mt-0.5">
                 Dữ liệu ghi nhận tự động theo thời gian thực khi cư dân qua cổng tiện ích
@@ -1351,7 +1351,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
               <div className="w-10 h-10 rounded-none bg-[#161D26] border border-[#2A374A] flex items-center justify-center mx-auto text-gray-400">
                 <History className="w-5 h-5 text-[#C5A880]" />
               </div>
-              <div className="text-xs font-bold text-white">Chưa có lượt ra vào tiện ích nào</div>
+              <div className="text-xs font-bold text-white">{isEn ? 'No facility access events yet' : 'Chưa có lượt ra vào tiện ích nào'}</div>
               <div className="text-[11px] text-gray-400 max-w-sm mx-auto leading-relaxed">
                 Khi cư dân quẹt thẻ hoặc dùng nhận diện khuôn mặt qua cổng tại Hồ bơi, Gym, BBQ, hệ thống sẽ tự động hiển thị nhật ký tại đây.
               </div>
@@ -1367,7 +1367,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     <div>
                       <div className="font-bold text-white text-sm">{log.facilityName}</div>
                       <div className="text-[11px] text-gray-400">
-                        Cư dân: <strong className="text-gray-200">{log.userName}</strong> ({log.role}) • Xác thực: <span className="text-[#C5A880]">{log.method === 'NFC_CARD' ? 'Thẻ Cư Dân' : 'Nhận Diện Khuôn Mặt'}</span>
+                        {isEn ? 'Resident:' : 'Cư dân:'} <strong className="text-gray-200">{log.userName}</strong> ({log.role}) • {isEn ? 'Auth:' : 'Xác thực:'} <span className="text-[#C5A880]">{log.method === 'NFC_CARD' ? (isEn ? 'Resident Card' : 'Thẻ Cư Dân') : (isEn ? 'Face Recognition' : 'Nhận Diện Khuôn Mặt')}</span>
                       </div>
                       <div className="text-[10px] text-gray-500 font-mono mt-0.5">
                         {log.detail}
@@ -1377,7 +1377,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
 
                   <div className="text-right sm:shrink-0 font-mono text-[11px]">
                     <div className="text-[#C5A880] font-bold">{log.timestamp}</div>
-                    <div className="text-[9.5px] text-emerald-400 uppercase">✓ CỔNG MỞ THÀNH CÔNG</div>
+                    <div className="text-[9.5px] text-emerald-400 uppercase">{isEn ? '✓ GATE UNLOCKED SUCCESSFULLY' : '✓ CỔNG MỞ THÀNH CÔNG'}</div>
                   </div>
                 </div>
               ))}
@@ -1437,8 +1437,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                       }`}
                     >
                       <CreditCard className="w-6 h-6" />
-                      <span>Quẹt Thẻ Cư Dân</span>
-                      <span className="text-[9px] font-mono font-normal">Chạm thẻ vào máy quét</span>
+                      <span>{isEn ? 'Tap Resident Card' : 'Quẹt Thẻ Cư Dân'}</span>
+                      <span className="text-[9px] font-mono font-normal">{isEn ? 'Tap card to sensor' : 'Chạm thẻ vào máy quét'}</span>
                     </button>
 
                     <button
@@ -1451,14 +1451,14 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                       }`}
                     >
                       <ScanFace className="w-6 h-6" />
-                      <span>Nhận Diện Khuôn Mặt</span>
-                      <span className="text-[9px] font-mono font-normal">Nhìn vào camera</span>
+                      <span>{isEn ? 'Face Recognition' : 'Nhận Diện Khuôn Mặt'}</span>
+                      <span className="text-[9px] font-mono font-normal">{isEn ? 'Look at camera' : 'Nhìn vào camera'}</span>
                     </button>
                   </div>
 
                   {/* Visual Card / Biometric Preview */}
                   <div className="p-3 bg-[#0D1117] border border-[#222B35] rounded-none text-xs font-mono text-gray-300 space-y-1">
-                    <div className="text-white font-bold">{userName} (Căn {aptCode})</div>
+                    <div className="text-white font-bold">{userName} ({isEn ? 'Unit' : 'Căn'} {aptCode})</div>
                     <div className="text-[10px] text-gray-400">
                       {turnstileMethod === 'NFC' ? 'Thẻ cư dân chính của căn hộ' : 'Khuôn mặt cư dân đã kích hoạt'}
                     </div>
@@ -1474,12 +1474,12 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     {isTurnstileScanning ? (
                       <>
                         <Wifi className="w-4 h-4 animate-spin rotate-90" />
-                        <span>Đang Mở Cửa Vào Tiện Ích...</span>
+                        <span>{isEn ? 'Unlocking Amenity Gate...' : 'Đang Mở Cửa Vào Tiện Ích...'}</span>
                       </>
                     ) : (
                       <>
                         <Check className="w-4 h-4" />
-                        <span>Mở Cửa Vào Tiện Ích</span>
+                        <span>{isEn ? 'Unlock Amenity Gate' : 'Mở Cửa Vào Tiện Ích'}</span>
                       </>
                     )}
                   </button>
@@ -1499,7 +1499,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
             <div className="p-4 bg-[#161F2C] border-b border-[#2A374A] flex items-center justify-between">
               <div className="text-xs uppercase tracking-[0.2em] text-[#C5A880] font-bold flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-[#C5A880]" />
-                <span>Thẻ Cư Dân Kim Loại Mạ Vàng Căn {aptCode}</span>
+                <span>{isEn ? `Gold-Plated Resident Card Unit ${aptCode}` : `Thẻ Cư Dân Kim Loại Mạ Vàng Căn ${aptCode}`}</span>
               </div>
               <button
                 type="button"
@@ -1538,7 +1538,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
               <div className="p-4 bg-[#161F2C] border-b border-[#2A374A] flex items-center justify-between">
                 <div className="text-xs uppercase tracking-[0.15em] text-[#C5A880] font-bold flex items-center gap-2">
                   <RotateCcw className="w-4 h-4 text-[#C5A880]" />
-                  <span>Yêu Cầu Hoàn Tiền Khi Bận Đột Xuất</span>
+                  <span>{isEn ? 'Refund Request For Schedule Conflict' : 'Yêu Cầu Hoàn Tiền Khi Bận Đột Xuất'}</span>
                 </div>
                 <button
                   type="button"
@@ -1562,7 +1562,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     Thời gian hẹn: <strong className="text-white">{refundModalBooking.bookingDate} ({refundModalBooking.timeSlot})</strong>
                   </div>
                   <div className="text-gray-400">
-                    Số tiền đã đặt giữ chỗ: <strong className="text-[#C5A880]">{(refundModalBooking.depositAmount || 500000).toLocaleString('vi-VN')} VNĐ</strong> ({refundModalBooking.paymentMethod || 'Hóa đơn tháng tới'})
+                    {isEn ? 'Deposit amount paid:' : 'Số tiền đã đặt giữ chỗ:'} <strong className="text-[#C5A880]">{(refundModalBooking.depositAmount || 500000).toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'VNĐ'}</strong> ({refundModalBooking.paymentMethod || (isEn ? 'Next month bill' : 'Hóa đơn tháng tới')})
                   </div>
                 </div>
 
@@ -1593,7 +1593,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                   </div>
 
                   <div className="pt-2 border-t border-white/10 flex items-center justify-between font-mono">
-                    <span className="text-gray-400">Số tiền hoàn trả về căn hộ:</span>
+                    <span className="text-gray-400">{isEn ? 'Refund credited to unit:' : 'Số tiền hoàn trả về căn hộ:'}</span>
                     <span className={`text-base font-bold ${
                       isFull ? 'text-emerald-400' : isPartial ? 'text-amber-400' : 'text-gray-400'
                     }`}>
@@ -1612,15 +1612,15 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     onChange={(e) => setRefundReason(e.target.value)}
                     className="w-full bg-[#161D26] border border-[#2A374A] p-2 text-white text-xs rounded-none focus:outline-none focus:border-[#C5A880]"
                   >
-                    <option value="Bận việc gia đình đột xuất không thể tham gia">Bận việc gia đình đột xuất</option>
-                    <option value="Lịch công tác / đi xa phát sinh ngoài dự kiến">Lịch công tác / đi xa đột xuất</option>
-                    <option value="Sức khỏe không đảm bảo, cần nghỉ ngơi">Sức khỏe không đảm bảo, cần nghỉ ngơi</option>
-                    <option value="Thay đổi kế hoạch khác cùng bạn bè/người thân">Thay đổi kế hoạch khác</option>
+                    <option value="Bận việc gia đình đột xuất không thể tham gia">{isEn ? 'Family emergency' : 'Bận việc gia đình đột xuất'}</option>
+                    <option value="Lịch công tác / đi xa phát sinh ngoài dự kiến">{isEn ? 'Unexpected business trip' : 'Lịch công tác / đi xa đột xuất'}</option>
+                    <option value="Sức khỏe không đảm bảo, cần nghỉ ngơi">{isEn ? 'Health condition, needing rest' : 'Sức khỏe không đảm bảo, cần nghỉ ngơi'}</option>
+                    <option value="Thay đổi kế hoạch khác cùng bạn bè/người thân">{isEn ? 'Schedule changed' : 'Thay đổi kế hoạch khác'}</option>
                   </select>
                 </div>
 
                 <div className="text-[10.5px] text-gray-400 italic">
-                  * Số tiền hoàn trả sẽ được Ban Quản Lý tự động kết chuyển và giảm trừ trực tiếp vào hóa đơn sinh hoạt kỳ kế tiếp của căn hộ {aptCode}.
+                  * Số tiền hoàn trả sẽ được VinHomes Manager tự động kết chuyển và giảm trừ trực tiếp vào hóa đơn sinh hoạt kỳ kế tiếp của căn hộ {aptCode}.
                 </div>
 
                 {/* Buttons */}
@@ -1631,7 +1631,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     disabled={isProcessingRefund}
                     className="h-10 px-3 bg-[#161D26] hover:bg-[#1E2633] text-gray-300 text-xs font-bold rounded-none border border-[#2A374A] transition-colors flex items-center justify-center active:scale-95"
                   >
-                    <span>Giữ Lại Lịch Đặt</span>
+                    <span>{isEn ? 'Keep Booking' : 'Giữ Lại Lịch Đặt'}</span>
                   </button>
 
                   <button
@@ -1643,12 +1643,12 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     {isProcessingRefund ? (
                       <>
                         <Wifi className="w-3.5 h-3.5 animate-spin rotate-90 shrink-0" />
-                        <span className="truncate">Đang Xử Lý Hoàn Tiền...</span>
+                        <span className="truncate">{isEn ? 'Processing Refund...' : 'Đang Xử Lý Hoàn Tiền...'}</span>
                       </>
                     ) : (
                       <>
                         <RotateCcw className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">Xác Nhận Hủy &amp; Hoàn Tiền</span>
+                        <span className="truncate">{isEn ? 'Confirm Cancel & Refund' : 'Xác Nhận Hủy & Hoàn Tiền'}</span>
                       </>
                     )}
                   </button>

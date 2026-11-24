@@ -68,7 +68,7 @@ const KNOWLEDGE_CATEGORIES_EN = [
     ]
   },
   {
-    category: '🏊 Amenities & NKS Services',
+    category: '🏊 Amenities & Skyline Services',
     prompts: [
       'What time does the 1st-floor restaurant open?',
       'Opening hours of the resort pool & sky pool',
@@ -84,7 +84,7 @@ const KNOWLEDGE_CATEGORIES_EN = [
     ]
   },
   {
-    category: '🔧 Maintenance & NKS Tech Services',
+    category: '🔧 Maintenance & Skyline Tech Services',
     prompts: [
       'Progress on my technical maintenance requests',
       'Cleaning schedule & trash disposal for Block 07',
@@ -103,7 +103,7 @@ const KNOWLEDGE_CATEGORIES = [
     ]
   },
   {
-    category: '🏊 Tiện Ích & Dịch Vụ NKS',
+    category: '🏊 Tiện Ích & Dịch Vụ Skyline',
     prompts: [
       'Dịch vụ nhà hàng ẩm thực tầng 1 mở cửa lúc mấy giờ?',
       'Giờ mở cửa cụm hồ bơi resort & hồ bơi chân mây',
@@ -119,7 +119,7 @@ const KNOWLEDGE_CATEGORIES = [
     ]
   },
   {
-    category: '🔧 Báo Hỏng & Dịch Vụ Kỹ Thuật NKS',
+    category: '🔧 Báo Hỏng & Dịch Vụ Kỹ Thuật Skyline',
     prompts: [
       'Tiến độ các phiếu hỗ trợ kỹ thuật của căn hộ',
       'Dịch vụ vệ sinh chung cư và tập kết rác Block 07',
@@ -400,10 +400,10 @@ const getInitialAiMessage = (isEn: boolean, name: string, code: string): AiMessa
   id: 'm-0',
   sender: 'ai',
   text: isEn
-    ? `Greetings Resident **${name}** (Apt **${code}** - Tower The Tropical BS-07, 30th Floor)!\n\nI am **Skyline AI Concierge**, always ready to assist you with inquiries about the 4 The Tropical towers (BS-07 34 fl., BS-08 39 fl., BS-09, BS-10), 1st floor restaurant services, resort pool complex, utility bills, and 24/7 NKS technical service!`
-    : `Kính chào Quý cư dân **${name}** (Căn **${code}** - Tòa The Tropical BS-07, Tầng 30)!\n\nTôi là **Skyline AI Concierge**, luôn sẵn sàng hỗ trợ Quý vị tra cứu thông tin 4 tòa chung cư The Tropical (BS-07 34 tầng, BS-08 39 tầng, BS-09, BS-10), dịch vụ nhà hàng tầng 1, cụm hồ bơi nhiệt đới resort, giải đáp hóa đơn sinh hoạt và tiếp nhận hỗ trợ kỹ thuật NKS 24/7!`,
+    ? `Greetings Resident **${name}** (Apt **${code}** - Tower The Tropical BS-07, 30th Floor)!\n\nI am **Skyline AI Concierge**, always ready to assist you with inquiries about the 4 The Tropical towers (BS-07 34 fl., BS-08 39 fl., BS-09, BS-10), 1st floor restaurant services, resort pool complex, utility bills, and 24/7 Skyline technical service!`
+    : `Kính chào Quý cư dân **${name}** (Căn **${code}** - Tòa The Tropical BS-07, Tầng 30)!\n\nTôi là **Skyline AI Concierge**, luôn sẵn sàng hỗ trợ Quý vị tra cứu thông tin 4 tòa chung cư The Tropical (BS-07 34 tầng, BS-08 39 tầng, BS-09, BS-10), dịch vụ nhà hàng tầng 1, cụm hồ bơi nhiệt đới resort, giải đáp hóa đơn sinh hoạt và tiếp nhận hỗ trợ kỹ thuật Skyline 24/7!`,
   timestamp: '08:00',
-  ragSource: isEn ? 'NKS SCRMAI Standard Data & The Tropical Plan (Beverly Solari)' : 'Dữ liệu chuẩn NKS SCRMAI & Quy hoạch The Tropical (Beverly Solari)',
+  ragSource: isEn ? 'Skyline Standard Data & The Tropical Plan (Beverly Solari)' : 'Dữ liệu chuẩn Skyline & Quy hoạch The Tropical (Beverly Solari)',
   suggestions: isEn ? [
     '🏢 Scale of The Tropical & Beverly Solari towers',
     '🏠 Which tower and floor is my apartment on?',
@@ -638,11 +638,7 @@ export default function AiConciergePage({ currentUser, onNavigateModule }: AiCon
             </span>
           </h2>
           <p className="text-xs text-gray-400 mt-0.5">
-            {isEn ? (
-              <>Digital concierge for The Tropical regulations, utility bills, amenity schedules, and technical service for Unit <strong className="text-white font-mono">{aptCode}</strong></>
-            ) : (
-              <>Trợ lý số giải đáp quy chuẩn chung cư The Tropical, biểu phí sinh hoạt, lịch tiện ích và tiếp nhận sự cố kỹ thuật cho Căn <strong className="text-white font-mono">{aptCode}</strong></>
-            )}
+            <>{isEn ? 'Digital concierge for The Tropical regulations, utility bills, amenity schedules, and technical service for Unit ' : 'Trợ lý số giải đáp quy chuẩn chung cư The Tropical, biểu phí sinh hoạt, lịch tiện ích và tiếp nhận sự cố kỹ thuật cho Căn '}<strong className="text-white font-mono">{aptCode}</strong></>
           </p>
         </div>
 

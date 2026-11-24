@@ -65,7 +65,7 @@ export default function AboutConcept() {
                 </>
               ) : (
                 <>
-                  Điểm đột phá của dự án là việc tích hợp một <strong className="text-[#C5A880]">Lõi Trí Tuệ Nhân Tạo (AI Core)</strong> chạy ngầm trong toàn bộ hạ tầng kỹ thuật. Cư dân không còn phải chờ đợi bảo dưỡng thủ công hay gặp phiền toái với các thủ tục giấy tờ: mọi yêu cầu hỗ trợ, kiểm soát ra vào, hóa đơn và an ninh đều được tự động hóa với độ chính xác gần như tuyệt đối.
+                  {isEn ? 'The breakthrough of the project is the integration of an AI Core running seamlessly underneath all engineering infrastructure. Residents no longer need manual maintenance requests or paperwork: all support tickets, access control, billing, and security are automated with near-absolute precision.' : 'Điểm đột phá của dự án là việc tích hợp một Lõi Trí Tuệ Nhân Tạo (AI Core) chạy ngầm trong toàn bộ hạ tầng kỹ thuật. Cư dân không còn phải chờ đợi bảo dưỡng thủ công hay gặp phiền toái với các thủ tục giấy tờ: mọi yêu cầu hỗ trợ, kiểm soát ra vào, hóa đơn và an ninh đều được tự động hóa với độ chính xác gần như tuyệt đối.'}
                 </>
               )}
             </p>

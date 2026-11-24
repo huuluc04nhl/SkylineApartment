@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { findUserStore, verifyUserPassword } from '@/lib/userStore';
 
 function formatToDateInput(d?: string): string {
   if (!d) return '';
@@ -41,104 +42,68 @@ export async function POST(req: Request) {
     }
 
     const u = username.trim();
+    const user = findUserStore(u);
 
-    // 1. Xác thực trực tiếp 100% qua API chính thức (https://account.nks.vn/api/nks/user/login)
-    const formData = new URLSearchParams();
-    formData.append('username', u);
-    formData.append('password', password);
-    formData.append('system', 'NKS');
-    formData.append('device', 'Web Browser');
-
-    let remoteRes: Response;
-    try {
-      remoteRes = await fetch('https://account.nks.vn/api/nks/user/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData.toString(),
-      });
-    } catch (networkErr: any) {
+    if (!user || !user.id) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Không thể kết nối đến máy chủ API xác thực (https://account.nks.vn). Vui lòng kiểm tra mạng.' 
-        },
-        { status: 503 }
-      );
-    }
-
-    const data = await remoteRes.json().catch(() => null);
-
-    if (!data) {
-      return NextResponse.json(
-        { success: false, message: 'Máy chủ API không phản hồi dữ liệu hợp lệ.' },
-        { status: 502 }
-      );
-    }
-
-    // 2. Kiểm tra phản hồi từ API: Nếu API từ chối -> Báo lỗi chính xác từ API, KHÔNG fallback tài khoản demo
-    if (!data.success || !data.data) {
-      const errorMessage = data.error || data.message || 'Tài khoản hoặc mật khẩu không chính xác trên hệ thống API.';
-      return NextResponse.json(
-        { success: false, message: errorMessage },
+        { success: false, message: 'Tài khoản không tồn tại trên hệ thống Skyline Smart Residence.' },
         { status: 401 }
       );
     }
 
-    // 3. API xác thực thành công -> Chuẩn hóa thông tin User & Access Token từ API response
-    const apiUser = data.data.user || {};
-    const accessToken = data.data.access_token || '';
+    // Xác thực mật khẩu nội bộ trực tiếp
+    const isPasswordValid = verifyUserPassword(u, password);
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { success: false, message: 'Mật khẩu đăng nhập không chính xác. Vui lòng kiểm tra lại.' },
+        { status: 401 }
+      );
+    }
 
-    const uLower = u.toLowerCase();
-    const emailLower = (apiUser.email || '').toLowerCase();
-    const role = (emailLower.includes('manager01') || emailLower.includes('admin') || uLower.includes('manager01') || uLower.includes('admin')) 
-      ? 'ADMIN' 
-      : (emailLower.includes('manager02') || uLower.includes('manager02'))
-      ? 'TECHNICIAN'
-      : (emailLower.includes('nhut') || emailLower.includes('cuong') || emailLower.includes('hai') || emailLower.includes('thinh'))
-      ? 'TENANT'
-      : 'OWNER';
+    // Tạo token phiên làm việc nội bộ
+    const accessToken = `skyline_session_${user.id}_${Date.now()}`;
 
     const formattedUser = {
-      id: String(apiUser.id || 'usr-120'),
-      username: apiUser.email || u,
-      firstname: apiUser.firstname || '',
-      lastname: apiUser.lastname || '',
-      fullname: apiUser.name || `${apiUser.lastname || ''} ${apiUser.firstname || ''}`.trim() || 'Cư Dân SKYLINE',
-      full_name: apiUser.name || `${apiUser.lastname || ''} ${apiUser.firstname || ''}`.trim() || 'Cư Dân SKYLINE',
-      email: apiUser.email || u,
-      phone: apiUser.phone || '',
-      role: role,
-      apartment_code: (role === 'ADMIN' || role === 'TECHNICIAN') ? 'BQL_OFFICE' : 'CH-06',
-      relationship: (role === 'ADMIN' || role === 'TECHNICIAN') ? 'Staff' : role === 'OWNER' ? 'Owner' : 'Family',
-      avatar_url: apiUser.avatar ? (apiUser.avatar.startsWith('http') ? apiUser.avatar : `https://data.nks.vn/${apiUser.avatar}`) : undefined,
-      avatar: apiUser.avatar ? (apiUser.avatar.startsWith('http') ? apiUser.avatar : `https://data.nks.vn/${apiUser.avatar}`) : undefined,
-      id_number: apiUser.id_number || '',
-      id_card_no: apiUser.id_number || '',
-      id_card_number: apiUser.id_number || '',
-      id_date: formatToDateInput(apiUser.id_date || apiUser.formatedCccdDate || ''),
-      id_place: apiUser.id_place || '',
-      province: apiUser.province || 'Thành phố Hồ Chí Minh',
-      gender: apiUser.gender ?? 1,
-      dob: formatToDateInput(apiUser.dob || apiUser.formatedDob || ''),
-      pob: apiUser.pob || '',
+      id: user.id,
+      username: user.username || u,
+      firstname: user.firstname || '',
+      lastname: user.lastname || '',
+      fullname: user.fullname || user.full_name || 'Cư Dân SKYLINE',
+      full_name: user.fullname || user.full_name || 'Cư Dân SKYLINE',
+      email: user.email || u,
+      phone: user.phone || '',
+      role: user.role,
+      apartment_code: user.apartment_code || (user.role === 'ADMIN' ? 'BQL_OFFICE' : user.role === 'TECHNICIAN' ? 'TECH_ROOM' : 'CH-06'),
+      relationship: user.relationship || (user.role === 'ADMIN' || user.role === 'TECHNICIAN' ? 'Staff' : user.role === 'OWNER' ? 'Owner' : 'Family'),
+      avatar_url: user.avatar_url,
+      avatar: user.avatar_url,
+      id_number: user.id_number || user.id_card_no || '',
+      id_card_no: user.id_card_no || user.id_number || '',
+      id_card_number: user.id_card_no || user.id_number || '',
+      id_date: formatToDateInput(user.id_date || ''),
+      id_place: user.id_place || '',
+      province: user.province || 'Thành phố Hồ Chí Minh',
+      gender: user.gender ?? 1,
+      dob: formatToDateInput(user.dob || ''),
+      pob: user.pob || '',
+      intro: user.intro || '',
+      license_plate: user.license_plate || '',
     };
 
     const response = NextResponse.json({
       success: true,
-      message: 'Đăng nhập thành công từ API',
+      message: 'Đăng nhập thành công',
       access_token: accessToken,
       user: formattedUser,
     });
 
-    if (accessToken) {
-      response.cookies.set('nks_token', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7,
-      });
-    }
+    response.cookies.set('skyline_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
 
     return response;
   } catch (error: any) {

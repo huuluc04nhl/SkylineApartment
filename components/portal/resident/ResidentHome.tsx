@@ -122,26 +122,18 @@ export default function ResidentHome({ currentUser, onNavigate, onOpenVisitorMod
             {t('Xin Chào')}, {userName}
           </h2>
           <div className="text-xs text-gray-300 mt-2.5 flex flex-wrap items-center gap-2">
-            {/* Căn Hộ & Nút Chi Tiết / Sổ Tay Cư Dân */}
-            <div className="h-8 flex items-center gap-1.5 bg-[#161B22] border border-[#2D3748] px-2.5 shadow-sm">
-              <span className="text-gray-400 text-[11px]">{t('Căn:')}</span>
-              <button
-                type="button"
-                onClick={() => setIsAptDetailOpen(true)}
-                className="text-white font-mono text-xs hover:text-[#C5A880] underline underline-offset-2 cursor-pointer font-bold"
-                title={t('Xem thông số căn hộ')}
-              >
-                {aptCode}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsAptDetailOpen(true)}
-                className="ml-1 h-5 px-2 bg-[#0D1117] hover:bg-[#C5A880] hover:text-[#0D1117] text-[#C5A880] border border-[#C5A880]/50 text-[10.5px] font-semibold transition-all flex items-center gap-1 shadow-sm"
-                title={t('Mở Chi Tiết Căn Hộ')}
-              >
-                <Building className="w-3 h-3" /> <span className="hidden sm:inline">{t('Chi Tiết')}</span>
-              </button>
-            </div>
+            {/* Căn Hộ & Chi Tiết (Tương Tác Đơn Điểm, Không Lặp Button) */}
+            <button
+              type="button"
+              onClick={() => setIsAptDetailOpen(true)}
+              className="h-8 flex items-center gap-1.5 bg-[#161B22] hover:bg-[#1C2533] border border-[#2D3748] hover:border-[#C5A880] px-2.5 shadow-sm text-gray-300 hover:text-white transition-all cursor-pointer group rounded-none"
+              title={t('Mở Chi Tiết Căn Hộ')}
+            >
+              <Building className="w-3.5 h-3.5 text-[#C5A880]" />
+              <span className="text-[11px] text-gray-400">{t('Căn:')}</span>
+              <strong className="text-white font-mono text-xs group-hover:text-[#C5A880]">{aptCode}</strong>
+              <span className="text-[10px] text-gray-400 group-hover:text-[#C5A880] font-mono ml-0.5">({t('Chi Tiết')})</span>
+            </button>
 
             {/* Vai Trò */}
             <div className="h-8 flex items-center gap-1.5 px-2.5 bg-[#C5A880]/15 border border-[#C5A880]/50 text-[#C5A880] text-[11px] font-semibold shadow-sm">
@@ -175,7 +167,7 @@ export default function ResidentHome({ currentUser, onNavigate, onOpenVisitorMod
                 {userFaceStatus === 'PENDING' && (
                   <div className="h-8 flex items-center gap-1.5 px-2.5 bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 text-[11px] font-mono font-medium shadow-sm animate-pulse">
                     <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>{t('FaceID: Chờ BQL Phê Duyệt')}</span>
+                    <span>{t('FaceID: Chờ VinHomes Manager Phê Duyệt')}</span>
                   </div>
                 )}
                 {userFaceStatus === 'NONE' && (
@@ -233,7 +225,7 @@ export default function ResidentHome({ currentUser, onNavigate, onOpenVisitorMod
                 {isEn ? `${pendingConfirmCount} FaceID profiles awaiting confirmation` : `Có ${pendingConfirmCount} hồ sơ FaceID cần xác nhận`}
               </div>
               <p className="text-xs text-gray-300 mt-0.5">
-                {t('Người nhà đã quét FaceID. Vui lòng xác nhận bảo lãnh để gửi BQL duyệt.')}
+                {t('Người nhà đã quét FaceID. Vui lòng xác nhận bảo lãnh để gửi VinHomes Manager duyệt.')}
               </p>
             </div>
           </div>

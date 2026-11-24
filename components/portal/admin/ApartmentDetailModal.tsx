@@ -48,6 +48,7 @@ import {
   getApartmentByCode
 } from '@/lib/apartmentStore';
 import { ApartmentMember, getApartmentMembers } from '@/lib/userStore';
+import ConfirmDeleteModal from '@/components/portal/shared/ConfirmDeleteModal';
 import { getPhoneValidationError, getCccdValidationError } from '@/lib/validationUtils';
 import ApartmentModel3DViewer from '@/components/portal/shared/ApartmentModel3DViewer';
 
@@ -70,7 +71,7 @@ export default function ApartmentDetailModal({
   onAssignResident,
   onRefresh
 }: ApartmentDetailModalProps) {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'ADMIN';
 
@@ -97,6 +98,7 @@ export default function ApartmentDetailModal({
   // Modal từ chối / yêu cầu bổ sung
   const [rejectingMember, setRejectingMember] = useState<ApartmentMember | null>(null);
   const [rejectReasonInput, setRejectReasonInput] = useState('Ảnh chụp CCCD bị mờ/lóa sáng, đề nghị quét lại rõ nét');
+  const [deleteMemberTarget, setDeleteMemberTarget] = useState<{ id: string; name: string } | null>(null);
 
   // Đồng bộ danh sách người nhà thời gian thực
   const refreshMembers = () => {
@@ -133,7 +135,7 @@ export default function ApartmentDetailModal({
 
   // 1. BQL Duyệt Người Nhà
   const handleApproveMember = (memberId: string, memberName: string) => {
-    approveFamilyMemberByBql(unit.code, memberId, 'Ban Quản Lý Skyline');
+    approveFamilyMemberByBql(unit.code, memberId, 'VinHomes Manager');
     refreshMembers();
     onRefresh();
     showToast(`✓ Đã phê duyệt và kích hoạt quyền FaceID cho "${memberName}" thành công!`);
@@ -142,7 +144,7 @@ export default function ApartmentDetailModal({
   // 2. BQL Yêu Cầu Chụp Lại / Từ Chối
   const handleConfirmRejectMember = () => {
     if (!rejectingMember) return;
-    rejectFamilyMemberByBql(unit.code, rejectingMember.id, rejectReasonInput, 'Ban Quản Lý Skyline');
+    rejectFamilyMemberByBql(unit.code, rejectingMember.id, rejectReasonInput, 'VinHomes Manager');
     showToast(`✓ Đã gửi yêu cầu bổ sung hồ sơ tới "${rejectingMember.fullName}".`);
     setRejectingMember(null);
     refreshMembers();
@@ -151,12 +153,16 @@ export default function ApartmentDetailModal({
 
   // 3. BQL Thu hồi quyền cư trú / Xóa người nhà
   const handleRemoveMember = (memberId: string, memberName: string) => {
-    if (confirm(`Xác nhận xóa & thu hồi quyền ra vào của thành viên "${memberName}" khỏi Căn ${unit.code}?`)) {
-      removeFamilyMemberByBql(unit.code, memberId);
-      refreshMembers();
-      onRefresh();
-      showToast(`✓ Đã xóa thành viên "${memberName}" khỏi căn hộ.`);
-    }
+    setDeleteMemberTarget({ id: memberId, name: memberName });
+  };
+
+  const confirmDeleteMember = () => {
+    if (!deleteMemberTarget) return;
+    removeFamilyMemberByBql(unit.code, deleteMemberTarget.id);
+    refreshMembers();
+    onRefresh();
+    showToast(`✓ Đã xóa thành viên "${deleteMemberTarget.name}" khỏi căn hộ.`);
+    setDeleteMemberTarget(null);
   };
 
   // 4. BQL Thêm Người Nhà Trực Tiếp
@@ -188,15 +194,15 @@ export default function ApartmentDetailModal({
       phone: newMemPhone.trim(),
       idCard: newMemCccd.trim() || '079' + Math.floor(100000000 + Math.random() * 900000000),
       licensePlate: newMemPlate.trim(),
-      avatarUrl: 'https://data.nks.vn/storage/users/default.png',
+      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(newMemName.trim())}&background=1C2533&color=C5A880`,
       faceStatus: newMemAutoApprove ? 'Đã Kích Hoạt FaceID' : 'Đang Chờ BQL Phê Duyệt',
       addedDate: new Date().toLocaleDateString('vi-VN'),
 
       // Thông tin đồng bộ chuẩn phù hợp với Chủ Hộ bảo lãnh:
       apartmentCode: unit.code,
       tower: unit.tower,
-      sponsorName: unit.owner?.name || 'Trần Hữu Lực',
-      sponsorPhone: unit.owner?.phone || '0364967082',
+      sponsorName: unit.owner?.name || 'Chủ Hộ',
+      sponsorPhone: unit.owner?.phone || '',
       residenceType: 'Thường trú cùng chủ hộ',
       temporaryResidenceStatus: newMemAutoApprove ? 'Đã Đăng Ký Tạm Trú' : 'Đang Làm Thủ Tục',
       relationshipProof: 'Văn bản bảo lãnh chủ hộ tiếp nhận tại quầy BQL',
@@ -232,7 +238,8 @@ export default function ApartmentDetailModal({
   };
 
   const handleEvict = () => {
-    evictApartmentResident(unit.code);
+    const blockCodeMatch = unit.towerName?.match(/BS-\d+/)?.[0] || 'BS-07';
+    evictApartmentResident(unit.code, blockCodeMatch);
     setIsConfirmingEvict(false);
     showToast(`✓ Đã thu hồi căn hộ ${unit.code} về trạng thái Căn Trống.`);
     onRefresh();
@@ -452,7 +459,7 @@ export default function ApartmentDetailModal({
 
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                       <img
-                        src={unit.owner.avatar.replace('data.nks.vn//', 'data.nks.vn/')}
+                        src={unit.owner.avatar || unit.owner.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(unit.owner.name)}&background=1C2533&color=C5A880`}
                         alt={unit.owner.name}
                         className="w-16 h-16 object-cover border-2 border-emerald-500/80 shadow-md"
                       />
@@ -610,7 +617,7 @@ export default function ApartmentDetailModal({
                             <div key={member.id} className="p-3.5 bg-[#121820] border border-[#222B35] flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-[#C5A880]/50 transition-colors">
                               <div className="flex items-start sm:items-center gap-3 min-w-0">
                                 <img
-                                  src={member.avatarUrl?.replace('data.nks.vn//', 'data.nks.vn/') || 'https://data.nks.vn/storage/users/default.png'}
+                                  src={member.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.fullName)}&background=1C2533&color=C5A880`}
                                   alt={member.fullName}
                                   className="w-12 h-12 object-cover border border-[#2D3748] flex-shrink-0"
                                 />
@@ -681,7 +688,7 @@ export default function ApartmentDetailModal({
                                       type="button"
                                       onClick={() => {
                                         setRejectingMember(member);
-                                        setRejectReasonInput('Ban Quản Lý tạm khóa / thu hồi quyền FaceID theo quy định');
+                                        setRejectReasonInput('VinHomes Manager tạm khóa / thu hồi quyền FaceID theo quy định');
                                       }}
                                       className="px-2.5 py-1.5 bg-[#161B22] hover:bg-[#1E2631] text-amber-400 border border-amber-600/60 font-semibold text-xs rounded-none transition-colors cursor-pointer"
                                     >
@@ -848,19 +855,19 @@ export default function ApartmentDetailModal({
                   <div className="border border-[#222B35] divide-y divide-[#222B35] text-xs">
                     <div className="p-3 flex items-center justify-between bg-[#161B22]/50">
                       <span className="text-gray-300">{t('Phí quản lý vận hành chung cư', 'Building operational management fee')} ({unit.area} m² x 18.500đ)</span>
-                      <span className="font-mono font-bold text-white">{unit.billing.monthlyFee.toLocaleString('vi-VN')} đ</span>
+                      <span className="font-mono font-bold text-white">{unit.billing.monthlyFee.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                     </div>
                     <div className="p-3 flex items-center justify-between bg-[#161B22]/50">
                       <span className="text-gray-300">{t('Phí trông giữ phương tiện tầng hầm', 'Basement vehicle parking fee')}</span>
-                      <span className="font-mono font-bold text-white">{unit.billing.parkingFee.toLocaleString('vi-VN')} đ</span>
+                      <span className="font-mono font-bold text-white">{unit.billing.parkingFee.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                     </div>
                     <div className="p-3 flex items-center justify-between bg-[#161B22]/50">
                       <span className="text-gray-300">{t('Phí dịch vụ tiện ích phát sinh', 'Incidental utility service fees')}</span>
-                      <span className="font-mono font-bold text-white">{unit.billing.serviceFee.toLocaleString('vi-VN')} đ</span>
+                      <span className="font-mono font-bold text-white">{unit.billing.serviceFee.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                     </div>
                     <div className="p-3.5 flex items-center justify-between bg-[#1C2533] font-bold">
                       <span className="text-white uppercase tracking-wider font-mono">{t('Tổng Cộng Cần Thu', 'Total Due')}</span>
-                      <span className="font-mono text-base text-[#C5A880]">{unit.billing.totalAmount.toLocaleString('vi-VN')} đ</span>
+                      <span className="font-mono text-base text-[#C5A880]">{unit.billing.totalAmount.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                     </div>
                   </div>
 
@@ -988,7 +995,7 @@ export default function ApartmentDetailModal({
                   required
                   value={newMemName}
                   onChange={(e) => setNewMemName(e.target.value)}
-                  placeholder="Ví dụ: Nguyễn Văn An"
+                  placeholder={isEn ? 'e.g. John Doe' : 'Ví dụ: Nguyễn Văn An'}
                   className="w-full bg-[#141B24] border border-[#2A3644] focus:border-[#C5A880] px-3 py-2 text-white text-xs rounded-none outline-none"
                 />
               </div>
@@ -1016,7 +1023,7 @@ export default function ApartmentDetailModal({
                     type="text"
                     value={newMemCccd}
                     onChange={(e) => setNewMemCccd(e.target.value)}
-                    placeholder="12 chữ số CCCD"
+                    placeholder={isEn ? '12-digit ID card' : '12 chữ số CCCD'}
                     className="w-full bg-[#141B24] border border-[#2A3644] focus:border-[#C5A880] px-3 py-2 text-white text-xs rounded-none outline-none font-mono"
                   />
                 </div>
@@ -1130,7 +1137,7 @@ export default function ApartmentDetailModal({
                     'Ảnh chụp CCCD bị mờ/lóa sáng, đề nghị quét lại rõ nét',
                     'Ảnh chân dung nghiêng/không khớp với thẻ CCCD',
                     'Chưa đủ giấy tờ chứng minh quan hệ cư trú theo quy định',
-                    'Ban Quản Lý tạm khóa / thu hồi quyền FaceID theo quy định'
+                    'VinHomes Manager tạm khóa / thu hồi quyền FaceID theo quy định'
                   ].map((preset, idx) => (
                     <button
                       key={idx}
@@ -1151,7 +1158,7 @@ export default function ApartmentDetailModal({
                   rows={3}
                   value={rejectReasonInput}
                   onChange={(e) => setRejectReasonInput(e.target.value)}
-                  placeholder="Nhập lý do chi tiết..."
+                  placeholder={isEn ? 'Enter detailed reason...' : 'Nhập lý do chi tiết...'}
                   className="w-full bg-[#141B24] border border-[#2A3644] focus:border-rose-500 p-2.5 text-white text-xs rounded-none outline-none resize-none font-mono"
                 />
               </div>
@@ -1175,6 +1182,25 @@ export default function ApartmentDetailModal({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal Xác Nhận Xóa Thành Viên */}
+      {deleteMemberTarget && (
+        <ConfirmDeleteModal
+          isOpen={!!deleteMemberTarget}
+          onClose={() => setDeleteMemberTarget(null)}
+          onConfirm={confirmDeleteMember}
+          title={t('Xác nhận xóa thành viên cư trú', 'Confirm Removing Resident Member')}
+          itemName={deleteMemberTarget.name}
+          itemCode={unit.code}
+          message={t(
+            `Bạn có chắc chắn muốn xóa thành viên "${deleteMemberTarget.name}" khỏi căn hộ ${unit.code}? Quyền FaceID và quyền ra vào thang máy, tiện ích sẽ bị thu hồi ngay lập tức.`,
+            `Are you sure you want to remove member "${deleteMemberTarget.name}" from apartment ${unit.code}? FaceID access and building amenity permissions will be revoked immediately.`
+          )}
+          confirmText={t('Xác Nhận Xóa Thành Viên', 'Confirm Remove Member')}
+          cancelText={t('Hủy Bỏ', 'Cancel')}
+          isDanger={true}
+        />
       )}
 
     </div>

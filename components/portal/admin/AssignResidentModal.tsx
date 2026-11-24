@@ -34,7 +34,7 @@ import {
   ApartmentHandoverProtocol,
   assignApartmentResident 
 } from '@/lib/apartmentStore';
-import { nksHandoverProvisionAccount } from '@/lib/nksApiClient';
+import { skylineHandoverProvisionAccount } from '@/lib/skylineApiClient';
 import { 
   cleanPhoneNumber, 
   isValidPhoneNumber, 
@@ -57,7 +57,7 @@ export default function AssignResidentModal({
   unit,
   onSuccess
 }: AssignResidentModalProps) {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const isOccupied = unit?.status === 'OCCUPIED';
 
   // Tabs: 'FORM' | 'CERTIFICATE'
@@ -73,12 +73,12 @@ export default function AssignResidentModal({
   const [cccd, setCccd] = useState('');
   const [dob, setDob] = useState('15/06/1992');
   const [pob, setPob] = useState('TP. Hồ Chí Minh');
-  const [avatar, setAvatar] = useState('https://data.nks.vn/storage/users/202609021654232258.jpg');
+  const [avatar, setAvatar] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80');
 
   // Section 2: Biên bản bàn giao kỹ thuật & chỉ số
   const todayStr = new Date().toLocaleDateString('vi-VN');
   const [handoverDate, setHandoverDate] = useState(todayStr);
-  const [handoverOfficer, setHandoverOfficer] = useState('Ban Quản Lý Skyline Smart Residence');
+  const [handoverOfficer, setHandoverOfficer] = useState('VinHomes Manager');
   const [keysCount, setKeysCount] = useState<number>(3);
   const [cardsCount, setCardsCount] = useState<number>(2);
   const [initialElectricMeter, setInitialElectricMeter] = useState<number>(15.0);
@@ -99,13 +99,13 @@ export default function AssignResidentModal({
     setActiveFormTab('RESIDENT');
     setError(null);
 
-    const defaultName = unit.owner?.name || (unit.code === 'CH-06' || unit.code === 'CH-01' ? 'Trần Hữu Lực' : '');
-    const defaultPhone = unit.owner?.phone || (unit.code === 'CH-06' || unit.code === 'CH-01' ? '0364967082' : '');
+    const defaultName = unit.owner?.name || '';
+    const defaultPhone = unit.owner?.phone || '';
     const defaultEmail = unit.owner?.email || (defaultPhone ? `${defaultPhone}@gmail.com` : '');
-    const defaultCccd = unit.owner?.cccd || (unit.code === 'CH-06' || unit.code === 'CH-01' ? '079204001234' : '');
+    const defaultCccd = unit.owner?.cccd || '';
     const defaultDob = unit.owner?.dob || '15/06/1992';
     const defaultPob = unit.owner?.pob || 'TP. Hồ Chí Minh';
-    const defaultAvatar = unit.owner?.avatar || 'https://data.nks.vn/storage/users/202609021654232258.jpg';
+    const defaultAvatar = unit.owner?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
 
     setName(defaultName);
     setPhone(defaultPhone);
@@ -118,7 +118,7 @@ export default function AssignResidentModal({
     const protocol = unit.owner?.handoverProtocol;
     if (protocol) {
       setHandoverDate(protocol.handoverDate || todayStr);
-      setHandoverOfficer(protocol.handoverOfficer || 'Ban Quản Lý Skyline Smart Residence');
+      setHandoverOfficer(protocol.handoverOfficer || 'VinHomes Manager');
       setKeysCount(protocol.keysCount || 3);
       setCardsCount(protocol.cardsCount || 2);
       setInitialElectricMeter(protocol.initialElectricMeter || 15.0);
@@ -126,7 +126,7 @@ export default function AssignResidentModal({
       setHandoverNotes(protocol.notes || 'Đã kiểm tra hệ thống điều hòa, thiết bị vệ sinh, điện nước, khóa cửa và PCCC hoạt động tốt.');
     } else {
       setHandoverDate(todayStr);
-      setHandoverOfficer('Ban Quản Lý Skyline Smart Residence');
+      setHandoverOfficer('VinHomes Manager');
       setKeysCount(3);
       setCardsCount(2);
       setInitialElectricMeter(15.0);
@@ -165,7 +165,7 @@ export default function AssignResidentModal({
     const protocol: ApartmentHandoverProtocol = {
       protocolCode: generatedProtocolCode,
       handoverDate: handoverDate.trim() || todayStr,
-      handoverOfficer: handoverOfficer.trim() || 'Ban Quản Lý Skyline Smart Residence',
+      handoverOfficer: handoverOfficer.trim() || 'VinHomes Manager',
       keysCount: Number(keysCount) || 3,
       cardsCount: Number(cardsCount) || 2,
       initialElectricMeter: Number(initialElectricMeter) || 0,
@@ -176,7 +176,7 @@ export default function AssignResidentModal({
     setIsSubmitting(true);
     try {
       // 1. GỌI API CẤP TÀI KHOẢN CƯ DÂN & LƯU THÔNG TIN
-      const apiRes = await nksHandoverProvisionAccount({
+      const apiRes = await skylineHandoverProvisionAccount({
         apartmentCode: unit.code,
         fullName: name.trim(),
         phone: phone.trim(),
@@ -188,13 +188,7 @@ export default function AssignResidentModal({
         handoverProtocol: protocol
       });
 
-      setProvisionedAccount(apiRes.account || null);
-      setCreatedProtocol(apiRes.protocol || protocol);
-      setCurrentStep('CERTIFICATE');
-      onSuccess();
-    } catch (err: any) {
-      console.warn('API từ xa gặp sự cố, tự động lưu hồ sơ vào bộ nhớ hệ thống:', err);
-      // Fallback lưu dữ liệu nội bộ
+      const blockCodeMatch = unit.towerName?.match(/BS-\d+/)?.[0] || 'BS-07';
       const newOwner: ApartmentResidentOwner = {
         name: name.trim(),
         phone: phone.trim(),
@@ -207,7 +201,29 @@ export default function AssignResidentModal({
         pob: pob.trim(),
         handoverProtocol: protocol
       };
-      const ok = assignApartmentResident(unit.code, newOwner, protocol);
+      assignApartmentResident(unit.code, newOwner, protocol, blockCodeMatch);
+
+      setProvisionedAccount(apiRes.account || null);
+      setCreatedProtocol(apiRes.protocol || protocol);
+      setCurrentStep('CERTIFICATE');
+      onSuccess();
+    } catch (err: any) {
+      console.warn('API từ xa gặp sự cố, tự động lưu hồ sơ vào bộ nhớ hệ thống:', err);
+      // Fallback lưu dữ liệu nội bộ
+      const blockCodeMatch = unit.towerName?.match(/BS-\d+/)?.[0] || 'BS-07';
+      const newOwner: ApartmentResidentOwner = {
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim() || `${phone.trim()}@skyline.residence.vn`,
+        cccd: cccd.trim(),
+        avatar,
+        eKycApproved: true,
+        handoverDate: handoverDate.trim() || todayStr,
+        dob: dob.trim(),
+        pob: pob.trim(),
+        handoverProtocol: protocol
+      };
+      const ok = assignApartmentResident(unit.code, newOwner, protocol, blockCodeMatch);
       if (ok) {
         setCreatedProtocol(protocol);
         setCurrentStep('CERTIFICATE');
@@ -331,7 +347,7 @@ export default function AssignResidentModal({
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="VD: Trần Hữu Lực, Nguyễn Văn Nam..."
+                      placeholder={isEn ? 'e.g. John Doe, David Smith...' : 'VD: Trần Hữu Lực, Nguyễn Văn Nam...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] px-3 py-2.5 text-white font-medium rounded-none focus:outline-none focus:border-[#C5A880]"
                       required
                     />
@@ -347,7 +363,7 @@ export default function AssignResidentModal({
                         maxLength={10}
                         value={phone}
                         onChange={(e) => setPhone(cleanPhoneNumber(e.target.value))}
-                        placeholder="VD: 0364967082"
+                        placeholder="VD: 0901234567"
                         className="w-full bg-[#161B22] border border-[#2D3748] px-3 py-2 text-white font-mono rounded-none focus:outline-none focus:border-[#C5A880]"
                         required
                       />
@@ -421,7 +437,7 @@ export default function AssignResidentModal({
                       type="text"
                       value={pob}
                       onChange={(e) => setPob(e.target.value)}
-                      placeholder="VD: Phường Long Thạnh Mỹ, TP. Thủ Đức, TP. Hồ Chí Minh"
+                      placeholder={isEn ? 'e.g. Long Thanh My Ward, Thu Duc City, HCMC' : 'VD: Phường Long Thạnh Mỹ, TP. Thủ Đức, TP. Hồ Chí Minh'}
                       className="w-full bg-[#161B22] border border-[#2D3748] px-3 py-2 text-white rounded-none focus:outline-none focus:border-[#C5A880]"
                     />
                   </div>

@@ -106,6 +106,7 @@ export default function VisitorQrModal({
   const [isDownloading, setIsDownloading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showScannedContent, setShowScannedContent] = useState(false);
 
   // Helper toast notification
   const showToast = (msg: string) => {
@@ -149,7 +150,7 @@ export default function VisitorQrModal({
         apartmentCode,
         towerName: 'Tropical BS-07',
         hostName: currentUser?.full_name || (currentUser as any)?.fullname || 'Trần Hữu Lực',
-        hostPhone: currentUser?.phone || currentUser?.username || '0364967082',
+        hostPhone: currentUser?.phone || currentUser?.username || '',
         visitorName: visitorName.trim(),
         phoneNumber: visitorPhone.trim(),
         licensePlate: licensePlate.trim().toUpperCase(),
@@ -167,23 +168,27 @@ export default function VisitorQrModal({
     const expTime = new Date(pass.validUntil).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
     const expDate = new Date(pass.validUntil).toLocaleDateString('vi-VN');
     const towerName = pass.towerName || 'Tòa Tropical BS-07';
+    const passUrl = typeof window !== 'undefined' 
+      ? `${window.location.origin}/visitor-pass?id=${pass.id}&pin=${pass.pinCode}`
+      : `https://skyline.residence/visitor-pass?id=${pass.id}`;
 
     let text = `✨ [SKYLINE SMART RESIDENCE] THƯ MỜI ĐÓN KHÁCH ĐIỆN TỬ ✨\n`;
     text += `━━━━━━━━━━━━━━━━━━━━\n`;
-    text += `👤 Kính gửi: ${pass.visitorName}\n`;
+    text += `👤 Kính gửi Quý khách: ${pass.visitorName}\n`;
     if (pass.phoneNumber) text += `📞 Số điện thoại: ${pass.phoneNumber}\n`;
     if (pass.licensePlate) text += `🚗 Biển số xe: ${pass.licensePlate}\n`;
-    text += `🏠 Chủ hộ bảo lãnh: ${pass.hostName || 'Trần Hữu Lực'} (${pass.hostPhone || '0364967082'})\n`;
     text += `🏢 Điểm đến: Căn hộ ${pass.apartmentCode} - ${towerName}\n`;
-    text += `📍 Địa chỉ: Chung cư Skyline Smart Residence\n`;
+    text += `🏠 Chủ hộ bảo lãnh: ${pass.hostName || 'Chủ Hộ'}${pass.hostPhone ? ' (' + pass.hostPhone + ')' : ''}\n`;
+    text += `📍 Địa chỉ: Chung cư cao cấp Skyline Smart Residence\n`;
     text += `━━━━━━━━━━━━━━━━━━━━\n`;
-    text += `🔑 MÃ PIN TRA CỨU: ${pass.pinCode}\n`;
+    text += `🔑 MÃ PIN TRA CỨU LỄ TÂN: ${pass.pinCode}\n`;
     text += `⏳ Thời hạn hiệu lực: Đến ${expTime} ngày ${expDate} (${pass.validHours} giờ)\n`;
+    text += `Mã vé: ${pass.id}\n`;
     text += `━━━━━━━━━━━━━━━━━━━━\n`;
     text += `📲 HƯỚNG DẪN TIẾP ĐÓN:\n`;
-    text += `1. Quý khách vui lòng xuất trình mã QR này tại Bàn Lễ Tân / Chốt An Ninh Chung Cư để làm thủ tục vào chung cư.\n`;
-    text += `2. Nhân viên lễ tân sẽ xác thực thông tin bảo lãnh của chủ hộ và hướng dẫn Quý khách lên căn hộ ${pass.apartmentCode}.\n`;
-    text += `(Quý khách cũng có thể đọc mã PIN ${pass.pinCode} cho lễ tân nếu cần).\n`;
+    text += `1. Quý khách xuất trình mã QR hoặc đọc mã PIN ${pass.pinCode} tại Bàn Lễ Tân / Bốt An Ninh để nhận thẻ thang máy lên căn hộ ${pass.apartmentCode}.\n`;
+    text += `2. Nhân viên lễ tân sẽ xác thực thông tin bảo lãnh chính thức từ chủ hộ.\n`;
+    text += `🌐 Xem thẻ online: ${passUrl}\n`;
     text += `Trân trọng đón tiếp!`;
     return text;
   };
@@ -206,8 +211,8 @@ export default function VisitorQrModal({
   const handleCopyLink = () => {
     if (!activePass) return;
     const shareUrl = typeof window !== 'undefined' 
-      ? `${window.location.origin}/portal?pass=${encodeURIComponent(activePass.qrData)}&pin=${activePass.pinCode}`
-      : `https://skyline.residence/portal?pin=${activePass.pinCode}`;
+      ? `${window.location.origin}/visitor-pass?id=${activePass.id}&pin=${activePass.pinCode}`
+      : `https://skyline.residence/visitor-pass?id=${activePass.id}&pin=${activePass.pinCode}`;
     navigator.clipboard.writeText(shareUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
@@ -506,7 +511,7 @@ export default function VisitorQrModal({
                     type="text"
                     value={visitorName}
                     onChange={(e) => setVisitorName(e.target.value)}
-                    placeholder="VD: Anh Minh, Chị Lan..."
+                    placeholder={isEn ? 'e.g. John Doe, Sarah...' : 'VD: Anh Minh, Chị Lan...'}
                     className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white rounded-none focus:border-[#C5A880] outline-none font-sans"
                     required
                   />
@@ -523,7 +528,7 @@ export default function VisitorQrModal({
                       maxLength={10}
                       value={visitorPhone}
                       onChange={(e) => setVisitorPhone(cleanPhoneNumber(e.target.value))}
-                      placeholder="VD: 0912345678 (Dùng liên hệ khi cần)"
+                      placeholder={isEn ? 'e.g. 0912345678 (Used for contact if needed)' : 'VD: 0912345678 (Dùng liên hệ khi cần)'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 pl-8 text-white rounded-none focus:border-[#C5A880] outline-none font-mono"
                     />
                     <Phone className="w-3.5 h-3.5 text-gray-500 absolute left-2.5 top-3" />
@@ -562,11 +567,11 @@ export default function VisitorQrModal({
                       onChange={(e) => setValidHours(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white rounded-none focus:border-[#C5A880] outline-none cursor-pointer"
                     >
-                      <option value="1">1 Giờ (Gặp nhanh)</option>
-                      <option value="2">2 Giờ (Tiếp khách)</option>
-                      <option value="4">4 Giờ (Nửa ngày)</option>
-                      <option value="8">8 Giờ (Trong ngày)</option>
-                      <option value="24">24 Giờ (Cả ngày)</option>
+                      <option value="1">{isEn ? '1 Hour (Quick visit)' : '1 Giờ (Gặp nhanh)'}</option>
+                      <option value="2">{isEn ? '2 Hours (Casual visit)' : '2 Giờ (Tiếp khách)'}</option>
+                      <option value="4">{isEn ? '4 Hours (Half day)' : '4 Giờ (Nửa ngày)'}</option>
+                      <option value="8">{isEn ? '8 Hours (Full day)' : '8 Giờ (Trong ngày)'}</option>
+                      <option value="24">{isEn ? '24 Hours (Overnight)' : '24 Giờ (Cả ngày)'}</option>
                     </select>
                   </div>
                 </div>
@@ -596,9 +601,9 @@ export default function VisitorQrModal({
                     <QrCode className="w-7 h-7 sm:w-8 sm:h-8" />
                   </div>
                   <div className="space-y-1">
-                    <div className="font-serif font-bold text-white text-base">Chưa Tạo Thẻ Đón Khách</div>
+                    <div className="font-serif font-bold text-white text-base">{isEn ? 'No Visitor Pass Created Yet' : 'Chưa Tạo Thẻ Đón Khách'}</div>
                     <p className="text-xs text-gray-400 max-w-xs leading-relaxed">
-                      Vui lòng điền thông tin khách thăm ở biểu mẫu bên trái và nhấn <span className="text-[#C5A880] font-semibold">"Tạo Mã QR Mời Khách"</span> để xuất thẻ QR bảo mật thực tế.
+                      {isEn ? <>Please fill in visitor information on the left and click <span className="text-[#C5A880] font-semibold">"Generate Guest QR Pass"</span> to export an official security QR pass.</> : <>Vui lòng điền thông tin khách thăm ở biểu mẫu bên trái và nhấn <span className="text-[#C5A880] font-semibold">"Tạo Mã QR Mời Khách"</span> để xuất thẻ QR bảo mật thực tế.</>}
                     </p>
                   </div>
                   <div className="text-[11px] text-gray-500 flex items-center gap-1.5 pt-2">
@@ -626,16 +631,16 @@ export default function VisitorQrModal({
                       <span className="px-2 py-0.5 text-[9.5px] font-bold uppercase rounded-none border bg-emerald-950/80 text-emerald-300 border-emerald-500/60 font-mono">
                         VIP PASS
                       </span>
-                      <span className="text-[9px] text-emerald-400 font-mono mt-0.5">Hiệu Lực Ngay</span>
+                      <span className="text-[9px] text-emerald-400 font-mono mt-0.5">{isEn ? 'Active Now' : 'Hiệu Lực Ngay'}</span>
                     </div>
                   </div>
 
                   {/* QR Image Container */}
                   <div className="flex flex-col sm:flex-row items-center gap-3.5 bg-[#0A0E14] p-3.5 rounded-none border border-[#222B35]">
-                    <div className="bg-white p-2 rounded-none shadow-inner flex-shrink-0 group relative cursor-pointer" onClick={handleDownloadCardImage} title="Nhấn để lưu ảnh">
+                    <div className="bg-white p-2 rounded-none shadow-inner flex-shrink-0 group relative cursor-pointer" onClick={handleDownloadCardImage} title={isEn ? 'Click to save image' : 'Nhấn để lưu ảnh'}>
                       <img
                         src={qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(activePass.qrData)}`}
-                        alt="QR Mời Khách"
+                        alt={isEn ? 'Guest QR Pass' : 'QR Mời Khách'}
                         className="w-28 h-28 object-contain"
                       />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-none flex items-center justify-center text-white text-[10px] font-bold gap-1">
@@ -646,7 +651,7 @@ export default function VisitorQrModal({
                     <div className="space-y-2 text-xs flex-1 w-full sm:w-auto">
                       <div className="p-2 bg-[#121820] border border-[#222B35] rounded-none flex items-center justify-between">
                         <div>
-                          <div className="text-gray-400 text-[10px]">Mã PIN Nhập Cổng:</div>
+                          <div className="text-gray-400 text-[10px]">{isEn ? 'Gate PIN Code:' : 'Mã PIN Nhập Cổng:'}</div>
                           <div className="font-mono text-xl font-bold text-[#C5A880] tracking-wider">
                             {activePass.pinCode}
                           </div>
@@ -655,7 +660,7 @@ export default function VisitorQrModal({
                           type="button"
                           onClick={handleCopyPin}
                           className="px-2.5 py-1 bg-[#1C2533] hover:bg-[#2A374A] text-gray-300 hover:text-white rounded-none text-[10px] flex items-center gap-1 border border-gray-700 transition-colors cursor-pointer"
-                          title="Sao chép mã PIN"
+                          title={isEn ? 'Copy PIN code' : 'Sao chép mã PIN'}
                         >
                           <Copy className="w-3 h-3 text-[#C5A880]" /> Chép PIN
                         </button>
@@ -664,7 +669,7 @@ export default function VisitorQrModal({
                       <div className="text-[11px] text-gray-300 space-y-0.5">
                         <div className="flex items-center gap-1.5 text-emerald-400">
                           <Clock className="w-3.5 h-3.5 shrink-0" />
-                          <span>Thời hạn hiệu lực: {activePass.validHours} giờ</span>
+                          <span>{isEn ? `Valid duration: ${activePass.validHours} hours` : `Thời hạn hiệu lực: ${activePass.validHours} giờ`}</span>
                         </div>
                         <div className="text-[10px] text-gray-400">
                           Đến {new Date(activePass.validUntil).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ({new Date(activePass.validUntil).toLocaleDateString('vi-VN')})
@@ -681,7 +686,7 @@ export default function VisitorQrModal({
                       <span className="flex items-center gap-1">
                         <Share2 className="w-3 h-3 text-[#C5A880]" /> Chia Sẻ Mã Đến Khách:
                       </span>
-                      <span className="text-[9.5px] text-emerald-400 font-normal">Sẵn sàng gửi</span>
+                      <span className="text-[9.5px] text-emerald-400 font-normal">{isEn ? 'Ready to share' : 'Sẵn sàng gửi'}</span>
                     </div>
 
                     {/* HÀNG 1: CÁC KÊNH CHIA SẺ TRỰC TIẾP */}
@@ -691,10 +696,10 @@ export default function VisitorQrModal({
                         type="button"
                         onClick={handleShareZalo}
                         className="py-2.5 px-2 bg-[#0068FF]/15 hover:bg-[#0068FF] text-[#60A5FA] hover:text-white border border-[#0068FF]/50 rounded-none text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer group"
-                        title="Sao chép lời mời và mở Zalo để gửi"
+                        title={isEn ? 'Copy invitation and open Zalo to send' : 'Sao chép lời mời và mở Zalo để gửi'}
                       >
                         <ZaloIcon className="w-4 h-4 shrink-0" />
-                        <span className="truncate">Gửi Zalo</span>
+                        <span className="truncate">{isEn ? 'Send via Zalo' : 'Gửi Zalo'}</span>
                       </button>
 
                       {/* Nút Gửi Messenger */}
@@ -702,7 +707,7 @@ export default function VisitorQrModal({
                         type="button"
                         onClick={handleShareMessenger}
                         className="py-2.5 px-2 bg-[#0084FF]/15 hover:bg-[#0084FF] text-[#38BDF8] hover:text-white border border-[#0084FF]/50 rounded-none text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer group"
-                        title="Sao chép lời mời và mở Messenger"
+                        title={isEn ? 'Copy invitation and open Messenger' : 'Sao chép lời mời và mở Messenger'}
                       >
                         <MessengerIcon className="w-4 h-4 shrink-0" />
                         <span className="truncate">Messenger</span>
@@ -714,14 +719,14 @@ export default function VisitorQrModal({
                         onClick={handleDownloadCardImage}
                         disabled={isDownloading}
                         className="py-2.5 px-2 bg-[#C5A880]/20 hover:bg-[#C5A880] text-[#C5A880] hover:text-[#0D1117] border border-[#C5A880] rounded-none text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
-                        title="Tải ảnh thẻ mời VIP định dạng PNG về máy"
+                        title={isEn ? 'Download VIP guest pass image as PNG' : 'Tải ảnh thẻ mời VIP định dạng PNG về máy'}
                       >
                         {isDownloading ? (
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                         ) : (
                           <Download className="w-3.5 h-3.5" />
                         )}
-                        <span className="truncate">Lưu Ảnh</span>
+                        <span className="truncate">{isEn ? 'Save Image' : 'Lưu Ảnh'}</span>
                       </button>
                     </div>
 
@@ -736,12 +741,12 @@ export default function VisitorQrModal({
                         {copiedLink ? (
                           <>
                             <Check className="w-3.5 h-3.5 text-emerald-400" />
-                            <span className="text-emerald-400 font-bold truncate">Đã Chép Link</span>
+                            <span className="text-emerald-400 font-bold truncate">{isEn ? 'Link Copied' : 'Đã Chép Link'}</span>
                           </>
                         ) : (
                           <>
                             <Link className="w-3.5 h-3.5 text-[#C5A880]" />
-                            <span className="truncate">Sao Chép Link Đón Khách</span>
+                            <span className="truncate">{isEn ? 'Copy Guest Access Link' : 'Sao Chép Link Đón Khách'}</span>
                           </>
                         )}
                       </button>
@@ -753,8 +758,38 @@ export default function VisitorQrModal({
                         className="py-2.5 px-3 bg-[#161B22] hover:bg-[#1E2530] text-gray-300 hover:text-white border border-[#2D3748] rounded-none text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       >
                         <Share2 className="w-3.5 h-3.5 text-[#C5A880]" />
-                        <span className="truncate">Chia Sẻ Khác</span>
+                        <span className="truncate">{isEn ? 'Other Share' : 'Chia Sẻ Khác'}</span>
                       </button>
+                    </div>
+
+                    {/* HÀNG 3: XEM TRƯỚC NỘI DUNG KHI KHÁCH QUÉT MÃ QR & TRANG WEB ONLINE */}
+                    <div className="pt-2 border-t border-[#222B35] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() => setShowScannedContent(!showScannedContent)}
+                          className="text-[11px] text-[#C5A880] hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer font-medium"
+                        >
+                          <Scan className="w-3.5 h-3.5" />
+                          <span>{showScannedContent ? t('Thu gọn nội dung quét') : t('Xem nội dung hiển thị khi quét mã')}</span>
+                        </button>
+
+                        <a
+                          href={`/visitor-pass?id=${activePass.id}&pin=${activePass.pinCode}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1 transition-colors font-medium"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>{t('Mở Thẻ Mời Online')}</span>
+                        </a>
+                      </div>
+
+                      {showScannedContent && (
+                        <div className="p-3 bg-[#0A0E14] border border-[#222B35] text-[11px] font-mono text-gray-300 whitespace-pre-wrap leading-relaxed animate-fadeIn select-all max-h-48 overflow-y-auto">
+                          {activePass.qrData}
+                        </div>
+                      )}
                     </div>
 
                   </div>

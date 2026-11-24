@@ -57,6 +57,7 @@ import {
   analyzePostWithAi
 } from '@/lib/communityStore';
 import { useLanguage } from '@/lib/languageContext';
+import ConfirmDeleteModal from '@/components/portal/shared/ConfirmDeleteModal';
 
 interface SurveysVotingProps {
   currentUser?: User;
@@ -98,7 +99,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
   const isTenant = currentUser?.role === 'TENANT';
   const aptCode = currentUser?.apartment_code || (isAdmin ? 'BQL_OFFICE' : 'CH-06');
   const userName = currentUser?.full_name || (currentUser as any)?.fullname || 'Cư Dân SKYLINE';
-  const userAvatar = currentUser?.avatar_url || 'https://data.nks.vn/storage/users/default.png';
+  const userAvatar = currentUser?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=1C2533&color=C5A880`;
 
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<'ALL' | PostCategory>('ALL');
@@ -115,6 +116,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
 
   // Notification message
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
   // Modal: Create Post
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -276,16 +278,20 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
       showToast('Bạn chỉ có thể xóa bài viết do chính bạn đăng.', 'error');
       return;
     }
-    if (confirm('Bạn có chắc chắn muốn gỡ bài viết này khỏi diễn đàn chung cư?')) {
-      deleteCommunityPost(postId);
-      showToast('Đã gỡ bài viết thành công.');
-    }
+    setPostToDelete(postId);
+  };
+
+  const confirmDeletePost = () => {
+    if (!postToDelete) return;
+    deleteCommunityPost(postToDelete);
+    showToast('Đã gỡ bài viết khỏi diễn đàn thành công.');
+    setPostToDelete(null);
   };
 
   // Handle Open AI Sentiment Report Modal (Admin / Management only)
   const handleOpenReportModal = async () => {
     if (!isAdmin) {
-      showToast(isEn ? 'This analytics report is reserved for Building Management.' : 'Báo cáo quản trị này dành riêng cho Ban Quản Lý.', 'error');
+      showToast(isEn ? 'This analytics report is reserved for VinHomes Manager.' : 'Báo cáo quản trị này dành riêng cho VinHomes Manager.', 'error');
       return;
     }
     setIsReportModalOpen(true);
@@ -665,9 +671,9 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                 <div className="p-5 border-b border-[#1A222D] flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <img
-                      src={post.avatarUrl || 'https://data.nks.vn/storage/users/default.png'}
+                      src={post.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.authorName)}&background=1C2533&color=C5A880`}
                       alt={post.authorName}
-                      onError={e => { e.currentTarget.src = 'https://data.nks.vn/storage/users/default.png'; }}
+                      onError={e => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(post.authorName)}&background=1C2533&color=C5A880`; }}
                       className="w-10 h-10 object-cover border border-[#C5A880]/50 rounded-none flex-shrink-0"
                     />
 
@@ -676,7 +682,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                         <span className="text-sm font-bold text-white tracking-wide">{post.authorName}</span>
                         {isBql ? (
                           <span className="px-2 py-0.5 bg-[#C5A880] text-[#0A0E14] text-[9px] font-bold uppercase tracking-wider">
-                            {t('Ban Quản Lý')}
+                            {t('VinHomes Manager')}
                           </span>
                         ) : post.authorRole === 'OWNER' ? (
                           <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-semibold uppercase tracking-wider">
@@ -746,7 +752,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                       <button
                         onClick={() => handleDeletePost(post.id, post.aptCode)}
                         className="p-1.5 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors ml-1"
-                        title="Gỡ bài viết này"
+                        title={isEn ? 'Remove this post' : 'Gỡ bài viết này'}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -766,7 +772,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                       <div className="p-4 bg-rose-950/20 border border-rose-500/40 space-y-2 text-center my-2">
                         <div className="flex items-center justify-center gap-2 text-rose-400 text-xs font-semibold">
                           <AlertTriangle className="w-4 h-4 text-rose-400 flex-shrink-0" />
-                          <span>Nội dung đã bị AI tự động làm mờ do chứa từ ngữ nhạy cảm / công kích.</span>
+                          <span>{isEn ? 'Content was automatically blurred by AI due to offensive / sensitive language.' : 'Nội dung đã bị AI tự động làm mờ do chứa từ ngữ nhạy cảm / công kích.'}</span>
                         </div>
                         <p className="text-[11px] text-gray-400">
                           {post.aiModerationReason || 'Vi phạm bộ quy tắc ứng xử văn minh trong cộng đồng cư dân SKYLINE.'}
@@ -776,7 +782,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                           className="text-[11px] text-[#C5A880] hover:underline flex items-center justify-center gap-1 mx-auto pt-1"
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          <span>Tôi vẫn muốn xem nội dung gốc</span>
+                          <span>{isEn ? 'I still want to view original content' : 'Tôi vẫn muốn xem nội dung gốc'}</span>
                         </button>
                       </div>
                     ) : (
@@ -805,7 +811,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                                 />
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] gap-1 font-mono">
                                   <Eye className="w-3.5 h-3.5 text-[#C5A880]" />
-                                  <span>Xem ảnh</span>
+                                  <span>{isEn ? 'View photo' : 'Xem ảnh'}</span>
                                 </div>
                               </div>
                             ))}
@@ -820,7 +826,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                     <div className="p-3.5 bg-[#141B24] border border-[#C5A880]/30 border-l-4 border-l-[#C5A880] space-y-1.5 shadow-md my-2">
                       <div className="flex items-center gap-1.5 text-[10px] text-[#C5A880] font-mono font-bold uppercase tracking-wider">
                         <Sparkles className="w-3.5 h-3.5 text-[#C5A880]" />
-                        <span>Trợ Lý Ảo SKYLINE AI Phản Hồi Tức Thì (Theo Sổ Tay Tòa Nhà):</span>
+                        <span>{isEn ? 'SKYLINE AI Virtual Assistant Instant Response (Building Handbook):' : 'Trợ Lý Ảo SKYLINE AI Phản Hồi Tức Thì (Theo Sổ Tay Tòa Nhà):'}</span>
                       </div>
                       <p className="text-xs text-gray-200 leading-relaxed italic">
                         "{post.aiQuickReply}"
@@ -896,7 +902,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                           <span>
                             {isEn
                               ? <>Permission: This legal poll requires an <strong>Apartment Owner</strong> account. You are viewing in read-only mode.</>
-                              : <>Quyền hạn: Cuộc biểu quyết pháp lý này yêu cầu tài khoản <strong>Chủ Hộ</strong>. Bạn đang xem với quyền tham khảo.</>}
+                              : <>{isEn ? <>Permissions: This legal vote requires a <strong>Primary Resident (Owner)</strong> account. Viewing in read-only mode.</> : <>Quyền hạn: Cuộc biểu quyết pháp lý này yêu cầu tài khoản <strong>Chủ Hộ</strong>. Bạn đang xem với quyền tham khảo.</>}</>}
                           </span>
                         </div>
                       ) : null}
@@ -1020,7 +1026,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                   <div className="p-5 bg-[#0C1017] border-t border-[#1A222D] space-y-4 animate-fadeIn">
                     <div className="text-xs font-serif font-bold text-[#C5A880] uppercase tracking-wider flex items-center gap-2">
                       <MessageSquare className="w-3.5 h-3.5" />
-                      <span>Bình luận & Ý kiến trao đổi ({post.comments.length})</span>
+                      <span>{isEn ? `Comments & Community Discussion (${post.comments.length})` : `Bình luận & Ý kiến trao đổi (${post.comments.length})`}</span>
                     </div>
 
                     {/* Comments list */}
@@ -1040,10 +1046,10 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                                   {isCmtBql ? (
                                     <span className="px-1.5 py-0.2 bg-[#C5A880] text-[#0A0E14] text-[8px] font-bold uppercase">BQL</span>
                                   ) : (
-                                    <span className="text-gray-400 font-mono">({cmt.aptCode || 'Căn Hộ'})</span>
+                                    <span className="text-gray-400 font-mono">({cmt.aptCode || (isEn ? 'Apartment' : 'Căn Hộ')})</span>
                                   )}
                                   {cmt.aiModeration === 'Toxic' && (
-                                    <span className="px-1.5 py-0.2 bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[8px]">Đã lọc từ ngữ</span>
+                                    <span className="px-1.5 py-0.2 bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[8px]">{isEn ? 'Language filtered' : 'Đã lọc từ ngữ'}</span>
                                   )}
                                 </div>
                                 <span className="text-gray-500 font-mono text-[10px]">
@@ -1071,7 +1077,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                             handleCommentSubmit(post.id);
                           }
                         }}
-                        placeholder={`Viết phản hồi với tư cách ${userName} (${aptCode})...`}
+                        placeholder={isEn ? `Reply as ${userName} (${aptCode})...` : `Viết phản hồi với tư cách ${userName} (${aptCode})...`}
                         className="flex-1 bg-[#141B24] border border-[#C5A880]/30 text-white px-3 py-2 text-xs placeholder-gray-500 focus:outline-none focus:border-[#C5A880]"
                       />
                       <button
@@ -1079,7 +1085,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                         className="px-4 py-2 bg-[#C5A880] hover:bg-white text-[#0A0E14] font-bold text-xs uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow"
                       >
                         <Send className="w-3.5 h-3.5" />
-                        <span>Gửi</span>
+                        <span>{isEn ? 'Send' : 'Gửi'}</span>
                       </button>
                     </div>
                   </div>
@@ -1452,7 +1458,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                         type="text"
                         value={createTags}
                         onChange={e => setCreateTags(e.target.value)}
-                        placeholder="Tiện ích, Rao vặt, Thể thao..."
+                        placeholder={isEn ? 'Amenities, Classifieds, Sports...' : 'Tiện ích, Rao vặt, Thể thao...'}
                         className="w-full bg-[#141B24] border border-[#2A3647] text-white px-3 py-2 text-xs placeholder-gray-500 focus:outline-none focus:border-[#C5A880]"
                       />
                     </div>
@@ -1654,7 +1660,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                     <span>
                       {isEn
                         ? 'Actionable Recommendations for Management'
-                        : 'Đề Xuất Hành Động Cho Ban Quản Lý (Actionable Recommendations)'}
+                        : 'Đề Xuất Hành Động Cho VinHomes Manager (Actionable Recommendations)'}
                     </span>
                   </div>
                   <div className="space-y-2">
@@ -1707,18 +1713,27 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
             <button 
               onClick={() => setPreviewZoomImage(null)}
               className="absolute -top-10 right-0 text-gray-300 hover:text-white p-2 flex items-center justify-center rounded-none bg-black/60 border border-gray-700"
-              title="Đóng hình ảnh"
+              title={isEn ? 'Close image' : 'Đóng hình ảnh'}
             >
               <X className="w-5 h-5" />
             </button>
             <img 
               src={previewZoomImage} 
-              alt="Hình ảnh đính kèm" 
+              alt={isEn ? 'Attached photo' : 'Hình ảnh đính kèm'} 
               className="max-w-full max-h-[82vh] object-contain mx-auto"
             />
           </div>
         </div>
       )}
+      {/* Confirm Delete Post Modal */}
+      <ConfirmDeleteModal
+        isOpen={!!postToDelete}
+        onClose={() => setPostToDelete(null)}
+        onConfirm={confirmDeletePost}
+        title={isEn ? 'Remove Forum Post' : 'Gỡ Bài Viết Diễn Đàn'}
+        message="Bạn có chắc chắn muốn gỡ bài viết này khỏi diễn đàn cộng đồng cư dân Skyline? Toàn bộ bình luận và tương tác liên quan sẽ bị xóa vĩnh viễn."
+        itemCode={postToDelete ? `#${postToDelete}` : undefined}
+      />
     </div>
   );
 }

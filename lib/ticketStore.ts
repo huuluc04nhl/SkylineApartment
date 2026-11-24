@@ -1,10 +1,7 @@
 /**
  * Skyline Smart Residence - Centralized Maintenance Ticket & Technician Payroll Store
- * 
- * Quản trị 100% dữ liệu thực tế - KHÔNG DỮ LIỆU ẢO / KHÔNG ẢNH UNSPLASH
- * - Danh bạ KTV lấy từ nhân sự kỹ thuật thực tế của tòa nhà (khớp với database schema và tài khoản BQL)
- * - Danh sách phiếu khởi đầu sạch (rỗng), được tạo thực tế từ Portal cư dân và lưu bền vững
- * - Bảng lương thù lao tính toán 100% động từ các ca sửa thực tế đã hoàn thành
+ * Pure In-Database Architecture. Powered by skylineDb.
+ * Zero LocalStorage. Zero External Mock APIs. Zero Dummy Tickets (No Sunny/Sunn fake tickets).
  */
 
 import { ServiceRequest } from './dataStore';
@@ -15,11 +12,13 @@ import {
   classifyTicket, 
   findInquiryAnswer 
 } from './ticketClassification';
+import { skylineDb } from './db';
+import { ServiceTicketRecord, TechnicianRecord } from './db/schema';
 
 export type { TicketCategoryType, TicketHandlerRole };
 
 export interface TechnicianProfile {
-  id: string; // 'KTV-01', 'KTV-02'
+  id: string; // 'KTV-01', 'KTV-02', 'KTV-03'
   name: string;
   phone: string;
   email: string;
@@ -30,51 +29,46 @@ export interface TechnicianProfile {
   status: 'AVAILABLE' | 'BUSY' | 'OFF_DUTY';
 }
 
-export interface ExtendedServiceRequest extends Omit<ServiceRequest, 'after_image' | 'ai_category'> {
-  nks_id?: number; // ID định danh thực tế từ NKS SCRMAI API
+export interface ExtendedServiceRequest extends Omit<ServiceRequest, 'after_image' | 'ai_category' | 'apartment_id' | 'sla_deadline' | 'sla_minutes_left' | 'before_image'> {
+  apartment_id?: string;
+  sla_deadline?: string;
+  sla_minutes_left?: number;
+  before_image?: string;
   ai_category?: 'Điện' | 'Nước' | 'Vệ sinh' | 'An ninh' | 'Khác' | string;
   
-  // Phân loại mục đích phiếu (Sửa chữa / Hỏi đáp / Phản ánh / Dịch vụ)
   ticket_type?: TicketCategoryType;
   ticket_type_label?: string;
-  handled_by?: TicketHandlerRole; // 'AI' | 'MANAGEMENT' | 'TECHNICIAN'
+  handled_by?: TicketHandlerRole;
 
-  // Phản hồi tự động bằng AI (cho câu hỏi, tra cứu quy chế)
   ai_reply?: string;
   ai_replied_at?: string;
 
-  // Phản hồi chính thức của Ban Quản Lý (cho khiếu nại, phản ánh)
   admin_reply?: string;
   admin_replied_at?: string;
   admin_replied_by?: string;
 
-  // Kỹ thuật hiện trường (cho trường hợp sự cố sửa chữa)
   after_image?: string;
   assigned_technician_id?: string;
   assigned_technician_phone?: string;
   scheduled_time?: string;
   resolution_notes?: string;
-  rating?: number; // 1 - 5 sao
+  rating?: number;
   resident_feedback?: string;
   rated_at?: string;
   resolved_at?: string;
 
-  // Đề xuất hỗ trợ bởi AI (Minh bạch - Chờ BQL phê duyệt)
   suggested_technician?: string;
   suggested_technician_id?: string;
   suggested_technician_phone?: string;
   suggested_match_score?: number;
   ai_suggested_reply?: string;
 
-  // Điều phối tự động bằng AI
   auto_dispatched?: boolean;
   ai_dispatch_reason?: string;
 
-  // Khu vực và mức độ khẩn cấp
   area?: string;
   urgency?: 'HIGH' | 'NORMAL' | string;
 
-  // AI Giám định ảnh nghiệm thu KTV (phân loại đạt chuẩn, chưa đạt hay ảnh giả)
   ai_verification?: {
     status: 'VERIFIED' | 'INCOMPLETE' | 'SUSPICIOUS';
     confidence_score?: number;
@@ -88,7 +82,6 @@ export interface ExtendedServiceRequest extends Omit<ServiceRequest, 'after_imag
     risk_warning?: string;
   };
 
-  // Trạng thái từ chối nghiệm thu & yêu cầu KTV làm lại
   rework_reason?: string;
   rework_count?: number;
 }
@@ -105,53 +98,97 @@ export interface TechnicianPayrollSummary {
   recentTickets: ExtendedServiceRequest[];
 }
 
-// Storage keys v2 - Không dữ liệu ảo
-const TICKETS_STORAGE_KEY = 'skyline_service_tickets_v2';
-const TECHNICIANS_STORAGE_KEY = 'skyline_technicians_v2';
-const AUTO_DISPATCH_SETTING_KEY = 'skyline_ai_auto_dispatch_enabled';
+export function technicianRecordToProfile(rec: TechnicianRecord): TechnicianProfile {
+  return {
+    id: rec.id,
+    name: rec.name,
+    phone: rec.phone,
+    email: rec.email,
+    specialty: rec.specialty,
+    baseSalary: rec.base_salary,
+    payPerTicket: rec.pay_per_ticket,
+    bonusPerFiveStar: rec.bonus_per_fivestar,
+    status: rec.status,
+  };
+}
 
-/**
- * Đội ngũ Kỹ thuật viên thực tế của Ban Quản Lý Tòa Nhà Skyline
- * Khớp chuẩn với Database SQL Schema và tài khoản BQL
- */
-export const DEFAULT_TECHNICIANS: TechnicianProfile[] = [
-  {
-    id: 'KTV-01',
-    name: 'Trần Đình Trọng',
-    phone: '0901.888.998',
-    email: 'trong.tran@skyline.vn',
-    specialty: 'Điện Lạnh & Kỹ Thuật Tòa Nhà',
-    baseSalary: 9500000,
-    payPerTicket: 180000,
-    bonusPerFiveStar: 50000,
-    status: 'AVAILABLE',
-  },
-  {
-    id: 'KTV-02',
-    name: 'Hoàng',
-    phone: '0908.777.666',
-    email: 'hoang.vesinh@skyline.vn',
-    specialty: 'Vệ Sinh & Cảnh Quan Chung Cư',
-    baseSalary: 8000000,
-    payPerTicket: 120000,
-    bonusPerFiveStar: 50000,
-    status: 'AVAILABLE',
-  },
-  {
-    id: 'KTV-03',
-    name: 'Lê Văn Kỹ Thuật',
-    phone: '0909.888.777',
-    email: 'tech.skyline@gmail.com',
-    specialty: 'Cơ Điện & Nước',
-    baseSalary: 8500000,
-    payPerTicket: 150000,
-    bonusPerFiveStar: 50000,
-    status: 'AVAILABLE',
-  }
-];
+export function serviceTicketRecordToRequest(rec: ServiceTicketRecord): ExtendedServiceRequest {
+  return {
+    id: rec.id,
+    apt_code: rec.apartment_code,
+    apartment_id: rec.apartment_code,
+    resident_name: rec.resident_name,
+    resident_phone: rec.resident_phone,
+    content: rec.content,
+    ticket_type: rec.ticket_type as any,
+    ticket_type_label: rec.ticket_type_label,
+    ai_category: rec.ai_category,
+    ai_priority: rec.ai_priority,
+    priority_color: rec.priority_color,
+    status: rec.status as any,
+    handled_by: rec.handled_by as any,
+    ai_reply: rec.ai_reply,
+    ai_replied_at: rec.ai_replied_at,
+    admin_reply: rec.admin_reply,
+    admin_replied_at: rec.admin_replied_at,
+    admin_replied_by: rec.admin_replied_by,
+    assigned_technician_id: rec.assigned_technician_id,
+    assigned_technician: rec.assigned_technician_name,
+    assigned_technician_phone: rec.assigned_technician_phone,
+    scheduled_time: rec.scheduled_time,
+    auto_dispatched: rec.auto_dispatched,
+    ai_dispatch_reason: rec.ai_dispatch_reason,
+    rating: rec.rating,
+    resident_feedback: rec.resident_feedback,
+    rated_at: rec.rated_at,
+    before_image: rec.before_image,
+    after_image: rec.after_image,
+    created_at: rec.created_at,
+    resolved_at: rec.resolved_at,
+    updated_at: rec.updated_at || rec.created_at,
+    sla_deadline: rec.sla_deadline,
+  };
+}
 
-// Khởi đầu sạch sẽ - không nạp phiếu ảo hay ảnh mạng Unsplash
-export const INITIAL_TICKETS: ExtendedServiceRequest[] = [];
+export function extendedServiceRequestToRecord(req: ExtendedServiceRequest): ServiceTicketRecord {
+  return {
+    id: req.id,
+    apartment_code: req.apt_code || req.apartment_id || 'CH-06',
+    resident_name: req.resident_name || 'Cư Dân Skyline',
+    resident_phone: req.resident_phone || '',
+    content: req.content,
+    ai_category: req.ai_category || 'Khác',
+    ai_priority: (req.ai_priority as 1 | 2 | 3) || 2,
+    priority_color: req.priority_color || '#D97706',
+    sla_deadline: req.sla_deadline,
+    status: req.status as any,
+    ticket_type: (req.ticket_type || 'REPAIR') as any,
+    ticket_type_label: req.ticket_type_label,
+    handled_by: (req.handled_by || 'TECHNICIAN') as any,
+    ai_reply: req.ai_reply,
+    ai_replied_at: req.ai_replied_at,
+    admin_reply: req.admin_reply,
+    admin_replied_at: req.admin_replied_at,
+    admin_replied_by: req.admin_replied_by,
+    assigned_technician_id: req.assigned_technician_id,
+    assigned_technician_name: req.assigned_technician,
+    assigned_technician_phone: req.assigned_technician_phone,
+    scheduled_time: req.scheduled_time,
+    auto_dispatched: req.auto_dispatched,
+    ai_dispatch_reason: req.ai_dispatch_reason,
+    rating: req.rating,
+    resident_feedback: req.resident_feedback,
+    rated_at: req.rated_at,
+    before_image: req.before_image,
+    after_image: req.after_image,
+    created_at: req.created_at,
+    resolved_at: req.resolved_at,
+    updated_at: req.updated_at || new Date().toISOString()
+  };
+}
+
+export const DEFAULT_TECHNICIANS: TechnicianProfile[] = skylineDb.technicians.find().map(technicianRecordToProfile);
+export const INITIAL_TICKETS: ExtendedServiceRequest[] = skylineDb.tickets.find().map(serviceTicketRecordToRequest);
 
 function notifyTicketsUpdated() {
   if (typeof window !== 'undefined') {
@@ -160,59 +197,38 @@ function notifyTicketsUpdated() {
 }
 
 // -----------------------------------------------------------------------------
-// GET / SAVE TECHNICIANS
+// GET / SAVE TECHNICIANS - FROM SKYLINE DATABASE
 // -----------------------------------------------------------------------------
 export function getTechnicians(): TechnicianProfile[] {
-  if (typeof window === 'undefined') return DEFAULT_TECHNICIANS;
-  try {
-    const raw = localStorage.getItem(TECHNICIANS_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(TECHNICIANS_STORAGE_KEY, JSON.stringify(DEFAULT_TECHNICIANS));
-      return DEFAULT_TECHNICIANS;
-    }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_TECHNICIANS;
-  } catch {
-    return DEFAULT_TECHNICIANS;
-  }
+  return skylineDb.technicians.find().map(technicianRecordToProfile);
 }
 
 export function saveTechnicians(techs: TechnicianProfile[]): void {
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(TECHNICIANS_STORAGE_KEY, JSON.stringify(techs));
-    } catch (e) {
-      console.warn('Lỗi lưu technicians vào bộ nhớ thiết bị:', e);
-    }
-    notifyTicketsUpdated();
-  }
+  techs.forEach(t => {
+    skylineDb.technicians.update(t.id, {
+      name: t.name,
+      phone: t.phone,
+      email: t.email,
+      specialty: t.specialty,
+      base_salary: t.baseSalary,
+      pay_per_ticket: t.payPerTicket,
+      bonus_per_fivestar: t.bonusPerFiveStar,
+      status: t.status,
+    });
+  });
+  notifyTicketsUpdated();
 }
 
 export function getTechnicianById(id: string): TechnicianProfile | undefined {
-  return getTechnicians().find(t => t.id === id);
+  const rec = skylineDb.technicians.findById(id);
+  return rec ? technicianRecordToProfile(rec) : undefined;
 }
 
 // -----------------------------------------------------------------------------
-// GET / SAVE TICKETS
+// GET / SAVE TICKETS - FROM SKYLINE DATABASE
 // -----------------------------------------------------------------------------
 export function getTickets(aptCode?: string, phone?: string): ExtendedServiceRequest[] {
-  let allTickets: ExtendedServiceRequest[] = [];
-  if (typeof window !== 'undefined') {
-    try {
-      const raw = localStorage.getItem(TICKETS_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          allTickets = parsed.map(t => ({
-            ...t,
-            apt_code: (t.apt_code === '12A05' || t.apt_code === '12A5' || t.apt_code === 'CH-06') ? 'CH-06' : t.apt_code
-          }));
-        }
-      }
-    } catch {
-      allTickets = [];
-    }
-  }
+  const allTickets = skylineDb.tickets.find().map(serviceTicketRecordToRequest);
 
   if (aptCode || phone) {
     const cleanCode = aptCode ? aptCode.trim().toUpperCase() : '';
@@ -227,93 +243,31 @@ export function getTickets(aptCode?: string, phone?: string): ExtendedServiceReq
   return allTickets;
 }
 
-export function saveTickets(tickets: ExtendedServiceRequest[]): void {
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(tickets));
-    } catch (quotaErr) {
-      console.warn('Bộ nhớ thiết bị đầy (QuotaExceededError), tự động tối ưu ảnh đính kèm:', quotaErr);
-      try {
-        // Tối ưu hóa: bỏ ảnh base64 quá lớn trong các phiếu cũ để vừa vặn bộ nhớ
-        const lightweight = tickets.slice(0, 30).map(t => ({
-          ...t,
-          before_image: t.before_image && t.before_image.length > 500 ? (t.before_image.startsWith('http') ? t.before_image : '') : t.before_image,
-          after_image: t.after_image && t.after_image.length > 500 ? (t.after_image.startsWith('http') ? t.after_image : '') : t.after_image,
-        }));
-        localStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(lightweight));
-      } catch (innerErr) {
-        console.warn('Không thể lưu tickets vào localStorage:', innerErr);
-      }
-    }
-    notifyTicketsUpdated();
-  }
-  // Đồng bộ ngầm lên máy chủ
-  if (typeof window !== 'undefined') {
-    fetch('/api/tickets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'SYNC_ALL', tickets }),
-    }).catch(e => console.warn('Lỗi đồng bộ tickets lên server:', e));
-  }
+export function getTicketById(id: string): ExtendedServiceRequest | undefined {
+  const rec = skylineDb.tickets.findById(id);
+  return rec ? serviceTicketRecordToRequest(rec) : undefined;
 }
 
-// -----------------------------------------------------------------------------
-// CORE ACTION METHODS
-// -----------------------------------------------------------------------------
-
-/**
- * Đồng bộ toàn bộ tickets với máy chủ và NKS SCRMAI API
- */
-export async function syncTicketsWithServer(aptCode?: string, phone?: string): Promise<ExtendedServiceRequest[]> {
-  try {
-    const params = new URLSearchParams();
-    if (aptCode) params.set('aptCode', aptCode);
-    if (phone) params.set('phone', phone);
-    const res = await fetch(`/api/tickets?${params.toString()}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && Array.isArray(data.tickets)) {
-        if (typeof window !== 'undefined') {
-          // Merge an toàn không xóa mất các phiếu khác
-          const currentAll = getTickets();
-          const map = new Map<string, ExtendedServiceRequest>();
-          currentAll.forEach(t => {
-            map.set(t.id, t);
-            if (t.nks_id) map.set(String(t.nks_id), t);
-          });
-          data.tickets.forEach((t: ExtendedServiceRequest) => {
-            map.set(t.id, t);
-            if (t.nks_id) map.set(String(t.nks_id), t);
-          });
-          const mergedList = Array.from(new Set(map.values()));
-          mergedList.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-          try {
-            localStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(mergedList));
-          } catch {
-            // Giảm tải nếu quota đầy
-            const trimmed = mergedList.slice(0, 30);
-            try { localStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(trimmed)); } catch { /* ignore */ }
-          }
-
-          if (Array.isArray(data.technicians) && data.technicians.length > 0) {
-            try {
-              localStorage.setItem(TECHNICIANS_STORAGE_KEY, JSON.stringify(data.technicians));
-            } catch { /* ignore */ }
-          }
-          notifyTicketsUpdated();
-        }
-        return data.tickets;
-      }
+export function saveTickets(tickets: ExtendedServiceRequest[]): void {
+  tickets.forEach(t => {
+    const existing = skylineDb.tickets.findById(t.id);
+    const record = extendedServiceRequestToRecord(t);
+    if (existing) {
+      skylineDb.tickets.update(existing.id, record);
+    } else {
+      skylineDb.tickets.insert(record);
     }
-  } catch (err) {
-    console.warn('Lỗi đồng bộ phiếu với máy chủ & NKS API:', err);
-  }
+  });
+  notifyTicketsUpdated();
+}
+
+export async function syncTicketsWithServer(aptCode?: string, phone?: string): Promise<ExtendedServiceRequest[]> {
+  notifyTicketsUpdated();
   return getTickets(aptCode, phone);
 }
 
 /**
- * Cư Dân tạo phiếu mới (sửa chữa, hỏi đáp hoặc phản ánh) và đồng bộ trực tiếp lên NKS SCRMAI API
+ * Tạo phiếu mới
  */
 export async function createTicketAsync(payload: {
   apartment_id?: string;
@@ -324,104 +278,11 @@ export async function createTicketAsync(payload: {
   ticket_type?: TicketCategoryType;
   ticket_type_label?: string;
   ai_category?: 'Điện' | 'Nước' | 'Vệ sinh' | 'An ninh' | 'Khác' | string;
-  before_image?: string; // Base64 ảnh chụp thực tế
+  before_image?: string;
 }): Promise<ExtendedServiceRequest> {
-  const cat = payload.ai_category || 'Khác';
-  const isUrgent = cat === 'Nước' || cat === 'Điện';
-
-  // Tự động phân loại nếu người dùng chưa chọn thủ công
-  const classification = classifyTicket(payload.content, payload.ai_category);
-  const ticketType = payload.ticket_type || classification.type;
-  const handler = ticketType === 'REPAIR' ? 'TECHNICIAN' : 'MANAGEMENT';
-  const isAutoResolved = ticketType === 'FEEDBACK' && Boolean(classification.canAutoResolve && classification.autoReplyText);
-
-  // Gợi ý KTV tối ưu cho trường hợp REPAIR
-  let suggestedTech: TechnicianProfile | undefined = undefined;
-  if (ticketType === 'REPAIR') {
-    const techs = getTechnicians();
-    if (techs.length > 0) {
-      if (cat === 'Điện' || cat === 'Nước') {
-        suggestedTech = techs.find(t => t.specialty.includes('Cơ Điện') || t.specialty.includes('Điện')) || techs[0];
-      } else if (cat === 'Vệ sinh') {
-        suggestedTech = techs.find(t => t.specialty.includes('Vệ Sinh')) || techs[0];
-      } else {
-        suggestedTech = techs.find(t => t.specialty.includes('Đa Năng')) || techs[0];
-      }
-    }
-  }
-
-  const optimisticTicket: ExtendedServiceRequest = {
-    id: `TICK-${Math.floor(100 + Math.random() * 900)}`,
-    apartment_id: payload.apartment_id || `apt-${payload.apt_code.toLowerCase()}`,
-    apt_code: payload.apt_code,
-    resident_name: payload.resident_name,
-    resident_phone: payload.resident_phone,
-    content: payload.content,
-    ticket_type: ticketType === 'REPAIR' ? 'REPAIR' : 'FEEDBACK',
-    ticket_type_label: ticketType === 'REPAIR' ? 'Sửa Chữa Kỹ Thuật' : 'Phản Ánh & Ý Kiến',
-    handled_by: handler,
-    ai_category: cat,
-    ai_priority: isUrgent ? 1 : 2,
-    priority_color: isUrgent ? '#DC2626' : '#D97706',
-    sla_deadline: new Date(Date.now() + (isUrgent ? 45 : 120) * 60000).toISOString(),
-    sla_minutes_left: isUrgent ? 45 : 120,
-    status: isAutoResolved ? 'Resolved' : 'Open',
-    admin_reply: isAutoResolved ? classification.autoReplyText : undefined,
-    admin_replied_at: isAutoResolved ? new Date().toISOString() : undefined,
-    admin_replied_by: isAutoResolved ? 'Hệ Thống Quản Lý Skyline (AI Tự Động)' : undefined,
-    ai_suggested_reply: classification.suggestedAdminReply || classification.autoReplyText,
-    suggested_technician: suggestedTech?.name,
-    suggested_technician_id: suggestedTech?.id,
-    suggested_technician_phone: suggestedTech?.phone,
-    suggested_match_score: suggestedTech ? 95 : undefined,
-    ai_dispatch_reason: suggestedTech ? `Kỹ thuật viên chuyên trách ${cat} phù hợp nhất.` : undefined,
-    scheduled_time: isUrgent ? 'Có mặt trong vòng 30 phút' : 'Có mặt trong vòng 45 phút',
-    before_image: payload.before_image || '',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-
-  try {
-    const res = await fetch('/api/tickets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'CREATE',
-        ticket: optimisticTicket,
-      }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.ticket) {
-        const saved = data.ticket as ExtendedServiceRequest;
-        try {
-          const currentTickets = getTickets();
-          const updated = [saved, ...currentTickets.filter(t => t.id !== saved.id && t.id !== optimisticTicket.id)];
-          saveTickets(updated);
-        } catch (e) {
-          console.warn('Lỗi lưu ticket mới vào bộ nhớ thiết bị:', e);
-        }
-        return saved;
-      }
-    }
-  } catch (err) {
-    console.warn('Lỗi gọi API tạo phiếu NKS:', err);
-  }
-
-  // Fallback nếu ngoại tuyến hoặc mất kết nối
-  try {
-    const currentTickets = getTickets();
-    const updatedList = [optimisticTicket, ...currentTickets];
-    saveTickets(updatedList);
-  } catch (e) {
-    console.warn('Lỗi lưu fallback ticket:', e);
-  }
-  return optimisticTicket;
+  return createTicket(payload);
 }
 
-/**
- * Cư Dân tạo phiếu mới đồng bộ cục bộ
- */
 export function createTicket(payload: {
   apartment_id?: string;
   apt_code: string;
@@ -433,7 +294,6 @@ export function createTicket(payload: {
   ai_category?: 'Điện' | 'Nước' | 'Vệ sinh' | 'An ninh' | 'Khác' | string;
   before_image?: string;
 }): ExtendedServiceRequest {
-  const allTickets = getTickets();
   const cat = payload.ai_category || 'Khác';
   const isUrgent = cat === 'Nước' || cat === 'Điện';
 
@@ -487,14 +347,14 @@ export function createTicket(payload: {
     updated_at: new Date().toISOString(),
   };
 
-  const updatedList = [newTicket, ...allTickets];
-  saveTickets(updatedList);
+  const rec = extendedServiceRequestToRecord(newTicket);
+  skylineDb.tickets.insert(rec);
+  notifyTicketsUpdated();
   return newTicket;
 }
 
 /**
- * Ban Quản Lý trực tiếp gửi câu trả lời / phản hồi chính thức cho cư dân
- * Đồng thời có thể phân công hoặc cập nhật tên Kỹ thuật viên xử lý (engineername)
+ * Phản hồi chính thức của BQL
  */
 export function adminRespondToTicket(
   ticketId: string,
@@ -502,276 +362,147 @@ export function adminRespondToTicket(
   adminName: string = 'Ban Quản Lý Chung Cư',
   engineername?: string
 ): ExtendedServiceRequest | null {
-  const allTickets = getTickets();
-  let targetTicket: ExtendedServiceRequest | null = null;
+  const existing = skylineDb.tickets.findById(ticketId);
+  if (!existing) return null;
 
-  const updatedTickets = allTickets.map(t => {
-    if (t.id === ticketId || String(t.nks_id) === ticketId) {
-      targetTicket = {
-        ...t,
-        admin_reply: replyText.trim(),
-        admin_replied_at: new Date().toISOString(),
-        admin_replied_by: adminName,
-        assigned_technician: engineername?.trim() || t.assigned_technician,
-        status: 'Resolved' as const,
-        updated_at: new Date().toISOString(),
-      };
-      return targetTicket;
-    }
-    return t;
-  });
-
-  if (targetTicket) {
-    saveTickets(updatedTickets);
-
-    // Bắn sync ngầm lên server và NKS API
-    if (typeof window !== 'undefined') {
-      fetch('/api/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'ADMIN_REPLY',
-          ticketId,
-          replyText,
-          adminName,
-          engineername: engineername?.trim() || (targetTicket as ExtendedServiceRequest).assigned_technician,
-        }),
-      }).catch(e => console.warn('Lỗi đồng bộ phản hồi BQL lên server:', e));
-    }
+  const patch: Partial<ServiceTicketRecord> = {
+    admin_reply: replyText.trim(),
+    admin_replied_at: new Date().toISOString(),
+    admin_replied_by: adminName,
+    status: 'Resolved',
+    updated_at: new Date().toISOString()
+  };
+  if (engineername) {
+    patch.assigned_technician_name = engineername.trim();
   }
 
-  return targetTicket;
+  const updatedRec = skylineDb.tickets.update(existing.id, patch);
+  notifyTicketsUpdated();
+  return updatedRec ? serviceTicketRecordToRequest(updatedRec) : null;
 }
 
 /**
- * Kích hoạt AI giải đáp tự động câu hỏi cho ticket
+ * AI trả lời tự động câu hỏi
  */
 export function aiAnswerTicket(
   ticketId: string,
   customAnswer?: string
 ): ExtendedServiceRequest | null {
-  const allTickets = getTickets();
-  let targetTicket: ExtendedServiceRequest | null = null;
+  const existing = skylineDb.tickets.findById(ticketId);
+  if (!existing) return null;
 
-  const updatedTickets = allTickets.map(t => {
-    if (t.id === ticketId || String(t.nks_id) === ticketId) {
-      const answer = customAnswer || findInquiryAnswer(t.content);
-      targetTicket = {
-        ...t,
-        handled_by: 'AI' as const,
-        ai_reply: answer,
-        ai_replied_at: new Date().toISOString(),
-        status: 'Resolved' as const,
-        updated_at: new Date().toISOString(),
-      };
-      return targetTicket;
-    }
-    return t;
+  const answer = customAnswer || findInquiryAnswer(existing.content);
+  const updatedRec = skylineDb.tickets.update(existing.id, {
+    handled_by: 'AI',
+    ai_reply: answer,
+    ai_replied_at: new Date().toISOString(),
+    status: 'Resolved',
+    updated_at: new Date().toISOString()
   });
 
-  if (targetTicket) {
-    saveTickets(updatedTickets);
-
-    // Đồng bộ lên server và NKS API
-    if (typeof window !== 'undefined') {
-      fetch('/api/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'AI_ANSWER',
-          ticketId,
-          customAnswer: (targetTicket as ExtendedServiceRequest).ai_reply,
-        }),
-      }).catch(e => console.warn('Lỗi đồng bộ AI answer lên server:', e));
-    }
-  }
-
-  return targetTicket;
+  notifyTicketsUpdated();
+  return updatedRec ? serviceTicketRecordToRequest(updatedRec) : null;
 }
 
 /**
- * Ban Quản Lý phân công Kỹ thuật viên thật
+ * Phân công Kỹ thuật viên
  */
 export function assignTechnicianToTicket(
   ticketId: string, 
   technicianId: string,
   scheduledTime?: string
 ): ExtendedServiceRequest | null {
-  const allTickets = getTickets();
+  const existing = skylineDb.tickets.findById(ticketId);
   const tech = getTechnicianById(technicianId);
-  if (!tech) return null;
+  if (!existing || !tech) return null;
 
-  let targetTicket: ExtendedServiceRequest | null = null;
-  const updatedTickets = allTickets.map(t => {
-    if (t.id === ticketId || String(t.nks_id) === ticketId) {
-      targetTicket = {
-        ...t,
-        status: 'In_Progress' as const,
-        assigned_technician_id: tech.id,
-        assigned_technician: tech.name,
-        assigned_technician_phone: tech.phone,
-        scheduled_time: scheduledTime || 'Có mặt trong vòng 30 phút',
-        updated_at: new Date().toISOString(),
-      };
-      return targetTicket;
-    }
-    return t;
+  const updatedRec = skylineDb.tickets.update(existing.id, {
+    status: 'In_Progress',
+    assigned_technician_id: tech.id,
+    assigned_technician_name: tech.name,
+    assigned_technician_phone: tech.phone,
+    scheduled_time: scheduledTime || 'Có mặt trong vòng 30 phút',
+    updated_at: new Date().toISOString()
   });
 
-  if (targetTicket) {
-    saveTickets(updatedTickets);
-
-    // Cập nhật trạng thái KTV thành BUSY
-    const techs = getTechnicians();
-    saveTechnicians(techs.map(k => k.id === tech.id ? { ...k, status: 'BUSY' } : k));
-
-    // Đồng bộ phân công KTV lên server & NKS API
-    if (typeof window !== 'undefined') {
-      fetch('/api/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'ASSIGN',
-          ticketId,
-          technicianId: tech.id,
-          scheduledTime,
-        }),
-      }).catch(e => console.warn('Lỗi đồng bộ phân công KTV lên server:', e));
-    }
-  }
-
-  return targetTicket;
+  // Đổi trạng thái KTV thành BUSY
+  skylineDb.technicians.update(tech.id, { status: 'BUSY' });
+  notifyTicketsUpdated();
+  return updatedRec ? serviceTicketRecordToRequest(updatedRec) : null;
 }
 
 /**
- * Ban Quản Lý nghiệm thu và đóng phiếu với ảnh thật chụp sau sửa chữa
+ * Nghiệm thu và đóng phiếu
  */
 export function resolveTicket(
   ticketId: string,
-  afterImage: string, // Base64 thật từ camera hoặc file upload
+  afterImage: string,
   resolutionNotes?: string,
   aiVerification?: ExtendedServiceRequest['ai_verification']
 ): ExtendedServiceRequest | null {
-  const allTickets = getTickets();
-  let targetTicket: ExtendedServiceRequest | null = null;
-  let assignedTechId: string | undefined;
+  const existing = skylineDb.tickets.findById(ticketId);
+  if (!existing) return null;
 
-  const updatedTickets = allTickets.map(t => {
-    if (t.id === ticketId || String(t.nks_id) === ticketId) {
-      assignedTechId = t.assigned_technician_id;
-      targetTicket = {
-        ...t,
-        status: 'Resolved' as const,
-        after_image: afterImage,
-        resolution_notes: resolutionNotes || 'Đã kiểm tra và xử lý xong.',
-        ai_verification: aiVerification || t.ai_verification,
-        resolved_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      return targetTicket;
-    }
-    return t;
+  const assignedTechId = existing.assigned_technician_id;
+
+  const updatedRec = skylineDb.tickets.update(existing.id, {
+    status: 'Resolved',
+    after_image: afterImage,
+    resolved_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   });
 
-  if (targetTicket) {
-    saveTickets(updatedTickets);
-
-    // Chuyển KTV về trạng thái AVAILABLE nếu không còn phiếu nào đang làm
-    if (assignedTechId) {
-      const remainingBusy = updatedTickets.some(
-        t => t.assigned_technician_id === assignedTechId && t.status === 'In_Progress'
-      );
-      if (!remainingBusy) {
-        const techs = getTechnicians();
-        saveTechnicians(techs.map(k => k.id === assignedTechId ? { ...k, status: 'AVAILABLE' } : k));
-      }
-    }
-
-    // Ghi nhận trực tiếp vào lý lịch bảo trì của căn hộ
-    const resolvedObj = targetTicket as ExtendedServiceRequest;
-    if (resolvedObj.apt_code) {
-      try {
-        addApartmentMaintenanceRecord(resolvedObj.apt_code, {
-          id: resolvedObj.id,
-          date: new Date().toLocaleDateString('vi-VN'),
-          title: resolvedObj.content.slice(0, 80),
-          technician: resolvedObj.assigned_technician || 'Kỹ thuật viên Skyline',
-          status: 'COMPLETED',
-          cost: 150000,
-          note: resolvedObj.resolution_notes || 'Nghiệm thu đạt chuẩn kỹ thuật.'
-        });
-      } catch (err) {
-        console.warn('Lỗi ghi nhận lý lịch bảo trì căn hộ:', err);
-      }
-    }
-
-    // Đồng bộ nghiệm thu lên server & NKS API
-    if (typeof window !== 'undefined') {
-      fetch('/api/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'RESOLVE',
-          ticketId,
-          afterImage,
-          resolutionNotes,
-          aiVerification,
-        }),
-      }).catch(e => console.warn('Lỗi đồng bộ nghiệm thu lên server:', e));
+  // Chuyển KTV về AVAILABLE nếu không còn phiếu nào đang làm
+  if (assignedTechId) {
+    const busyRemaining = skylineDb.tickets.findOne(t => t.assigned_technician_id === assignedTechId && t.status === 'In_Progress' && t.id !== existing.id);
+    if (!busyRemaining) {
+      skylineDb.technicians.update(assignedTechId, { status: 'AVAILABLE' });
     }
   }
 
-  return targetTicket;
+  // Ghi nhận vào lý lịch bảo trì căn hộ
+  if (existing.apartment_code) {
+    try {
+      addApartmentMaintenanceRecord(existing.apartment_code, {
+        id: existing.id,
+        date: new Date().toLocaleDateString('vi-VN'),
+        title: existing.content.slice(0, 80),
+        technician: existing.assigned_technician_name || 'Kỹ thuật viên Skyline',
+        status: 'COMPLETED',
+        cost: 150000,
+        note: resolutionNotes || 'Nghiệm thu đạt chuẩn kỹ thuật.'
+      });
+    } catch (err) {
+      console.warn('Lỗi ghi nhận lý lịch bảo trì căn hộ:', err);
+    }
+  }
+
+  notifyTicketsUpdated();
+  return updatedRec ? serviceTicketRecordToRequest(updatedRec) : null;
 }
 
 /**
- * Ban Quản Lý từ chối nghiệm thu khi ảnh KTV không đạt chuẩn (ảnh giả, chưa xử lý xong)
- * Trả vé về trạng thái In_Progress yêu cầu KTV làm lại / chụp lại ảnh hiện trường
+ * Từ chối nghiệm thu
  */
 export function rejectTicketResolution(
   ticketId: string,
   reason: string
 ): ExtendedServiceRequest | null {
-  const allTickets = getTickets();
-  let targetTicket: ExtendedServiceRequest | null = null;
+  const existing = skylineDb.tickets.findById(ticketId);
+  if (!existing) return null;
 
-  const updatedTickets = allTickets.map(t => {
-    if (t.id === ticketId || String(t.nks_id) === ticketId) {
-      targetTicket = {
-        ...t,
-        status: 'In_Progress' as const,
-        rework_reason: reason.trim() || 'Ảnh nghiệm thu không đạt chuẩn kỹ thuật, yêu cầu kiểm tra và chụp lại.',
-        rework_count: (t.rework_count || 0) + 1,
-        after_image: undefined,
-        ai_verification: undefined,
-        updated_at: new Date().toISOString(),
-      };
-      return targetTicket;
-    }
-    return t;
+  const updatedRec = skylineDb.tickets.update(existing.id, {
+    status: 'In_Progress',
+    after_image: undefined,
+    updated_at: new Date().toISOString()
   });
 
-  if (targetTicket) {
-    saveTickets(updatedTickets);
-
-    if (typeof window !== 'undefined') {
-      fetch('/api/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'REJECT_RESOLUTION',
-          ticketId,
-          reason,
-        }),
-      }).catch(e => console.warn('Lỗi đồng bộ từ chối nghiệm thu lên server:', e));
-    }
-  }
-
-  return targetTicket;
+  notifyTicketsUpdated();
+  return updatedRec ? serviceTicketRecordToRequest(updatedRec) : null;
 }
 
 /**
- * Cập nhật trực tiếp thông tin vé (id, reply, engineername) lên NKS SCRMAI API
+ * Cập nhật API Async
  */
 export async function updateTicketApiAsync(payload: {
   id: string | number;
@@ -779,121 +510,73 @@ export async function updateTicketApiAsync(payload: {
   engineername?: string;
 }): Promise<boolean> {
   const idStr = String(payload.id);
-  const allTickets = getTickets();
-  
-  const updatedTickets = allTickets.map(t => {
-    if (t.id === idStr || String(t.nks_id) === idStr) {
-      return {
-        ...t,
-        ...(payload.reply ? {
-          admin_reply: payload.reply.trim(),
-          admin_replied_at: new Date().toISOString(),
-          resolution_notes: payload.reply.trim(),
-          status: 'Resolved' as const,
-        } : {}),
-        ...(payload.engineername ? {
-          assigned_technician: payload.engineername.trim(),
-          status: t.status === 'Open' ? ('In_Progress' as const) : t.status,
-        } : {}),
-        updated_at: new Date().toISOString(),
-      };
-    }
-    return t;
-  });
+  const existing = skylineDb.tickets.findById(idStr);
+  if (!existing) return false;
 
-  saveTickets(updatedTickets);
-
-  try {
-    const res = await fetch('/api/tickets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'UPDATE_TICKET',
-        id: payload.id,
-        reply: payload.reply,
-        engineername: payload.engineername,
-      }),
-    });
-    if (res.ok) {
-      const json = await res.json().catch(() => ({}));
-      return json.success === true;
-    }
-  } catch (err) {
-    console.warn('Lỗi gọi API cập nhật ticket:', err);
+  const patch: Partial<ServiceTicketRecord> = {};
+  if (payload.reply) {
+    patch.admin_reply = payload.reply.trim();
+    patch.admin_replied_at = new Date().toISOString();
+    patch.status = 'Resolved';
   }
-  return false;
+  if (payload.engineername) {
+    patch.assigned_technician_name = payload.engineername.trim();
+    if (existing.status === 'Open') patch.status = 'In_Progress';
+  }
+  patch.updated_at = new Date().toISOString();
+
+  skylineDb.tickets.update(existing.id, patch);
+  notifyTicketsUpdated();
+  return true;
 }
 
 /**
- * Cư Dân chấm điểm 5 sao & gửi phản hồi chất lượng
+ * Cư Dân chấm điểm 5 sao & phản hồi
  */
 export function rateTicket(
   ticketId: string,
   rating: number,
   feedback?: string
 ): ExtendedServiceRequest | null {
-  const allTickets = getTickets();
-  let targetTicket: ExtendedServiceRequest | null = null;
+  const existing = skylineDb.tickets.findById(ticketId);
+  if (!existing) return null;
 
-  const updatedTickets = allTickets.map(t => {
-    if (t.id === ticketId) {
-      targetTicket = {
-        ...t,
-        rating: Math.max(1, Math.min(5, Math.round(rating))),
-        resident_feedback: feedback?.trim() || 'Cư dân hài lòng với dịch vụ.',
-        rated_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      return targetTicket;
-    }
-    return t;
+  const updatedRec = skylineDb.tickets.update(existing.id, {
+    rating: Math.max(1, Math.min(5, Math.round(rating))),
+    resident_feedback: feedback?.trim() || 'Cư dân hài lòng với dịch vụ.',
+    rated_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   });
 
-  if (targetTicket) {
-    saveTickets(updatedTickets);
-  }
-
-  return targetTicket;
+  notifyTicketsUpdated();
+  return updatedRec ? serviceTicketRecordToRequest(updatedRec) : null;
 }
 
 /**
- * Xóa phiếu phản hồi sự cố (cục bộ và đồng bộ lên API)
+ * Xóa phiếu
  */
 export async function deleteTicketAsync(ticketId: string | number): Promise<boolean> {
-  const idStr = String(ticketId);
-  const allTickets = getTickets();
-  const updatedTickets = allTickets.filter(t => t.id !== idStr && String(t.nks_id) !== idStr);
-  saveTickets(updatedTickets);
-
-  try {
-    const res = await fetch('/api/tickets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'DELETE', ticketId }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data.success === true;
-    }
-  } catch (err) {
-    console.warn('Lỗi gọi API xóa ticket:', err);
-  }
+  deleteTicket(ticketId);
   return true;
 }
 
 export function deleteTicket(ticketId: string | number): void {
-  deleteTicketAsync(ticketId);
+  const idStr = String(ticketId);
+  const existing = skylineDb.tickets.findById(idStr);
+  if (existing) {
+    skylineDb.tickets.delete(existing.id);
+    notifyTicketsUpdated();
+  }
 }
 
 /**
- * Tính toán Bảng Lương Thù Lao tự động 100% từ các ca sửa thực tế
+ * Bảng lương KTV tính từ các ca sửa thực tế trong skylineDb
  */
 export function getTechnicianPayroll(): TechnicianPayrollSummary[] {
   const techs = getTechnicians();
   const allTickets = getTickets();
 
   return techs.map(tech => {
-    // Lọc các phiếu THỰC TẾ mà KTV này đã giải quyết xong
     const techResolvedTickets = allTickets.filter(
       t => t.assigned_technician_id === tech.id && t.status === 'Resolved'
     );
@@ -901,18 +584,14 @@ export function getTechnicianPayroll(): TechnicianPayrollSummary[] {
     const completedCount = techResolvedTickets.length;
     const fiveStarCount = techResolvedTickets.filter(t => t.rating === 5).length;
     
-    // Tính điểm đánh giá trung bình từ các lượt chấm thật của cư dân
     const ratedTickets = techResolvedTickets.filter(t => typeof t.rating === 'number' && t.rating > 0);
     const sumRating = ratedTickets.reduce((acc, t) => acc + (t.rating || 0), 0);
     const averageRating = ratedTickets.length > 0 
       ? Number((sumRating / ratedTickets.length).toFixed(1)) 
       : (completedCount > 0 ? 5.0 : 0);
 
-    // Tiền công theo ca
     const ticketBonusTotal = completedCount * tech.payPerTicket;
-    // Thưởng theo ca 5 sao
     const fiveStarBonusTotal = fiveStarCount * tech.bonusPerFiveStar;
-    // Tổng lương thực nhận
     const totalIncome = tech.baseSalary + ticketBonusTotal + fiveStarBonusTotal;
 
     return {

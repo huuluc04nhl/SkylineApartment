@@ -1,6 +1,6 @@
 /**
  * Skyline Smart Residence - Image to Base64 Processing Utility
- * Chuẩn hóa và đồng bộ hóa chuyển đổi hình ảnh sang Base64 theo đặc tả NKS API:
+ * Chuẩn hóa và đồng bộ hóa chuyển đổi hình ảnh sang Base64 theo chuẩn Skyline API:
  * "* Công cụ chuyển đổi Image to Base 64"
  */
 

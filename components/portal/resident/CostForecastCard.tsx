@@ -176,3 +176,4 @@ export default function CostForecastCard({ bills, aptCode }: CostForecastCardPro
     </div>
   );
 }
+

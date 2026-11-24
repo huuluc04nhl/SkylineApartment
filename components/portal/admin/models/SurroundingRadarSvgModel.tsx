@@ -7,6 +7,7 @@ import {
   ZoomIn, ZoomOut, RotateCcw, Map, Eye
 } from 'lucide-react';
 import { SurroundingAmenity } from '../AdminBuildingApartmentManager';
+import { useLanguage } from '@/lib/languageContext';
 
 interface SurroundingRadarSvgModelProps {
   amenities: SurroundingAmenity[];
@@ -31,6 +32,7 @@ export default function SurroundingRadarSvgModel({
   hideHeader = false,
   showPinsOverride
 }: SurroundingRadarSvgModelProps) {
+  const { t, isEn } = useLanguage();
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [showPins, setShowPins] = useState<boolean>(true);
 
@@ -40,12 +42,12 @@ export default function SurroundingRadarSvgModel({
   const PHOTO_AMENITY_COORDS: Record<string, { x: number; y: number; icon: any; color: string; label: string }> = {
     'SUR-01': { x: 460, y: 350, icon: GraduationCap, color: '#38BDF8', label: 'Vinschool & VinUni' },
     'SUR-02': { x: 880, y: 245, icon: ShoppingBag, color: '#F43F5E', label: 'Vincom Mega Mall' },
-    'SUR-03': { x: 600, y: 260, icon: Waves, color: '#06B6D4', label: 'Biển Hồ & Hồ Ngọc Trai' },
-    'SUR-04': { x: 610, y: 405, icon: HeartPulse, color: '#EF4444', label: 'Bệnh Viện Vinmec' },
-    'SUR-05': { x: 775, y: 310, icon: Bus, color: '#10B981', label: 'Trạm VinBus Xanh' },
-    'SUR-06': { x: 520, y: 285, icon: Anchor, color: '#8B5CF6', label: 'Bến Thuyền & Thể Thao' },
-    'SUR-07': { x: 260, y: 400, icon: Trophy, color: '#F59E0B', label: 'Quảng Trường & VinWonders' },
-    'SUR-08': { x: 105, y: 190, icon: Building2, color: '#C5A880', label: 'Tháp Biểu Tượng 45T' },
+    'SUR-03': { x: 600, y: 260, icon: Waves, color: '#06B6D4', label: isEn ? 'Ocean Lake & Pearl Lake' : 'Biển Hồ & Hồ Ngọc Trai' },
+    'SUR-04': { x: 610, y: 405, icon: HeartPulse, color: '#EF4444', label: isEn ? 'Vinmec Hospital' : 'Bệnh Viện Vinmec' },
+    'SUR-05': { x: 775, y: 310, icon: Bus, color: '#10B981', label: isEn ? 'Green VinBus Station' : 'Trạm VinBus Xanh' },
+    'SUR-06': { x: 520, y: 285, icon: Anchor, color: '#8B5CF6', label: isEn ? 'Marina & Sports Hub' : 'Bến Thuyền & Thể Thao' },
+    'SUR-07': { x: 260, y: 400, icon: Trophy, color: '#F59E0B', label: isEn ? 'Square & VinWonders' : 'Quảng Trường & VinWonders' },
+    'SUR-08': { x: 105, y: 190, icon: Building2, color: '#C5A880', label: isEn ? '45-Floor Icon Tower' : 'Tháp Biểu Tượng 45T' },
   };
 
   return (
@@ -55,9 +57,9 @@ export default function SurroundingRadarSvgModel({
         <div className="px-3 py-1.5 bg-[#0A0F17] border-b border-[#1E293B] flex items-center justify-between gap-2 text-xs font-mono shrink-0">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="text-gray-400 text-[11px]">Tiện ích:</span>
+          <span className="text-gray-400 text-[11px]">{t('Tiện ích:', 'Amenities:')}</span>
           <span className="px-2 py-0.5 bg-[#141E2D] border border-[#23354C] text-cyan-300 font-bold text-[11px]">
-            8 Đại Tiện Ích Thành Phố Biển Hồ
+            {t('8 Đại Tiện Ích Thành Phố Biển Hồ', '8 Landmark Amenities of Coastal Lake City')}
           </span>
         </div>
 
@@ -71,17 +73,17 @@ export default function SurroundingRadarSvgModel({
                 ? 'bg-[#182638] border-[#3B82F6] text-cyan-300'
                 : 'bg-[#0E1520] border-[#222E3E] text-gray-400 hover:text-white'
             }`}
-            title="Bật/tắt ghim định vị"
+            title={t('Bật/tắt ghim định vị', 'Toggle location pins')}
           >
             <Eye className="w-3 h-3" />
-            <span className="hidden sm:inline">Ghim</span>
+            <span className="hidden sm:inline">{t('Ghim', 'Pins')}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setZoomLevel(prev => Math.max(0.7, Number((prev - 0.15).toFixed(2))))}
             className="p-1 bg-[#121A26] hover:bg-[#1A2637] border border-[#223247] text-gray-300 hover:text-white"
-            title="Thu nhỏ"
+            title={t('Thu nhỏ', 'Zoom out')}
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
@@ -89,7 +91,7 @@ export default function SurroundingRadarSvgModel({
             type="button"
             onClick={() => setZoomLevel(1)}
             className="px-2 py-0.5 bg-[#090D14] border border-[#223247] text-[#C5A880] text-[11px] min-w-[48px] text-center hover:bg-[#121A26]"
-            title="Mặc định 100%"
+            title={t('Mặc định 100%', 'Default 100%')}
           >
             {Math.round(zoomLevel * 100)}%
           </button>
@@ -97,7 +99,7 @@ export default function SurroundingRadarSvgModel({
             type="button"
             onClick={() => setZoomLevel(prev => Math.min(2.0, Number((prev + 0.15).toFixed(2))))}
             className="p-1 bg-[#121A26] hover:bg-[#1A2637] border border-[#223247] text-gray-300 hover:text-white"
-            title="Phóng to"
+            title={t('Phóng to', 'Zoom in')}
           >
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
@@ -107,7 +109,7 @@ export default function SurroundingRadarSvgModel({
               type="button"
               onClick={onOpenZoomModal}
               className="p-1 bg-[#121A26] hover:bg-[#C5A880] hover:text-black border border-[#223247] text-gray-300 transition-all ml-0.5"
-              title="Phóng to toàn màn hình"
+              title={t('Phóng to toàn màn hình', 'Fullscreen view')}
             >
               <Maximize2 className="w-3.5 h-3.5" />
             </button>

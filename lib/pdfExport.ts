@@ -1,6 +1,6 @@
 'use client';
 
-import { ExtendedBill } from '@/lib/billingStore';
+import { ExtendedBill, calculateBillFundAllocation } from '@/lib/billingStore';
 import { Device } from '@/lib/dataStore';
 
 /**
@@ -48,9 +48,8 @@ export async function exportInvoicePdf({ bill, residentName, aptCode }: InvoiceP
     container.style.zIndex = '-9999';
 
     const isPaid = bill.status === 'Paid';
+    const alloc = calculateBillFundAllocation(bill);
     const subtotal = bill.details?.reduce((sum, d) => sum + (d.total_line_amount || 0), 0) || bill.total_amount;
-    const vatAmount = Math.round(subtotal * 0.1);
-    const finalTotal = subtotal + vatAmount;
 
     container.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #C5A880; padding-bottom: 20px; margin-bottom: 24px;">
@@ -133,18 +132,43 @@ export async function exportInvoicePdf({ bill, residentName, aptCode }: InvoiceP
         </tbody>
       </table>
 
+      <!-- Minh Bạch Nguồn Tiền Thanh Toán Trong Phiếu Thu PDF -->
+      <div style="margin-bottom: 24px; padding: 14px; background: #F8FAFC; border: 1px solid #E2E8F0; font-size: 11px;">
+        <div style="font-weight: 700; color: #1E293B; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between;">
+          <span>Minh Bạch Nguồn Tiền Thanh Toán:</span>
+          <span style="color: #16A34A; font-weight: 600;">✓ Tách bạch quỹ theo quy định</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; color: #475569;">
+          <div style="padding: 10px; background: white; border: 1px solid #E2E8F0;">
+            <div style="font-weight: 700; color: #0284C7; font-size: 11px;">1. Thu Hộ Điện & Nước (${alloc.stateUtilitiesPercent}%):</div>
+            <div style="font-size: 13px; font-weight: 700; color: #0F172A; margin: 4px 0; font-family: monospace;">${alloc.stateUtilitiesAmount.toLocaleString('vi-VN')} đ</div>
+            <div style="font-size: 10px; color: #64748B; line-height: 1.4;">Nộp 100% cho Điện lực EVN & Cấp nước. BQL không giữ lại.</div>
+          </div>
+          <div style="padding: 10px; background: white; border: 1px solid #E2E8F0;">
+            <div style="font-weight: 700; color: #16A34A; font-size: 11px;">2. Duy Trì Tòa Nhà & Tiện Ích (${alloc.operationsPercent}%):</div>
+            <div style="font-size: 13px; font-weight: 700; color: #0F172A; margin: 4px 0; font-family: monospace;">${alloc.operationsAmount.toLocaleString('vi-VN')} đ</div>
+            <div style="font-size: 10px; color: #64748B; line-height: 1.4;">Chi trả an ninh, vệ sinh, chiếu sáng, thang máy, hồ bơi & gym.</div>
+          </div>
+          <div style="padding: 10px; background: white; border: 1px solid #E2E8F0;">
+            <div style="font-weight: 700; color: #D97706; font-size: 11px;">3. Quỹ Bảo Dưỡng & Mạng (${alloc.maintenancePercent + alloc.taxesAndTelecomPercent}%):</div>
+            <div style="font-size: 13px; font-weight: 700; color: #0F172A; margin: 4px 0; font-family: monospace;">${(alloc.maintenanceAmount + alloc.taxesAndTelecomAmount).toLocaleString('vi-VN')} đ</div>
+            <div style="font-size: 10px; color: #64748B; line-height: 1.4;">Dành cho sửa chữa lớn tài sản chung và cáp quang VNPT.</div>
+          </div>
+        </div>
+      </div>
+
       <div style="display: flex; justify-content: flex-end; margin-bottom: 30px;">
         <div style="width: 320px; font-size: 12px; border: 1px solid #E5E7EB; padding: 14px; background: #F9FAFB;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span style="color: #6B7280;">Tạm tính dịch vụ:</span>
-            <span style="font-family: monospace; font-weight: 600;">${subtotal.toLocaleString('vi-VN')} đ</span>
+            <span style="color: #6B7280;">Tổng cộng chi phí kỳ này:</span>
+            <span style="font-family: monospace; font-weight: 600;">${bill.total_amount.toLocaleString('vi-VN')} đ</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #E5E7EB; padding-bottom: 6px;">
-            <span style="color: #6B7280;">Thuế GTGT (VAT 10%):</span>
-            <span style="font-family: monospace; font-weight: 600;">${vatAmount.toLocaleString('vi-VN')} đ</span>
+            <span style="color: #6B7280;">Thuế & Phí dịch vụ:</span>
+            <span style="font-family: monospace; font-weight: 600; color: #16A34A;">Đã gồm đầy đủ</span>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 800; color: #0D1117;">
-            <span>TỔNG CỘNG:</span>
+            <span>TỔNG THANH TOÁN:</span>
             <span style="color: #C5A880; font-family: monospace;">${bill.total_amount.toLocaleString('vi-VN')} đ</span>
           </div>
         </div>
@@ -216,7 +240,7 @@ export async function exportMaintenanceTicketPdf(options: MaintenancePdfOptions)
 
     const { device, ticketId, assignedTechnician, priority, scheduledDate, notes } = options;
     const finalTicketId = ticketId || `MT-${device.id.toUpperCase()}-${Date.now().toString().slice(-6)}`;
-    const techName = assignedTechnician || 'Lê Văn Kỹ Thuật (Kỹ Sư Trưởng BMS)';
+    const techName = assignedTechnician || 'Lê Quốc Tuấn (Kỹ Sư Cơ Điện & Nước)';
     const dateStr = scheduledDate || device.predict_date;
     const priorityLevel = priority || (device.health_score < 70 ? 'Cấp bách' : 'Bình thường');
 

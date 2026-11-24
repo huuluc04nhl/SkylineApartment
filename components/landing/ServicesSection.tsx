@@ -94,14 +94,14 @@ export default function ServicesSection() {
           <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-serif font-bold tracking-tight ${
             isDark ? 'text-white' : 'text-gray-900'
           }`}>
-            {t('Dịch Vụ Quản Gia & Kỹ Thuật NKS Túc Trực 24/7', '24/7 Butler & NKS Technical Support Services')}
+            {t('Dịch Vụ Quản Gia & Kỹ Thuật Skyline Túc Trực 24/7', '24/7 Butler & Skyline Technical Support Services')}
           </h2>
           <p className={`text-sm sm:text-base font-light leading-relaxed ${
             isDark ? 'text-gray-300' : 'text-gray-600'
           }`}>
             {t(
-              'Đặc quyền chuẩn sống thảnh thơi tại 4 chung cư The Tropical (BS-07, BS-08, BS-09, BS-10). Từ dọn dẹp, giặt là, chăm sóc xe đến đội ngũ kỹ thuật NKS thường trực xử lý sự cố trong 15 phút, tất cả đều được vận hành chuẩn hóa trên ứng dụng di động.',
-              'Exclusive effortless living at 4 towers of The Tropical (BS-07, BS-08, BS-09, BS-10). From housekeeping, laundry, and car care to on-duty NKS technical engineers responding in 15 minutes, all standardized on the mobile portal.'
+              'Đặc quyền chuẩn sống thảnh thơi tại 4 chung cư The Tropical (BS-07, BS-08, BS-09, BS-10). Từ dọn dẹp, giặt là, chăm sóc xe đến đội ngũ kỹ thuật Skyline thường trực xử lý sự cố trong 15 phút, tất cả đều được vận hành chuẩn hóa trên ứng dụng di động.',
+              'Exclusive effortless living at 4 towers of The Tropical (BS-07, BS-08, BS-09, BS-10). From housekeeping, laundry, and car care to on-duty Skyline technical engineers responding in 15 minutes, all standardized on the mobile portal.'
             )}
           </p>
         </div>
@@ -275,7 +275,7 @@ export default function ServicesSection() {
           </div>
         </div>
 
-        {/* 2. MẢNG KỸ THUẬT NKS TÚC TRỰC 24/7 (24/7 TECHNICAL ASSISTANCE) */}
+        {/* 2. MẢNG KỸ THUẬT Skyline TÚC TRỰC 24/7 (24/7 TECHNICAL ASSISTANCE) */}
         <div className={`p-8 sm:p-10 border rounded-none relative overflow-hidden ${
           isDark 
             ? 'bg-[#0A0E14] border-[#C5A880]/50 shadow-2xl' 
@@ -293,13 +293,13 @@ export default function ServicesSection() {
               </div>
 
               <h3 className={`text-2xl sm:text-3xl font-serif font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                {t('Đội Ngũ Kỹ Sư NKS Thường Trực — Có Mặt Sau 15 Phút', 'On-Duty NKS Engineering Team — On-Site in 15 Minutes')}
+                {t('Đội Ngũ Kỹ Sư Skyline Thường Trực — Có Mặt Sau 15 Phút', 'On-Duty Skyline Engineering Team — On-Site in 15 Minutes')}
               </h3>
 
               <p className={`text-xs sm:text-sm leading-relaxed max-w-3xl font-light ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                 {t(
-                  'Hệ thống kỹ thuật căn hộ thông minh tại 4 chung cư The Tropical được bảo bọc bởi trạm kỹ thuật NKS đặt ngay tại tầng hầm và cụm kỹ thuật BS-07. Mọi sự cố về điện sinh hoạt, rò rỉ nước ngầm, khóa cửa FaceID hay điều hòa không khí đều được tiếp nhận và xử lý cấp tốc.',
-                  'Smart home engineering across 4 towers of The Tropical is protected by an NKS technical station stationed in the BS-07 basement. All incidents regarding domestic electricity, underground pipe leaks, FaceID door locks, or HVAC are resolved promptly.'
+                  'Hệ thống kỹ thuật căn hộ thông minh tại 4 chung cư The Tropical được bảo bọc bởi trạm kỹ thuật Skyline đặt ngay tại tầng hầm và cụm kỹ thuật BS-07. Mọi sự cố về điện sinh hoạt, rò rỉ nước ngầm, khóa cửa FaceID hay điều hòa không khí đều được tiếp nhận và xử lý cấp tốc.',
+                  'Smart home engineering across 4 towers of The Tropical is protected by an Skyline technical station stationed in the BS-07 basement. All incidents regarding domestic electricity, underground pipe leaks, FaceID door locks, or HVAC are resolved promptly.'
                 )}
               </p>
 

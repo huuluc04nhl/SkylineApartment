@@ -73,6 +73,7 @@ import {
 } from '@/lib/ticketClassification';
 import { fileToBase64 } from '@/lib/imageUtils';
 import { useLanguage } from '@/lib/languageContext';
+import ConfirmDeleteModal from '@/components/portal/shared/ConfirmDeleteModal';
 import { cleanPhoneNumber, isValidPhoneNumber, getPhoneValidationError } from '@/lib/validationUtils';
 
 export default function KanbanBoard() {
@@ -82,8 +83,6 @@ export default function KanbanBoard() {
       const urlParams = new URLSearchParams(window.location.search);
       const sub = urlParams.get('subtab');
       if (sub === 'KANBAN' || sub === 'PAYROLL') return sub;
-      const saved = localStorage.getItem('skyline_kanban_active_tab');
-      if (saved === 'KANBAN' || saved === 'PAYROLL') return saved as 'KANBAN' | 'PAYROLL';
     }
     return 'KANBAN';
   });
@@ -91,7 +90,6 @@ export default function KanbanBoard() {
   const setActiveTab = (tab: 'KANBAN' | 'PAYROLL') => {
     setActiveTabState(tab);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('skyline_kanban_active_tab', tab);
       const url = new URL(window.location.href);
       if (url.searchParams.get('subtab') !== tab) {
         url.searchParams.set('subtab', tab);
@@ -192,6 +190,7 @@ export default function KanbanBoard() {
   const [inspectingTicket, setInspectingTicket] = useState<ExtendedServiceRequest | null>(null);
   const [viewingPayrollTech, setViewingPayrollTech] = useState<TechnicianPayrollSummary | null>(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+  const [ticketToDelete, setTicketToDelete] = useState<ExtendedServiceRequest | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const refreshAllData = () => {
@@ -200,7 +199,7 @@ export default function KanbanBoard() {
     setPayrollList(getTechnicianPayroll());
   };
 
-  const handleSyncNks = async () => {
+  const handleSyncTickets = async () => {
     setIsSyncing(true);
     try {
       await syncTicketsWithServer();
@@ -214,14 +213,17 @@ export default function KanbanBoard() {
     }
   };
 
-  const handleDeleteTicket = async (ticket: ExtendedServiceRequest) => {
-    const code = ticket.nks_id ? `#${ticket.nks_id}` : `#${ticket.id}`;
-    if (!window.confirm(`Bạn có chắc muốn xóa phiếu ${code}?`)) {
-      return;
-    }
-    await deleteTicketAsync(ticket.nks_id || ticket.id);
+  const handleDeleteTicket = (ticket: ExtendedServiceRequest) => {
+    setTicketToDelete(ticket);
+  };
+
+  const confirmDeleteTicket = async () => {
+    if (!ticketToDelete) return;
+    const code = `#${ticketToDelete.id}`;
+    await deleteTicketAsync(ticketToDelete.id);
     refreshAllData();
-    setActionSuccessMsg(`Đã xóa phiếu ${code}.`);
+    setActionSuccessMsg(`Đã xóa vĩnh viễn phiếu sự cố ${code}.`);
+    setTicketToDelete(null);
     setTimeout(() => setActionSuccessMsg(null), 3000);
   };
 
@@ -248,7 +250,7 @@ export default function KanbanBoard() {
     const res = autoDispatchSingleTicket(ticketId);
     if (res && res.assigned_technician) {
       refreshAllData();
-      setActionSuccessMsg(`Đã phân công ${res.assigned_technician} cho phiếu #${res.nks_id || res.id}.`);
+      setActionSuccessMsg(`Đã phân công ${res.assigned_technician} cho phiếu #${res.id}.`);
       setTimeout(() => setActionSuccessMsg(null), 3500);
     }
   };
@@ -257,7 +259,7 @@ export default function KanbanBoard() {
     const res = autoResolveSingleTicketWithAI(ticket.id);
     if (res) {
       refreshAllData();
-      setActionSuccessMsg(`Đã nghiệm thu phiếu #${res.nks_id || res.id.replace('TICK-', '')}.`);
+      setActionSuccessMsg(`Đã nghiệm thu phiếu #${res.id.replace('TICK-', '')}.`);
       setTimeout(() => setActionSuccessMsg(null), 4000);
     }
   };
@@ -341,7 +343,7 @@ export default function KanbanBoard() {
       console.warn('Lỗi load danh sách căn hộ:', e);
     }
 
-    // Tự động đồng bộ live dữ liệu từ máy chủ & NKS API (Tuyệt đối không tự ý chuyển trạng thái vé)
+    // Tự động đồng bộ live dữ liệu từ máy chủ & Skyline API (Tuyệt đối không tự ý chuyển trạng thái vé)
     syncTicketsWithServer().then(() => {
       refreshAllData();
     });
@@ -385,7 +387,7 @@ export default function KanbanBoard() {
       refreshAllData();
       setIsCreateModalOpen(false);
       setNewContent('');
-      setActionSuccessMsg(`Đã tiếp nhận sự cố thành công! Phiếu #${res.nks_id || res.id} đã được đưa vào hàng đợi.`);
+      setActionSuccessMsg(`Đã tiếp nhận sự cố thành công! Phiếu #${res.id} đã được đưa vào hàng đợi.`);
       setTimeout(() => setActionSuccessMsg(null), 4000);
     } catch (err) {
       console.error('Lỗi tiếp nhận sự cố:', err);
@@ -414,10 +416,10 @@ export default function KanbanBoard() {
       const matchPhone = (t.resident_phone || '').toLowerCase().includes(q);
       const matchContent = (t.content || '').toLowerCase().includes(q);
       const matchId = (t.id || '').toLowerCase().includes(q);
-      const matchNks = t.nks_id ? String(t.nks_id).includes(q) : false;
+      
       const matchTech = (t.assigned_technician || '').toLowerCase().includes(q);
       const matchCat = (t.ai_category || '').toLowerCase().includes(q);
-      if (!matchApt && !matchName && !matchPhone && !matchContent && !matchId && !matchNks && !matchTech && !matchCat) {
+      if (!matchApt && !matchName && !matchPhone && !matchContent && !matchId && !matchTech && !matchCat) {
         return false;
       }
     }
@@ -454,7 +456,7 @@ export default function KanbanBoard() {
       replyEngineerName.trim() || undefined
     );
     refreshAllData();
-    setActionSuccessMsg(`Đã gửi phản hồi và cập nhật KTV cho phiếu #${feedbackReplyTicket.nks_id || feedbackReplyTicket.id}!`);
+    setActionSuccessMsg(`Đã gửi phản hồi và cập nhật KTV cho phiếu #${feedbackReplyTicket.id}!`);
     setTimeout(() => setActionSuccessMsg(null), 4000);
     setFeedbackReplyTicket(null);
     setFeedbackReplyContent('');
@@ -466,7 +468,7 @@ export default function KanbanBoard() {
     const res = aiAnswerTicket(ticket.id);
     if (res) {
       refreshAllData();
-      setActionSuccessMsg(`AI đã hoàn tất giải đáp thông tin cho phiếu #${res.nks_id || res.id}!`);
+      setActionSuccessMsg(`AI đã hoàn tất giải đáp thông tin cho phiếu #${res.id}!`);
       setTimeout(() => setActionSuccessMsg(null), 3500);
     }
   };
@@ -503,7 +505,7 @@ export default function KanbanBoard() {
       );
       if (res) {
         refreshAllData();
-        setActionSuccessMsg(`BQL đã duyệt phân công KTV ${res.assigned_technician} xử lý phiếu #${res.nks_id || res.id}!`);
+        setActionSuccessMsg(`BQL đã duyệt phân công KTV ${res.assigned_technician} xử lý phiếu #${res.id}!`);
         setTimeout(() => setActionSuccessMsg(null), 4000);
       }
     }
@@ -577,7 +579,7 @@ export default function KanbanBoard() {
     const defaultReason = aiVerificationResult?.risk_warning || aiVerificationResult?.verification_detail || 'Ảnh nghiệm thu không đạt chuẩn kỹ thuật, yêu cầu kiểm tra và xử lý lại.';
     rejectTicketResolution(resolvingTicket.id, defaultReason);
     refreshAllData();
-    setActionSuccessMsg(`Đã từ chối nghiệm thu #${resolvingTicket.nks_id || resolvingTicket.id}. Yêu cầu KTV khắc phục lại!`);
+    setActionSuccessMsg(`Đã từ chối nghiệm thu #${resolvingTicket.id}. Yêu cầu KTV khắc phục lại!`);
     setTimeout(() => setActionSuccessMsg(null), 4000);
     setResolvingTicket(null);
     setAfterImageBase64('');
@@ -617,7 +619,7 @@ export default function KanbanBoard() {
 
           {/* Nút Làm Mới Dữ Liệu */}
           <button
-            onClick={handleSyncNks}
+            onClick={handleSyncTickets}
             disabled={isSyncing}
             className="px-3 py-1.5 bg-[#121820] hover:bg-[#161B22] border border-[#222B35] hover:border-[#C5A880]/50 text-xs font-semibold text-gray-300 hover:text-white flex items-center gap-1.5 transition-colors disabled:opacity-50"
             title={t('Cập nhật danh sách yêu cầu thực tế mới nhất từ cư dân', 'Refresh latest resident service requests')}
@@ -841,7 +843,7 @@ export default function KanbanBoard() {
                         <div className="flex items-center justify-between gap-1 text-xs">
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-[#C5A880] font-bold">
-                              {ticket.nks_id ? `#${ticket.nks_id}` : `#${ticket.id.replace('TICK-', '')}`}
+                              {`#${ticket.id.replace('TICK-', '')}`}
                             </span>
                             <span className="text-[10px] text-gray-500 font-mono">
                               {new Date(ticket.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
@@ -1002,7 +1004,7 @@ export default function KanbanBoard() {
                         <div className="flex items-center justify-between gap-1 text-xs">
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-[#C5A880] font-bold">
-                              {ticket.nks_id ? `#${ticket.nks_id}` : `#${ticket.id.replace('TICK-', '')}`}
+                              {`#${ticket.id.replace('TICK-', '')}`}
                             </span>
                             <span className="text-[10px] text-gray-500 font-mono">
                               {new Date(ticket.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
@@ -1168,7 +1170,7 @@ export default function KanbanBoard() {
                         <div className="flex items-center justify-between gap-1 text-xs">
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-[#C5A880] font-bold">
-                              {ticket.nks_id ? `#${ticket.nks_id}` : `#${ticket.id.replace('TICK-', '')}`}
+                              {`#${ticket.id.replace('TICK-', '')}`}
                             </span>
                             <span className="text-[10px] text-gray-500 font-mono">
                               {new Date(ticket.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
@@ -1273,7 +1275,7 @@ export default function KanbanBoard() {
                         {/* Card Footer */}
                         <div className="pt-2 border-t border-[#1E2630] flex items-center justify-between text-[11px] text-gray-400">
                           <span className="truncate text-gray-500">
-                            KTV: <span className="text-gray-300 font-medium">{ticket.assigned_technician || 'Kỹ thuật viên'}</span>
+                            {isEn ? 'Tech:' : 'KTV:'} <span className="text-gray-300 font-medium">{ticket.assigned_technician || (isEn ? 'Technician' : 'Kỹ thuật viên')}</span>
                           </span>
                           <button
                             onClick={() => setInspectingTicket(ticket)}
@@ -1321,7 +1323,7 @@ export default function KanbanBoard() {
                           <tr key={ticket.id} className="hover:bg-[#161B22]/70 transition-colors">
                             <td className="py-3 px-3.5 whitespace-nowrap font-mono">
                               <div className="text-[#C5A880] font-bold">
-                                {ticket.nks_id ? `#${ticket.nks_id}` : `#${ticket.id.replace('TICK-', '')}`}
+                                {`#${ticket.id.replace('TICK-', '')}`}
                               </div>
                               <div className="text-[10px] text-gray-400">
                                 {new Date(ticket.created_at).toLocaleDateString('vi-VN')} {new Date(ticket.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
@@ -1512,9 +1514,9 @@ export default function KanbanBoard() {
                 <Users className="w-4 h-4 text-[#C5A880]" /> Đội Ngũ KTV Trực Ca
               </div>
               <div className="text-2xl font-bold font-mono text-white mt-1">
-                {technicians.length} <span className="text-xs text-gray-400 font-normal">Kỹ thuật viên</span>
+                {technicians.length} <span className="text-xs text-gray-400 font-normal">{isEn ? 'Technicians' : 'Kỹ thuật viên'}</span>
               </div>
-              <div className="text-[11px] text-emerald-400 pt-1">100% Đã được cấp thẻ nghiệp vụ</div>
+              <div className="text-[11px] text-emerald-400 pt-1">{isEn ? '100% Certified & Credentialed' : '100% Đã được cấp thẻ nghiệp vụ'}</div>
             </div>
 
             <div className="p-5 bg-[#121820] border border-[#222B35] space-y-1">
@@ -1522,7 +1524,7 @@ export default function KanbanBoard() {
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Tổng Ca Sửa Đã Nghiệm Thu
               </div>
               <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">
-                {totalCompletedMonth} <span className="text-xs text-gray-400 font-normal">ca trong tháng</span>
+                {totalCompletedMonth} <span className="text-xs text-gray-400 font-normal">{isEn ? 'jobs this month' : 'ca trong tháng'}</span>
               </div>
               <div className="text-[11px] text-gray-400 pt-1">
                 {totalCompletedMonth > 0 ? '100% đúng quy trình nghiệm thu thực tế' : 'Chưa có ca nào hoàn tất'}
@@ -1534,9 +1536,9 @@ export default function KanbanBoard() {
                 <Award className="w-4 h-4 text-yellow-400" /> Tổng Quỹ Lương & Thù Lao Tháng
               </div>
               <div className="text-2xl font-bold font-mono text-[#C5A880] mt-1">
-                {totalFund.toLocaleString('vi-VN')} <span className="text-xs text-gray-400 font-normal">VNĐ</span>
+                {totalFund.toLocaleString(isEn ? 'en-US' : 'vi-VN')} <span className="text-xs text-gray-400 font-normal">{isEn ? 'VND' : 'VNĐ'}</span>
               </div>
-              <div className="text-[11px] text-[#C5A880] pt-1">Bao gồm lương cơ bản + công ca + thưởng 5⭐</div>
+              <div className="text-[11px] text-[#C5A880] pt-1">{isEn ? 'Includes base salary + job pay + 5⭐ bonus' : 'Bao gồm lương cơ bản + công ca + thưởng 5⭐'}</div>
             </div>
           </div>
 
@@ -1549,7 +1551,7 @@ export default function KanbanBoard() {
                   Bảng Lương & Thù Lao Kỹ Thuật Viên Chung Cư (Tháng Này)
                 </h3>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Công thức: <strong>Tổng Lương = Lương Cứng + (Số ca sửa × Tiền công) + (Số ca 5⭐ × Thưởng 50.000đ)</strong>
+                  <>{isEn ? 'Formula:' : 'Công thức:'} <strong>{isEn ? 'Total Pay = Base Salary + (Completed Jobs × Job Rate) + (5⭐ Jobs × 50,000 VND)' : 'Tổng Lương = Lương Cứng + (Số ca sửa × Tiền công) + (Số ca 5⭐ × Thưởng 50.000đ)'}</strong></>
                 </p>
               </div>
 
@@ -1567,16 +1569,16 @@ export default function KanbanBoard() {
               <table className="w-full text-left text-xs text-gray-300">
                 <thead className="bg-[#161B22] text-[#C5A880] uppercase tracking-wider font-semibold border-b border-[#222B35] text-[11px]">
                   <tr>
-                    <th className="p-3">Mã & Họ Tên KTV</th>
-                    <th className="p-3">Chuyên Môn</th>
-                    <th className="p-3">Trạng Thái</th>
-                    <th className="p-3 text-center">Ca Đã Sửa</th>
-                    <th className="p-3 text-center">Đánh Giá ⭐</th>
-                    <th className="p-3 text-right">Lương Cơ Bản</th>
-                    <th className="p-3 text-right">Tiền Công Ca</th>
-                    <th className="p-3 text-right">Thưởng 5⭐</th>
-                    <th className="p-3 text-right text-[#C5A880]">Tổng Lương Thực Nhận</th>
-                    <th className="p-3 text-center">Chi Tiết</th>
+                    <th className="p-3">{isEn ? 'ID & Technician Name' : 'Mã & Họ Tên KTV'}</th>
+                    <th className="p-3">{isEn ? 'Specialty' : 'Chuyên Môn'}</th>
+                    <th className="p-3">{isEn ? 'Status' : 'Trạng Thái'}</th>
+                    <th className="p-3 text-center">{isEn ? 'Completed' : 'Ca Đã Sửa'}</th>
+                    <th className="p-3 text-center">{isEn ? 'Rating ⭐' : 'Đánh Giá ⭐'}</th>
+                    <th className="p-3 text-right">{isEn ? 'Base Salary' : 'Lương Cơ Bản'}</th>
+                    <th className="p-3 text-right">{isEn ? 'Job Pay' : 'Tiền Công Ca'}</th>
+                    <th className="p-3 text-right">{isEn ? '5⭐ Bonus' : 'Thưởng 5⭐'}</th>
+                    <th className="p-3 text-right text-[#C5A880]">{isEn ? 'Net Total Pay' : 'Tổng Lương Thực Nhận'}</th>
+                    <th className="p-3 text-center">{isEn ? 'Details' : 'Chi Tiết'}</th>
                   </tr>
                 </thead>
 
@@ -1612,7 +1614,7 @@ export default function KanbanBoard() {
                         <span className="text-yellow-400 font-bold font-mono">
                           {item.averageRating} ⭐
                         </span>
-                        <div className="text-[10px] text-gray-400">({item.fiveStarCount} lượt 5⭐)</div>
+                        <div className="text-[10px] text-gray-400">({item.fiveStarCount} {isEn ? 'times 5⭐' : 'lượt 5⭐'})</div>
                       </td>
 
                       <td className="p-3 text-right font-mono text-gray-300">
@@ -1676,7 +1678,7 @@ export default function KanbanBoard() {
             <div className="space-y-1.5">
               <label className="text-xs text-gray-300 font-semibold flex items-center justify-between">
                 <span>{t('Căn Hộ Báo Sự Cố:', 'Apartment Unit:')}</span>
-                <span className="text-[10px] text-[#C5A880] font-mono">* Tự động nhận diện hồ sơ cư dân</span>
+                <span className="text-[10px] text-[#C5A880] font-mono">*{isEn ? ' Auto-detected resident profile' : ' Tự động nhận diện hồ sơ cư dân'}</span>
               </label>
               <select
                 value={newAptCode}
@@ -1690,7 +1692,7 @@ export default function KanbanBoard() {
                     </option>
                   ))
                 ) : (
-                  <option value="CH-06">Căn CH-06 — Tòa BS-07</option>
+                  <option value="CH-06">{isEn ? 'Apt CH-06 — Tower BS-07' : 'Căn CH-06 — Tòa BS-07'}</option>
                 )}
               </select>
             </div>
@@ -1703,7 +1705,7 @@ export default function KanbanBoard() {
                   type="text"
                   value={newResidentName}
                   onChange={(e) => setNewResidentName(e.target.value)}
-                  placeholder="Nguyễn Văn A"
+                  placeholder={isEn ? 'Nguyen Van A' : 'Nguyễn Văn A'}
                   className="w-full bg-[#141B24] border border-[#222B35] focus:border-[#C5A880] text-xs text-white p-2 rounded-none outline-none"
                 />
               </div>
@@ -1745,11 +1747,11 @@ export default function KanbanBoard() {
                   onChange={(e) => setNewCategory(e.target.value as any)}
                   className="w-full bg-[#141B24] border border-[#222B35] focus:border-[#C5A880] text-xs text-white p-2 rounded-none outline-none"
                 >
-                  <option value="Điện">⚡ Điện dân dụng / Thiết bị</option>
-                  <option value="Nước">💧 Cấp thoát nước / Thiết bị vệ sinh</option>
-                  <option value="Vệ sinh">🧹 Vệ sinh hành lang / Môi trường</option>
-                  <option value="An ninh">🛡️ An ninh / Thẻ từ ra vào</option>
-                  <option value="Khác">📦 Khác / Cơ sở hạ tầng</option>
+                  <option value="Điện">⚡ {isEn ? 'Electrical / Appliances' : 'Điện dân dụng / Thiết bị'}</option>
+                  <option value="Nước">💧 {isEn ? 'Plumbing / Sanitaries' : 'Cấp thoát nước / Thiết bị vệ sinh'}</option>
+                  <option value="Vệ sinh">🧹 {isEn ? 'Housekeeping / Environment' : 'Vệ sinh hành lang / Môi trường'}</option>
+                  <option value="An ninh">🛡️ {isEn ? 'Security / Keycard Access' : 'An ninh / Thẻ từ ra vào'}</option>
+                  <option value="Khác">📦 {isEn ? 'Other / Building Infrastructure' : 'Khác / Cơ sở hạ tầng'}</option>
                 </select>
               </div>
             </div>
@@ -1818,14 +1820,14 @@ export default function KanbanBoard() {
             </div>
 
             <div className="p-3 bg-[#161B22] border border-[#222B35] text-xs space-y-1.5">
-              <div><strong>Căn hộ:</strong> <span className="text-[#C5A880] font-bold">Căn {assigningTicket.apt_code} ({assigningTicket.resident_name})</span></div>
-              <div><strong>Nội dung:</strong> <span className="text-gray-200">{assigningTicket.content}</span></div>
-              <div><strong>Hạng mục:</strong> <span className="text-amber-400 font-semibold">{assigningTicket.ai_category}</span></div>
+              <div><strong>{isEn ? 'Apartment:' : 'Căn hộ:'}</strong> <span className="text-[#C5A880] font-bold">{isEn ? 'Unit' : 'Căn'} {assigningTicket.apt_code} ({assigningTicket.resident_name})</span></div>
+              <div><strong>{isEn ? 'Description:' : 'Nội dung:'}</strong> <span className="text-gray-200">{assigningTicket.content}</span></div>
+              <div><strong>{isEn ? 'Category:' : 'Hạng mục:'}</strong> <span className="text-amber-400 font-semibold">{assigningTicket.ai_category}</span></div>
             </div>
 
             {/* Select Technician */}
             <div className="space-y-2">
-              <label className="text-xs text-gray-300 font-semibold">Chọn Kỹ Thuật Viên Phụ Trách Trực Ca:</label>
+              <label className="text-xs text-gray-300 font-semibold">{isEn ? 'Select On-Duty Technician:' : 'Chọn Kỹ Thuật Viên Phụ Trách Trực Ca:'}</label>
               <div className="space-y-2">
                 {technicians.map((tech) => (
                   <label
@@ -1846,7 +1848,7 @@ export default function KanbanBoard() {
                       />
                       <div>
                         <div className="text-xs font-bold text-white">{tech.name} ({tech.id})</div>
-                        <div className="text-[10px] text-gray-400">Chuyên môn: {tech.specialty} • SĐT: {tech.phone}</div>
+                        <div className="text-[10px] text-gray-400">{isEn ? 'Specialty:' : 'Chuyên môn:'} {tech.specialty} • {isEn ? 'Phone:' : 'SĐT:'} {tech.phone}</div>
                       </div>
                     </div>
 
@@ -1863,12 +1865,12 @@ export default function KanbanBoard() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs text-gray-300 font-semibold">Thời Gian Hẹn Cư Dân Có Mặt:</label>
+              <label className="text-xs text-gray-300 font-semibold">{isEn ? 'Scheduled Arrival Window:' : 'Thời Gian Hẹn Cư Dân Có Mặt:'}</label>
               <input
                 type="text"
                 value={scheduledTimeInput}
                 onChange={(e) => setScheduledTimeInput(e.target.value)}
-                placeholder="VD: Có mặt trong vòng 20 phút..."
+                placeholder={isEn ? 'e.g. Arriving within 20 mins...' : 'VD: Có mặt trong vòng 20 phút...'}
                 className="w-full bg-[#161B22] border border-[#2D3748] text-xs text-white p-2.5 focus:outline-none focus:border-[#C5A880]"
                 required
               />
@@ -1906,7 +1908,7 @@ export default function KanbanBoard() {
             <div className="flex items-center justify-between border-b border-[#222B35] px-5 py-3.5 shrink-0 bg-[#0E131B]">
               <h3 className="font-serif text-base sm:text-lg font-bold text-white flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                <span>Nghiệm Thu & Đóng Phiếu #{resolvingTicket.id}</span>
+                <span>{isEn ? 'Accept & Close Ticket #' : 'Nghiệm Thu & Đóng Phiếu #'}{resolvingTicket.id}</span>
               </h3>
               <button 
                 type="button"
@@ -1925,19 +1927,19 @@ export default function KanbanBoard() {
               {/* Ticket Info Compact */}
               <div className="p-2.5 bg-[#161B22] border border-[#222B35] space-y-1 text-xs leading-relaxed rounded-none">
                 <div className="flex items-center justify-between flex-wrap gap-1">
-                  <span>Căn hộ: <strong className="text-white">Căn {resolvingTicket.apt_code} ({resolvingTicket.resident_name})</strong></span>
+                  <span>{isEn ? 'Apartment:' : 'Căn hộ:'} <strong className="text-white">{isEn ? 'Unit' : 'Căn'} {resolvingTicket.apt_code} ({resolvingTicket.resident_name})</strong></span>
                   <span className="text-gray-400 font-mono text-[11px]">KTV: <strong className="text-[#C5A880]">{resolvingTicket.assigned_technician}</strong></span>
                 </div>
                 <div className="text-gray-400 line-clamp-2">
-                  <span className="text-gray-500">Nội dung:</span> {resolvingTicket.content}
+                  <span className="text-gray-500">{isEn ? 'Description:' : 'Nội dung:'}</span> {resolvingTicket.content}
                 </div>
               </div>
 
               {/* Upload After Image */}
               <div className="space-y-1.5">
                 <label className="text-xs text-gray-300 font-semibold flex items-center justify-between">
-                  <span>Tải Ảnh Nghiệm Thu:</span>
-                  <span className="text-[10px] text-gray-500 font-mono">* Gửi cư dân</span>
+                  <span>{isEn ? 'Upload Acceptance Photo:' : 'Tải Ảnh Nghiệm Thu:'}</span>
+                  <span className="text-[10px] text-gray-500 font-mono">*{isEn ? ' Sent to resident' : ' Gửi cư dân'}</span>
                 </label>
 
                 <input
@@ -1966,10 +1968,10 @@ export default function KanbanBoard() {
                         alt="After Preview" 
                         className="w-8 h-8 object-cover border border-emerald-500"
                       />
-                      <span className="text-xs text-emerald-400 font-medium">Đã nạp ảnh ✓</span>
+                      <span className="text-xs text-emerald-400 font-medium">{isEn ? 'Photo loaded ✓' : 'Đã nạp ảnh ✓'}</span>
                     </div>
                   ) : (
-                    <span className="text-[11px] text-amber-400 font-medium">* Cần ảnh chụp sau sửa</span>
+                    <span className="text-[11px] text-amber-400 font-medium">*{isEn ? ' Photo after repair required' : ' Cần ảnh chụp sau sửa'}</span>
                   )}
                 </div>
               </div>
@@ -1977,7 +1979,7 @@ export default function KanbanBoard() {
               {/* Resolution Notes with AI recognition badge */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs text-gray-300 font-semibold">Ghi Chú Kỹ Thuật Khi Bàn Giao:</label>
+                  <label className="text-xs text-gray-300 font-semibold">{isEn ? 'Handover Technical Notes:' : 'Ghi Chú Kỹ Thuật Khi Bàn Giao:'}</label>
                   <span className="text-[10px] text-[#C5A880] font-mono flex items-center gap-1">
                     <Sparkles className="w-3 h-3 text-[#C5A880]" /> Đã tự động nhận diện
                   </span>
@@ -1986,7 +1988,7 @@ export default function KanbanBoard() {
                   rows={3}
                   value={resolutionNotes}
                   onChange={(e) => setResolutionNotes(e.target.value)}
-                  placeholder="VD: Đã thay gioăng cao su van xả, kiểm tra áp lực nước 2.5 bar ổn định..."
+                  placeholder={isEn ? 'e.g. Replaced flush valve rubber seal, tested water pressure at 2.5 bar...' : 'VD: Đã thay gioăng cao su van xả, kiểm tra áp lực nước 2.5 bar ổn định...'}
                   className="w-full bg-[#161B22] border border-[#2D3748] text-xs text-white p-2.5 focus:outline-none focus:border-[#C5A880] rounded-none resize-none leading-relaxed"
                   required
                 />
@@ -1997,8 +1999,8 @@ export default function KanbanBoard() {
                 <div className="p-2.5 bg-[#0E131B] border border-[#C5A880]/40 text-xs flex items-center gap-2.5 text-[#C5A880] rounded-none">
                   <RefreshCw className="w-4 h-4 text-[#C5A880] animate-spin shrink-0" />
                   <div>
-                    <div className="font-semibold text-[#C5A880]">AI Đang Thẩm Định Ảnh Nghiệm Thu...</div>
-                    <div className="text-[10px] text-gray-400">Đối chiếu hiện trường trước &amp; sau sửa</div>
+                    <div className="font-semibold text-[#C5A880]">{isEn ? 'AI Verifying Acceptance Photo...' : 'AI Đang Thẩm Định Ảnh Nghiệm Thu...'}</div>
+                    <div className="text-[10px] text-gray-400">{isEn ? 'Cross-checking scene before & after repair' : 'Đối chiếu hiện trường trước & sau sửa'}</div>
                   </div>
                 </div>
               )}
@@ -2017,17 +2019,17 @@ export default function KanbanBoard() {
                       {aiVerificationResult.status === 'VERIFIED' ? (
                         <>
                           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span className="text-emerald-300">✓ AI Thẩm Định: Ảnh Đạt Chuẩn ({aiVerificationResult.confidence_score}%)</span>
+                          <span className="text-emerald-300">✓ {isEn ? 'AI Verified: Valid photo' : 'AI Thẩm Định: Ảnh Đạt Chuẩn'} ({aiVerificationResult.confidence_score}%)</span>
                         </>
                       ) : aiVerificationResult.status === 'SUSPICIOUS' ? (
                         <>
                           <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                          <span className="text-rose-300">⚠️ Cảnh Báo AI: Ảnh Không Khớp ({aiVerificationResult.confidence_score}%)</span>
+                          <span className="text-rose-300">⚠️ {isEn ? 'AI Warning: Photo does not match' : 'Cảnh Báo AI: Ảnh Không Khớp'} ({aiVerificationResult.confidence_score}%)</span>
                         </>
                       ) : (
                         <>
                           <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                          <span className="text-amber-300">⏳ AI: Chưa Khắc Phục Triệt Để ({aiVerificationResult.confidence_score}%)</span>
+                          <span className="text-amber-300">⏳ {isEn ? 'AI Note: Incomplete repair' : 'AI: Chưa Khắc Phục Triệt Để'} ({aiVerificationResult.confidence_score}%)</span>
                         </>
                       )}
                     </span>
@@ -2066,7 +2068,7 @@ export default function KanbanBoard() {
                           onChange={(e) => setAllowOverrideVerification(e.target.checked)}
                           className="rounded-none bg-[#0E131B] border-gray-600 text-[#C5A880] focus:ring-0 w-3.5 h-3.5"
                         />
-                        <span>Tôi đã kiểm tra thực tế, chịu trách nhiệm duyệt ngoại lệ</span>
+                        <span>{isEn ? 'I have inspected on site, approving exception with responsibility' : 'Tôi đã kiểm tra thực tế, chịu trách nhiệm duyệt ngoại lệ'}</span>
                       </label>
                     </div>
                   )}
@@ -2084,7 +2086,7 @@ export default function KanbanBoard() {
                     className="px-3 py-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-500/60 text-rose-200 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 rounded-none transition-colors"
                   >
                     <X className="w-3.5 h-3.5 text-rose-400" />
-                    <span>Từ Chối & Yêu Cầu Sửa Lại</span>
+                    <span>{isEn ? 'Reject & Request Rework' : 'Từ Chối & Yêu Cầu Sửa Lại'}</span>
                   </button>
                 )}
               </div>
@@ -2129,27 +2131,27 @@ export default function KanbanBoard() {
           <div className="bg-[#0D1117] border border-[#C5A880] max-w-xl w-full p-6 text-white space-y-5 shadow-2xl animate-fadeIn">
             <div className="flex items-center justify-between border-b border-[#222B35] pb-3">
               <div>
-                <span className="text-[10px] text-[#C5A880] font-mono uppercase font-bold tracking-wider">BAN QUẢN LÝ CHUNG CƯ</span>
-                <h3 className="font-serif text-lg font-bold text-white">Phiếu Thù Lao Kỹ Thuật Viên</h3>
+                <span className="text-[10px] text-[#C5A880] font-mono uppercase font-bold tracking-wider">{isEn ? 'PROPERTY MANAGEMENT BOARD' : 'BAN QUẢN LÝ CHUNG CƯ'}</span>
+                <h3 className="font-serif text-lg font-bold text-white">{isEn ? 'Technician Remuneration Slip' : 'Phiếu Thù Lao Kỹ Thuật Viên'}</h3>
               </div>
               <button onClick={() => setViewingPayrollTech(null)} className="text-gray-400 hover:text-white">✕</button>
             </div>
 
             <div className="p-4 bg-[#121820] border border-[#222B35] space-y-2 text-xs">
               <div className="flex justify-between">
-                <span>Họ và tên:</span>
+                <span>{isEn ? 'Full name:' : 'Họ và tên:'}</span>
                 <strong className="text-white text-sm">{viewingPayrollTech.technician.name}</strong>
               </div>
               <div className="flex justify-between">
-                <span>Mã số KTV / Chuyên môn:</span>
+                <span>{isEn ? 'Technician ID / Specialty:' : 'Mã số KTV / Chuyên môn:'}</span>
                 <span className="font-mono text-[#C5A880]">{viewingPayrollTech.technician.id} • {viewingPayrollTech.technician.specialty}</span>
               </div>
               <div className="flex justify-between">
-                <span>Số điện thoại:</span>
+                <span>{isEn ? 'Phone number:' : 'Số điện thoại:'}</span>
                 <span className="font-mono text-gray-300">{viewingPayrollTech.technician.phone}</span>
               </div>
               <div className="flex justify-between">
-                <span>Đánh giá trung bình cư dân:</span>
+                <span>{isEn ? 'Average resident rating:' : 'Đánh giá trung bình cư dân:'}</span>
                 <span className="text-yellow-400 font-bold">{viewingPayrollTech.averageRating} ⭐ ({viewingPayrollTech.fiveStarCount} ca 5 sao)</span>
               </div>
             </div>
@@ -2157,20 +2159,20 @@ export default function KanbanBoard() {
             {/* Breakdown lines */}
             <div className="space-y-2 text-xs border-t border-b border-[#222B35] py-3">
               <div className="flex justify-between text-gray-300">
-                <span>1. Lương cứng cơ bản tháng:</span>
-                <span className="font-mono">{viewingPayrollTech.baseSalary.toLocaleString('vi-VN')} đ</span>
+                <span>{isEn ? '1. Monthly base salary:' : '1. Lương cứng cơ bản tháng:'}</span>
+                <span className="font-mono">{viewingPayrollTech.baseSalary.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
               </div>
               <div className="flex justify-between text-gray-300">
-                <span>2. Tiền công theo ca hoàn tất ({viewingPayrollTech.completedTicketsCount} ca × {viewingPayrollTech.technician.payPerTicket.toLocaleString('vi-VN')}đ):</span>
-                <span className="font-mono text-emerald-400">+{viewingPayrollTech.ticketBonusTotal.toLocaleString('vi-VN')} đ</span>
+                <span>{isEn ? `2. Completed job pay (${viewingPayrollTech.completedTicketsCount} jobs × ${viewingPayrollTech.technician.payPerTicket.toLocaleString('en-US')} VND):` : `2. Tiền công theo ca hoàn tất (${viewingPayrollTech.completedTicketsCount} ca × ${viewingPayrollTech.technician.payPerTicket.toLocaleString('vi-VN')}đ):`}</span>
+                <span className="font-mono text-emerald-400">+{viewingPayrollTech.ticketBonusTotal.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
               </div>
               <div className="flex justify-between text-gray-300">
-                <span>3. Tiền thưởng cư dân chấm 5⭐ ({viewingPayrollTech.fiveStarCount} ca × {viewingPayrollTech.technician.bonusPerFiveStar.toLocaleString('vi-VN')}đ):</span>
-                <span className="font-mono text-yellow-400">+{viewingPayrollTech.fiveStarBonusTotal.toLocaleString('vi-VN')} đ</span>
+                <span>{isEn ? `3. Resident 5⭐ bonus (${viewingPayrollTech.fiveStarCount} jobs × ${viewingPayrollTech.technician.bonusPerFiveStar.toLocaleString('en-US')} VND):` : `3. Tiền thưởng cư dân chấm 5⭐ (${viewingPayrollTech.fiveStarCount} ca × ${viewingPayrollTech.technician.bonusPerFiveStar.toLocaleString('vi-VN')}đ):`}</span>
+                <span className="font-mono text-yellow-400">+{viewingPayrollTech.fiveStarBonusTotal.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
               </div>
 
               <div className="flex justify-between pt-2 border-t border-[#222B35] text-sm">
-                <span className="font-bold text-white">TỔNG THỰC LĨNH THÁNG NÀY:</span>
+                <span className="font-bold text-white">{isEn ? 'TOTAL NET EARNED THIS MONTH:' : 'TỔNG THỰC LĨNH THÁNG NÀY:'}</span>
                 <span className="font-bold font-mono text-base text-[#C5A880]">
                   {viewingPayrollTech.totalIncome.toLocaleString('vi-VN')} đ
                 </span>
@@ -2178,7 +2180,7 @@ export default function KanbanBoard() {
             </div>
 
             <div className="flex justify-between items-center text-xs text-gray-500">
-              <span>Xác nhận: <strong>Ban Quản Lý Chung Cư</strong></span>
+              <span>{isEn ? 'Confirmed:' : 'Xác nhận:'} <strong>{isEn ? 'Skyline Property Management' : 'Ban Quản Lý Chung Cư'}</strong></span>
               <button 
                 onClick={() => window.print()} 
                 className="px-4 py-2 bg-[#C5A880] text-[#0D1117] text-xs font-bold uppercase tracking-wider hover:bg-white"
@@ -2208,16 +2210,16 @@ export default function KanbanBoard() {
 
             <div className="space-y-3">
               <div className="text-xs text-gray-300">
-                <strong>Mô tả cư dân:</strong> {inspectingTicket.content}
+                <strong>{isEn ? 'Resident note:' : 'Mô tả cư dân:'}</strong> {inspectingTicket.content}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {inspectingTicket.before_image && (
                   <div className="space-y-1">
-                    <span className="text-[11px] text-red-400 font-semibold">Ảnh hiện trường lúc báo:</span>
+                    <span className="text-[11px] text-red-400 font-semibold">{isEn ? 'Initial scene photo:' : 'Ảnh hiện trường lúc báo:'}</span>
                     <img 
                       src={inspectingTicket.before_image} 
-                      alt="Hiện trường" 
+                      alt={isEn ? 'Initial scene' : 'Hiện trường'} 
                       className="w-full h-56 object-cover border border-red-500/50"
                     />
                   </div>
@@ -2225,10 +2227,10 @@ export default function KanbanBoard() {
 
                 {inspectingTicket.after_image && (
                   <div className="space-y-1">
-                    <span className="text-[11px] text-emerald-400 font-semibold">Ảnh nghiệm thu sau khi sửa:</span>
+                    <span className="text-[11px] text-emerald-400 font-semibold">{isEn ? 'Acceptance photo after repair:' : 'Ảnh nghiệm thu sau khi sửa:'}</span>
                     <img 
                       src={inspectingTicket.after_image} 
-                      alt="Nghiệm thu" 
+                      alt={isEn ? 'Acceptance photo' : 'Nghiệm thu'} 
                       className="w-full h-56 object-cover border border-emerald-500/50"
                     />
                   </div>
@@ -2249,17 +2251,17 @@ export default function KanbanBoard() {
                       {inspectingTicket.ai_verification.status === 'VERIFIED' ? (
                         <>
                           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span className="text-emerald-300">✓ AI Thẩm Định: Ảnh Đạt Chuẩn ({inspectingTicket.ai_verification.confidence_score}%)</span>
+                          <span className="text-emerald-300">✓ {isEn ? 'AI Verified: Valid photo' : 'AI Thẩm Định: Ảnh Đạt Chuẩn'} ({inspectingTicket.ai_verification.confidence_score}%)</span>
                         </>
                       ) : inspectingTicket.ai_verification.status === 'SUSPICIOUS' ? (
                         <>
                           <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                          <span className="text-rose-300">⚠️ CẢNH BÁO AI: Ảnh Nghi Ngờ Không Khớp Hiện Trường ({inspectingTicket.ai_verification.confidence_score}%)</span>
+                          <span className="text-rose-300">⚠️ {isEn ? 'AI Warning: Suspicious scene mismatch' : 'CẢNH BÁO AI: Ảnh Nghi Ngờ Không Khớp Hiện Trường'} ({inspectingTicket.ai_verification.confidence_score}%)</span>
                         </>
                       ) : (
                         <>
                           <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                          <span className="text-amber-300">⏳ AI Nhận Định: Chưa Khắc Phục Triệt Để ({inspectingTicket.ai_verification.confidence_score}%)</span>
+                          <span className="text-amber-300">⏳ {isEn ? 'AI Note: Issue not completely fixed' : 'AI Nhận Định: Chưa Khắc Phục Triệt Để'} ({inspectingTicket.ai_verification.confidence_score}%)</span>
                         </>
                       )}
                     </span>
@@ -2317,38 +2319,38 @@ export default function KanbanBoard() {
 
             <div className="p-3 bg-[#161B22] border border-[#222B35] space-y-1.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-gray-400">Mã yêu cầu:</span>
+                <span className="text-gray-400">{isEn ? 'Ticket ID:' : 'Mã yêu cầu:'}</span>
                 <strong className="text-[#C5A880] font-mono">
-                  {feedbackReplyTicket.nks_id ? `#${feedbackReplyTicket.nks_id}` : `#${feedbackReplyTicket.id}`}
+                  {`#${feedbackReplyTicket.id}`}
                 </strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Cư dân:</span>
-                <span className="text-white font-semibold">{feedbackReplyTicket.resident_name} • Căn {feedbackReplyTicket.apt_code}</span>
+                <span className="text-gray-400">{isEn ? 'Resident:' : 'Cư dân:'}</span>
+                <span className="text-white font-semibold">{feedbackReplyTicket.resident_name} • {isEn ? 'Unit' : 'Căn'} {feedbackReplyTicket.apt_code}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Hạng mục:</span>
-                <span className="text-rose-300 font-bold">{feedbackReplyTicket.ai_category || 'Phản ánh dịch vụ'}</span>
+                <span className="text-gray-400">{isEn ? 'Category:' : 'Hạng mục:'}</span>
+                <span className="text-rose-300 font-bold">{feedbackReplyTicket.ai_category || (isEn ? 'Service Feedback' : 'Phản ánh dịch vụ')}</span>
               </div>
               <div className="pt-1 text-gray-300 border-t border-[#222B35]">
-                <span className="text-gray-400 font-medium">Nội dung phản ánh:</span> "{feedbackReplyTicket.content}"
+                <span className="text-gray-400 font-medium">{isEn ? 'Feedback content:' : 'Nội dung phản ánh:'}</span> "{feedbackReplyTicket.content}"
               </div>
             </div>
 
             {/* AI Assistant Suggested Draft */}
             <div className="flex items-center justify-between gap-2">
-              <label className="text-xs text-gray-300 font-semibold flex-shrink-0">Nội dung phản hồi cư dân:</label>
+              <label className="text-xs text-gray-300 font-semibold flex-shrink-0">{isEn ? 'Response to resident:' : 'Nội dung phản hồi cư dân:'}</label>
               <button
                 type="button"
                 onClick={handleGenerateAiAdminReply}
                 disabled={isGeneratingAiReply}
                 className="text-[11px] px-2.5 py-1 bg-[#141B24] border border-[#C5A880]/40 hover:border-[#C5A880] text-[#C5A880] hover:text-white flex items-center gap-1.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex-shrink-0 rounded-none"
-                title="AI Gemini soạn thảo phản hồi thông minh, phù hợp ngữ cảnh từng yêu cầu cụ thể"
+                title={isEn ? 'Gemini AI crafts intelligent responses tailored to request context' : 'AI Gemini soạn thảo phản hồi thông minh, phù hợp ngữ cảnh từng yêu cầu cụ thể'}
               >
                 {isGeneratingAiReply ? (
-                  <><RefreshCw className="w-3.5 h-3.5 text-[#C5A880] animate-spin" /><span>Đang soạn...</span></>
+                  <><RefreshCw className="w-3.5 h-3.5 text-[#C5A880] animate-spin" /><span>{isEn ? 'Drafting...' : 'Đang soạn...'}</span></>
                 ) : (
-                  <><Sparkles className="w-3.5 h-3.5 text-[#C5A880]" /><span>AI Soạn Thảo Thông Minh</span></>
+                  <><Sparkles className="w-3.5 h-3.5 text-[#C5A880]" /><span>{isEn ? 'AI Smart Drafting' : 'AI Soạn Thảo Thông Minh'}</span></>
                 )}
               </button>
             </div>
@@ -2358,7 +2360,7 @@ export default function KanbanBoard() {
                 rows={5}
                 value={feedbackReplyContent}
                 onChange={(e) => setFeedbackReplyContent(e.target.value)}
-                placeholder="Nhập nội dung phản hồi, xin lỗi hoặc giải pháp xử lý từ BQL..."
+                placeholder={isEn ? 'Enter response, acknowledgment, or resolution plan from Management...' : 'Nhập nội dung phản hồi, xin lỗi hoặc giải pháp xử lý từ BQL...'}
                 className="w-full bg-[#161B22] border border-[#2D3748] text-xs text-white p-3 focus:outline-none focus:border-[#C5A880] leading-relaxed rounded-none"
                 required
               />
@@ -2367,8 +2369,8 @@ export default function KanbanBoard() {
               <div className="space-y-1.5 pt-1">
                 <label className="text-xs text-gray-300 font-semibold flex items-center gap-1.5">
                   <Wrench className="w-3.5 h-3.5 text-amber-400" />
-                  <span>KTV phụ trách</span>
-                  <span className="text-[10px] text-gray-500 font-normal italic">(tuỳ chọn)</span>
+                  <span>{isEn ? 'Assigned technician' : 'KTV phụ trách'}</span>
+                  <span className="text-[10px] text-gray-500 font-normal italic">({isEn ? 'optional' : 'tuỳ chọn'})</span>
                 </label>
                 <div className="flex gap-2 items-stretch">
                   {technicians.length > 0 && (
@@ -2377,7 +2379,7 @@ export default function KanbanBoard() {
                       onChange={(e) => setReplyEngineerName(e.target.value)}
                       className="bg-[#161B22] border border-[#2D3748] text-xs text-gray-300 px-2 py-2 focus:outline-none focus:border-[#C5A880] min-w-0 w-[160px] flex-shrink-0 rounded-none"
                     >
-                      <option value="">-- Chọn KTV --</option>
+                      <option value="">{isEn ? '-- Select Technician --' : '-- Chọn KTV --'}</option>
                       {technicians.map(k => (
                         <option key={k.id} value={k.name}>{k.name}</option>
                       ))}
@@ -2387,7 +2389,7 @@ export default function KanbanBoard() {
                     type="text"
                     value={replyEngineerName}
                     onChange={(e) => setReplyEngineerName(e.target.value)}
-                    placeholder="Hoặc nhập tên KTV thủ công..."
+                    placeholder={isEn ? 'Or type technician name manually...' : 'Hoặc nhập tên KTV thủ công...'}
                     className="flex-1 min-w-0 bg-[#161B22] border border-[#2D3748] text-xs text-white px-3 py-2 focus:outline-none focus:border-[#C5A880] rounded-none"
                   />
                 </div>
@@ -2395,14 +2397,14 @@ export default function KanbanBoard() {
 
               <div className="flex flex-col gap-1.5 text-xs text-gray-400 pt-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="flex-shrink-0">Đơn vị ký duyệt:</span>
+                  <span className="flex-shrink-0">{isEn ? 'Signing department:' : 'Đơn vị ký duyệt:'}</span>
                   <div className="px-2.5 py-1 bg-[#161B22] border border-[#2D3748] text-white font-medium flex items-center gap-1.5 select-none flex-shrink-0 rounded-none">
                     <ShieldCheck className="w-3.5 h-3.5 text-[#C5A880]" />
-                    <span className="whitespace-nowrap">Ban Quản Lý Chung Cư Skyline</span>
-                    <span className="text-[10px] text-emerald-400 font-mono font-bold whitespace-nowrap">(Chính thức)</span>
+                    <span className="whitespace-nowrap">{isEn ? 'Skyline Property Management Office' : 'Ban Quản Lý Chung Cư Skyline'}</span>
+                    <span className="text-[10px] text-emerald-400 font-mono font-bold whitespace-nowrap">{isEn ? '(Official)' : '(Chính thức)'}</span>
                   </div>
                 </div>
-                <span className="text-[10px] text-gray-500 italic">* Chữ ký số tự động gắn kèm khi gửi văn bản</span>
+                <span className="text-[10px] text-gray-500 italic">*{isEn ? ' Digital signature is automatically attached upon sending' : ' Chữ ký số tự động gắn kèm khi gửi văn bản'}</span>
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-[#222B35]">
@@ -2418,7 +2420,7 @@ export default function KanbanBoard() {
                   className="px-5 py-2 bg-rose-950/80 hover:bg-rose-900 border border-rose-500/70 text-rose-200 text-xs font-bold uppercase tracking-wider transition-colors shadow-lg flex items-center gap-1.5 rounded-none"
                 >
                   <Send className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Gửi Phản Hồi Cho Cư Dân</span>
+                  <span>{isEn ? 'Send Response to Resident' : 'Gửi Phản Hồi Cho Cư Dân'}</span>
                 </button>
               </div>
             </form>

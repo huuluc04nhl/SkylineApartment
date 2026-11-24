@@ -12,7 +12,7 @@ import { updateEnrolledFaceStatus } from '@/lib/faceEnrollStore';
 import { validateCccdCard, verifyFaceWithCccd } from '@/lib/ekycValidator';
 
 /**
- * GET /api/nks/ekyc
+ * GET /api/ekyc
  * Returns e-KYC requests for BQL or specific user
  */
 export async function GET(req: Request) {
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
 }
 
 /**
- * POST /api/nks/ekyc
+ * POST /api/ekyc
  * Submits e-KYC or handles BQL approve/reject/confirm
  */
 export async function POST(req: Request) {
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
         userId: userId || phone,
         fullName,
         roleLabel,
-        apartmentCode: (apartmentCode === '12A05' || apartmentCode === '12A5' || !apartmentCode) ? 'CH-06' : apartmentCode,
+        apartmentCode: apartmentCode || 'CH-06',
         phone,
         email,
         idCardNo,
@@ -85,13 +85,15 @@ export async function POST(req: Request) {
         idCardFrontUrl: idCardFrontUrl || '',
         idCardBackUrl: idCardBackUrl || '',
         faceSamples,
-        faceScore: faceScore || 99.4,
+        faceScore: typeof faceScore === 'number' ? faceScore : 0,
         status: targetStatus,
+        isSimulation: !!body.isSimulation,
+        algorithm: body.algorithm || 'PERCEPTUAL_COSINE_SIMILARITY',
       });
 
       // Synchronize apartment member face status
       try {
-        const targetApt = (apartmentCode === '12A05' || apartmentCode === '12A5' || !apartmentCode) ? 'CH-06' : apartmentCode;
+        const targetApt = apartmentCode || 'CH-06';
         updateApartmentMember(targetApt, userId || phone, {
           faceStatus: isPendingOwner ? 'Chờ Chủ Hộ Xác Nhận' : 'Đang Chờ BQL Phê Duyệt',
           avatarUrl: avatarUrl,
@@ -139,7 +141,7 @@ export async function POST(req: Request) {
     // 2. BQL Approves e-KYC
     if (action === 'APPROVE') {
       const { id, approverName } = body;
-      const approved = approveEkycRequest(id, approverName || 'Ban Quản Lý Skyline');
+      const approved = approveEkycRequest(id, approverName || 'VinHomes Manager');
       if (!approved) {
         return NextResponse.json({ success: false, message: 'Không tìm thấy hồ sơ e-KYC' }, { status: 404 });
       }
@@ -157,7 +159,7 @@ export async function POST(req: Request) {
           pob: approved.pob,
           avatar_url: approved.avatarUrl,
         });
-        const approvedApt = (approved.apartmentCode === '12A05' || approved.apartmentCode === '12A5' || !approved.apartmentCode) ? 'CH-06' : approved.apartmentCode;
+        const approvedApt = approved.apartmentCode || 'CH-06';
         updateApartmentMember(approvedApt, approved.userId, {
           faceStatus: 'Đã Kích Hoạt FaceID',
           avatarUrl: approved.avatarUrl,
@@ -193,7 +195,7 @@ export async function POST(req: Request) {
       }
 
       try {
-        const rejectedApt = (rejected.apartmentCode === '12A05' || rejected.apartmentCode === '12A5' || !rejected.apartmentCode) ? 'CH-06' : rejected.apartmentCode;
+        const rejectedApt = rejected.apartmentCode || 'CH-06';
         updateApartmentMember(rejectedApt, rejected.userId, {
           faceStatus: 'BQL Yêu Cầu Chụp Lại',
         });
@@ -218,14 +220,14 @@ export async function POST(req: Request) {
       const revoked = rejectEkycRequest(
         id, 
         reason || 'Ban Quản Lý đã tạm khóa / thu hồi quyền ra vào FaceID theo quy định vận hành.', 
-        approverName || 'Ban Quản Lý Skyline'
+        approverName || 'VinHomes Manager'
       );
       if (!revoked) {
         return NextResponse.json({ success: false, message: 'Không tìm thấy hồ sơ e-KYC' }, { status: 404 });
       }
 
       try {
-        const revokedApt = (revoked.apartmentCode === '12A05' || revoked.apartmentCode === '12A5' || !revoked.apartmentCode) ? 'CH-06' : revoked.apartmentCode;
+        const revokedApt = revoked.apartmentCode || 'CH-06';
         updateApartmentMember(revokedApt, revoked.userId, {
           faceStatus: 'BQL Tạm Khóa / Thu Hồi Quyền',
         });

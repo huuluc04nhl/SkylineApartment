@@ -335,12 +335,12 @@ export const APARTMENT_MODELS: Record<ApartmentCategory, ApartmentData> = {
     features: [
       'Thiết kế thông tầng Duplex trần cao 6.5m với đèn chùm pha lê cao cấp',
       'Hồ bơi Jacuzzi chân mây và sân vườn thượng uyển riêng trên cao',
-      'Hệ thống thang máy riêng bảo mật sinh trắc học FaceID tầng Penthouse'
+      'Thang máy riêng bảo mật bằng khuôn mặt FaceID cho căn Penthouse'
     ],
     featuresEn: [
       'Duplex double-height layout with 6.5m soaring ceiling & crystal chandelier',
       'Private sky Jacuzzi pool and personal high-altitude terrace garden',
-      'Dedicated private elevator with biometric FaceID security for Penthouse'
+      'Dedicated private elevator with secure FaceID recognition for Penthouse'
     ],
     hotspots: [
       {
@@ -509,7 +509,7 @@ export default function FloorPlanExplorer({ onOpenLogin }: FloorPlanExplorerProp
                       ? 'border-[#2A374A] hover:border-[#C5A880] text-gray-300 hover:text-white' 
                       : 'border-gray-300 hover:border-gray-500 text-gray-700 bg-white'
                   }`}
-                  title={t('Hotline Ban Quản Lý')}
+                  title={t('Hotline VinHomes Manager')}
                 >
                   <Phone className="w-3.5 h-3.5 text-[#C5A880]" />
                   <span>0364 967 082</span>
@@ -526,7 +526,7 @@ export default function FloorPlanExplorer({ onOpenLogin }: FloorPlanExplorerProp
                   </div>
                   <div className="text-[10px] text-[#C5A880] font-mono uppercase font-bold">
                     {isAdmin 
-                      ? t('Ban Quản Lý Chung Cư') 
+                      ? 'VinHomes Manager' 
                       : isTechnician 
                         ? t('Kỹ Thuật Viên Vận Hành') 
                         : `${t('Chủ Hộ Căn')} ${currentUser?.apartment_code || 'CH-06'}`}
@@ -789,7 +789,7 @@ export default function FloorPlanExplorer({ onOpenLogin }: FloorPlanExplorerProp
                     <Building className="w-4 h-4 text-blue-400 shrink-0" />
                     <div className="text-xs">
                       <span className="font-bold text-blue-400 block uppercase">{t('Chế Độ Quản Trị Chung Cư')}</span>
-                      <span className="text-[11px] text-gray-300">{t('Dữ liệu NKS SCRMAI • Chung Cư BS-07 Tầng 30')}</span>
+                      <span className="text-[11px] text-gray-300">{t('Dữ liệu Skyline SCRMAI • Chung Cư BS-07 Tầng 30')}</span>
                     </div>
                   </div>
                   <span className="text-[10px] font-mono px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/40">
@@ -1069,7 +1069,7 @@ export default function FloorPlanExplorer({ onOpenLogin }: FloorPlanExplorerProp
                     }`}
                   >
                     <Phone className="w-3.5 h-3.5 text-[#C5A880]" />
-                    <span>{t('Hotline Ban Quản Lý: 0364 967 082')}</span>
+                    <span>{t('Hotline VinHomes Manager: 0364 967 082')}</span>
                   </a>
 
                   <div className={`p-2.5 border rounded-none text-[11px] leading-relaxed flex items-start gap-2 ${

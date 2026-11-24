@@ -1,20 +1,16 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import { 
-  ExtendedServiceRequest, 
-  INITIAL_TICKETS, 
-  DEFAULT_TECHNICIANS, 
-  TechnicianProfile 
+  getTickets, 
+  getTicketById, 
+  getTechnicians, 
+  createTicket, 
+  deleteTicket,
+  ExtendedServiceRequest,
+  serviceTicketRecordToRequest,
+  extendedServiceRequestToRecord
 } from '@/lib/ticketStore';
-import { 
-  fetchNksTickets, 
-  createNksTicket, 
-  updateNksTicket,
-  deleteNksTicket,
-  nksTicketToServiceRequest,
-  NksTicket
-} from '@/lib/nksTicketService';
+import { skylineDb } from '@/lib/db';
+import { ServiceTicketRecord } from '@/lib/db/schema';
 import { evaluateBestTechnicianWithAI } from '@/lib/aiDispatchService';
 import { 
   classifyTicket, 
@@ -22,577 +18,249 @@ import {
   generateSuggestedAdminReply 
 } from '@/lib/ticketClassification';
 
-const TICKETS_FILE = path.join(process.cwd(), '.skyline_tickets.json');
-
-interface ServerStorageData {
-  tickets: ExtendedServiceRequest[];
-  technicians: TechnicianProfile[];
-  updatedAt: string;
-}
-
-function readServerData(): ServerStorageData {
-  try {
-    if (fs.existsSync(TICKETS_FILE)) {
-      const raw = fs.readFileSync(TICKETS_FILE, 'utf-8');
-      const parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.tickets)) {
-        return parsed;
-      }
-    }
-  } catch (e) {
-    console.warn('Lỗi đọc file .skyline_tickets.json:', e);
-  }
-  return {
-    tickets: INITIAL_TICKETS,
-    technicians: DEFAULT_TECHNICIANS,
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-function writeServerData(data: ServerStorageData) {
-  try {
-    fs.writeFileSync(TICKETS_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (e) {
-    console.warn('Lỗi ghi file .skyline_tickets.json:', e);
-  }
-}
-
 /**
- * GET /api/tickets?aptCode=CH-06&phone=0364967082
- * Tự động đồng bộ live với NKS SCRMAI API
+ * GET /api/tickets - Lấy danh sách phiếu từ skylineDb
  */
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const aptCode = searchParams.get('aptCode');
     const phone = searchParams.get('phone');
-    const action = searchParams.get('action');
+    const status = searchParams.get('status');
 
-    // Nếu yêu cầu trực tiếp danh sách thô từ NKS SCRMAI API
-    if (action === 'FETCH_NKS') {
-      const nksList = await fetchNksTickets(phone || undefined);
-      return NextResponse.json({ success: true, data: nksList });
-    }
+    let tickets = getTickets(aptCode || undefined, phone || undefined);
+    const technicians = getTechnicians();
 
-    const data = readServerData();
-    let nksTickets: NksTicket[] = [];
-
-    try {
-      // Gọi trực tiếp NKS SCRMAI API
-      nksTickets = await fetchNksTickets(phone || undefined);
-      // Nếu lọc theo phone mà NKS chưa có vé nào, nạp danh sách vé tòa nhà từ NKS
-      if ((!nksTickets || nksTickets.length === 0) && phone) {
-        const allNks = await fetchNksTickets();
-        if (Array.isArray(allNks) && allNks.length > 0) {
-          nksTickets = allNks;
-        }
-      }
-    } catch (apiErr) {
-      console.warn('Không thể kết nối NKS API, sử dụng dữ liệu lưu cục bộ:', apiErr);
-    }
-
-    // Merge NKS tickets với local technician assignment & resolution notes
-    const localMap = new Map<string, ExtendedServiceRequest>();
-    data.tickets.forEach(t => {
-      localMap.set(t.id, t);
-      if (t.nks_id) {
-        localMap.set(String(t.nks_id), t);
-      }
-    });
-
-    const mergedList: ExtendedServiceRequest[] = [];
-    const processedNksIds = new Set<number>();
-
-    // 1. Chuyển đổi và merge toàn bộ tickets thực tế từ NKS
-    if (Array.isArray(nksTickets) && nksTickets.length > 0) {
-      for (const nks of nksTickets) {
-        processedNksIds.add(nks.id);
-        const existingLocal = localMap.get(String(nks.id));
-        const unified = nksTicketToServiceRequest(nks, existingLocal);
-        mergedList.push(unified);
-      }
-    }
-
-    // 2. Giữ lại các phiếu cục bộ chưa kịp đồng bộ hoặc được tạo offline
-    for (const localT of data.tickets) {
-      if (localT.nks_id && processedNksIds.has(localT.nks_id)) {
-        continue;
-      }
-      if (processedNksIds.has(Number(localT.id))) {
-        continue;
-      }
-      mergedList.push(localT);
-    }
-
-    // Sắp xếp theo ngày tạo mới nhất lên đầu
-    mergedList.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-    // Tự động nhận diện và đồng bộ KTV xuất hiện trong các vé NKS API thực tế
-    if (Array.isArray(nksTickets) && nksTickets.length > 0) {
-      if (!Array.isArray(data.technicians)) data.technicians = DEFAULT_TECHNICIANS;
-      const existingNames = new Set(data.technicians.map(t => t.name.trim().toLowerCase()));
-      nksTickets.forEach(nks => {
-        const engName = (nks.engineername || '').trim();
-        if (engName && !existingNames.has(engName.toLowerCase())) {
-          existingNames.add(engName.toLowerCase());
-          const newId = `KTV-${String(data.technicians.length + 1).padStart(2, '0')}`;
-          const isSanitation = (nks.service || '').toLowerCase().includes('vệ sinh');
-          const isCooling = (nks.service || '').toLowerCase().includes('lạnh') || (nks.service || '').toLowerCase().includes('nhà hàng');
-          data.technicians.push({
-            id: newId,
-            name: engName,
-            phone: '090' + Math.floor(1000000 + Math.random() * 9000000),
-            email: `${engName.toLowerCase().replace(/\s+/g, '')}@skyline.vn`,
-            specialty: isSanitation ? 'Vệ Sinh & Cảnh Quan Chung Cư' : isCooling ? 'Điện Lạnh & Kỹ Thuật Tòa Nhà' : 'Cơ Điện & Nước',
-            baseSalary: 8500000,
-            payPerTicket: 150000,
-            bonusPerFiveStar: 50000,
-            status: 'AVAILABLE',
-          });
-        }
-      });
-    }
-
-    // Cập nhật lại kho lưu trữ server
-    data.tickets = mergedList;
-    data.updatedAt = new Date().toISOString();
-    writeServerData(data);
-
-    let filtered = mergedList;
-    if (aptCode || phone) {
-      const clean = aptCode ? aptCode.trim().toUpperCase() : '';
-      const cleanPhone = phone ? phone.trim() : '';
-      filtered = filtered.filter(t => {
-        const matchApt = clean && t.apt_code && t.apt_code.trim().toUpperCase() === clean;
-        const matchPhone = cleanPhone && t.resident_phone && t.resident_phone.trim() === cleanPhone;
-        return Boolean(matchApt || matchPhone);
-      });
+    if (status) {
+      tickets = tickets.filter(t => t.status === status);
     }
 
     return NextResponse.json({
       success: true,
-      tickets: filtered,
-      technicians: data.technicians,
-      nksConnected: Array.isArray(nksTickets) && nksTickets.length > 0,
-      totalCount: mergedList.length,
+      tickets,
+      technicians,
+      total: tickets.length,
+      updatedAt: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('Lỗi GET /api/tickets:', error);
-    return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi tải danh sách phiếu.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
 
 /**
- * POST /api/tickets
+ * POST /api/tickets - Tạo phiếu mới hoặc xử lý các action
  */
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    const { action, tickets, ticket, technicianId, scheduledTime, afterImage, resolutionNotes, rating, feedback } = body;
-    const data = readServerData();
+    const { 
+      action,
+      ticketId,
+      replyText,
+      adminName,
+      engineername,
+      afterImage,
+      resolutionNotes,
+      aiVerification,
+      reason,
+      apt_code, 
+      resident_name, 
+      resident_phone, 
+      content, 
+      service, 
+      before_image,
+      ticket
+    } = body;
 
-    // 1. Đồng bộ toàn bộ mảng từ client
-    if (action === 'SYNC_ALL' && Array.isArray(tickets)) {
-      data.tickets = tickets;
-      data.updatedAt = new Date().toISOString();
-      writeServerData(data);
-      return NextResponse.json({ success: true, count: tickets.length });
-    }
-
-    // 2. Cư Dân tạo phiếu mới -> Gửi trực tiếp lên NKS SCRMAI API
-    if (action === 'CREATE' && (ticket || body.content)) {
-      const t = ticket || body;
-      
-      // Gọi NKS SCRMAI API với thông tin tài khoản cư dân thực tế
-      const residentFullName = (t.resident_name || body.resident_name || '').trim() || 'Cư dân Skyline';
-      const residentPhoneNumber = (t.resident_phone || body.resident_phone || '').trim();
-      const residentEmail = (t.email || body.email || '').trim() || 'resident@skyline.vn';
-      const apt = (t.apt_code || body.apt_code || '').trim() || 'Tòa Nhà';
-      const category = t.ai_category || body.ai_category || 'Kỹ thuật';
-
-      const nksResult = await createNksTicket({
-        fullname: residentFullName,
-        phone: residentPhoneNumber,
-        email: residentEmail,
-        service: category,
-        subject: `[Căn ${apt}] ${category} - ${residentFullName}`,
-        description: t.content || body.content || '',
-        image: t.before_image || body.before_image || '',
-        system: 'skyline',
-      });
-
-      // Phân loại mục đích của ticket (REPAIR | INQUIRY | FEEDBACK | SERVICE_REQUEST)
-      const ticketCategory = t.ticket_type || t.ai_category || body.ai_category || 'Kỹ thuật';
-      const classification = classifyTicket(
-        t.content || body.content || '',
-        ticketCategory,
-        t.subject || t.title || body.subject || ''
-      );
-
-      // Nếu cư dân đã chỉ định rõ mục đích lúc tạo phiếu thì ưu tiên
-      const finalCategoryType = t.ticket_type || classification.type;
-      const finalCategoryLabel = t.ticket_type_label || classification.typeLabel;
-      const finalHandledBy = classification.handledBy;
-
-      const newId = nksResult.success && nksResult.id ? String(nksResult.id) : (t.id || `TICK-${Math.floor(100 + Math.random() * 900)}`);
-
-      let suggestedTech: TechnicianProfile | undefined = undefined;
-      let suggestedScore: number | undefined = undefined;
-      let scheduledTime: string | undefined = undefined;
-      let aiReason: string | undefined = undefined;
-      let ticketStatus: 'Open' | 'In_Progress' | 'Resolved' = 'Open';
-      let actualHandledBy = classification.handledBy;
-
-      // =========================================================================
-      // LUỒNG 1: SỰ CỐ KỸ THUẬT / SỬA CHỮA (REPAIR - CẦN KỸ THUẬT VIÊN)
-      // =========================================================================
-      if (finalCategoryType === 'REPAIR') {
-        ticketStatus = 'Open';
-        actualHandledBy = 'TECHNICIAN';
-        if (data.technicians && data.technicians.length > 0) {
-          const evalResult = evaluateBestTechnicianWithAI(
-            { ...t, id: newId },
-            data.technicians,
-            data.tickets
-          );
-          suggestedTech = evalResult.technician;
-          scheduledTime = evalResult.scheduledTime;
-          aiReason = evalResult.reason;
-          suggestedScore = evalResult.matchScore;
-        }
-      } 
-      // =========================================================================
-      // LUỒNG 2: PHẢN ÁNH / Ý KIẾN / THẮC MẮC (FEEDBACK)
-      // =========================================================================
-      else {
-        // Tùy theo mức độ nghiêm trọng:
-        // - Nghiêm trọng thật sự (an ninh, trộm cắp, hỏa hoạn, thái độ, xô xát...): Giữ 'Open' để BQL trực tiếp thụ lý
-        // - Thông thường (nội quy, chất lượng nước hồ bơi, giờ gym, gửi xe, lịch rác, BBQ, hóa đơn...):
-        //   AI tự động phân tích và đưa ra phản hồi hoàn thiện ticket luôn ('Resolved')
-        if (classification.canAutoResolve && classification.autoReplyText) {
-          ticketStatus = 'Resolved';
-          actualHandledBy = 'MANAGEMENT';
-        } else {
-          ticketStatus = 'Open';
-          actualHandledBy = 'MANAGEMENT';
-        }
-        suggestedTech = undefined;
-        scheduledTime = undefined;
-        aiReason = undefined;
-      }
-
-      const autoReplyText = (ticketStatus === 'Resolved' && classification.autoReplyText)
-        ? classification.autoReplyText
-        : undefined;
-
-      const newTicket: ExtendedServiceRequest = {
-        ...t,
-        id: newId,
-        nks_id: nksResult.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        status: ticketStatus,
-        ticket_type: finalCategoryType === 'REPAIR' ? 'REPAIR' : 'FEEDBACK',
-        ticket_type_label: finalCategoryType === 'REPAIR' ? 'Sự Cố Kỹ Thuật' : 'Phản Ánh & Ý Kiến',
-        handled_by: actualHandledBy,
-        admin_reply: autoReplyText,
-        admin_replied_at: autoReplyText ? new Date().toISOString() : undefined,
-        admin_replied_by: autoReplyText ? 'Hệ Thống Quản Lý Skyline (AI Tự Động)' : undefined,
-        ai_suggested_reply: classification.suggestedAdminReply || autoReplyText,
-        assigned_technician_id: undefined,
-        assigned_technician: undefined,
-        assigned_technician_phone: undefined,
-        suggested_technician: suggestedTech?.name,
-        suggested_technician_id: suggestedTech?.id,
-        suggested_technician_phone: suggestedTech?.phone,
-        suggested_match_score: suggestedScore,
-        scheduled_time: scheduledTime,
-        auto_dispatched: false,
-        ai_dispatch_reason: aiReason,
-      };
-
-      // Tự động đồng bộ câu trả lời hoàn thiện lên NKS SCRMAI API
-      if (nksResult.id && autoReplyText) {
-        await updateNksTicket({
-          id: nksResult.id,
-          reply: autoReplyText,
-        }).catch(e => console.warn('Lỗi sync AI auto-reply lên NKS:', e));
-      }
-
-
-
-      // Thêm vào danh sách local
-      data.tickets = [newTicket, ...data.tickets.filter(item => item.id !== newId)];
-      data.updatedAt = new Date().toISOString();
-      writeServerData(data);
-
-      return NextResponse.json({ 
-        success: true, 
-        ticket: newTicket,
-        nksId: nksResult.id,
-        nksSuccess: nksResult.success 
-      });
-    }
-
-    // 3. Phân công Kỹ thuật viên (Thủ công hoặc AI)
-    if (action === 'ASSIGN' && body.ticketId && technicianId) {
-      const tech = data.technicians.find(t => t.id === technicianId);
-      if (!tech) {
-        return NextResponse.json({ success: false, message: 'Không tìm thấy kỹ thuật viên.' }, { status: 404 });
-      }
-      let targetTicket: ExtendedServiceRequest | undefined;
-      data.tickets = data.tickets.map(t => {
-        if (t.id === body.ticketId || String(t.nks_id) === String(body.ticketId)) {
-          targetTicket = {
-            ...t,
-            status: 'In_Progress',
-            assigned_technician_id: tech.id,
-            assigned_technician: tech.name,
-            assigned_technician_phone: tech.phone,
-            scheduled_time: scheduledTime || 'Có mặt trong vòng 30 phút',
-            auto_dispatched: Boolean(body.autoDispatched),
-            ai_dispatch_reason: body.aiReason || t.ai_dispatch_reason,
-            updated_at: new Date().toISOString(),
-          };
-          return targetTicket;
-        }
-        return t;
-      });
-
-      // Đồng bộ phân công KTV lên NKS API
-      const nksIdNum = targetTicket?.nks_id || Number(String(body.ticketId).replace('TICK-', ''));
-      if (!isNaN(nksIdNum) && nksIdNum > 0) {
-        await updateNksTicket({
-          id: nksIdNum,
-          engineername: tech.name,
-          reply: targetTicket?.admin_reply || targetTicket?.ai_reply,
+    // 1. Phân công KTV
+    if (action === 'ASSIGN' && ticketId && body.technicianId) {
+      const existing = skylineDb.tickets.findById(ticketId);
+      const tech = skylineDb.technicians.findById(body.technicianId);
+      if (existing && tech) {
+        skylineDb.tickets.update(existing.id, {
+          status: 'In_Progress',
+          assigned_technician_id: tech.id,
+          assigned_technician_name: tech.name,
+          assigned_technician_phone: tech.phone,
+          scheduled_time: body.scheduledTime || 'Có mặt trong vòng 30 phút',
+          updated_at: new Date().toISOString()
         });
+        skylineDb.technicians.update(tech.id, { status: 'BUSY' });
+        return NextResponse.json({ success: true, message: 'Phân công kỹ thuật viên thành công' });
       }
-
-      data.updatedAt = new Date().toISOString();
-      writeServerData(data);
-      return NextResponse.json({ success: true, message: `Đã phân công ${tech.name} xử lý phiếu.` });
+      return NextResponse.json({ success: false, message: 'Không tìm thấy phiếu hoặc KTV' }, { status: 404 });
     }
 
-    // 4. Nghiệm thu hoàn tất
-    if (action === 'RESOLVE' && body.ticketId && afterImage) {
-      let targetTicket: ExtendedServiceRequest | undefined;
-      const notes = resolutionNotes || 'Đã sửa chữa và bàn giao xong.';
-      data.tickets = data.tickets.map(t => {
-        if (t.id === body.ticketId || String(t.nks_id) === String(body.ticketId)) {
-          targetTicket = {
-            ...t,
-            status: 'Resolved',
-            after_image: afterImage,
-            resolution_notes: notes,
-            ai_verification: body.aiVerification || t.ai_verification,
-            resolved_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-          return targetTicket;
-        }
-        return t;
-      });
-
-      // Đồng bộ biên bản nghiệm thu & KTV lên NKS API
-      const nksIdNum = targetTicket?.nks_id || Number(String(body.ticketId).replace('TICK-', ''));
-      if (!isNaN(nksIdNum) && nksIdNum > 0) {
-        await updateNksTicket({
-          id: nksIdNum,
-          reply: notes,
-          engineername: targetTicket?.assigned_technician,
+    // 2. Phản hồi BQL
+    if (action === 'ADMIN_REPLY' && ticketId && replyText) {
+      const existing = skylineDb.tickets.findById(ticketId);
+      if (existing) {
+        skylineDb.tickets.update(existing.id, {
+          admin_reply: replyText.trim(),
+          admin_replied_at: new Date().toISOString(),
+          admin_replied_by: adminName || 'VinHomes Manager',
+          assigned_technician_name: engineername?.trim() || existing.assigned_technician_name,
+          status: 'Resolved',
+          updated_at: new Date().toISOString()
         });
+        return NextResponse.json({ success: true, message: 'Đã gửi phản hồi BQL' });
       }
-
-      data.updatedAt = new Date().toISOString();
-      writeServerData(data);
-      return NextResponse.json({ success: true, message: 'Đã nghiệm thu và đóng phiếu thành công.' });
+      return NextResponse.json({ success: false, message: 'Không tìm thấy phiếu' }, { status: 404 });
     }
 
-    // 4.1 BQL từ chối nghiệm thu khi ảnh không đạt chuẩn
-    if (action === 'REJECT_RESOLUTION' && body.ticketId) {
-      data.tickets = data.tickets.map(t => {
-        if (t.id === body.ticketId || String(t.nks_id) === String(body.ticketId)) {
-          return {
-            ...t,
-            status: 'In_Progress',
-            rework_reason: (body.reason || 'Ảnh không đạt chuẩn').trim(),
-            rework_count: (t.rework_count || 0) + 1,
-            after_image: undefined,
-            ai_verification: undefined,
-            updated_at: new Date().toISOString(),
-          };
-        }
-        return t;
-      });
-      data.updatedAt = new Date().toISOString();
-      writeServerData(data);
-      return NextResponse.json({ success: true, message: 'Đã từ chối nghiệm thu và yêu cầu KTV làm lại.' });
-    }
-
-    // 5. Cư dân chấm điểm 5 sao
-    if (action === 'RATE' && body.ticketId && typeof rating === 'number') {
-      data.tickets = data.tickets.map(t => {
-        if (t.id === body.ticketId) {
-          return {
-            ...t,
-            rating: Math.max(1, Math.min(5, Math.round(rating))),
-            resident_feedback: feedback || '',
-            rated_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-        }
-        return t;
-      });
-      data.updatedAt = new Date().toISOString();
-      writeServerData(data);
-      return NextResponse.json({ success: true, message: 'Đã ghi nhận đánh giá của cư dân.' });
-    }
-
-    // 6. Ban Quản Lý (BQL) phản hồi ý kiến / phản ánh / thắc mắc của cư dân
-    if (action === 'ADMIN_REPLY' && body.ticketId && body.replyText) {
-      const ticketIdStr = String(body.ticketId);
-      const adminName = body.adminName || 'Ban Quản Lý Skyline';
-      let found = false;
-      let targetTicket: ExtendedServiceRequest | undefined;
-
-      data.tickets = data.tickets.map(t => {
-        if (t.id === ticketIdStr || String(t.nks_id) === ticketIdStr) {
-          found = true;
-          targetTicket = {
-            ...t,
-            admin_reply: String(body.replyText).trim(),
-            admin_replied_at: new Date().toISOString(),
-            admin_replied_by: adminName,
-            assigned_technician: body.engineername || t.assigned_technician,
-            status: 'Resolved',
-            updated_at: new Date().toISOString(),
-          };
-          return targetTicket;
-        }
-        return t;
-      });
-
-      if (!found) {
-        return NextResponse.json({ success: false, message: 'Không tìm thấy phiếu yêu cầu.' }, { status: 404 });
-      }
-
-      // Đồng bộ nội dung phản hồi BQL và tên KTV lên NKS API
-      const nksIdNum = targetTicket?.nks_id || Number(ticketIdStr.replace('TICK-', ''));
-      if (!isNaN(nksIdNum) && nksIdNum > 0) {
-        await updateNksTicket({
-          id: nksIdNum,
-          reply: String(body.replyText).trim(),
-          engineername: body.engineername || targetTicket?.assigned_technician,
+    // 3. Nghiệm thu phiếu
+    if (action === 'RESOLVE' && ticketId) {
+      const existing = skylineDb.tickets.findById(ticketId);
+      if (existing) {
+        skylineDb.tickets.update(existing.id, {
+          status: 'Resolved',
+          after_image: afterImage,
+          resolved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         });
-      }
-
-      data.updatedAt = new Date().toISOString();
-      writeServerData(data);
-      return NextResponse.json({ success: true, message: 'Đã gửi phản hồi chính thức từ Ban Quản Lý tới cư dân.' });
-    }
-
-    // 7. AI tự động trả lời / cập nhật câu trả lời thông minh
-    if (action === 'AI_ANSWER' && body.ticketId) {
-      const ticketIdStr = String(body.ticketId);
-      let targetTicket: ExtendedServiceRequest | undefined;
-      data.tickets = data.tickets.map(t => {
-        if (t.id === ticketIdStr || String(t.nks_id) === ticketIdStr) {
-          const answer = body.customAnswer || findInquiryAnswer(t.content);
-          targetTicket = {
-            ...t,
-            ai_reply: answer,
-            ai_replied_at: new Date().toISOString(),
-            status: 'Resolved',
-            updated_at: new Date().toISOString(),
-          };
-          return targetTicket;
+        if (existing.assigned_technician_id) {
+          skylineDb.technicians.update(existing.assigned_technician_id, { status: 'AVAILABLE' });
         }
-        return t;
-      });
+        return NextResponse.json({ success: true, message: 'Nghiệm thu thành công' });
+      }
+      return NextResponse.json({ success: false, message: 'Không tìm thấy phiếu' }, { status: 404 });
+    }
 
-      // Đồng bộ câu trả lời AI lên NKS API
-      const nksIdNum = targetTicket?.nks_id || Number(ticketIdStr.replace('TICK-', ''));
-      if (!isNaN(nksIdNum) && nksIdNum > 0) {
-        await updateNksTicket({
-          id: nksIdNum,
-          reply: targetTicket?.ai_reply,
-          engineername: targetTicket?.assigned_technician,
+    // 4. Từ chối nghiệm thu
+    if (action === 'REJECT_RESOLUTION' && ticketId) {
+      const existing = skylineDb.tickets.findById(ticketId);
+      if (existing) {
+        skylineDb.tickets.update(existing.id, {
+          status: 'In_Progress',
+          after_image: undefined,
+          updated_at: new Date().toISOString()
         });
+        return NextResponse.json({ success: true, message: 'Đã yêu cầu làm lại' });
       }
-
-      data.updatedAt = new Date().toISOString();
-      writeServerData(data);
-      return NextResponse.json({ success: true, message: 'AI đã cập nhật câu trả lời giải đáp cho cư dân.' });
+      return NextResponse.json({ success: false, message: 'Không tìm thấy phiếu' }, { status: 404 });
     }
 
-    // 8. Cập nhật trực tiếp vé (id, reply, engineername) lên NKS SCRMAI API
-    if ((action === 'UPDATE' || action === 'UPDATE_TICKET') && (body.id || body.ticketId)) {
-      const rawId = body.id || body.ticketId;
-      const ticketIdStr = String(rawId);
-      const replyVal = body.reply !== undefined && body.reply !== null ? String(body.reply).trim() : undefined;
-      const engineerVal = body.engineername !== undefined && body.engineername !== null ? String(body.engineername).trim() : undefined;
+    // 5. Xóa phiếu
+    if (action === 'DELETE' && ticketId) {
+      deleteTicket(ticketId);
+      return NextResponse.json({ success: true, message: 'Đã xóa phiếu' });
+    }
 
-      let found = false;
-      data.tickets = data.tickets.map(t => {
-        if (t.id === ticketIdStr || String(t.nks_id) === ticketIdStr) {
-          found = true;
-          return {
-            ...t,
-            ...(replyVal ? {
-              admin_reply: replyVal,
-              admin_replied_at: new Date().toISOString(),
-              resolution_notes: replyVal,
-              status: 'Resolved',
-            } : {}),
-            ...(engineerVal ? {
-              assigned_technician: engineerVal,
-              status: t.status === 'Open' ? 'In_Progress' : t.status,
-            } : {}),
-            updated_at: new Date().toISOString(),
-          };
-        }
-        return t;
-      });
-
-      const nksIdNum = Number(ticketIdStr.replace('TICK-', ''));
-      if (!isNaN(nksIdNum) && nksIdNum > 0) {
-        await updateNksTicket({
-          id: nksIdNum,
-          reply: replyVal,
-          engineername: engineerVal,
-        });
-      }
-
-      data.updatedAt = new Date().toISOString();
-      writeServerData(data);
-      return NextResponse.json({ 
-        success: true, 
-        message: 'Đã cập nhật vé lên hệ thống NKS SCRMAI thành công.' 
+    // 6. Tạo trực tiếp từ object ticket
+    if (action === 'CREATE' && ticket) {
+      const rec = extendedServiceRequestToRecord(ticket);
+      const inserted = skylineDb.tickets.insert(rec);
+      return NextResponse.json({
+        success: true,
+        message: 'Tạo phiếu thành công',
+        ticket: serviceTicketRecordToRequest(inserted)
       });
     }
 
-    // 9. Xóa phiếu trên NKS API và cơ sở dữ liệu
-    if (action === 'DELETE' && body.ticketId) {
-      const ticketIdStr = String(body.ticketId);
-      const numId = Number(ticketIdStr.replace('TICK-', ''));
-      if (!isNaN(numId) && numId > 0) {
-        await deleteNksTicket(numId);
-      }
-      data.tickets = data.tickets.filter(t => t.id !== ticketIdStr && String(t.nks_id) !== ticketIdStr);
-      data.updatedAt = new Date().toISOString();
-      writeServerData(data);
-      return NextResponse.json({ success: true, message: 'Đã xóa phiếu thành công.' });
+    // 7. Tạo phiếu từ form người dùng
+    const textContent = content || ticket?.content;
+    if (!textContent || !textContent.trim()) {
+      return NextResponse.json({ success: false, message: 'Nội dung phiếu không được để trống' }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, data });
+    const created = createTicket({
+      apt_code: apt_code || 'CH-06',
+      resident_name: resident_name || 'Cư Dân Skyline',
+      resident_phone: resident_phone || '',
+      content: textContent.trim(),
+      ai_category: (service as any) || 'Khác',
+      before_image: before_image || undefined
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Tạo phiếu hỗ trợ thành công',
+      ticket: created,
+    });
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi xử lý phiếu.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  }
+}
+
+/**
+ * PUT /api/tickets - Cập nhật phiếu
+ */
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+    const { 
+      id, 
+      status, 
+      admin_reply, 
+      assigned_technician_id, 
+      assigned_technician, 
+      resolution_notes,
+      rating,
+      resident_feedback
+    } = body;
+
+    if (!id) {
+      return NextResponse.json({ success: false, message: 'Thiếu ID phiếu' }, { status: 400 });
+    }
+
+    const existing = skylineDb.tickets.findById(id);
+    if (!existing) {
+      return NextResponse.json({ success: false, message: 'Không tìm thấy phiếu yêu cầu' }, { status: 404 });
+    }
+
+    const patch: Partial<ServiceTicketRecord> = {
+      updated_at: new Date().toISOString()
+    };
+    if (status) patch.status = status;
+    if (admin_reply !== undefined) {
+      patch.admin_reply = admin_reply;
+      if (!existing.admin_replied_at) {
+        patch.admin_replied_at = new Date().toISOString();
+        patch.admin_replied_by = 'VinHomes Manager';
+      }
+    }
+    if (assigned_technician_id !== undefined) patch.assigned_technician_id = assigned_technician_id;
+    if (assigned_technician !== undefined) patch.assigned_technician_name = assigned_technician;
+    if (rating !== undefined) {
+      patch.rating = rating;
+      patch.rated_at = new Date().toISOString();
+    }
+    if (resident_feedback !== undefined) patch.resident_feedback = resident_feedback;
+    if (status === 'Resolved' && !existing.resolved_at) {
+      patch.resolved_at = new Date().toISOString();
+    }
+
+    const updated = skylineDb.tickets.update(existing.id, patch);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Cập nhật phiếu thành công',
+      ticket: updated ? serviceTicketRecordToRequest(updated) : null,
+    });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/tickets - Hủy phiếu
+ */
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ success: false, message: 'Thiếu ID phiếu' }, { status: 400 });
+    }
+
+    deleteTicket(id);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Đã hủy phiếu thành công',
+    });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

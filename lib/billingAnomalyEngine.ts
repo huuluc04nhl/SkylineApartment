@@ -61,35 +61,49 @@ export function calculateZScores(values: number[]): number[] {
 /**
  * Quét toàn diện danh sách hóa đơn và phát hiện bất thường theo quy tắc chuẩn
  */
+function getBillAptCode(b: any): string {
+  return String(b?.apartment_code || b?.apt_code || '').trim();
+}
+
+function getBillMonth(b: any): string {
+  return String(b?.billing_month || '').trim();
+}
+
 export function detectBillingAnomalies(
-  targetBills: BillRecord[],
-  allHistoricalBills: BillRecord[] = targetBills
+  targetBills: any[],
+  allHistoricalBills: any[] = targetBills
 ): BillingAnomaly[] {
   const anomalies: BillingAnomaly[] = [];
-  const seenBillsMap = new Map<string, BillRecord[]>();
+  const seenBillsMap = new Map<string, any[]>();
 
   // 1. Kiểm tra TRÙNG HÓA ĐƠN (Duplicate Bills)
   targetBills.forEach(b => {
-    const key = `${b.apartment_code.toUpperCase()}_${b.billing_month.trim()}`;
+    const aptCode = getBillAptCode(b);
+    const month = getBillMonth(b);
+    if (!aptCode || !month) return;
+
+    const key = `${aptCode.toUpperCase()}_${month}`;
     const list = seenBillsMap.get(key) || [];
     list.push(b);
     seenBillsMap.set(key, list);
   });
 
-  seenBillsMap.forEach((billsInPeriod, key) => {
+  seenBillsMap.forEach((billsInPeriod) => {
     if (billsInPeriod.length > 1) {
       billsInPeriod.slice(1).forEach(dup => {
+        const dupApt = getBillAptCode(dup);
+        const dupMonth = getBillMonth(dup);
         anomalies.push({
           id: `anom-dup-${dup.id}`,
           billId: dup.id,
-          apartmentCode: dup.apartment_code,
-          billingMonth: dup.billing_month,
+          apartmentCode: dupApt,
+          billingMonth: dupMonth,
           severity: 'HIGH',
           category: 'DUPLICATE_BILL',
           field: 'apartment_code',
           detectedValue: dup.id,
           expectedValue: '1 hóa đơn duy nhất/kỳ',
-          reason: `Phát hiện ${billsInPeriod.length} hóa đơn cùng lập cho căn ${dup.apartment_code} trong kỳ ${dup.billing_month}.`,
+          reason: `Phát hiện ${billsInPeriod.length} hóa đơn cùng lập cho căn ${dupApt} trong kỳ ${dupMonth}.`,
           suggestedAction: 'Kiểm tra và hủy bỏ bản ghi hóa đơn bị lập trùng trước khi phát hành ra cư dân.',
         });
       });
@@ -97,9 +111,10 @@ export function detectBillingAnomalies(
   });
 
   // Gom lịch sử tiêu thụ điện nước theo từng căn để tính toán chuỗi thời gian
-  const aptHistoryMap = new Map<string, BillRecord[]>();
+  const aptHistoryMap = new Map<string, any[]>();
   allHistoricalBills.forEach(b => {
-    const code = b.apartment_code.toUpperCase();
+    const code = getBillAptCode(b).toUpperCase();
+    if (!code) return;
     const list = aptHistoryMap.get(code) || [];
     list.push(b);
     aptHistoryMap.set(code, list);
@@ -107,8 +122,12 @@ export function detectBillingAnomalies(
 
   // 2. Kiểm tra từng hóa đơn
   targetBills.forEach(bill => {
-    const details = bill.details || [];
-    const aptHistory = (aptHistoryMap.get(bill.apartment_code.toUpperCase()) || [])
+    const aptCode = getBillAptCode(bill);
+    const month = getBillMonth(bill);
+    if (!aptCode) return;
+
+    const details: any[] = bill.details || bill.bill_details || [];
+    const aptHistory = (aptHistoryMap.get(aptCode.toUpperCase()) || [])
       .filter(h => h.id !== bill.id); // loại trừ kỳ hiện tại
 
     // A. Kiểm tra THIẾU KHOẢN PHÍ BẮT BUỘC (Missing Management Fee)
@@ -117,14 +136,14 @@ export function detectBillingAnomalies(
       anomalies.push({
         id: `anom-missing-mgmt-${bill.id}`,
         billId: bill.id,
-        apartmentCode: bill.apartment_code,
-        billingMonth: bill.billing_month,
+        apartmentCode: aptCode,
+        billingMonth: month,
         severity: 'MEDIUM',
         category: 'MISSING_MANDATORY_FEE',
         field: 'Management_Fee',
         detectedValue: 0,
         expectedValue: 'Định mức diện tích × 18.000 đ',
-        reason: `Hóa đơn căn ${bill.apartment_code} kỳ ${bill.billing_month} không có khoản mục Phí Quản Lý Vận Hành.`,
+        reason: `Hóa đơn căn ${aptCode} kỳ ${month} không có khoản mục Phí Quản Lý Vận Hành.`,
         suggestedAction: 'Bổ sung dòng phí quản lý vận hành theo diện tích thông thủy của căn hộ.',
       });
     }
@@ -135,8 +154,8 @@ export function detectBillingAnomalies(
         anomalies.push({
           id: `anom-rate-mgmt-${d.id}`,
           billId: bill.id,
-          apartmentCode: bill.apartment_code,
-          billingMonth: bill.billing_month,
+          apartmentCode: aptCode,
+          billingMonth: month,
           severity: 'MEDIUM',
           category: 'INCORRECT_UNIT_PRICE',
           field: 'unit_price',
@@ -151,8 +170,8 @@ export function detectBillingAnomalies(
         anomalies.push({
           id: `anom-rate-water-${d.id}`,
           billId: bill.id,
-          apartmentCode: bill.apartment_code,
-          billingMonth: bill.billing_month,
+          apartmentCode: aptCode,
+          billingMonth: month,
           severity: 'LOW',
           category: 'INCORRECT_UNIT_PRICE',
           field: 'unit_price',
@@ -170,11 +189,11 @@ export function detectBillingAnomalies(
 
     // Lấy chuỗi lịch sử kỳ trước của cùng căn hộ
     const pastElecUsages = aptHistory
-      .map(h => h.details.find(d => d.service_type === 'Electricity')?.usage)
+      .map(h => (h.details || h.bill_details || []).find((d: any) => d.service_type === 'Electricity')?.usage)
       .filter((u): u is number => typeof u === 'number' && u > 0);
 
     const pastWaterUsages = aptHistory
-      .map(h => h.details.find(d => d.service_type === 'Water')?.usage)
+      .map(h => (h.details || h.bill_details || []).find((d: any) => d.service_type === 'Water')?.usage)
       .filter((u): u is number => typeof u === 'number' && u > 0);
 
     // 1) ĐIỆN
@@ -187,8 +206,8 @@ export function detectBillingAnomalies(
         anomalies.push({
           id: `anom-elec-drop-${bill.id}`,
           billId: bill.id,
-          apartmentCode: bill.apartment_code,
-          billingMonth: bill.billing_month,
+          apartmentCode: aptCode,
+          billingMonth: month,
           severity: 'HIGH',
           category: 'METER_DECREASE',
           field: 'Electricity',
@@ -204,8 +223,8 @@ export function detectBillingAnomalies(
         anomalies.push({
           id: `anom-elec-surge-${bill.id}`,
           billId: bill.id,
-          apartmentCode: bill.apartment_code,
-          billingMonth: bill.billing_month,
+          apartmentCode: aptCode,
+          billingMonth: month,
           severity: pctChange >= 100 ? 'HIGH' : 'MEDIUM',
           category: 'SPIKE_SURGE',
           field: 'Electricity',
@@ -226,8 +245,8 @@ export function detectBillingAnomalies(
         anomalies.push({
           id: `anom-water-surge-${bill.id}`,
           billId: bill.id,
-          apartmentCode: bill.apartment_code,
-          billingMonth: bill.billing_month,
+          apartmentCode: aptCode,
+          billingMonth: month,
           severity: pctWaterChange >= 100 ? 'HIGH' : 'MEDIUM',
           category: 'SPIKE_SURGE',
           field: 'Water',
@@ -242,3 +261,4 @@ export function detectBillingAnomalies(
 
   return anomalies;
 }
+

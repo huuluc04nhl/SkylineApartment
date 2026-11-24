@@ -23,26 +23,15 @@ import {
   findInquiryAnswer 
 } from './ticketClassification';
 
-const AUTO_DISPATCH_SETTING_KEY = 'skyline_ai_auto_dispatch_enabled';
+let _isAutoDispatchEnabled = false;
 
-/**
- * Kiểm tra cấu hình Tự động điều phối AI
- * Mặc định TẮT (false) để đảm bảo tính minh bạch: BQL là người xem xét & bấm duyệt,
- * tránh việc hệ thống tự ý nhảy trạng thái mà BQL không kịp kiểm tra.
- */
 export function isAutoDispatchEnabled(): boolean {
-  if (typeof window === 'undefined') return false;
-  const stored = localStorage.getItem(AUTO_DISPATCH_SETTING_KEY);
-  if (stored === null) return false; // Mặc định tắt để đảm bảo minh bạch
-  return stored === 'true';
+  return _isAutoDispatchEnabled;
 }
 
-/**
- * Bật / Tắt chế độ tự động điều phối AI
- */
 export function setAutoDispatchEnabled(enabled: boolean): void {
+  _isAutoDispatchEnabled = enabled;
   if (typeof window !== 'undefined') {
-    localStorage.setItem(AUTO_DISPATCH_SETTING_KEY, enabled ? 'true' : 'false');
     window.dispatchEvent(new CustomEvent('skyline_ai_dispatch_setting_changed', { detail: { enabled } }));
   }
 }
@@ -158,7 +147,7 @@ export function evaluateBestTechnicianWithAI(
 export function autoDispatchSingleTicket(ticketId: string): ExtendedServiceRequest | null {
   const allTickets = getTickets();
   const technicians = getTechnicians();
-  const targetTicket = allTickets.find(t => t.id === ticketId || String(t.nks_id) === ticketId);
+  const targetTicket = allTickets.find(t => t.id === ticketId);
   if (!targetTicket) return null;
 
   // Nếu phiếu đã được xử lý hoặc nghiệm thu thì bỏ qua
@@ -227,7 +216,7 @@ export function autoDispatchSingleTicket(ticketId: string): ExtendedServiceReque
 
 /**
  * Ban Quản Lý bấm 1 chạm để PHÊ DUYỆT ĐỀ XUẤT ĐIỀU PHỐI CỦA AI:
- * Chuyển phiếu sang 'In_Progress', gán chính thức KTV và cập nhật NKS API
+ * Chuyển phiếu sang 'In_Progress', gán chính thức KTV và cập nhật Skyline API
  */
 export const approveAiRecommendation = autoDispatchSingleTicket;
 
@@ -250,7 +239,7 @@ export function autoDispatchAllPendingTickets(): {
     if (dispatched) {
       if (dispatched.assigned_technician) {
         results.push({
-          ticketId: dispatched.nks_id ? `#${dispatched.nks_id}` : `#${dispatched.id}`,
+          ticketId: `#${dispatched.id}`,
           techName: dispatched.assigned_technician,
           reason: dispatched.ai_dispatch_reason || 'AI phân công tối ưu',
         });
@@ -273,8 +262,8 @@ export function autoDispatchAllPendingTickets(): {
  */
 export function generateAiInspectionImage(ticket: ExtendedServiceRequest): string {
   const cat = ticket.ai_category || 'Kỹ thuật';
-  const idStr = ticket.nks_id ? `#${ticket.nks_id}` : `#${ticket.id.replace('TICK-', '')}`;
-  const tech = ticket.assigned_technician || 'KTV Ban Quản Lý';
+  const idStr = `#${ticket.id.replace('TICK-', '')}`;
+  const tech = ticket.assigned_technician || 'KTV VinHomes Manager';
   const dateStr = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
 
   // Màu sắc chủ đạo theo hạng mục
@@ -399,7 +388,7 @@ export function generateAiResolutionNotes(ticket: ExtendedServiceRequest): strin
  */
 export function autoResolveSingleTicketWithAI(ticketId: string): ExtendedServiceRequest | null {
   const allTickets = getTickets();
-  const target = allTickets.find(t => t.id === ticketId || String(t.nks_id) === ticketId);
+  const target = allTickets.find(t => t.id === ticketId);
   if (!target) return null;
 
   if (target.status === 'Resolved') return target;
@@ -449,7 +438,7 @@ export function autoResolveAllInProgressTicketsWithAI(): {
     const resolved = autoResolveSingleTicketWithAI(t.id);
     if (resolved) {
       results.push({
-        ticketId: resolved.nks_id ? `#${resolved.nks_id}` : `#${resolved.id}`,
+        ticketId: `#${resolved.id}`,
         aptCode: resolved.apt_code,
         notes: resolved.resolution_notes || 'AI nghiệm thu hoàn tất',
       });

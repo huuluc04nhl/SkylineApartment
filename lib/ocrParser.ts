@@ -1,4 +1,5 @@
 import jsQR from 'jsqr';
+import { getUserStore } from './userStore';
 
 export interface OcrCccdResult {
   idNumber: string;
@@ -816,12 +817,9 @@ export async function runDualSideCccdOcr(
   await new Promise((r) => setTimeout(r, 600));
 
   let fallbackUser: any = null;
-  if (typeof window !== 'undefined') {
-    try {
-      const stored = localStorage.getItem('skyline_user_store');
-      if (stored) fallbackUser = JSON.parse(stored);
-    } catch {}
-  }
+  try {
+    fallbackUser = getUserStore('huuluc04@gmail.com') || null;
+  } catch {}
 
   const fallbackResult: OcrCccdResult = {
     idNumber: fallbackUser?.id_number || fallbackUser?.id_card_no || '067204000961',

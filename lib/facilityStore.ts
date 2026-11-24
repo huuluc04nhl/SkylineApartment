@@ -153,25 +153,20 @@ export function isTimeSlotOverlap(slotA: string, slotB: string): boolean {
   return Math.max(rangeA.startMin, rangeB.startMin) < Math.min(rangeA.endMin, rangeB.endMin);
 }
 
+
+const inMemoryFacilityMap = new Map<string, any>();
+
 function getStorageItem<T>(key: string, defaultVal: T): T {
-  if (typeof window === 'undefined') return defaultVal;
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return defaultVal;
-    return JSON.parse(raw);
-  } catch {
-    return defaultVal;
+  if (inMemoryFacilityMap.has(key)) {
+    return inMemoryFacilityMap.get(key) as T;
   }
+  return defaultVal;
 }
 
 function setStorageItem<T>(key: string, val: T): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(key, JSON.stringify(val));
-  } catch (err) {
-    console.error('Failed to set facility storage:', err);
-  }
+  inMemoryFacilityMap.set(key, val);
 }
+
 
 /**
  * Lấy toàn bộ danh sách đặt chỗ của toàn bộ tòa nhà (Shared Registry)

@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { extractFaceDescriptorFromBase64, EnrolledFaceProfile } from '@/lib/biometricFaceEngine';
+import { extractFaceDescriptorFromBase64, analyzeBiometric4Samples, EnrolledFaceProfile } from '@/lib/biometricFaceEngine';
 import { saveEnrolledFaceProfile, getEnrolledFaceProfile, getAllEnrolledFaceProfiles } from '@/lib/faceEnrollStore';
 import { updateUserStore, getUserStore, updateApartmentMember } from '@/lib/userStore';
 import { submitEkycRequest } from '@/lib/ekycStore';
 
 /**
- * GET /api/nks/user/face-enroll?userId=...
+ * GET /api/user/face-enroll?userId=...
  * Đồng bộ hồ sơ 4 mẫu FaceID giữa Mobile, Desktop và Ban Quản Lý
  */
 export async function GET(req: Request) {
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
             right: existingProfile.samples.right,
             smile: existingProfile.samples.smile,
           },
-          faceScore: existingProfile.faceScore || 99.4,
+          faceScore: existingProfile.faceScore || 0,
         });
       } catch (e) {
         console.warn('Submit e-KYC request to BQL error:', e);
@@ -156,32 +156,22 @@ export async function POST(req: Request) {
       smile: ensureBase64DataUrl(samples.smile),
     };
 
-    // 1. Phân tích trích xuất vector đặc trưng sinh trắc học tổng hợp từ cả 4 mẫu quét
-    const descFront = extractFaceDescriptorFromBase64(normalizedSamples.front);
-    const descLeft = extractFaceDescriptorFromBase64(normalizedSamples.left);
-    const descRight = extractFaceDescriptorFromBase64(normalizedSamples.right);
-    const descSmile = extractFaceDescriptorFromBase64(normalizedSamples.smile);
-
-    // Tạo vector tổng hợp 128 chiều từ 4 mẫu góc quét
-    const compositeDesc = new Float32Array(128);
-    let sumSq = 0;
-    for (let i = 0; i < 128; i++) {
-      const val = (descFront[i] + descLeft[i] + descRight[i] + descSmile[i]) / 4;
-      compositeDesc[i] = val;
-      sumSq += val * val;
+    // 1. Phân tích sinh trắc học 4 góc thật bằng thuật toán thực tế (Anti-spoofing & Multi-angle fusion)
+    const analysis = analyzeBiometric4Samples(normalizedSamples);
+    if (!analysis.valid) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: analysis.error || 'Dữ liệu sinh trắc học không hợp lệ hoặc phát hiện gian lận ảnh tĩnh.',
+          details: analysis.details,
+        },
+        { status: 400 }
+      );
     }
-    const norm = Math.sqrt(sumSq);
-    if (norm > 0) {
-      for (let i = 0; i < 128; i++) {
-        compositeDesc[i] /= norm;
-      }
-    }
-    const descriptorArray = Array.from(compositeDesc);
 
     // Lấy thông tin user hiện tại (giữ nguyên avatar_url, không ghi đè)
     const existingUser = getUserStore(userId);
-    const rawTargetApt = apartmentCode || existingUser?.apartment_code || 'CH-06';
-    const targetApt = (rawTargetApt === '12A05' || rawTargetApt === '12A5') ? 'CH-06' : rawTargetApt;
+    const targetApt = apartmentCode || existingUser?.apartment_code || 'CH-06';
 
     // Xác định luồng: Nếu là Người nhà tự quét (TENANT) -> status = 'PENDING_OWNER' (chờ chủ hộ duyệt)
     // Nếu do Chủ hộ đích thân quét hoặc Chủ hộ tự làm -> status = 'PENDING' (gửi thẳng BQL)
@@ -195,12 +185,16 @@ export async function POST(req: Request) {
       email: email || existingUser?.email || (userId.includes('@') ? userId : ''),
       avatarUrl: existingUser?.avatar_url || '',
       samples: normalizedSamples,
-      descriptor: descriptorArray,
+      descriptor: (Array.isArray(body.descriptor) && body.descriptor.length === 128)
+        ? body.descriptor
+        : analysis.compositeDescriptor,
+      descriptorsByAngle: body.descriptorsByAngle || analysis.descriptorsByAngle,
       enrolledAt: new Date().toISOString(),
       status: isPendingOwner ? 'PENDING_OWNER' : 'PENDING',
       confirmedByOwner: !isPendingOwner,
       confirmedByOwnerAt: !isPendingOwner ? new Date().toISOString() : undefined,
-      faceScore: 99.4,
+      faceScore: typeof body.faceScore === 'number' ? body.faceScore : analysis.faceScore,
+      livenessVerified: true,
     };
 
     // 2. Lưu vào FaceEnrollStore (Bộ nhớ + File .skyline_faces.json trên server)
@@ -232,7 +226,7 @@ export async function POST(req: Request) {
           idCardFrontUrl: existingUser?.cccd_front_url || '',
           idCardBackUrl: existingUser?.cccd_back_url || '',
           faceSamples: normalizedSamples,
-          faceScore: 99.4,
+          faceScore: faceProfile.faceScore,
         });
       } catch (e) {
         console.warn('Sync ekyc request error:', e);
@@ -255,7 +249,10 @@ export async function POST(req: Request) {
         status: faceProfile.status,
         confirmedByOwner: faceProfile.confirmedByOwner,
         faceScore: faceProfile.faceScore,
+        livenessVerified: faceProfile.livenessVerified,
+        poseVarianceScore: analysis.poseVarianceScore,
         samples: faceProfile.samples,
+        details: analysis.details,
       },
     });
   } catch (error: any) {

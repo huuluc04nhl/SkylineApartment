@@ -1469,7 +1469,71 @@ const INITIAL_TICKETS: ServiceTicketRecord[] = [
 ];
 
 const INITIAL_BILLS: BillRecord[] = [
-  // CĂN HỘ CH-06 (Chủ hộ: Trần Hữu Lực - 3 kỳ liên tiếp để Cư Dân so sánh chi tiết A2)
+  // CĂN HỘ CH-06 (Chủ hộ: Trần Hữu Lực - Đầy đủ các kỳ Tháng & Quý 4/2026 mới nhất hiện tại)
+  {
+    id: 'bill-2026-11-ch06',
+    apartment_code: 'CH-06',
+    owner_name: 'Trần Hữu Lực',
+    billing_month: 'Tháng 11/2026',
+    due_date: '2026-11-30 23:59:59+07',
+    total_amount: 2485000,
+    status: 'Unpaid',
+    payment_qr_url: 'https://api.qrserver.com/v1/create-qr-code/?data=VNPAY_SKYLINE_CH06_2485000',
+    has_ai_anomaly: false,
+    created_at: '2026-11-05 08:00:00+07',
+    paid_at: null,
+    details: [
+      { id: 'bd-11-01', service_type: 'Management_Fee', service_name: 'Phí Quản Lý Vận Hành Tiêu Chuẩn (42.0 m2 x 18.000 đ)', usage: 42.0, unit: 'm²', unit_price: 18000, total_line_amount: 756000, ai_anomaly: false },
+      { id: 'bd-11-02', service_type: 'Electricity', service_name: 'Điện Sinh Hoạt Căn Hộ (272 kWh theo bậc thang EVN)', usage: 272, unit: 'kWh', unit_price: 2650, total_line_amount: 720800, ai_anomaly: false },
+      { id: 'bd-11-03', service_type: 'Water', service_name: 'Nước Sinh Hoạt Căn Hộ (18.5 m³)', usage: 18.5, unit: 'm³', unit_price: 17700, total_line_amount: 327450, ai_anomaly: false },
+      { id: 'bd-11-04', service_type: 'Parking', service_name: 'Phí Giữ Xe Ô Tô Định Danh Hầm B2 (51K-889.99)', usage: 1, unit: 'xe', unit_price: 1200000, total_line_amount: 1200000, ai_anomaly: false },
+      { id: 'bd-11-05', service_type: 'Parking', service_name: 'Phí Giữ Xe Máy RFID Hầm B1 (59P1-886.79)', usage: 1, unit: 'xe', unit_price: 120000, total_line_amount: 120000, ai_anomaly: false }
+    ]
+  },
+  {
+    id: 'bill-2026-10-ch06',
+    apartment_code: 'CH-06',
+    owner_name: 'Trần Hữu Lực',
+    billing_month: 'Tháng 10/2026',
+    due_date: '2026-10-30 23:59:59+07',
+    total_amount: 2410000,
+    status: 'Paid',
+    payment_method: 'VNPAY',
+    transaction_ref: 'VNP10293847',
+    payment_qr_url: 'https://api.qrserver.com/v1/create-qr-code/?data=VNPAY_SKYLINE_CH06_PAID_10',
+    has_ai_anomaly: false,
+    created_at: '2026-10-05 08:00:00+07',
+    paid_at: '2026-10-25 11:20:00+07',
+    details: [
+      { id: 'bd-10-01', service_type: 'Management_Fee', service_name: 'Phí Quản Lý Vận Hành (42.0 m2 x 18.000 đ)', usage: 42.0, unit: 'm²', unit_price: 18000, total_line_amount: 756000, ai_anomaly: false },
+      { id: 'bd-10-02', service_type: 'Electricity', service_name: 'Điện Sinh Hoạt Căn Hộ (260 kWh)', usage: 260, unit: 'kWh', unit_price: 2650, total_line_amount: 689000, ai_anomaly: false },
+      { id: 'bd-10-03', service_type: 'Water', service_name: 'Nước Sinh Hoạt Căn Hộ (17.5 m³)', usage: 17.5, unit: 'm³', unit_price: 17700, total_line_amount: 309750, ai_anomaly: false },
+      { id: 'bd-10-04', service_type: 'Parking', service_name: 'Phí Giữ Xe Ô Tô Định Danh Hầm B2 (51K-889.99)', usage: 1, unit: 'xe', unit_price: 1200000, total_line_amount: 1200000, ai_anomaly: false },
+      { id: 'bd-10-05', service_type: 'Parking', service_name: 'Phí Giữ Xe Máy RFID Hầm B1 (59P1-886.79)', usage: 1, unit: 'xe', unit_price: 120000, total_line_amount: 120000, ai_anomaly: false }
+    ]
+  },
+  {
+    id: 'bill-2026-09-ch06',
+    apartment_code: 'CH-06',
+    owner_name: 'Trần Hữu Lực',
+    billing_month: 'Tháng 09/2026',
+    due_date: '2026-09-30 23:59:59+07',
+    total_amount: 2380000,
+    status: 'Paid',
+    payment_method: 'VIETQR',
+    transaction_ref: 'MB-QR-99214',
+    payment_qr_url: 'https://api.qrserver.com/v1/create-qr-code/?data=VNPAY_SKYLINE_CH06_PAID_09',
+    has_ai_anomaly: false,
+    created_at: '2026-09-05 08:00:00+07',
+    paid_at: '2026-09-22 09:10:00+07',
+    details: [
+      { id: 'bd-09-01', service_type: 'Management_Fee', service_name: 'Phí Quản Lý Vận Hành (42.0 m2 x 18.000 đ)', usage: 42.0, unit: 'm²', unit_price: 18000, total_line_amount: 756000, ai_anomaly: false },
+      { id: 'bd-09-02', service_type: 'Electricity', service_name: 'Điện Sinh Hoạt Căn Hộ (253 kWh)', usage: 253, unit: 'kWh', unit_price: 2650, total_line_amount: 670450, ai_anomaly: false },
+      { id: 'bd-09-03', service_type: 'Water', service_name: 'Nước Sinh Hoạt Căn Hộ (17 m³)', usage: 17, unit: 'm³', unit_price: 17700, total_line_amount: 300900, ai_anomaly: false },
+      { id: 'bd-09-04', service_type: 'Parking', service_name: 'Phí Giữ Xe Ô Tô Định Danh Hầm B2 (51K-889.99)', usage: 1, unit: 'xe', unit_price: 1200000, total_line_amount: 1200000, ai_anomaly: false },
+      { id: 'bd-09-05', service_type: 'Parking', service_name: 'Phí Giữ Xe Máy RFID Hầm B1 (59P1-886.79)', usage: 1, unit: 'xe', unit_price: 120000, total_line_amount: 120000, ai_anomaly: false }
+    ]
+  },
   {
     id: 'bill-2026-08-ch06',
     apartment_code: 'CH-06',
@@ -1477,11 +1541,13 @@ const INITIAL_BILLS: BillRecord[] = [
     billing_month: 'Tháng 08/2026',
     due_date: '2026-08-30 23:59:59+07',
     total_amount: 2505000,
-    status: 'Unpaid',
+    status: 'Paid',
+    payment_method: 'VNPAY',
+    transaction_ref: 'VNP8827102',
     payment_qr_url: 'https://api.qrserver.com/v1/create-qr-code/?data=VNPAY_SKYLINE_CH06_2505000',
     has_ai_anomaly: true,
     created_at: '2026-08-05 08:00:00+07',
-    paid_at: null,
+    paid_at: '2026-08-28 16:00:00+07',
     details: [
       { id: 'bd-01', service_type: 'Management_Fee', service_name: 'Phí Quản Lý Vận Hành Tiêu Chuẩn (42.0 m2 x 18.000 đ)', usage: 42.0, unit: 'm²', unit_price: 18000, total_line_amount: 756000, ai_anomaly: false },
       { id: 'bd-02', service_type: 'Electricity', service_name: 'Điện Sinh Hoạt Căn Hộ (285 kWh theo bậc thang EVN)', usage: 285, unit: 'kWh', unit_price: 2650, total_line_amount: 755250, ai_anomaly: false },
@@ -1886,7 +1952,20 @@ const INITIAL_VISITOR_PASSES: VisitorPassRecord[] = [
     purpose: 'VISITOR',
     purpose_label: 'Khách Thăm Căn Hộ',
     valid_hours: 8,
-    qr_data: '{"skyline_pass":true,"passId":"SKY-PASS-8492","aptCode":"CH-06","hostName":"Trần Hữu Lực","visitorName":"Trần Quốc Bảo"}',
+    qr_data: `✨ SKYLINE SMART RESIDENCE ✨
+📋 THƯ MỜI ĐÓN KHÁCH ĐIỆN TỬ
+━━━━━━━━━━━━━━━━━━━━
+👤 Khách thăm: Trần Quốc Bảo
+📞 Số điện thoại: 0903123456
+🚗 Biển số xe: 51G-888.88
+🏢 Điểm đến: Căn hộ CH-06 • Tropical BS-07
+🏠 Chủ hộ bảo lãnh: Trần Hữu Lực (0364967082)
+━━━━━━━━━━━━━━━━━━━━
+🔑 MÃ PIN LỄ TÂN: 849201
+⏳ Hiệu lực đến: 23:59 ngày 14/11/2026 (8 giờ)
+Mã thẻ vé: SKY-PASS-8492
+━━━━━━━━━━━━━━━━━━━━
+👉 Quý khách vui lòng xuất trình nội dung này hoặc đọc mã PIN tại Sảnh Lễ Tân / Bốt An Ninh tòa nhà để được hướng dẫn lên căn hộ.`,
     pin_code: '849201',
     status: 'CHECKED_IN',
     note: 'Khách đối tác công việc lên căn CH-06 (Tòa BS-07)',
@@ -1907,7 +1986,20 @@ const INITIAL_VISITOR_PASSES: VisitorPassRecord[] = [
     purpose: 'VISITOR',
     purpose_label: 'Khách Thăm Căn Hộ',
     valid_hours: 4,
-    qr_data: '{"skyline_pass":true,"passId":"SKY-PASS-6521","aptCode":"CH-06","hostName":"Trần Hữu Lực","visitorName":"Phạm Minh Tuấn"}',
+    qr_data: `✨ SKYLINE SMART RESIDENCE ✨
+📋 THƯ MỜI ĐÓN KHÁCH ĐIỆN TỬ
+━━━━━━━━━━━━━━━━━━━━
+👤 Khách thăm: Phạm Minh Tuấn
+📞 Số điện thoại: 0918765432
+🚗 Biển số xe: 59P1-999.99
+🏢 Điểm đến: Căn hộ CH-06 • Tropical BS-07
+🏠 Chủ hộ bảo lãnh: Trần Hữu Lực (0364967082)
+━━━━━━━━━━━━━━━━━━━━
+🔑 MÃ PIN LỄ TÂN: 652190
+⏳ Hiệu lực đến: 23:59 ngày 14/11/2026 (4 giờ)
+Mã thẻ vé: SKY-PASS-6521
+━━━━━━━━━━━━━━━━━━━━
+👉 Quý khách vui lòng xuất trình nội dung này hoặc đọc mã PIN tại Sảnh Lễ Tân / Bốt An Ninh tòa nhà để được hướng dẫn lên căn hộ.`,
     pin_code: '652190',
     status: 'ACTIVE',
     note: 'Bạn bè đến thăm gia đình',

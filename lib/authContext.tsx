@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole } from './dataStore';
-import { skylineLogin as nksLogin, skylineFaceLogin as nksFaceLogin } from './skylineApiClient';
+import { skylineLogin, skylineFaceLogin } from './skylineApiClient';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -62,18 +62,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, []);
 
-  // 2. Login via NKS API (Server sets HTTP-Only Cookie)
+  // 2. Login via Skyline Server API (Server sets HTTP-Only Cookie)
   const login = async (roleOrUsername: UserRole | string, password?: string, isOtpAuth?: boolean): Promise<User | null> => {
     setIsLoading(true);
     try {
-      // Map quick role to standard NKS account if role string is provided
+      // Map quick role to standard Skyline account if role string is provided
       let usernameToSubmit = roleOrUsername;
       let pwdToSubmit = password;
       if (roleOrUsername === 'ADMIN') {
-        usernameToSubmit = 'nks.manager01@gmail.com';
+        usernameToSubmit = 'admin@skyline.vn';
         if (!pwdToSubmit) pwdToSubmit = 'admin123';
       } else if (roleOrUsername === 'TECHNICIAN') {
-        usernameToSubmit = 'nks.manager02@gmail.com';
+        usernameToSubmit = '0901888998';
         if (!pwdToSubmit) pwdToSubmit = '12345678';
       } else if (roleOrUsername === 'OWNER') {
         usernameToSubmit = 'huuluc04@gmail.com';
@@ -83,9 +83,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!pwdToSubmit) pwdToSubmit = '12345678';
       }
 
-      const nksRes = await nksLogin(usernameToSubmit, pwdToSubmit, isOtpAuth);
-      if (nksRes.success && nksRes.user) {
-        const u = nksRes.user as any as User;
+      const res = await skylineLogin(usernameToSubmit, pwdToSubmit, isOtpAuth);
+      if (res.success && res.user) {
+        const u = res.user as any as User;
         setCurrentUser(u);
         return u;
       }
@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }) => {
     setIsLoading(true);
     try {
-      const res = await nksFaceLogin(payload || {});
+      const res = await skylineFaceLogin(payload || {});
       if (res.success && res.user) {
         const u = res.user as any as User;
         setCurrentUser(u);

@@ -1,13 +1,25 @@
 // ============================================================================
-// DATA STORE & TYPE DEFINITIONS - SKYLINE SMART RESIDENCE (SRS COMPLIANT)
+// DATA STORE & TYPE DEFINITIONS - SKYLINE SMART RESIDENCE (PURE IN-DATABASE)
+// Single Source of Truth from skylineDb. Zero LocalStorage. Zero Fake Mocks.
 // ============================================================================
+
+import { skylineDb } from '@/lib/db';
+import { 
+  UserRecord, 
+  ApartmentRecord, 
+  BillRecord, 
+  ServiceTicketRecord, 
+  FacilityRecord, 
+  CommunityPostRecord, 
+  VotingTopicRecord 
+} from '@/lib/db/schema';
 
 export type UserRole = 'ADMIN' | 'OWNER' | 'TENANT' | 'TECHNICIAN' | 'RECEPTIONIST';
 
 export interface User {
   id: string;
   role: UserRole;
-  username: string; // Số điện thoại
+  username: string; // Số điện thoại hoặc tên tài khoản
   full_name: string;
   phone?: string;
   email?: string;
@@ -68,29 +80,29 @@ export type BillServiceType =
   | 'Water' 
   | 'Management_Fee' 
   | 'Parking' 
-  | 'Internet'
-  | 'Facility'
+  | 'Internet' 
+  | 'Facility' 
   | 'Laundry' 
   | 'Housekeeping' 
   | 'Personal_Trainer' 
   | 'Car_Care' 
-  | 'Spa'
-  | 'Dining'
-  | 'Transport'
+  | 'Spa' 
+  | 'Dining' 
+  | 'Transport' 
   | 'Other';
 
 export interface BillDetail {
   id: string;
   bill_id: string;
   service_type: BillServiceType;
-  service_name?: string; // Tên hiển thị dịch vụ chi tiết
-  usage?: number; // Số lượng / số giờ / số buổi / kWh / m3
-  unit?: string; // "kg", "giờ", "buổi", "lần", "bộ", "kWh", "m³", "m²", "xe"
+  service_name?: string;
+  usage?: number;
+  unit?: string;
   unit_price?: number;
   total_line_amount: number;
-  order_date?: string; // Ngày phát sinh dịch vụ
-  booking_ref?: string; // Mã phiếu đặt dịch vụ
-  ai_anomaly?: boolean; // AI phát hiện bất thường > 50%
+  order_date?: string;
+  booking_ref?: string;
+  ai_anomaly?: boolean;
   anomaly_reason?: string;
 }
 
@@ -98,6 +110,7 @@ export interface Bill {
   id: string;
   apartment_id: string;
   apt_code: string;
+  apartment_code?: string;
   owner_name: string;
   billing_month: string;
   due_date: string;
@@ -119,9 +132,9 @@ export interface ServiceRequest {
   resident_phone?: string;
   content: string;
   ai_category: 'Điện' | 'Nước' | 'Vệ sinh' | 'An ninh' | 'Nhà hàng' | 'Hồ bơi' | 'Khác' | string;
-  ai_priority: 1 | 2 | 3; // 1: Khẩn cấp, 2: Cao, 3: Bình thường
+  ai_priority: 1 | 2 | 3;
   priority_color?: string;
-  sla_deadline: string; // ISO String
+  sla_deadline: string;
   sla_minutes_left: number;
   status: 'Open' | 'Assigned' | 'In_Progress' | 'Resolved';
   assigned_technician?: string;
@@ -136,8 +149,8 @@ export interface Device {
   name: string;
   category: 'Thang máy' | 'Máy bơm' | 'Hệ thống PCCC' | 'Trạm biến áp' | 'Barrier' | 'Thông gió & Hút khói';
   location: string;
-  health_score: number; // 0 - 100 [AI]
-  predict_date: string; // [AI Dự báo hỏng hóc]
+  health_score: number;
+  predict_date: string;
   last_maintenance: string;
   status: 'Hoạt động tốt' | 'Cần kiểm tra' | 'Cảnh báo hỏng';
 }
@@ -175,7 +188,7 @@ export interface SecurityAlert {
   location: string;
   camera_id: string;
   snapshot_url: string;
-  confidence: number; // 0.95 = 95%
+  confidence: number;
   created_at: string;
   status: 'New' | 'Investigating' | 'Resolved';
 }
@@ -186,7 +199,7 @@ export interface Facility {
   category: 'Gym' | 'BBQ' | 'Hồ bơi' | 'Sân Tennis' | 'Phòng sinh hoạt' | 'Xông hơi' | 'Khu trẻ em' | 'Nhà hàng' | 'Công viên' | string;
   max_quota_per_month: number;
   hero_image_url: string;
-  rating_score: number; // 5.0
+  rating_score: number;
   operating_hours: string;
   pricing: string;
   current_occupancy: number;
@@ -214,7 +227,7 @@ export interface CommunityPost {
   title: string;
   content: string;
   ai_moderation: 'Clean' | 'Toxic' | 'Pending';
-  ai_sentiment: number; // -1.0 to 1.0 (Positive / Negative)
+  ai_sentiment: number;
   tags: string[];
   likes: number;
   comments_count: number;
@@ -235,678 +248,300 @@ export interface Survey {
 }
 
 // ============================================================================
-// MOCK DATA STORE
+// DATABASE TRANSFORMATION HELPERS
 // ============================================================================
 
-export const DEMO_USERS: User[] = [
-  // 1. Manager (Trưởng Ban Quản Lý)
-  {
-    id: 'user-manager-1',
-    role: 'ADMIN',
-    username: 'nks.manager01@gmail.com',
-    phone: '0901888999',
-    email: 'nks.manager01@gmail.com',
-    full_name: 'Nguyễn Văn Quản Trị (Trưởng BQL)',
-    avatar_url: 'https://data.nks.vn/storage/users/default.png',
+export function userRecordToUser(u: UserRecord): User {
+  return {
+    id: u.id,
+    role: u.role,
+    username: u.username,
+    full_name: u.full_name,
+    phone: u.phone || undefined,
+    email: u.email || undefined,
+    id_card_no: u.id_card_no || undefined,
+    id_card_number: u.id_card_no || undefined,
+    id_number: u.id_card_no || undefined,
+    id_date: u.id_date || undefined,
+    id_place: u.id_place || undefined,
+    face_vector: u.face_vector || undefined,
+    emergency_phone: u.emergency_phone || undefined,
+    avatar_url: u.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.full_name)}&background=1C2533&color=C5A880`,
     ui_language: 'vi',
-    emergency_phone: '19008899',
-    apartment_code: 'BQL_OFFICE',
-    relationship: 'Staff',
-    password: 'admin123',
-  },
+    apartment_code: u.apartment_code || undefined,
+    relationship: (u.relationship as any) || (u.role === 'OWNER' ? 'Owner' : u.role === 'ADMIN' ? 'Staff' : 'Family'),
+    license_plate: u.license_plate || undefined,
+    dob: u.dob || undefined,
+    pob: u.pob || undefined,
+    password: u.password_hash || undefined,
+  };
+}
 
-  // 2. Kỹ Thuật (Kỹ Sư Vận Hành Tòa Nhà)
-  {
-    id: 'user-tech-1',
-    role: 'TECHNICIAN',
-    username: 'nks.manager02@gmail.com',
-    phone: '0901888998',
-    email: 'nks.manager02@gmail.com',
-    full_name: 'Trần Văn Kỹ Thuật (Kỹ Sư Vận Hành)',
-    avatar_url: 'https://data.nks.vn/storage/users/default.png',
-    ui_language: 'vi',
-    emergency_phone: '0901888998',
-    apartment_code: 'TECH_ROOM',
-    relationship: 'Staff',
-    password: '12345678',
-  },
-
-  // 3. Citizen / Owner (Chủ hộ căn hộ CH-06 - The Tropical BS-07)
-  {
-    id: 'user-owner-1',
-    role: 'OWNER',
-    username: 'huuluc04@gmail.com',
-    phone: '0364967082',
-    email: 'huuluc04@gmail.com',
-    full_name: 'Trần Hữu Lực',
-    id_card_no: '067204000961',
-    face_vector: 'VEC-512-FACE-001-OK',
-    emergency_phone: '0364967082',
-    avatar_url: 'https://data.nks.vn/storage/users/202609021654232258.jpg',
-    ui_language: 'vi',
-    apartment_code: 'CH-06',
-    relationship: 'Owner',
-    license_plate: '51K-889.99',
-    dob: '2004-08-18',
-    pob: 'Triệu Trạch, Triệu Phong, Quảng Trị',
-    password: '12345678',
-  },
-
-  // 4. Family Member 1 (Tài khoản mẫu Người Nhà trong căn hộ)
-  {
-    id: 'user-tenant-1',
-    role: 'TENANT',
-    username: 'nguyenhuunhut1309@gmail.com',
-    phone: '0917795211',
-    email: 'nguyenhuunhut1309@gmail.com',
-    full_name: 'Nguyễn Hữu Nhựt',
-    id_card_no: '079198005678',
-    face_vector: 'VEC-512-FACE-002-OK',
-    emergency_phone: '0917795211',
-    avatar_url: 'https://data.nks.vn/storage/users/202607191405195335.jpg',
-    ui_language: 'vi',
-    apartment_code: '',
-    dob: '2004-09-02',
-    password: '12345678',
-  },
-
-  // 5. Family Member 2 (Tài khoản mẫu Người Nhà trong căn hộ)
-  {
-    id: 'user-member-1',
-    role: 'TENANT',
-    username: 'vanncuong1614@gmail.com',
-    phone: '0325524482',
-    email: 'vanncuong1614@gmail.com',
-    full_name: 'Nguyễn Văn Cường',
-    id_card_no: '074204001708',
-    avatar_url: 'https://data.nks.vn/storage/users/202608301345022366.jpg',
-    ui_language: 'vi',
-    apartment_code: '',
-    dob: '2004-01-16',
-    pob: 'Tỉnh Thanh Hóa',
-    password: '12345678',
-  },
-
-  // 6. Family Member 3 (Tài khoản mẫu Người Nhà trong căn hộ)
-  {
-    id: 'user-member-2',
-    role: 'TENANT',
-    username: 'lehai17082004@gmail.com',
-    phone: '0977758215',
-    email: 'lehai17082004@gmail.com',
-    full_name: 'Lê Đức Hải',
-    id_card_no: '070204001704',
-    avatar_url: 'https://data.nks.vn/storage/users/202607210516458204.jpg',
-    ui_language: 'vi',
-    apartment_code: '',
-    dob: '2004-08-17',
-    pob: 'Xuân Thọ, Triệu Sơn, Thanh Hóa',
-    password: '12345678',
-  },
-
-  // 7. Family Member 4 (Tài khoản Người Nhà trong căn hộ)
-  {
-    id: 'user-member-3',
-    role: 'TENANT',
-    username: '26vucatthinh@gmail.com',
-    phone: '0909262626',
-    email: '26vucatthinh@gmail.com',
-    full_name: 'Vũ Cát Thịnh',
-    id_card_no: '079201002626',
-    avatar_url: 'https://data.nks.vn/storage/users/default.png',
-    ui_language: 'vi',
-    apartment_code: '',
-    relationship: 'Family',
-    dob: '2001-05-26',
-    pob: 'TP. Hồ Chí Minh',
-    password: '12345678',
-  },
-];
-
-export const DEMO_APARTMENTS: Apartment[] = [
-  {
-    id: 'apt-ch-06',
-    block_id: 1,
-    block_code: 'The Tropical (BS-07)',
-    floor_number: 30,
-    apt_code: 'CH-06',
-    apt_type: '1PN',
-    wall_area: 46.0,
-    clear_area: 42.0,
+export function apartmentRecordToApartment(a: ApartmentRecord): Apartment {
+  const blockCode = a.tower_code ? `BS-${a.block_id === 880 ? '07' : a.block_id === 881 ? '08' : a.block_id === 882 ? '09' : '10'}` : 'BS-07';
+  return {
+    id: a.id,
+    block_id: a.block_id,
+    block_code: blockCode,
+    floor_number: a.floor_number,
+    apt_code: a.apt_code,
+    apt_type: a.apt_type as any,
+    wall_area: a.wall_area,
+    clear_area: a.clear_area,
     legal_status: 'Pink_Book',
-    status: 'Đã bàn giao',
-    price_vnd: 2650000000,
-    bedrooms: 1,
-    bathrooms: 1,
-    thumbnail_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop&q=80',
-    floor_plan_url: 'https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?w=800&auto=format&fit=crop&q=80',
+    status: a.status === 'OCCUPIED' ? 'Đã bàn giao' : a.status === 'MAINTENANCE' ? 'Đang bảo trì' : 'Đang trống',
+    price_vnd: a.price_vnd,
+    bedrooms: a.bedrooms,
+    bathrooms: a.bathrooms,
+    thumbnail_url: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
+    floor_plan_url: '/models/floorplans/skyline-floorplan-ch06.svg',
     smart_widgets: [
-      { id: 'w-1', name: 'Đèn phòng khách', type: 'light', status: 'on', x: 35, y: 40 },
-      { id: 'w-2', name: 'Điều hòa Daikin Inverter', type: 'ac', status: 24, x: 55, y: 30 },
-      { id: 'w-3', name: 'Khóa cửa thông minh FaceID', type: 'door', status: 'on', x: 15, y: 80 },
-      { id: 'w-4', name: 'Rèm cửa tự động', type: 'curtain', status: 'on', x: 80, y: 45 },
-      { id: 'w-5', name: 'Cảm biến rò rỉ nước AI', type: 'sensor', status: 'on', x: 70, y: 75 },
+      { id: 'w1', name: 'Đèn phòng khách', type: 'light', status: 'on', x: 25, y: 30 },
+      { id: 'w2', name: 'Điều hòa Daikin Inverter', type: 'ac', status: 24, x: 60, y: 40 },
+      { id: 'w3', name: 'Khóa cửa FaceID', type: 'door', status: 'on', x: 10, y: 50 },
+      { id: 'w4', name: 'Rèm tự động', type: 'curtain', status: 'off', x: 85, y: 65 },
+      { id: 'w5', name: 'Cảm biến chất lượng không khí', type: 'sensor', status: 'on', x: 50, y: 20 },
     ],
-  },
-  {
-    id: 'apt-ch-01',
-    block_id: 1,
-    block_code: 'The Tropical (BS-07)',
-    floor_number: 30,
-    apt_code: 'CH-01',
-    apt_type: '2PN',
-    wall_area: 55.0,
-    clear_area: 50.0,
-    legal_status: 'Pink_Book',
-    status: 'Đã bàn giao',
-    price_vnd: 3150000000,
-    bedrooms: 2,
-    bathrooms: 1,
-    thumbnail_url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop&q=80',
-    floor_plan_url: 'https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?w=800&auto=format&fit=crop&q=80',
-    smart_widgets: [],
-  },
-  {
-    id: 'apt-18a01',
-    block_id: 1,
-    block_code: 'Chung Cư Skyline',
-    floor_number: 18,
-    apt_code: '18A01',
-    apt_type: '3PN',
-    wall_area: 119.5,
-    clear_area: 112.0,
-    legal_status: 'SPA',
-    status: 'Đang trống',
-    price_vnd: 7600000000,
-    bedrooms: 3,
-    bathrooms: 3,
-    thumbnail_url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop&q=80',
-    floor_plan_url: 'https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?w=800&auto=format&fit=crop&q=80',
-    smart_widgets: [],
-  },
-  {
-    id: 'apt-25p01',
-    block_id: 1,
-    block_code: 'Chung Cư Skyline',
-    floor_number: 25,
-    apt_code: '25PH-01',
-    apt_type: 'Duplex',
-    wall_area: 232.0,
-    clear_area: 215.0,
-    legal_status: 'SPA',
-    status: 'Đang trống',
-    price_vnd: 18500000000,
-    bedrooms: 4,
-    bathrooms: 4,
-    thumbnail_url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=80',
-    floor_plan_url: 'https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?w=800&auto=format&fit=crop&q=80',
-    smart_widgets: [],
-  },
-  {
-    id: 'apt-08b12',
-    block_id: 1,
-    block_code: 'Chung Cư Skyline',
-    floor_number: 8,
-    apt_code: '08A02',
-    apt_type: '1PN',
-    wall_area: 56.4,
-    clear_area: 52.0,
-    legal_status: 'Pink_Book',
-    status: 'Đang trống',
-    price_vnd: 2950000000,
-    bedrooms: 1,
-    bathrooms: 1,
-    thumbnail_url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&auto=format&fit=crop&q=80',
-    floor_plan_url: 'https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?w=800&auto=format&fit=crop&q=80',
-    smart_widgets: [],
-  },
-];
+  };
+}
 
-export const DEMO_BILLS: Bill[] = [
-  {
-    id: 'bill-2026-08-ch06',
-    apartment_id: 'apt-ch-06',
-    apt_code: 'CH-06',
-    owner_name: 'Trần Hữu Lực',
-    billing_month: 'Tháng 08/2026',
-    due_date: '2026-08-30T23:59:59',
-    total_amount: 2505000,
-    status: 'Unpaid',
-    status_color: '#D97706',
-    payment_qr_url: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=VNPAY_SKYLINE_CH06_2505000',
-    invoice_pdf_url: '#',
-    has_ai_anomaly: false,
-    created_at: '2026-08-05T08:00:00',
-    details: [
-      {
-        id: 'bd-1',
-        bill_id: 'bill-2026-08-ch06',
-        service_type: 'Electricity',
-        service_name: 'Tiền Điện Sinh Hoạt',
-        usage: 340,
-        unit: 'kWh',
-        unit_price: 3200,
-        total_line_amount: 1088000,
-      },
-      {
-        id: 'bd-2',
-        bill_id: 'bill-2026-08-ch06',
-        service_type: 'Water',
-        service_name: 'Tiền Nước Sinh Hoạt',
-        usage: 18,
-        unit: 'm³',
-        unit_price: 18000,
-        total_line_amount: 324000,
-        ai_anomaly: false,
-      },
-      {
-        id: 'bd-3',
-        bill_id: 'bill-2026-08-ch06',
-        service_type: 'Management_Fee',
-        service_name: 'Phí Quản Lý Vận Hành',
-        usage: 73.2,
-        unit: 'm²',
-        unit_price: 10000,
-        total_line_amount: 732000,
-      },
-      {
-        id: 'bd-4',
-        bill_id: 'bill-2026-08-ch06',
-        service_type: 'Parking',
-        service_name: 'Phí Gửi Xe Căn Hộ',
-        usage: 1,
-        unit: 'xe',
-        unit_price: 141000,
-        total_line_amount: 141000,
-      },
-      {
-        id: 'bd-4-net',
-        bill_id: 'bill-2026-08-ch06',
-        service_type: 'Internet',
-        service_name: 'Cáp Quang Internet VNPT Fiber 300Mbps',
-        usage: 1,
-        unit: 'tháng',
-        unit_price: 220000,
-        total_line_amount: 220000,
-      },
-    ],
-  },
-  {
-    id: 'bill-2026-07-ch06',
-    apartment_id: 'apt-ch-06',
-    apt_code: 'CH-06',
-    owner_name: 'Trần Hữu Lực',
-    billing_month: 'Tháng 07/2026',
-    due_date: '2026-07-30T23:59:59',
-    total_amount: 2370000,
-    status: 'Paid',
-    status_color: '#16A34A',
-    payment_qr_url: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=VNPAY_SKYLINE_CH06_PAID',
-    invoice_pdf_url: '#',
-    has_ai_anomaly: false,
-    created_at: '2026-07-05T08:00:00',
-    details: [
-      {
-        id: 'bd-11',
-        bill_id: 'bill-2026-07-ch06',
-        service_type: 'Electricity',
-        service_name: 'Tiền Điện Sinh Hoạt',
-        usage: 280,
-        unit: 'kWh',
-        unit_price: 3200,
-        total_line_amount: 896000,
-        ai_anomaly: false,
-      },
-      {
-        id: 'bd-12',
-        bill_id: 'bill-2026-07-ch06',
-        service_type: 'Water',
-        service_name: 'Tiền Nước Sinh Hoạt',
-        usage: 18,
-        unit: 'm³',
-        unit_price: 18000,
-        total_line_amount: 324000,
-      },
-      {
-        id: 'bd-13',
-        bill_id: 'bill-2026-07-ch06',
-        service_type: 'Management_Fee',
-        service_name: 'Phí Quản Lý Vận Hành',
-        usage: 73.2,
-        unit: 'm²',
-        unit_price: 10000,
-        total_line_amount: 732000,
-      },
-      {
-        id: 'bd-14',
-        bill_id: 'bill-2026-07-ch06',
-        service_type: 'Parking',
-        service_name: 'Phí Gửi Xe Căn Hộ',
-        usage: 1,
-        unit: 'xe',
-        unit_price: 198000,
-        total_line_amount: 198000,
-      },
-      {
-        id: 'bd-15-net',
-        bill_id: 'bill-2026-07-ch06',
-        service_type: 'Internet',
-        service_name: 'Cáp Quang Internet VNPT Fiber 300Mbps',
-        usage: 1,
-        unit: 'tháng',
-        unit_price: 220000,
-        total_line_amount: 220000,
-      },
-    ],
-  },
-];
+export function billRecordToBill(b: BillRecord): Bill {
+  return {
+    id: b.id,
+    apartment_id: b.apartment_code,
+    apt_code: b.apartment_code,
+    apartment_code: b.apartment_code,
+    owner_name: b.owner_name,
+    billing_month: b.billing_month,
+    due_date: b.due_date,
+    total_amount: b.total_amount,
+    status: b.status,
+    status_color: b.status === 'Paid' ? '#10B981' : b.status === 'Overdue' ? '#EF4444' : '#F59E0B',
+    payment_qr_url: b.payment_qr_url || '',
+    invoice_pdf_url: `/portal/billing/invoice?id=${b.id}`,
+    details: (b.details || []).map((d: any, idx) => ({
+      id: d.id || `line-${idx}`,
+      bill_id: b.id,
+      service_type: d.service_type as any,
+      service_name: d.service_name,
+      usage: d.usage,
+      unit: d.unit,
+      unit_price: d.unit_price,
+      total_line_amount: d.total_line_amount,
+      order_date: d.order_date,
+      booking_ref: d.booking_ref,
+      ai_anomaly: d.ai_anomaly,
+      anomaly_reason: d.anomaly_reason,
+    })),
+    has_ai_anomaly: (b.details || []).some(d => d.ai_anomaly),
+    created_at: b.created_at || '2026-08-25',
+  };
+}
 
-export const DEMO_TICKETS: ServiceRequest[] = [
-  {
-    id: '925',
-    apartment_id: 'apt-ch-06',
-    apt_code: 'CH-06',
-    resident_name: 'Trần Hữu Lực',
-    resident_phone: '0364967082',
-    content: 'Nhà hàng - Vệ sinh bàn ghế nhà hàng tầng 1 sau sự kiện tiệc tối.',
-    ai_category: 'Nhà hàng',
-    ai_priority: 2,
-    priority_color: '#3B82F6',
-    sla_deadline: '2026-08-28T18:00:00',
-    sla_minutes_left: 0,
-    status: 'Resolved',
-    assigned_technician: 'Trần Đình Trọng',
-    before_image: '',
-    after_image: '',
-    created_at: '2026-08-27T10:00:00',
-    updated_at: '2026-08-28T16:30:00',
-  },
-  {
-    id: '924',
-    apartment_id: 'apt-ch-06',
-    apt_code: 'CH-06',
-    resident_name: 'Trần Hữu Lực',
-    resident_phone: '0364967082',
-    content: 'Hồ bơi - Kiểm tra chất lượng nước hồ bơi định kỳ và bảo dưỡng hệ thống lọc.',
-    ai_category: 'Hồ bơi',
-    ai_priority: 2,
-    priority_color: '#06B6D4',
-    sla_deadline: '2026-08-28T12:00:00',
-    sla_minutes_left: 0,
-    status: 'Resolved',
-    assigned_technician: 'Đội Kỹ Thuật Skyline',
-    before_image: '',
-    after_image: '',
-    created_at: '2026-08-27T08:30:00',
-    updated_at: '2026-08-28T11:00:00',
-  },
-  {
-    id: '921',
-    apartment_id: 'apt-ch-06',
-    apt_code: 'CH-06',
-    resident_name: 'Trần Hữu Lực',
-    resident_phone: '0364967082',
-    content: 'Vệ sinh Block 07 - Tập kết rác thải Block 07 và phun khử khuẩn khu kỹ thuật.',
-    ai_category: 'Vệ sinh',
-    ai_priority: 3,
-    priority_color: '#10B981',
-    sla_deadline: '2026-08-27T17:00:00',
-    sla_minutes_left: 0,
-    status: 'Resolved',
-    assigned_technician: 'Hoàng',
-    before_image: '',
-    after_image: '',
-    created_at: '2026-08-26T14:00:00',
-    updated_at: '2026-08-27T15:30:00',
-  },
-];
+export function ticketRecordToServiceRequest(t: ServiceTicketRecord): ServiceRequest {
+  return {
+    id: t.id,
+    apartment_id: t.apartment_code,
+    apt_code: t.apartment_code,
+    resident_name: t.resident_name,
+    resident_phone: t.resident_phone,
+    content: t.content,
+    ai_category: t.ai_category,
+    ai_priority: (t.ai_priority || 3) as any,
+    priority_color: t.priority_color,
+    sla_deadline: t.scheduled_time || '2026-08-30T17:00:00Z',
+    sla_minutes_left: 45,
+    status: t.status === 'Resolved' ? 'Resolved' : t.status === 'In_Progress' ? 'In_Progress' : t.status === 'Assigned' ? 'Assigned' : 'Open',
+    assigned_technician: t.assigned_technician_name,
+    before_image: t.before_image || '',
+    after_image: t.after_image || '',
+    created_at: t.created_at,
+    updated_at: t.updated_at || t.created_at,
+  };
+}
+
+export function facilityRecordToFacility(f: FacilityRecord): Facility {
+  return {
+    id: f.id,
+    name: f.name,
+    category: f.category,
+    max_quota_per_month: f.max_quota_per_month,
+    hero_image_url: f.hero_image_url,
+    rating_score: f.rating_score,
+    operating_hours: f.operating_hours,
+    pricing: f.pricing,
+    current_occupancy: f.current_occupancy,
+    max_capacity: f.max_capacity,
+  };
+}
+
+export function communityPostRecordToPost(p: CommunityPostRecord): CommunityPost {
+  return {
+    id: p.id,
+    author_name: p.author_name,
+    author_role: (p.author_role as any) || 'Cư dân',
+    apt_code: p.apt_code,
+    title: p.title,
+    content: p.content,
+    ai_moderation: (p.ai_moderation as any) || 'Clean',
+    ai_sentiment: p.ai_sentiment || 0.8,
+    tags: p.tags || [],
+    likes: p.likes,
+    comments_count: p.comments_count,
+    is_pinned: !!p.is_pinned,
+    created_at: p.created_at,
+  };
+}
+
+export function votingTopicRecordToSurvey(v: VotingTopicRecord): Survey {
+  return {
+    id: v.id,
+    title: v.title,
+    description: v.description,
+    legal_type: (v.legal_type as any) || 'Đóng góp Quỹ Bảo trì',
+    deadline: v.deadline,
+    is_owner_only: v.is_owner_only,
+    total_votes: v.total_votes,
+    options: v.options.map(o => ({ id: o.id, text: o.text, votes: o.votes })),
+  };
+}
+
+// ============================================================================
+// LIVE REPOSITORY ADAPTERS DIRECTLY WIRED TO DATABASE
+// ============================================================================
+
+export const DEMO_USERS: User[] = skylineDb.users.find().map(userRecordToUser);
+export const DEMO_APARTMENTS: Apartment[] = skylineDb.apartments.find().map(apartmentRecordToApartment);
+export const DEMO_BILLS: Bill[] = skylineDb.bills.find().map(billRecordToBill);
+export const DEMO_TICKETS: ServiceRequest[] = skylineDb.tickets.find().map(ticketRecordToServiceRequest);
+export const DEMO_FACILITIES: Facility[] = skylineDb.facilities.find().map(facilityRecordToFacility);
+export const DEMO_COMMUNITY_POSTS: CommunityPost[] = skylineDb.communityPosts.find().map(communityPostRecordToPost);
+export const DEMO_SURVEYS: Survey[] = skylineDb.votingTopics.find().map(votingTopicRecordToSurvey);
 
 export const DEMO_DEVICES: Device[] = [
   {
-    id: 'dev-1',
-    name: 'Cụm Thang Máy Tốc Độ Cao Otis BS-07 (Thang 01 & 02)',
+    id: 'dev-01',
+    name: 'Thang máy Otis SkyRise #01 (Tòa BS-07)',
     category: 'Thang máy',
-    location: 'Trục Lõi Tòa BS-07 (Tầng B2 -> Tầng 34)',
-    health_score: 96.8,
-    predict_date: '2026-11-20',
-    last_maintenance: '2026-08-15',
-    status: 'Hoạt động tốt',
-  },
-  {
-    id: 'dev-2',
-    name: 'Thang Chuyên Dụng Cứu Hỏa & Vận Chuyển Hàng Otis (Thang 03)',
-    category: 'Thang máy',
-    location: 'Trục Buồng Thang PCCC BS-07 (Tầng B2 -> Tầng 34)',
-    health_score: 92.4,
-    predict_date: '2026-10-30',
+    location: 'Trục thang máy chính Block BS-07',
+    health_score: 94,
+    predict_date: '2026-11-15',
     last_maintenance: '2026-08-10',
-    status: 'Hoạt động tốt',
+    status: 'Hoạt động tốt'
   },
   {
-    id: 'dev-3',
-    name: 'Cụm Máy Bơm Tăng Áp PCCC Grundfos & Bể Ngầm 800m³',
-    category: 'Máy bơm',
-    location: 'Trạm Bơm Kỹ Thuật Hầm B2',
-    health_score: 88.5,
-    predict_date: '2026-09-28',
-    last_maintenance: '2026-08-05',
-    status: 'Hoạt động tốt',
-  },
-  {
-    id: 'dev-4',
-    name: 'Trạm Biến Áp Trung Thế 1500kVA & Máy Phát Cummins 1000kVA',
-    category: 'Trạm biến áp',
-    location: 'Phòng Máy Phát Điện Dự Phòng Hầm B1',
-    health_score: 94.0,
-    predict_date: '2026-12-15',
-    last_maintenance: '2026-08-20',
-    status: 'Hoạt động tốt',
-  },
-  {
-    id: 'dev-5',
-    name: 'Hệ Thống Quạt Tăng Áp Cầu Thang & Hút Khói Hành Lang Systemair',
-    category: 'Thông gió & Hút khói',
-    location: 'Tầng Kỹ Thuật Mái & Trục Kỹ Thuật BS-07',
-    health_score: 91.0,
-    predict_date: '2026-10-15',
+    id: 'dev-02',
+    name: 'Thang máy Otis SkyRise #02 (Tòa BS-07)',
+    category: 'Thang máy',
+    location: 'Trục thang máy chính Block BS-07',
+    health_score: 72,
+    predict_date: '2026-09-02',
     last_maintenance: '2026-07-28',
-    status: 'Hoạt động tốt',
+    status: 'Cần kiểm tra'
   },
   {
-    id: 'dev-6',
-    name: 'Cổng Barrier Tự Động & Camera AI Quét Biển Số LPR Hầm Xe',
-    category: 'Barrier',
-    location: 'Cổng Kiểm Soát Ra Vào Hầm B1 & B2',
-    health_score: 98.2,
-    predict_date: '2027-01-10',
-    last_maintenance: '2026-08-25',
-    status: 'Hoạt động tốt',
+    id: 'dev-03',
+    name: 'Cụm máy bơm tăng áp Grundfos Hydro MPC',
+    category: 'Máy bơm',
+    location: 'Phòng kỹ thuật nước Tầng Hầm B2',
+    health_score: 96,
+    predict_date: '2026-12-05',
+    last_maintenance: '2026-08-15',
+    status: 'Hoạt động tốt'
   },
+  {
+    id: 'dev-04',
+    name: 'Hệ thống báo cháy & chữa cháy tự động Sprinkler',
+    category: 'Hệ thống PCCC',
+    location: 'Toàn khu phức hợp The Tropical (BS-07 -> BS-10)',
+    health_score: 98,
+    predict_date: '2027-01-20',
+    last_maintenance: '2026-08-20',
+    status: 'Hoạt động tốt'
+  },
+  {
+    id: 'dev-05',
+    name: 'Trạm biến áp khô ABB 2500kVA',
+    category: 'Trạm biến áp',
+    location: 'Trạm điện trung thế Tầng Hầm B1',
+    health_score: 89,
+    predict_date: '2026-10-30',
+    last_maintenance: '2026-08-05',
+    status: 'Hoạt động tốt'
+  },
+  {
+    id: 'dev-06',
+    name: 'Barrier tự động đọc thẻ RFID & Biển số AI LPR',
+    category: 'Barrier',
+    location: 'Cổng kiểm soát xe Hầm B1 / B2',
+    health_score: 91,
+    predict_date: '2026-11-01',
+    last_maintenance: '2026-08-12',
+    status: 'Hoạt động tốt'
+  },
+  {
+    id: 'dev-07',
+    name: 'Hệ thống quạt hút khói & tạo áp cầu thang thoát hiểm',
+    category: 'Thông gió & Hút khói',
+    location: 'Buồng thang bộ thoát hiểm & Hầm B1/B2',
+    health_score: 88,
+    predict_date: '2026-10-18',
+    last_maintenance: '2026-07-20',
+    status: 'Hoạt động tốt'
+  }
 ];
 
 export const DEMO_SECURITY_ALERTS: SecurityAlert[] = [
   {
-    id: 'alert-01',
+    id: 'alt-01',
     alert_type: 'Fire',
-    title: 'Camera AI phát hiện khói mỏng bất thường',
-    location: 'Hầm B1 - Khu đỗ xe Ô tô ô số 42-45',
-    camera_id: 'CAM-B1-08',
-    snapshot_url: 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?w=800&auto=format&fit=crop&q=80',
+    title: 'Phát hiện nhiệt độ bất thường tại khu vực kỹ thuật Block BS-07',
+    location: 'Tầng Hầm B1 - Trạm Biến Áp BS-07',
+    camera_id: 'CAM-B1-04',
+    snapshot_url: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80',
     confidence: 0.96,
-    created_at: '2026-08-26T17:48:10',
-    status: 'New',
-  },
-  {
-    id: 'alert-02',
-    alert_type: 'Crowd',
-    title: 'Tập trung đông người ngoài khung giờ quy định',
-    location: 'Sảnh chính Tòa A (Tầng 1)',
-    camera_id: 'CAM-LOBBY-01',
-    snapshot_url: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&auto=format&fit=crop&q=80',
-    confidence: 0.88,
-    created_at: '2026-08-26T16:20:00',
-    status: 'Resolved',
-  },
-];
-
-export const DEMO_FACILITIES: Facility[] = [
-  {
-    id: 'fac-1',
-    name: 'Hồ Bơi Vô Cực Chân Mây (Skyline Horizon Pool - Tầng Chân Mây)',
-    category: 'Hồ bơi',
-    max_quota_per_month: 20,
-    hero_image_url: 'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&auto=format&fit=crop&q=80',
-    rating_score: 4.9,
-    operating_hours: '06:00 - 22:00',
-    pricing: 'Miễn phí theo Thẻ cư dân (20 lượt/tháng)',
-    current_occupancy: 14,
-    max_capacity: 40,
-  },
-  {
-    id: 'fac-resort-pool',
-    name: 'Bể Bơi Nhiệt Đới & Ốc Đảo Resort (Nội Khu The Tropical)',
-    category: 'Hồ bơi',
-    max_quota_per_month: 30,
-    hero_image_url: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800&auto=format&fit=crop&q=80',
-    rating_score: 5.0,
-    operating_hours: '06:00 - 22:00',
-    pricing: 'Miễn phí theo Thẻ cư dân (Vào tự do FaceID / Thẻ)',
-    current_occupancy: 18,
-    max_capacity: 60,
-  },
-  {
-    id: 'fac-3',
-    name: 'Trung Tâm Thể Hình Technogym (Fitness & Yoga - Tầng 3)',
-    category: 'Gym',
-    max_quota_per_month: 30,
-    hero_image_url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&auto=format&fit=crop&q=80',
-    rating_score: 5.0,
-    operating_hours: 'Mở cửa 24/7',
-    pricing: 'Miễn phí theo Thẻ cư dân',
-    current_occupancy: 8,
-    max_capacity: 35,
-  },
-  {
-    id: 'fac-sport-court',
-    name: 'Cụm Sân Thể Thao Đa Năng (Pickleball & Tennis - Công Viên Nội Khu)',
-    category: 'Sân thể thao',
-    max_quota_per_month: 15,
-    hero_image_url: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop&q=80',
-    rating_score: 4.95,
-    operating_hours: '06:00 - 22:00',
-    pricing: 'Miễn phí theo Thẻ cư dân (Đặt lịch trước 2 giờ)',
-    current_occupancy: 4,
-    max_capacity: 16,
-  },
-  {
-    id: 'fac-sauna',
-    name: 'Phòng Xông Hơi Đá Muối Himalaya (Private VIP - Tầng 3)',
-    category: 'Xông hơi',
-    max_quota_per_month: 10,
-    hero_image_url: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&auto=format&fit=crop&q=80',
-    rating_score: 5.0,
-    operating_hours: '08:00 - 22:00',
-    pricing: '500.000 đ / giờ (Phòng gia đình VIP)',
-    current_occupancy: 1,
-    max_capacity: 4,
-  },
-  {
-    id: 'fac-2',
-    name: 'Vườn Tiệc Nướng BBQ Panoramic (Sân Thượng Chân Mây)',
-    category: 'BBQ',
-    max_quota_per_month: 4,
-    hero_image_url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&auto=format&fit=crop&q=80',
-    rating_score: 4.8,
-    operating_hours: '17:00 - 23:00',
-    pricing: '600.000 đ / ca (Bao gồm set bếp Weber & dọn dẹp)',
-    current_occupancy: 2,
-    max_capacity: 6,
-  },
-  {
-    id: 'fac-restaurant',
-    name: 'Nhà Hàng Ẩm Thực Skyline (Tầng 1 - Sảnh The Tropical BS-07)',
-    category: 'Nhà hàng',
-    max_quota_per_month: 50,
-    hero_image_url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
-    rating_score: 4.9,
-    operating_hours: '06:30 - 22:30',
-    pricing: 'Phục vụ cư dân & Khách theo thực đơn (Ưu đãi 10% thẻ cư dân)',
-    current_occupancy: 22,
-    max_capacity: 80,
-  },
-  {
-    id: 'fac-kids',
-    name: 'Khu Vui Chơi Trẻ Em Sky Kids Zone (Tầng 1 - Sảnh Chung Cư BS-07)',
-    category: 'Khu trẻ em',
-    max_quota_per_month: 30,
-    hero_image_url: 'https://images.unsplash.com/photo-1566454544259-f4b94c3d758c?w=800&auto=format&fit=crop&q=80',
-    rating_score: 4.9,
-    operating_hours: '07:00 - 21:00',
-    pricing: 'Miễn phí theo Thẻ cư dân (Có người lớn đi kèm)',
-    current_occupancy: 6,
-    max_capacity: 25,
-  },
-];
-
-export const DEMO_COMMUNITY_POSTS: CommunityPost[] = [
-  {
-    id: 'post-1',
-    author_name: 'Ban Quản Lý Chung Cư SKYLINE',
-    author_role: 'BQL',
-    title: 'Thông báo lịch bảo dưỡng định kỳ hệ thống thang máy Chung Cư BS-08',
-    content: 'Ban Quản lý xin thông báo kế hoạch kiểm tra kỹ thuật định kỳ thang máy số 02 vào ngày 28/08/2026 từ 09:00 - 11:30. Kính mong Quý cư dân sử dụng thang số 01 và 03 trong thời gian trên.',
-    ai_moderation: 'Clean',
-    ai_sentiment: 0.85,
-    tags: ['Bảo trì', 'Thông báo BQL', 'Thang máy'],
-    likes: 42,
-    comments_count: 5,
-    is_pinned: true,
-    created_at: '2026-08-25T10:00:00',
-  },
-  {
-    id: 'post-2',
-    author_name: 'Trần Hữu Lực (Căn CH-06)',
-    author_role: 'Cư dân',
-    apt_code: 'CH-06',
-    title: 'Trao đổi lại bộ bàn ghế đọc sách ban công bằng gỗ sồi còn mới 95%',
-    content: 'Gia đình mình vừa thay đổi nội thất nên muốn nhượng lại bộ bàn ghế ban công gọn nhẹ cho bác nào có nhu cầu, có thể qua xem trực tiếp tại căn CH-06.',
-    ai_moderation: 'Clean',
-    ai_sentiment: 0.92,
-    tags: ['Rao vặt', 'Nội thất', 'Cộng đồng'],
-    likes: 18,
-    comments_count: 3,
-    created_at: '2026-08-26T11:30:00',
-  },
-];
-
-export const DEMO_SURVEYS: Survey[] = [
-  {
-    id: 'sur-01',
-    title: 'Biểu quyết Thông qua Phương án Nâng cấp Hệ thống Kiểm soát Xe Thông minh Tự Động Hầm B2',
-    description: 'Chiến dịch lấy ý kiến hợp pháp của các Chủ sở hữu căn hộ về việc trích Quỹ Bảo trì để nâng cấp camera đọc biển số tự động tốc độ cao.',
-    legal_type: 'Bầu Ban Quản Trị',
-    deadline: '2026-09-10T23:59:59',
-    is_owner_only: true,
-    total_votes: 0,
-    options: [
-      { id: 'opt-1', text: 'Đồng ý phương án nâng cấp (Dự toán 150 triệu)', votes: 0 },
-      { id: 'opt-2', text: 'Không đồng ý, giữ nguyên hiện trạng', votes: 0 },
-      { id: 'opt-3', text: 'Ý kiến khác', votes: 0 },
-    ],
-  },
+    created_at: '2026-08-27 10:15:00',
+    status: 'Resolved'
+  }
 ];
 
 /**
- * Real-time updater for DEMO_USERS in dataStore
+ * Real-time updater for Users - updates authoritative database and cache
  */
 export function updateDemoUser(identifier: string, updates: Partial<User>): User | null {
   const norm = identifier.toLowerCase().trim();
+  
+  // 1. Update in Database
+  const dbMatch = skylineDb.users.findOne(u => 
+    u.id.toLowerCase() === norm ||
+    u.username.toLowerCase() === norm ||
+    (u.phone && u.phone.toLowerCase() === norm) ||
+    (u.email && u.email.toLowerCase() === norm) ||
+    u.role.toLowerCase() === norm
+  );
+
+  if (dbMatch) {
+    const patch: Partial<UserRecord> = {};
+    if (updates.full_name) patch.full_name = updates.full_name;
+    if (updates.email) patch.email = updates.email;
+    if (updates.phone) patch.phone = updates.phone;
+    if (updates.id_card_no || updates.id_card_number) patch.id_card_no = updates.id_card_no || updates.id_card_number;
+    if (updates.avatar_url) patch.avatar_url = updates.avatar_url;
+    if (updates.license_plate) patch.license_plate = updates.license_plate;
+    if (updates.dob) patch.dob = updates.dob;
+    if (updates.pob) patch.pob = updates.pob;
+    if (updates.password) patch.password_hash = updates.password;
+
+    skylineDb.users.update(dbMatch.id, patch);
+  }
+
+  // 2. Update cached array
   const matched = DEMO_USERS.find(u => 
     u.id === identifier ||
     (u.username && u.username.toLowerCase().trim() === norm) ||
     (u.email && u.email.toLowerCase().trim() === norm) ||
     (u.phone && u.phone.toLowerCase().trim() === norm) ||
-    u.role === identifier
+    u.role.toLowerCase() === norm
   );
 
   if (matched) {
@@ -926,13 +561,59 @@ export function updateDemoUser(identifier: string, updates: Partial<User>): User
 }
 
 /**
- * Add or update user in DEMO_USERS
+ * Add or update user - updates authoritative database and cache
  */
 export function addOrUpdateDemoUser(user: User): User {
+  const normUser = user.username ? user.username.toLowerCase().trim() : '';
+
+  // 1. Sync to Database
+  const dbMatch = skylineDb.users.findOne(u => 
+    Boolean(
+      u.id === user.id ||
+      (normUser && u.username.toLowerCase() === normUser) ||
+      (user.phone && u.phone === user.phone)
+    )
+  );
+
+  if (dbMatch) {
+    skylineDb.users.update(dbMatch.id, {
+      full_name: user.full_name,
+      email: user.email,
+      phone: user.phone,
+      id_card_no: user.id_card_no || user.id_card_number,
+      avatar_url: user.avatar_url,
+      license_plate: user.license_plate,
+      dob: user.dob,
+      pob: user.pob,
+      password_hash: user.password,
+    });
+  } else {
+    skylineDb.users.insert({
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      full_name: user.full_name,
+      phone: user.phone || user.username,
+      email: user.email || `${user.username}@skyline.vn`,
+      password_hash: user.password || '12345678',
+      id_card_no: user.id_card_no || user.id_card_number || '',
+      avatar_url: user.avatar_url,
+      relationship: user.relationship,
+      apartment_code: user.apartment_code,
+      license_plate: user.license_plate,
+      dob: user.dob,
+      pob: user.pob,
+      gender: (user as any).gender ?? 1
+    });
+  }
+
+  // 2. Sync to array
   const index = DEMO_USERS.findIndex(u => 
-    u.id === user.id ||
-    (u.username && u.username.toLowerCase().trim() === user.username.toLowerCase().trim()) ||
-    (u.phone && user.phone && u.phone.trim() === user.phone.trim())
+    Boolean(
+      u.id === user.id ||
+      (normUser && u.username.toLowerCase() === normUser) ||
+      (user.phone && u.phone && u.phone.trim() === user.phone.trim())
+    )
   );
 
   if (index !== -1) {

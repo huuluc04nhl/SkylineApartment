@@ -271,3 +271,4 @@ export default function InvoiceExplanationModal({
     </div>
   );
 }
+

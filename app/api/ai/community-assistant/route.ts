@@ -119,7 +119,7 @@ function localDeterministicAnalysis(title: string, content: string): {
   } else if (text.includes('bbq') || text.includes('xông hơi') || text.includes('sauna')) {
     quickReply = 'Vườn nướng BBQ chân mây (17:00-23:00) và Phòng xông hơi VIP (08:00-22:00) là tiện ích riêng tư, Quý cư dân vui lòng đặt trước tại tab Tiện Ích để giữ chỗ.';
   } else if (text.includes('hotline') || text.includes('bảo vệ') || text.includes('số điện thoại')) {
-    quickReply = 'Hotline Ban Quản Lý túc trực 24/7: 1900 8899. Quầy Lễ tân tiếp dân đặt tại Sảnh Grand Lobby Tầng 1.';
+    quickReply = 'Hotline VinHomes Manager túc trực 24/7: 1900 8899. Quầy Lễ tân tiếp dân đặt tại Sảnh Grand Lobby Tầng 1.';
   }
 
   return {
@@ -207,8 +207,8 @@ Tác giả: ${authorRole || 'Cư dân'} (Căn hộ: ${aptCode || 'N/A'})`;
         });
       }
 
-      const systemInstruction = `Bạn là Giám đốc Vận hành AI của Ban Quản Lý Chung Cư SKYLINE.
-Nhiệm vụ: Phân tích danh sách các bài viết diễn đàn cư dân gần đây để đưa ra Báo cáo Cảm xúc Cộng đồng và Đề xuất Chiến lược hành động (Actionable Recommendations) cho Ban Quản Lý.
+      const systemInstruction = `Bạn là Giám đốc Vận hành AI của VinHomes Manager - Chung Cư SKYLINE.
+Nhiệm vụ: Phân tích danh sách các bài viết diễn đàn cư dân gần đây để đưa ra Báo cáo Cảm xúc Cộng đồng và Đề xuất Chiến lược hành động (Actionable Recommendations) cho VinHomes Manager.
 Định dạng JSON trả về:
 {
   "summary": "Tóm tắt 2-3 câu về tâm tư, nguyện vọng chung và xu hướng thảo luận nổi bật của cư dân",

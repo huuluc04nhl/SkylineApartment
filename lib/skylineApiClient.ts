@@ -3,6 +3,8 @@
 // Standardized API client for Skyline Smart Residence operations
 // ============================================================================
 
+import { getAllEnrolledFaceProfiles } from './faceEnrollStore';
+
 export interface SkylineUserInfo {
   id: string;
   username: string;
@@ -30,16 +32,12 @@ export interface SkylineUserInfo {
   access_token?: string;
 }
 
-export type NksUserInfo = SkylineUserInfo;
-
 export interface SkylineLoginResponse {
   success: boolean;
   message?: string;
   access_token?: string;
   user?: SkylineUserInfo;
 }
-
-export type NksLoginResponse = SkylineLoginResponse;
 
 /**
  * 1. Login API (POST /api/user/login)
@@ -73,7 +71,6 @@ export async function skylineLogin(
 
   return data;
 }
-export const nksLogin = skylineLogin;
 
 /**
  * 2. Get User Info API (POST /api/user or GET)
@@ -96,7 +93,6 @@ export async function skylineGetUserInfo(accessToken?: string): Promise<SkylineU
 
   return null;
 }
-export const nksGetUserInfo = skylineGetUserInfo;
 
 /**
  * 3. Update User Info API (POST /api/user/updateInfo)
@@ -114,7 +110,6 @@ export async function skylineUpdateInfo(info: Partial<SkylineUserInfo>): Promise
 
   return await res.json();
 }
-export const nksUpdateInfo = skylineUpdateInfo;
 
 /**
  * 4. Update Password API (POST /api/user/updatePass)
@@ -147,7 +142,6 @@ export async function skylineUpdatePassword(
 
   return data;
 }
-export const nksUpdatePassword = skylineUpdatePassword;
 
 /**
  * 5. Update Avatar API (POST /api/user/updateAvatar)
@@ -165,7 +159,6 @@ export async function skylineUpdateAvatar(avatarBase64: string): Promise<{ succe
 
   return await res.json();
 }
-export const nksUpdateAvatar = skylineUpdateAvatar;
 
 /**
  * 6. Update CCCD e-KYC API (POST /api/user/updateCccd)
@@ -194,7 +187,6 @@ export async function skylineUpdateCccd(payload: {
 
   return await res.json();
 }
-export const nksUpdateCccd = skylineUpdateCccd;
 
 /**
  * 7. Get Family Members API (GET /api/user/family)
@@ -212,7 +204,6 @@ export async function skylineGetFamilyMembers(aptCode?: string): Promise<{ succe
 
   return await res.json();
 }
-export const nksGetFamilyMembers = skylineGetFamilyMembers;
 
 /**
  * 8. Search Resident Account from API (GET /api/user/family?search=...)
@@ -229,7 +220,6 @@ export async function skylineSearchFamilyAccount(query: string): Promise<{ succe
 
   return await res.json();
 }
-export const nksSearchFamilyAccount = skylineSearchFamilyAccount;
 
 /**
  * 9. Add Family Member API (POST /api/user/family)
@@ -257,7 +247,6 @@ export async function skylineAddFamilyMember(payload: {
 
   return await res.json();
 }
-export const nksAddFamilyMember = skylineAddFamilyMember;
 
 /**
  * 10. Remove Family Member API (DELETE /api/user/family)
@@ -275,7 +264,6 @@ export async function skylineRemoveFamilyMember(memberId: string): Promise<{ suc
 
   return await res.json();
 }
-export const nksRemoveFamilyMember = skylineRemoveFamilyMember;
 
 /**
  * 10b. Update Family Member API (PUT /api/user/family)
@@ -300,7 +288,6 @@ export async function skylineUpdateFamilyMember(payload: {
 
   return await res.json();
 }
-export const nksUpdateFamilyMember = skylineUpdateFamilyMember;
 
 /**
  * 11. FaceID Biometric Login API (POST /api/user/face-login)
@@ -329,27 +316,11 @@ export async function skylineFaceLogin(payload: {
   message?: string;
 }> {
   let clientProfiles = payload.clientProfiles;
-  if (!clientProfiles && typeof window !== 'undefined') {
+  if (!clientProfiles) {
     try {
-      const raw = localStorage.getItem('skyline_enrolled_faces_v1');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          let hasStale = false;
-          clientProfiles = parsed.map((p: any) => {
-            if (p && (p.apartmentCode === '12A05' || p.apartmentCode === '12A5' || !p.apartmentCode)) {
-              hasStale = true;
-              return { ...p, apartmentCode: 'CH-06' };
-            }
-            return p;
-          });
-          if (hasStale) {
-            localStorage.setItem('skyline_enrolled_faces_v1', JSON.stringify(clientProfiles));
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('Lỗi đọc client profiles:', e);
+      clientProfiles = getAllEnrolledFaceProfiles();
+    } catch {
+      clientProfiles = undefined;
     }
   }
 
@@ -369,7 +340,6 @@ export async function skylineFaceLogin(payload: {
 
   return data;
 }
-export const nksFaceLogin = skylineFaceLogin;
 
 /**
  * 12. FaceID Biometric 4-Step Enrollment API (POST /api/user/face-enroll)
@@ -402,7 +372,6 @@ export async function skylineEnrollFaceId(payload: {
 
   return data;
 }
-export const nksEnrollFaceId = skylineEnrollFaceId;
 
 /**
  * 12b. Chủ hộ xác nhận hồ sơ FaceID của người nhà và gửi BQL
@@ -426,7 +395,6 @@ export async function skylineConfirmFamilyFaceIdByOwner(userId: string, apartmen
 
   return data;
 }
-export const nksConfirmFamilyFaceIdByOwner = skylineConfirmFamilyFaceIdByOwner;
 
 /**
  * 13. Lấy hồ sơ 4 mẫu FaceID đã đăng ký từ Server (GET /api/user/face-enroll)
@@ -447,12 +415,12 @@ export async function skylineGetEnrolledFaceProfile(userId: string): Promise<any
     return null;
   }
 }
-export const nksGetEnrolledFaceProfile = skylineGetEnrolledFaceProfile;
 
-export interface NksFaceIdVerifyResponse {
+export interface SkylineFaceIdVerifyResponse {
   success: boolean;
   message?: string;
   data?: {
+    user?: any;
     embedding?: number[];
     cropped_face?: string;
     metrics?: {
@@ -466,42 +434,32 @@ export interface NksFaceIdVerifyResponse {
 }
 
 /**
- * 13b. Xác thực sinh trắc học FaceID chính thức qua máy chủ NKS (POST https://account.nks.vn/api/nks/user/faceIdVerify)
- * Đặc tả: NKS API Tài liệu Mục 7
+ * 13b. Xác thực sinh trắc học FaceID chính thức qua máy chủ Skyline (POST /api/user/face-login)
  */
-export async function skylineFaceIdVerify(accessToken: string): Promise<NksFaceIdVerifyResponse> {
+export async function skylineFaceIdVerify(accessToken: string): Promise<SkylineFaceIdVerifyResponse> {
   if (!accessToken) {
-    throw new Error('Vui lòng cung cấp access_token để xác thực FaceID qua NKS.');
+    throw new Error('Vui lòng cung cấp access_token để xác thực FaceID.');
   }
 
-  const formData = new FormData();
-  formData.append('access_token', accessToken);
-
-  const res = await fetch('https://account.nks.vn/api/nks/user/faceIdVerify', {
+  const res = await fetch('/api/user/face-login', {
     method: 'POST',
-    body: formData,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ access_token: accessToken }),
   });
-
-  if (res.status === 500) {
-    throw new Error('Tài khoản chưa có dữ liệu ảnh chân dung FaceID hợp lệ trên máy chủ NKS.');
-  }
 
   const json = await res.json().catch(() => null);
   if (!res.ok || !json?.success) {
-    throw new Error(json?.message || `Xác thực FaceID qua NKS thất bại (Mã lỗi: ${res.status})`);
+    throw new Error(json?.message || `Xác thực FaceID thất bại (Mã lỗi: ${res.status})`);
   }
 
-  // Chuẩn hóa vector 512 chiều nếu trả về dưới dạng chuỗi phân tách bởi dấu phẩy
-  if (Array.isArray(json.data?.embedding) && typeof json.data.embedding[0] === 'string') {
-    json.data.embedding = json.data.embedding[0]
-      .split(',')
-      .map((n: string) => parseFloat(n.trim()))
-      .filter((n: number) => !isNaN(n));
-  }
-
-  return json;
+  return {
+    success: true,
+    data: {
+      user: json.user,
+      embedding: json.user?.face_vector ? JSON.parse(json.user.face_vector) : [],
+    }
+  };
 }
-export const nksFaceIdVerify = skylineFaceIdVerify;
 
 /**
  * 14. Apartment Handover & Account Provisioning API (POST /api/user/handover)
@@ -546,4 +504,3 @@ export async function skylineHandoverProvisionAccount(payload: {
 
   return data;
 }
-export const nksHandoverProvisionAccount = skylineHandoverProvisionAccount;

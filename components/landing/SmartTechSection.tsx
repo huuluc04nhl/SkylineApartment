@@ -73,7 +73,7 @@ export default function SmartTechSection() {
       portalTab: 'resident-smarthome',
       actionText: isEn ? 'Experience Smart Home Living' : 'Trải Nghiệm Smart Home Căn Hộ',
       visualWidget: {
-        badge: isEn ? 'BASEMENT BIOMETRIC IDENTIFICATION' : 'ĐỊNH DANH SINH TRẮC HỌC TẦNG HẦM',
+        badge: isEn ? 'SMART BASEMENT ACCESS' : 'NHẬN DIỆN MỞ CỔNG TẦNG HẦM',
         title: isEn ? 'Automated Parking Barrier & Elevators' : 'Barrier Xe & Thang Máy Tự Động',
         subtitle: isEn ? 'Tower BS-07 • Basement B1-B2 The Tropical' : 'Chung cư BS-07 • Hầm B1-B2 The Tropical',
         statusColor: 'emerald',
@@ -155,10 +155,10 @@ export default function SmartTechSection() {
       techSpecs: [
         { label: isEn ? 'Water Leak Warning' : 'Cảnh Báo Rò Rỉ Nước', value: isEn ? 'Detected within 15 mins' : 'Phát Hiện Sau 15 Phút' },
         { label: isEn ? 'Energy Efficiency' : 'Tiết Kiệm Năng Lượng', value: isEn ? '-20% Power Usage' : '-20% Điện Tiêu Thụ' },
-        { label: isEn ? 'NKS Technical Response' : 'Ứng Trực Kỹ Thuật NKS', value: isEn ? 'On-site in 15 - 60 mins' : 'Có Mặt 15 - 60 Phút' }
+        { label: isEn ? 'Skyline Technical Response' : 'Ứng Trực Kỹ Thuật Skyline', value: isEn ? 'On-site in 15 - 60 mins' : 'Có Mặt 15 - 60 Phút' }
       ],
       portalTab: 'resident-tickets',
-      actionText: isEn ? 'Request NKS Technical Service' : 'Yêu Cầu Hỗ Trợ Kỹ Thuật NKS',
+      actionText: isEn ? 'Request Skyline Technical Service' : 'Yêu Cầu Hỗ Trợ Kỹ Thuật Skyline',
       visualWidget: {
         badge: isEn ? 'INFRASTRUCTURE & NIGHT SECURITY' : 'GIÁM SÁT HẠ TẦNG & AN NINH ĐÊM',
         title: isEn ? 'Energy & Safety Core Monitoring' : 'Lõi Giám Sát Năng Lượng & An Toàn',

@@ -121,27 +121,20 @@ export default function SmartPaymentReminderBanner({
           </div>
         </div>
 
-        {/* Right: Quick Action Buttons */}
+        {/* Right: Quick Action Button (Deduplicated, single clean CTA) */}
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            onClick={onPayVietQr}
-            className="px-3 py-2 bg-[#161B22] border border-[#2D3748] hover:border-[#C5A880] text-gray-200 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <QrCode className="w-3.5 h-3.5 text-cyan-400" />
-            <span>VietQR</span>
-          </button>
-
-          <button
-            type="button"
             onClick={onPayVnpay}
-            className="px-4 py-2 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+            className="px-4 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-md cursor-pointer"
           >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>{isEn ? 'Pay Online (VNPAY)' : 'Thanh Toán VNPAY'}</span>
+            <CreditCard className="w-4 h-4" />
+            <span>{isEn ? 'Pay Bill Now' : 'Thanh Toán Ngay'}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
     </div>
   );
 }
+

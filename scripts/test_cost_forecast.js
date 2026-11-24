@@ -29,3 +29,4 @@ assert.strictEqual(variable > 0, true, 'Variable cost must be positive');
 console.log('✅ Test 2: Fixed vs Variable cost decomposition PASSED');
 
 console.log('🎉 ALL A3 FORECAST TESTS PASSED!');
+

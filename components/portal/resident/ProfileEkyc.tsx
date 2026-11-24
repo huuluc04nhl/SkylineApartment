@@ -39,16 +39,16 @@ import {
 import { User } from '@/lib/dataStore';
 import ResidentSmartCard from './ResidentSmartCard';
 import { 
-  nksGetUserInfo, 
-  nksUpdateInfo, 
-  nksUpdateCccd, 
-  nksUpdateAvatar, 
-  nksUpdatePassword,
-  nksGetFamilyMembers,
-  nksAddFamilyMember,
-  nksRemoveFamilyMember,
-  nksGetEnrolledFaceProfile
-} from '@/lib/nksApiClient';
+  skylineGetUserInfo, 
+  skylineUpdateInfo, 
+  skylineUpdateCccd, 
+  skylineUpdateAvatar, 
+  skylineUpdatePassword,
+  skylineGetFamilyMembers,
+  skylineAddFamilyMember,
+  skylineRemoveFamilyMember,
+  skylineGetEnrolledFaceProfile
+} from '@/lib/skylineApiClient';
 import { useAuth } from '@/lib/authContext';
 import CccdOcrScannerModal from './CccdOcrScannerModal';
 import AvatarEditorModal from './AvatarEditorModal';
@@ -63,7 +63,7 @@ import {
   EkycRequest 
 } from '@/lib/ekycStore';
 import { validateCccdCard, verifyFaceWithCccd } from '@/lib/ekycValidator';
-import BankFaceEnrollModal from './BankFaceEnrollModal';
+import FaceEnrollModal from './FaceEnrollModal';
 import { getEnrolledFaceProfile, EnrolledFaceProfile } from '@/lib/faceEnrollStore';
 import AccountPasswordSection from '@/components/portal/shared/AccountPasswordSection';
 import { useLanguage } from '@/lib/languageContext';
@@ -92,8 +92,6 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
       const urlParams = new URLSearchParams(window.location.search);
       const sub = urlParams.get('subtab');
       if (sub === 'INFO' || sub === 'EKYC' || sub === 'PASSWORD') return sub;
-      const saved = localStorage.getItem('skyline_profile_subtab');
-      if (saved === 'INFO' || saved === 'EKYC' || saved === 'PASSWORD') return saved as 'INFO' | 'EKYC' | 'PASSWORD';
     }
     return 'INFO';
   });
@@ -101,7 +99,6 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
   const setActiveTab = (tab: 'INFO' | 'EKYC' | 'PASSWORD') => {
     setActiveTabState(tab);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('skyline_profile_subtab', tab);
       const url = new URL(window.location.href);
       if (url.searchParams.get('subtab') !== tab) {
         url.searchParams.set('subtab', tab);
@@ -112,7 +109,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
   const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isCardViewerOpen, setIsCardViewerOpen] = useState(false);
-  const [isBankEnrollOpen, setIsBankEnrollOpen] = useState(false);
+  const [isFaceEnrollOpen, setIsFaceEnrollOpen] = useState(false);
   const [enrolledFaceProfile, setEnrolledFaceProfile] = useState<EnrolledFaceProfile | null>(null);
   const [isLoadingApi, setIsLoadingApi] = useState(true);
   const [ocrFilledNotice, setOcrFilledNotice] = useState(false);
@@ -152,7 +149,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
     async function loadApiUserData() {
       setIsLoadingApi(true);
       try {
-        const apiUser = await nksGetUserInfo();
+        const apiUser = await skylineGetUserInfo();
         if (apiUser) {
           setFullName(apiUser.fullname || apiUser.full_name || '');
           setPhone(apiUser.phone || apiUser.username || '');
@@ -196,13 +193,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
 
     const userKey = currentUser.phone || currentUser.email || currentUser.username || currentUser.id;
 
-    // Check persistent resident localStorage for real uploaded CCCD images
-    if (typeof window !== 'undefined') {
-      const savedFront = localStorage.getItem('skyline_cccd_front_' + userKey);
-      const savedBack = localStorage.getItem('skyline_cccd_back_' + userKey);
-      if (savedFront) setCccdImage(savedFront);
-      if (savedBack) setCccdBackImage(savedBack);
-    }
+    // Persistent CCCD images are synchronized from EKYC database model
 
     // Synchronize live e-KYC status with BQL approval center (Local + Server)
     const syncEkycStatus = async () => {
@@ -255,7 +246,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
       if (p) setEnrolledFaceProfile(p);
 
       // Tự động kéo từ máy chủ API để đồng bộ mẫu vừa quét trên Mobile sang Desktop
-      nksGetEnrolledFaceProfile(userKey).then(remoteP => {
+      skylineGetEnrolledFaceProfile(userKey).then(remoteP => {
         if (remoteP) {
           setEnrolledFaceProfile(remoteP);
         }
@@ -279,7 +270,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
     };
   }, [currentUser]);
 
-  // 1. Submit Update Profile Info to NKS API (POST /api/nks/user/updateInfo + updateCccd)
+  // 1. Submit Update Profile Info to Skyline API (POST /api/user/updateInfo + updateCccd)
   const handleSaveInfo = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveError(null);
@@ -307,7 +298,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
       const firstname = parts.slice(-1)[0] || '';
       const lastname = parts.slice(0, -1).join(' ') || '';
 
-      const res = await nksUpdateInfo({
+      const res = await skylineUpdateInfo({
         username: currentUser?.username || currentUser?.email || phone.trim(),
         firstname,
         lastname,
@@ -325,9 +316,9 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
         license_plate: licensePlate,
       });
 
-      // Also synchronize CCCD card images to NKS Server
+      // Also synchronize CCCD card images to Skyline Server
       try {
-        await nksUpdateCccd({
+        await skylineUpdateCccd({
           number: idCardNumber.trim(),
           date: idDate,
           place: idPlace,
@@ -368,14 +359,14 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
         setSaveError('Không thể lưu thông tin. Vui lòng thử lại sau.');
       }
     } catch (err: any) {
-      console.warn('NKS save info error', err);
+      console.warn('Skyline save info error', err);
       setSaveError('Lỗi kết nối máy chủ khi cập nhật thông tin.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 2. Submit Update Avatar to NKS API (POST /api/nks/user/updateAvatar)
+  // 2. Submit Update Avatar to Skyline API (POST /api/user/updateAvatar)
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -387,7 +378,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
         const base64Data = event.target?.result as string;
         setAvatarUrl(base64Data);
 
-        const res = await nksUpdateAvatar(base64Data);
+        const res = await skylineUpdateAvatar(base64Data);
         if (res.success) {
           updateUserInfo({ avatar_url: base64Data });
           await refreshUser();
@@ -425,25 +416,14 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
     if (stdIdDate) setIdDate(stdIdDate);
     if (stdIdPlace) setIdPlace(stdIdPlace);
 
-    if (frontSrc) {
-      setCccdImage(frontSrc);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('skyline_cccd_front_' + userKey, frontSrc);
-      }
-    }
-    if (backSrc) {
-      setCccdBackImage(backSrc);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('skyline_cccd_back_' + userKey, backSrc);
-      }
-    }
-
+    if (frontSrc) setCccdImage(frontSrc);
+    if (backSrc) setCccdBackImage(backSrc);
     updateEkycCardImages(userKey, frontSrc, backSrc);
 
     // Tự động lưu và cập nhật đầy đủ lên API ngay sau khi quét
     try {
       setIsSaving(true);
-      await nksUpdateCccd({
+      await skylineUpdateCccd({
         front: frontSrc,
         back: backSrc,
         number: stdIdNumber,
@@ -459,7 +439,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
       const firstname = parts.slice(-1)[0] || '';
       const lastname = parts.slice(0, -1).join(' ') || '';
 
-      const updateRes = await nksUpdateInfo({
+      const updateRes = await skylineUpdateInfo({
         username: currentUser?.username || currentUser?.email || currentUser?.phone || userKey,
         firstname,
         lastname,
@@ -567,7 +547,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
         idCardFrontUrl: cccdImage,
         idCardBackUrl: cccdBackImage || '',
         faceSamples,
-        faceScore: enrolledFaceProfile?.faceScore || 99.4,
+        faceScore: enrolledFaceProfile?.faceScore || 0,
       };
 
       const req = submitEkycRequest(reqPayload);
@@ -601,7 +581,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
 
       setEkycFeedback({
         type: 'success',
-        message: 'Đã gửi toàn bộ hồ sơ (Căn cước công dân 2 mặt & 4 mẫu FaceID) tới Ban Quản Lý thành công! Ban Quản Lý sẽ tiến hành đối soát và phê duyệt kích hoạt quyền ra vào chung cư.'
+        message: 'Đã gửi toàn bộ hồ sơ (CCCD 2 mặt & 4 góc khuôn mặt) tới VinHomes Manager thành công! Ban Quản Lý sẽ tiến hành đối soát và phê duyệt kích hoạt quyền ra vào chung cư.'
       });
     } finally {
       setIsScanningOcr(false);
@@ -621,7 +601,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
             {t('Thông Tin Cá Nhân & Định Danh')}
           </h2>
           <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 sm:line-clamp-none">
-            {t('Căn hộ')}: <strong className="text-white font-mono">{aptCode}</strong> • {t('Hồ sơ định danh pháp lý và bảo mật tài khoản')}
+            {t('Căn hộ')}: <strong className="text-white font-mono">{aptCode}</strong> • {t('Thông tin cư dân và bảo mật tài khoản')}
           </p>
         </div>
 
@@ -685,7 +665,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                 type="button"
                 onClick={() => {
                   setActiveTab('EKYC');
-                  setIsBankEnrollOpen(true);
+                  setIsFaceEnrollOpen(true);
                 }}
                 className="px-3 py-1.5 bg-[#C5A880] hover:bg-white text-[#0D1117] text-[11px] sm:text-xs font-bold uppercase tracking-wider rounded-none flex items-center gap-1.5 transition-all shadow"
               >
@@ -721,7 +701,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
           }`}
         >
           <ScanFace className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-          <span>{isEn ? '2. Identity Card & FaceID' : '2. Căn Cước & FaceID'}</span>
+          <span>{isEn ? '2. Identity Card & Face Photo' : '2. Căn Cước & Khuôn Mặt'}</span>
         </button>
 
         <button
@@ -757,22 +737,22 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
             <div
               onClick={() => setIsAvatarModalOpen(true)}
               className="relative group cursor-pointer shrink-0"
-              title="Nhấp vào đây để đổi ảnh đại diện hoặc tùy chỉnh ảnh"
+              title={isEn ? 'Click here to change profile picture or edit avatar' : 'Nhấp vào đây để đổi ảnh đại diện hoặc tùy chỉnh ảnh'}
             >
               <img
-                src={avatarUrl || currentUser.avatar_url || 'https://data.nks.vn/storage/users/default.png'}
+                src={avatarUrl || currentUser.avatar_url || 'https://ui-avatars.com/api/?name=User&background=1C2533&color=C5A880&bold=true'}
                 alt="Avatar"
-                className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-[#C5A880] group-hover:border-white shadow-lg transition-all group-hover:brightness-90"
+                className="w-14 h-14 sm:w-20 sm:h-20 rounded-none object-cover border-2 border-[#C5A880] group-hover:border-white shadow-lg transition-all group-hover:brightness-90"
               />
               {/* Desktop Hover Overlay */}
               <div
-                className="hidden sm:flex absolute inset-0 bg-black/60 rounded-full flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-bold"
+                className="hidden sm:flex absolute inset-0 bg-black/60 rounded-none flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-bold"
               >
                 <Camera className="w-4 h-4 mb-0.5 text-[#C5A880]" />
                 {t('Đổi Ảnh')}
               </div>
               {/* Mobile Persistent Touch Indicator Badge */}
-              <div className="sm:hidden absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[#C5A880] text-[#0D1117] rounded-full flex items-center justify-center shadow-lg border-2 border-[#161D26]">
+              <div className="sm:hidden absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-[#C5A880] text-[#0D1117] rounded-none flex items-center justify-center shadow-lg border-2 border-[#161D26]">
                 <Camera className="w-3 h-3 text-[#0D1117]" />
               </div>
             </div>
@@ -802,7 +782,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                   <span className="text-gray-300 text-[11px]">
                     {isEn
                       ? <>Please review the information and click <strong>[Save Contact Information Changes]</strong> at the bottom of the form.</>
-                      : <>Vui lòng kiểm tra lại thông tin và nhấn nút <strong>[Lưu Thay Đổi Thông Tin Liên Hệ]</strong> ở cuối biểu mẫu để lưu dữ liệu.</>}
+                      : <>{isEn ? 'Please check information and click Save Contact Info at bottom of form.' : 'Vui lòng kiểm tra lại thông tin và nhấn nút [Lưu Thay Đổi Thông Tin Liên Hệ] ở cuối biểu mẫu để lưu dữ liệu.'}</>}
                   </span>
                 </div>
               </div>
@@ -936,7 +916,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                   <span className="flex items-center gap-1.5">
                     <Smartphone className="w-3.5 h-3.5 text-[#C5A880]" /> {isEn ? 'Phone Number (Receive OTP):' : <>Số Điện Thoại <span className="hidden sm:inline">Liên Hệ (Nhận OTP)</span>:</>}
                   </span>
-                  <span className="text-[10px] text-gray-400 font-mono">10 số (03/05/07/08/09)</span>
+                  <span className="text-[10px] text-gray-400 font-mono">{isEn ? '10 digits (03/05/07/08/09)' : '10 số (03/05/07/08/09)'}</span>
                 </label>
                 <input
                   type="tel"
@@ -1070,10 +1050,10 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                 <ShieldCheck className="w-3.5 h-3.5 shrink-0" /> {isEn ? `Resident Verification • Unit ${aptCode}` : `Xác Thực Cư Dân • Căn Hộ ${aptCode}`}
               </div>
               <h3 className="font-serif text-base sm:text-lg font-bold text-white mt-0.5 truncate">
-                {isEn ? 'National ID (CCCD) & Face Biometrics' : 'Căn Cước (CCCD) & Khuôn Mặt'}
+                {isEn ? 'National ID (CCCD) & Face Photo' : 'Căn Cước (CCCD) & Khuôn Mặt'}
               </h3>
               <p className="text-xs text-gray-400 line-clamp-1 sm:line-clamp-none mt-0.5">
-                {isEn ? 'Citizen identity card and biometric facial profile to authorize lobby entrance access.' : 'Thông tin căn cước công dân và khuôn mặt để cấp quyền mở cửa sảnh đón.'}
+                {isEn ? 'Citizen identity card and face photo to authorize lobby entrance access.' : 'Thông tin căn cước công dân và khuôn mặt để cấp quyền mở cửa sảnh đón.'}
               </p>
             </div>
 
@@ -1261,15 +1241,15 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
               <div>
                 <div className="flex items-center justify-between border-b border-[#222B35] pb-2 mb-2 sm:mb-4">
                   <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5 sm:gap-2">
-                    <ScanFace className="w-4 h-4 text-[#C5A880] shrink-0" /> <span className="truncate">{isEn ? 'FaceID Biometrics (4 Steps)' : 'Sinh Trắc FaceID (4 Bước)'}</span>
+                    <ScanFace className="w-4 h-4 text-[#C5A880] shrink-0" /> <span className="truncate">{isEn ? 'Face Recognition (4 Steps)' : 'Nhận Diện Khuôn Mặt (4 Bước)'}</span>
                   </span>
                   <button
                     type="button"
-                    onClick={() => setIsBankEnrollOpen(true)}
+                    onClick={() => setIsFaceEnrollOpen(true)}
                     className="h-8 sm:h-7 px-2.5 sm:px-3 bg-[#C5A880] hover:bg-white text-[#0D1117] text-[11px] sm:text-xs font-bold uppercase tracking-wider rounded-none flex items-center gap-1.5 transition-all shadow shrink-0"
                   >
                     <Camera className="w-3.5 h-3.5" />
-                    <span>{enrolledFaceProfile ? (isEn ? 'Rescan' : 'Quét Lại') : (isEn ? 'Scan FaceID' : 'Quét FaceID')}</span>
+                    <span>{enrolledFaceProfile ? (isEn ? 'Rescan' : 'Chụp Lại') : (isEn ? 'Scan Face' : 'Chụp Khuôn Mặt')}</span>
                   </button>
                 </div>
 
@@ -1278,7 +1258,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                     <div className="flex items-center justify-between text-xs">
                       {enrolledFaceProfile.status === 'PENDING_OWNER' ? (
                         <div className="font-semibold text-amber-400 flex items-center gap-1.5 truncate">
-                          <Clock className="w-3.5 h-3.5 animate-pulse shrink-0" /> {isEn ? '4 Samples • Awaiting Owner Confirmation' : '4 Mẫu • Chờ Chủ Hộ Xác Nhận'}
+                          <Clock className="w-3.5 h-3.5 animate-pulse shrink-0" /> {isEn ? '4 Angles • Awaiting Owner Confirmation' : '4 Góc Mặt • Chờ Chủ Hộ Xác Nhận'}
                         </div>
                       ) : enrolledFaceProfile.status === 'PENDING' ? (
                         <div className="font-semibold text-cyan-400 flex items-center gap-1.5 truncate">
@@ -1286,7 +1266,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                         </div>
                       ) : (
                         <div className="font-semibold text-emerald-400 flex items-center gap-1.5 truncate">
-                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> {isEn ? 'Activated 4/4 Samples' : 'Đã Kích Hoạt 4/4 Mẫu'}
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> {isEn ? 'Activated 4 Angles' : 'Đã Kích Hoạt 4 Góc Mặt'}
                         </div>
                       )}
                       <span className="text-[10px] font-mono text-gray-400 shrink-0">
@@ -1339,11 +1319,11 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                         <div className={`relative aspect-square border ${enrolledFaceProfile.status === 'PENDING' ? 'border-amber-500/60' : 'border-emerald-500/60'} bg-black overflow-hidden group`}>
                           <img 
                             src={enrolledFaceProfile.samples.smile} 
-                            alt="Smile" 
+                            alt="Closer" 
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
                           />
                           <span className="absolute bottom-0 inset-x-0 bg-black/80 text-white text-[8.5px] sm:text-[9px] font-mono text-center py-0.5">
-                            {isEn ? '4. Smile' : '4. Cười'}
+                            {isEn ? '4. Closer' : '4. Tiến gần'}
                           </span>
                         </div>
                       </div>
@@ -1357,7 +1337,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                         <p className="text-gray-300 text-[10.5px] line-clamp-2 sm:line-clamp-none">
                           {isEn
                             ? `4-angle facial profile saved. The owner of unit ${aptCode} will verify and endorse for Management activation.`
-                            : `Hồ sơ 4 góc mặt đã được lưu. Chủ hộ căn hộ ${aptCode} sẽ kiểm tra và xác nhận bảo lãnh để BQL kích hoạt FaceID.`}
+                            : `Hồ sơ 4 góc mặt đã được lưu. Chủ hộ căn hộ ${aptCode} sẽ kiểm tra và xác nhận để kích hoạt mở cửa.`}
                         </p>
                       </div>
                     ) : enrolledFaceProfile.status === 'PENDING' ? (
@@ -1367,45 +1347,74 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                         </div>
                         <p className="text-gray-300 text-[10.5px] line-clamp-2 sm:line-clamp-none">
                           {isEn
-                            ? '4-sample biometric profile has been submitted to Management administration for verification and door access activation.'
-                            : 'Hồ sơ 4 mẫu quét sinh trắc học đã gửi lên hệ thống quản trị của BQL để đối soát và kích hoạt quyền mở cửa.'}
+                            ? '4-sample photo profile has been submitted to Management administration for verification and door access activation.'
+                            : 'Hồ sơ 4 góc khuôn mặt đã gửi lên Ban Quản Lý để đối soát và kích hoạt quyền mở cửa.'}
                         </p>
                       </div>
                     ) : (
                       <div className="p-2.5 bg-emerald-950/40 border border-emerald-500/40 text-[11px] text-emerald-200 space-y-1">
                         <div className="font-semibold flex items-center gap-1.5 text-emerald-300">
-                          <ShieldCheck className="w-3.5 h-3.5 shrink-0" /> {isEn ? 'FaceID Access Activated' : 'Đã Kích Hoạt Quyền FaceID'}
+                          <ShieldCheck className="w-3.5 h-3.5 shrink-0" /> {isEn ? 'Face Access Activated' : 'Đã Kích Hoạt Nhận Diện Khuôn Mặt'}
                         </div>
                         <p className="text-gray-300 text-[10.5px] line-clamp-2 sm:line-clamp-none">
                           {isEn
-                            ? '4-vector multi-angle biometric profile approved. You can now use FaceID at the lobby gates and login screen.'
-                            : 'Hồ sơ sinh trắc học 4 vector đa góc đã được duyệt hợp lệ. Bạn có thể sử dụng FaceID tại cửa sảnh và màn hình đăng nhập.'}
+                            ? 'Multi-angle facial profile approved. You can now use face recognition at the lobby gates and login screen.'
+                            : 'Hình ảnh khuôn mặt đã được duyệt. Bạn có thể sử dụng mở cửa sảnh, thang máy và đăng nhập tài khoản.'}
                         </p>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="p-3.5 sm:p-4 bg-[#161D26] border border-amber-500/60 space-y-2.5 sm:space-y-3">
-                    <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
-                      <AlertCircle className="w-4 h-4 shrink-0" /> {isEn ? 'No FaceID Samples Collected' : 'Chưa Thu Thập Mẫu FaceID'}
+                  <div className="p-4 sm:p-5 bg-[#0D1117] border border-[#222B35] space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#1E2631] pb-3">
+                      <div>
+                        <div className="flex items-center gap-2 text-[#C5A880] text-xs font-bold uppercase tracking-wider">
+                          <ShieldCheck className="w-4 h-4 text-[#C5A880] shrink-0" />
+                          <span>{isEn ? 'Face Recognition Registration' : 'Đăng Ký Nhận Diện Khuôn Mặt'}</span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          {isEn
+                            ? 'Fast automated capture for door and elevator access.'
+                            : 'Chụp 4 góc tự động • Mở cổng sảnh và thang máy nhanh chóng không cần chạm.'}
+                        </p>
+                      </div>
+                      <span className="self-start sm:self-auto px-2 py-0.5 bg-[#16202C] border border-[#2D3A4B] text-[10px] text-cyan-300 font-medium">
+                        {isEn ? 'Auto Detection' : 'Tự động nhận diện'}
+                      </span>
                     </div>
-                    <p className="text-xs text-gray-300 leading-relaxed hidden sm:block">
-                      {isEn
-                        ? 'For official facial recognition at entrance gates, Skyline collects 4 facial angles:'
-                        : 'Để nhận diện khuôn mặt chính thức khi mở cửa sảnh đón, hệ thống Skyline thu thập 4 góc chụp khuôn mặt của Quý cư dân:'}
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[10.5px] sm:text-[11px] text-gray-300">
-                      <div className="p-1.5 sm:p-2 bg-[#0D1117] border border-gray-800">{isEn ? '1. Look Straight' : '1. Nhìn thẳng'}</div>
-                      <div className="p-1.5 sm:p-2 bg-[#0D1117] border border-gray-800">{isEn ? '2. Turn Left 30°' : '2. Quay trái 30°'}</div>
-                      <div className="p-1.5 sm:p-2 bg-[#0D1117] border border-gray-800">{isEn ? '3. Turn Right 30°' : '3. Quay phải 30°'}</div>
-                      <div className="p-1.5 sm:p-2 bg-[#0D1117] border border-gray-800">{isEn ? '4. Smile' : '4. Mỉm cười'}</div>
+
+                    {/* 4 Angle Step Preview Cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                      <div className="p-2.5 bg-[#121820] border border-[#222B35] space-y-1">
+                        <div className="text-[10px] font-mono font-bold text-[#C5A880] uppercase">1. {isEn ? 'Front' : 'Nhìn thẳng'}</div>
+                        <div className="text-[10.5px] text-white font-medium">{isEn ? 'Straight' : 'Hướng thẳng'}</div>
+                        <div className="text-[9.5px] text-gray-500">{isEn ? 'Keep steady' : 'Giữ yên đầu'}</div>
+                      </div>
+                      <div className="p-2.5 bg-[#121820] border border-[#222B35] space-y-1">
+                        <div className="text-[10px] font-mono font-bold text-[#C5A880] uppercase">2. {isEn ? 'Turn Left' : 'Nghiêng trái'}</div>
+                        <div className="text-[10.5px] text-white font-medium">{isEn ? 'Tilt left' : 'Nghiêng nhẹ mặt'}</div>
+                        <div className="text-[9.5px] text-gray-500">{isEn ? 'Side view' : 'Góc bên trái'}</div>
+                      </div>
+                      <div className="p-2.5 bg-[#121820] border border-[#222B35] space-y-1">
+                        <div className="text-[10px] font-mono font-bold text-[#C5A880] uppercase">3. {isEn ? 'Turn Right' : 'Nghiêng phải'}</div>
+                        <div className="text-[10.5px] text-white font-medium">{isEn ? 'Tilt right' : 'Nghiêng nhẹ mặt'}</div>
+                        <div className="text-[9.5px] text-gray-500">{isEn ? 'Side view' : 'Góc bên phải'}</div>
+                      </div>
+                      <div className="p-2.5 bg-[#121820] border border-[#222B35] space-y-1">
+                        <div className="text-[10px] font-mono font-bold text-emerald-400 uppercase">4. {isEn ? 'Come Closer' : 'Tiến lại gần'}</div>
+                        <div className="text-[10.5px] text-white font-medium">{isEn ? 'Closer view' : 'Gần camera hơn'}</div>
+                        <div className="text-[9.5px] text-gray-500">{isEn ? 'Real person' : 'Xác nhận người thật'}</div>
+                      </div>
                     </div>
+
+                    {/* Prominent Scan Action Button */}
                     <button
                       type="button"
-                      onClick={() => setIsBankEnrollOpen(true)}
-                      className="w-full h-10 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider rounded-none flex items-center justify-center gap-2 transition-all shadow"
+                      onClick={() => setIsFaceEnrollOpen(true)}
+                      className="w-full py-3 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider rounded-none flex items-center justify-center gap-2 transition-all shadow cursor-pointer group"
                     >
-                      <Camera className="w-4 h-4 text-[#0D1117]" /> {isEn ? 'Start 4-Step Face Scan' : 'Bắt Đầu Quét Mặt 4 Bước'}
+                      <Scan className="w-4 h-4 text-[#0D1117] group-hover:scale-110 transition-transform" />
+                      <span>{isEn ? 'Start 4-Step Face Capture (Auto)' : 'Bắt Đầu Chụp Khuôn Mặt (4 Bước Tự Động)'}</span>
                     </button>
                   </div>
                 )}
@@ -1470,7 +1479,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
           </div>
 
           {/* =================================================================== */}
-          {/* BƯỚC 3: XÁC NHẬN CHỐT 2 THÔNG TIN (CCCD & FACEID) GỬI BAN QUẢN LÝ    */}
+          {/* BƯỚC 3: XÁC NHẬN CHỐT 2 THÔNG TIN (CCCD & KHUÔN MẶT) GỬI BAN QUẢN LÝ  */}
           {/* =================================================================== */}
           <div className="p-4 sm:p-6 bg-gradient-to-r from-[#161D26] via-[#121820] to-[#0D1117] border border-[#C5A880] rounded-none space-y-3.5 sm:space-y-4 shadow-2xl">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-[#222B35] pb-3 sm:pb-4">
@@ -1479,12 +1488,12 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                   <ShieldCheck className="w-3.5 h-3.5 shrink-0" /> {isEn ? 'Step 3: Confirm & Submit Dossier to Management' : 'Bước 3: Xác Nhận & Gửi Hồ Sơ Cho Ban Quản Lý'}
                 </div>
                 <h3 className="font-serif text-base sm:text-lg font-bold text-white truncate">
-                  {isEn ? 'Confirm & Submit to Management (ID & FaceID)' : 'Xác Nhận & Gửi Ban Quản Lý (CCCD & FaceID)'}
+                  {isEn ? 'Confirm & Submit to Management (ID & Face Photo)' : 'Xác Nhận & Gửi Hồ Sơ (CCCD & Khuôn Mặt)'}
                 </h3>
                 <p className="text-xs text-gray-400 max-w-2xl leading-relaxed hidden sm:block">
                   {isEn
-                    ? 'When scanning ID or FaceID, each record is saved independently. Once both steps are complete, click below to finalize and submit your dossier to Management for review and access authorization.'
-                    : 'Khi bạn quét CCCD hoặc FaceID, mỗi thông tin đã được tự động lưu độc lập. Sau khi hoàn tất cả 2 mục, nhấn nút bên dưới để chốt hồ sơ gửi Ban Quản Lý thẩm định và kích hoạt quyền ra vào chung cư.'}
+                    ? 'When scanning ID or taking face photos, each record is saved independently. Once both steps are complete, click below to submit your dossier to Management for review and access authorization.'
+                    : 'Thông tin CCCD và hình ảnh khuôn mặt được lưu tự động. Sau khi hoàn tất cả 2 mục, bạn chỉ cần bấm nút bên dưới để gửi VinHomes Manager kích hoạt quyền mở cửa.'}
                 </p>
               </div>
 
@@ -1544,7 +1553,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                 </span>
               </div>
 
-              {/* Check 2: FaceID */}
+              {/* Check 2: Khuôn mặt */}
               <div className={`p-2.5 sm:p-3 border flex items-center justify-between gap-2 rounded-none transition-colors ${
                 enrolledFaceProfile?.samples?.front
                   ? 'bg-emerald-950/30 border-emerald-500/50 text-emerald-200'
@@ -1557,11 +1566,11 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                     <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
                   )}
                   <div className="min-w-0">
-                    <span className="font-bold block text-white truncate">{isEn ? '2. FaceID Biometrics' : '2. Sinh Trắc Học FaceID'}</span>
+                    <span className="font-bold block text-white truncate">{isEn ? '2. Face Photo Registration' : '2. Nhận Diện Khuôn Mặt'}</span>
                     <span className="text-[10.5px] text-gray-400 truncate block">
                       {enrolledFaceProfile?.samples?.front
-                        ? (isEn ? '4-angle samples saved' : 'Đã lưu riêng bộ 4 góc mẫu')
-                        : (isEn ? 'Need 4 face angle samples' : 'Chưa thu thập đủ 4 mẫu')}
+                        ? (isEn ? '4-angle photos saved' : 'Đã lưu đủ 4 góc khuôn mặt')
+                        : (isEn ? 'Need 4 face angle photos' : 'Chưa chụp đủ 4 góc khuôn mặt')}
                     </span>
                   </div>
                 </div>
@@ -1593,12 +1602,12 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
                 {isScanningOcr
                   ? (isEn ? 'Submitting Dossier...' : 'Đang Gửi Chốt Hồ Sơ...')
                   : ekycStatus === 'VERIFIED'
-                  ? (isEn ? 'Resubmit Update to Management' : 'Gửi Cập Nhật Lại Cho Ban Quản Lý')
+                  ? (isEn ? 'Resubmit Update to VinHomes Manager' : 'Gửi Cập Nhật Lại Cho VinHomes Manager')
                   : ekycStatus === 'REJECTED'
-                  ? (isEn ? 'Resubmit for Management Review' : 'Gửi Lại Ban Quản Lý Thẩm Định')
+                  ? (isEn ? 'Resubmit for VinHomes Manager Review' : 'Gửi Lại VinHomes Manager Thẩm Định')
                   : ekycStatus === 'PENDING'
                   ? (isEn ? 'Resubmit / Update Dossier' : 'Gửi Lại / Cập Nhật Chốt Hồ Sơ')
-                  : (isEn ? 'Submit Dossier to Management' : 'Gửi Ban Quản Lý Xác Nhận Chốt Hồ Sơ')}
+                  : (isEn ? 'Submit Dossier to VinHomes Manager' : 'Gửi Hồ Sơ Cho VinHomes Manager Xác Nhận')}
               </button>
             </div>
           </div>
@@ -1633,7 +1642,6 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
           updateUserInfo({ avatar_url: newAvatarUrl, avatar: newAvatarUrl } as any);
           const userKey = currentUser.phone || currentUser.email || currentUser.username || currentUser.id;
           if (typeof window !== 'undefined') {
-            localStorage.setItem('skyline_user_avatar_' + userKey, newAvatarUrl);
             window.dispatchEvent(new CustomEvent('skyline_avatar_updated', { detail: { avatar: newAvatarUrl } }));
           }
           await refreshUser();
@@ -1662,18 +1670,14 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
           const userKey = currentUser.phone || currentUser.email || currentUser.username || currentUser.id;
           if (front) {
             setCccdImage(front);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('skyline_cccd_front_' + userKey, front);
-            }
+            
           }
           if (back) {
             setCccdBackImage(back);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('skyline_cccd_back_' + userKey, back);
-            }
+            
           }
           updateEkycCardImages(userKey, front, back);
-          nksUpdateCccd({
+          skylineUpdateCccd({
             front,
             back,
             number: idCardNumber,
@@ -1683,10 +1687,10 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
         }}
       />
 
-      {/* Official 4-Step Banking-Grade FaceID Biometric Enrollment Modal */}
-      <BankFaceEnrollModal
-        isOpen={isBankEnrollOpen}
-        onClose={() => setIsBankEnrollOpen(false)}
+      {/* Official 4-Step FaceID Biometric Enrollment Modal */}
+      <FaceEnrollModal
+        isOpen={isFaceEnrollOpen}
+        onClose={() => setIsFaceEnrollOpen(false)}
         userId={currentUser.phone || currentUser.email || currentUser.username || currentUser.id}
         fullName={fullName || currentUser.full_name}
         apartmentCode={aptCode}
@@ -1699,7 +1703,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
           setIsEditingLegal(true);
           setEkycFeedback({
             type: 'success',
-            message: 'Đã lưu độc lập 4 góc mẫu FaceID vào thiết bị và hệ thống! Khi đã có đủ cả CCCD và FaceID, vui lòng nhấn "Gửi Ban Quản Lý Xác Nhận Chốt Hồ Sơ" ở Bước 3.',
+            message: 'Đã lưu độc lập 4 góc mẫu FaceID vào thiết bị và hệ thống! Khi đã có đủ cả CCCD và FaceID, vui lòng nhấn "Gửi VinHomes Manager Xác Nhận Chốt Hồ Sơ" ở Bước 3.',
           });
           // TUYỆT ĐỐI KHÔNG cập nhật / ghi đè ảnh chân dung cá nhân (avatar) từ mẫu FaceID
           // Ảnh chân dung cư dân được giữ nguyên vẹn từ thẻ CCCD hoặc mục Đổi Avatar riêng biệt.

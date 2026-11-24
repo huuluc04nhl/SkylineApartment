@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { extractUserIdFromToken, verifyUserPassword, updateUserPassword } from '@/lib/userStore';
 
 export async function POST(req: Request) {
   try {
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
     }
 
     const cookieStore = cookies();
-    const token = access_token || cookieStore.get('nks_token')?.value || '';
+    const token = access_token || cookieStore.get('skyline_token')?.value || '';
 
     if (!token) {
       return NextResponse.json(
@@ -49,47 +50,27 @@ export async function POST(req: Request) {
       );
     }
 
-    // Gửi yêu cầu đổi mật khẩu trực tiếp tới API (https://account.nks.vn/api/nks/user/updatePass)
-    const formData = new URLSearchParams();
-    formData.append('access_token', token);
-    formData.append('old_password', old_password);
-    formData.append('password', password);
-    formData.append('repassword', confirm_password || password);
+    const userIdentifier = extractUserIdFromToken(token) || body.username || body.phone || 'user-owner-1';
+    const isCurrentPasswordCorrect = verifyUserPassword(userIdentifier, old_password);
 
-    const remoteRes = await fetch('https://account.nks.vn/api/nks/user/updatePass', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData.toString(),
-    });
-
-    const data = await remoteRes.json().catch(() => null);
-
-    if (data) {
-      if (data.success) {
-        return NextResponse.json({
-          success: true,
-          message: data.message || 'Cập nhật mật khẩu thành công qua hệ thống API.',
-          updated_at: new Date().toISOString(),
-        });
-      } else {
-        return NextResponse.json(
-          { 
-            success: false, 
-            message: data.message || data.error || 'Mật khẩu hiện tại không chính xác hoặc không hợp lệ theo API.' 
-          },
-          { status: 400 }
-        );
-      }
+    if (!isCurrentPasswordCorrect) {
+      return NextResponse.json(
+        { success: false, message: 'Mật khẩu hiện tại không chính xác. Vui lòng kiểm tra lại.' },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json(
-      { success: false, message: 'Máy chủ API không phản hồi kết quả đổi mật khẩu.' },
-      { status: 502 }
-    );
+    updateUserPassword(userIdentifier, password);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Cập nhật mật khẩu tài khoản thành công.',
+      updated_at: new Date().toISOString(),
+    });
   } catch (error: any) {
-    console.error('Error updating password via API:', error);
+    console.error('Error updating password:', error);
     return NextResponse.json(
-      { success: false, message: 'Lỗi máy chủ khi cập nhật mật khẩu qua API: ' + (error?.message || '') },
+      { success: false, message: 'Lỗi máy chủ khi cập nhật mật khẩu: ' + (error?.message || '') },
       { status: 500 }
     );
   }

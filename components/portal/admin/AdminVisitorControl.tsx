@@ -60,6 +60,7 @@ import {
 import { getApartmentUnits } from '@/lib/apartmentStore';
 import { cleanPhoneNumber, isValidPhoneNumber, getPhoneValidationError } from '@/lib/validationUtils';
 import { useLanguage } from '@/lib/languageContext';
+import ConfirmDeleteModal from '@/components/portal/shared/ConfirmDeleteModal';
 
 export type VisitorTab = 'LIST' | 'SCANNER' | 'AUDIT_LOGS';
 
@@ -71,8 +72,6 @@ export default function AdminVisitorControl() {
       const urlParams = new URLSearchParams(window.location.search);
       const sub = urlParams.get('subtab');
       if (sub === 'LIST' || sub === 'SCANNER' || sub === 'AUDIT_LOGS') return sub as VisitorTab;
-      const saved = localStorage.getItem('skyline_visitor_active_tab');
-      if (saved === 'LIST' || saved === 'SCANNER' || saved === 'AUDIT_LOGS') return saved as VisitorTab;
     }
     return 'LIST';
   });
@@ -80,7 +79,6 @@ export default function AdminVisitorControl() {
   const setActiveTab = (tab: VisitorTab) => {
     setActiveTabState(tab);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('skyline_visitor_active_tab', tab);
       const url = new URL(window.location.href);
       if (url.searchParams.get('subtab') !== tab) {
         url.searchParams.set('subtab', tab);
@@ -117,6 +115,21 @@ export default function AdminVisitorControl() {
 
   // Audit Logs
   const [auditLogs, setAuditLogs] = useState<GateAuditLog[]>([]);
+
+  // Confirmation Modal State
+  const [deleteModalConfig, setDeleteModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    itemCode?: string;
+    itemName?: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
   const [logSearch, setLogSearch] = useState('');
 
   // Modals
@@ -238,28 +251,42 @@ export default function AdminVisitorControl() {
 
   // Delete / Revoke Pass Action
   const handleDeletePass = (pass: GeneratedVisitorPass) => {
-    if (confirm(`Bạn có chắc muốn hủy thẻ đón khách [${pass.visitorName}] của Căn ${pass.apartmentCode}?`)) {
-      deleteVisitorPass(pass.id);
-      showFeedback(`Đã hủy thẻ khách [${pass.id}] thành công.`, 'info');
-      if (selectedPassForDetail?.id === pass.id) {
-        setSelectedPassForDetail(null);
-      }
-      if (scanResult?.visitor?.passId === pass.id) {
-        setScanResult(null);
-      }
-      refreshData();
-    }
+    setDeleteModalConfig({
+      isOpen: true,
+      title: 'Hủy & Thu Hồi Thẻ Khách',
+      message: `Bạn có chắc chắn muốn hủy và thu hồi thẻ đón khách của cư dân căn hộ ${pass.apartmentCode}? Mã PIN và QR Code liên kết sẽ bị vô hiệu hóa ngay tức thì trên tất cả các cửa tự động.`,
+      itemCode: pass.id,
+      itemName: `${pass.visitorName} (Căn ${pass.apartmentCode})`,
+      onConfirm: () => {
+        deleteVisitorPass(pass.id);
+        showFeedback(`Đã hủy thẻ khách [${pass.id}] thành công.`, 'info');
+        if (selectedPassForDetail?.id === pass.id) {
+          setSelectedPassForDetail(null);
+        }
+        if (scanResult?.visitor?.passId === pass.id) {
+          setScanResult(null);
+        }
+        refreshData();
+      },
+    });
   };
 
   // Reset / Xóa dữ liệu khách ảo để đảm bảo hệ thống hoàn toàn sạch sẽ
   const handleClearAllData = () => {
-    if (confirm('Xác nhận xóa sạch toàn bộ dữ liệu khách và nhật ký thử nghiệm để bắt đầu mới hoàn toàn?')) {
-      clearAllVisitorData();
-      showFeedback('Đã dọn dẹp sạch sẽ toàn bộ dữ liệu khách thăm.', 'info');
-      setSelectedPassForDetail(null);
-      setScanResult(null);
-      refreshData();
-    }
+    setDeleteModalConfig({
+      isOpen: true,
+      title: 'Đặt Lại Toàn Bộ Dữ Liệu Khách Thăm',
+      message: 'Xác nhận xóa sạch toàn bộ dữ liệu khách thăm và nhật ký ra vào thử nghiệm để bắt đầu mới hoàn toàn?',
+      itemCode: 'ALL_VISITORS',
+      itemName: 'Toàn bộ danh sách thẻ khách & Audit logs',
+      onConfirm: () => {
+        clearAllVisitorData();
+        showFeedback('Đã dọn dẹp sạch sẽ toàn bộ dữ liệu khách thăm.', 'info');
+        setSelectedPassForDetail(null);
+        setScanResult(null);
+        refreshData();
+      },
+    });
   };
 
   // Camera video frame scanner loop
@@ -389,8 +416,8 @@ export default function AdminVisitorControl() {
     }
 
     const selectedUnitObj = apartments.find(u => u.code === newPassApt);
-    const hostName = selectedUnitObj?.owner?.name || (newPassApt === 'CH-06' || newPassApt === 'CH-01' ? 'Trần Hữu Lực' : `Chủ Hộ Căn ${newPassApt}`);
-    const hostPhone = selectedUnitObj?.owner?.phone || (newPassApt === 'CH-06' || newPassApt === 'CH-01' ? '0364967082' : '0900.000.000');
+    const hostName = selectedUnitObj?.owner?.name || (newPassApt === 'CH-06' ? 'Trần Hữu Lực' : `Chủ Hộ Căn ${newPassApt}`);
+    const hostPhone = selectedUnitObj?.owner?.phone || '0901234567';
 
     const pass = generateVisitorPassToken({
       apartmentCode: newPassApt,
@@ -496,13 +523,13 @@ export default function AdminVisitorControl() {
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 border-b border-[#222B35] pb-4">
         <div className="min-w-0 flex-1 pr-2">
           <div className="text-[10px] uppercase tracking-[0.25em] text-[#C5A880] font-semibold flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#C5A880]" /> Ban Quản Lý Tòa Nhà • Bộ Phận Lễ Tân & Tiếp Đón
+            <ShieldCheck className="w-3.5 h-3.5 text-[#C5A880]" /> {isEn ? 'Skyline Resident Care • Reception & Guest Services' : 'VinHomes Manager • Bộ Phận Lễ Tân & Tiếp Đón'}
           </div>
           <h2 className="font-serif text-2xl text-white font-bold mt-1">
-            Đón Tiếp &amp; Kiểm Tra Khách Thăm
+            {isEn ? 'Reception & Visitor Verification' : 'Đón Tiếp & Kiểm Tra Khách Thăm'}
           </h2>
           <p className="text-xs text-gray-400 mt-0.5 max-w-2xl">
-            Xác thực thông tin khách thăm theo bảo lãnh của cư dân. Tiếp đón thuận tiện qua mã QR, mã PIN hoặc cấp thẻ trực tiếp tại quầy lễ tân.
+            {isEn ? 'Verify visitor access authorized by residents. Welcoming via QR code, PIN pass, or issue passes at the reception desk.' : 'Xác thực thông tin khách thăm theo bảo lãnh của cư dân. Tiếp đón thuận tiện qua mã QR, mã PIN hoặc cấp thẻ trực tiếp tại quầy lễ tân.'}
           </p>
         </div>
 
@@ -510,7 +537,7 @@ export default function AdminVisitorControl() {
         <div className="flex items-center gap-2.5 shrink-0">
           {/* Checkpoint selector */}
           <div className="flex items-center gap-2 bg-[#121820] border border-[#2D3748] px-3 py-1.5 text-xs shrink-0">
-            <span className="text-gray-400 font-medium">Chốt:</span>
+            <span className="text-gray-400 font-medium">{isEn ? 'Station:' : 'Chốt:'}</span>
             <select
               value={selectedCheckpoint}
               onChange={(e) => setSelectedCheckpoint(e.target.value)}
@@ -548,7 +575,7 @@ export default function AdminVisitorControl() {
               showFeedback('Đã làm mới dữ liệu khách thăm!');
             }}
             className="p-2 bg-[#121820] hover:bg-[#1C2533] text-gray-300 hover:text-[#C5A880] border border-[#2D3748] rounded-none transition-colors cursor-pointer shrink-0"
-            title="Làm mới dữ liệu"
+            title={isEn ? 'Refresh data' : 'Làm mới dữ liệu'}
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -571,10 +598,10 @@ export default function AdminVisitorControl() {
             <span className="flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5 text-[#C5A880]" /> Tổng Khách Thăm
             </span>
-            <span className="text-[9.5px] font-mono text-gray-400">Tất cả</span>
+            <span className="text-[9.5px] font-mono text-gray-400">{isEn ? 'All' : 'Tất cả'}</span>
           </div>
           <div className="text-2xl font-bold font-mono text-white mt-1">{totalPasses}</div>
-          <div className="text-[10.5px] text-gray-400 mt-0.5">Nhấp để xem danh sách</div>
+          <div className="text-[10.5px] text-gray-400 mt-0.5">{t('Nhấp để xem danh sách', 'Click to view list')}</div>
         </div>
 
         <div 
@@ -592,7 +619,7 @@ export default function AdminVisitorControl() {
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
           </div>
           <div className="text-2xl font-bold font-mono text-emerald-300 mt-1">{inBuildingCount}</div>
-          <div className="text-[10.5px] text-emerald-400/80 mt-0.5">Khách đang thăm căn hộ</div>
+          <div className="text-[10.5px] text-emerald-400/80 mt-0.5">{t('Khách đang thăm căn hộ', 'Visitors currently in building')}</div>
         </div>
 
         <div 
@@ -607,10 +634,10 @@ export default function AdminVisitorControl() {
             <span className="flex items-center gap-1.5 font-semibold">
               <Clock className="w-3.5 h-3.5 text-amber-400" /> Chờ Khách Đến
             </span>
-            <span className="text-[9.5px] font-mono text-amber-400">Chưa đến</span>
+            <span className="text-[9.5px] font-mono text-amber-400">{isEn ? 'Expected' : 'Chưa đến'}</span>
           </div>
           <div className="text-2xl font-bold font-mono text-amber-300 mt-1">{pendingCount}</div>
-          <div className="text-[10.5px] text-amber-400/80 mt-0.5">Mã thẻ còn thời hạn hiệu lực</div>
+          <div className="text-[10.5px] text-amber-400/80 mt-0.5">{t('Mã thẻ còn thời hạn hiệu lực', 'Active valid passes')}</div>
         </div>
 
         <div 
@@ -625,10 +652,10 @@ export default function AdminVisitorControl() {
             <span className="flex items-center gap-1.5">
               <LogOut className="w-3.5 h-3.5 text-gray-400" /> Đã Rời Đi
             </span>
-            <span className="text-[9.5px] font-mono text-gray-400">Hoàn tất</span>
+            <span className="text-[9.5px] font-mono text-gray-400">{isEn ? 'Completed' : 'Hoàn tất'}</span>
           </div>
           <div className="text-2xl font-bold font-mono text-gray-300 mt-1">{completedCount}</div>
-          <div className="text-[10.5px] text-gray-400 mt-0.5">Đã hoàn tất chuyến thăm</div>
+          <div className="text-[10.5px] text-gray-400 mt-0.5">{t('Đã hoàn tất chuyến thăm', 'Visit concluded')}</div>
         </div>
       </div>
 
@@ -647,7 +674,7 @@ export default function AdminVisitorControl() {
             }`}
           >
             <ListFilter className="w-4 h-4" />
-            <span>Danh Sách Khách Thăm ({filteredPasses.length})</span>
+            <span>{t('Danh Sách Khách Thăm', 'Visitor List')} ({filteredPasses.length})</span>
           </button>
 
           <button
@@ -660,7 +687,7 @@ export default function AdminVisitorControl() {
             }`}
           >
             <QrCode className="w-4 h-4" />
-            <span>Kiểm Tra Mã QR &amp; Tra Cứu PIN</span>
+            <span>{t('Kiểm Tra Mã QR & Tra Cứu PIN', 'Scan QR & Check PIN')}</span>
             {scanResult && (
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             )}
@@ -676,7 +703,7 @@ export default function AdminVisitorControl() {
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
-            <span>Lịch Sử Đón Tiếp ({auditLogs.length})</span>
+            <span>{t('Lịch Sử Đón Tiếp', 'Access Logs')} ({auditLogs.length})</span>
           </button>
         </div>
 
@@ -687,13 +714,13 @@ export default function AdminVisitorControl() {
               type="button"
               onClick={handleClearAllData}
               className="px-2.5 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 text-[11px] font-mono transition-all flex items-center gap-1"
-              title="Xóa bỏ toàn bộ dữ liệu mẫu / dữ liệu rác để làm việc với dữ liệu thật"
+              title={isEn ? 'Clear mock data to work with live data' : 'Xóa bỏ toàn bộ dữ liệu mẫu / dữ liệu rác để làm việc với dữ liệu thật'}
             >
-              <span>🗑️ Làm Sạch Dữ Liệu</span>
+              <span>🗑️ {t('Làm Sạch Dữ Liệu', 'Clear Data')}</span>
             </button>
 
             <div className="flex items-center gap-1.5 pl-1 border-l border-[#222B35]">
-              <span className="text-[11px] text-gray-400 mr-1">Hiển thị:</span>
+              <span className="text-[11px] text-gray-400 mr-1">{isEn ? 'View:' : 'Hiển thị:'}</span>
               <button
                 type="button"
                 onClick={() => setViewLayout('TABLE')}
@@ -702,7 +729,7 @@ export default function AdminVisitorControl() {
                     ? 'bg-[#C5A880] text-[#0D1117] border-[#C5A880]'
                     : 'bg-[#161B22] text-gray-400 hover:text-white border-[#2D3748]'
                 }`}
-                title="Dạng bảng chi tiết"
+                title={isEn ? 'Detailed table view' : 'Dạng bảng chi tiết'}
               >
                 <ListFilter className="w-3.5 h-3.5" />
               </button>
@@ -714,7 +741,7 @@ export default function AdminVisitorControl() {
                     ? 'bg-[#C5A880] text-[#0D1117] border-[#C5A880]'
                     : 'bg-[#161B22] text-gray-400 hover:text-white border-[#2D3748]'
                 }`}
-                title="Dạng thẻ hồ sơ trực quan"
+                title={isEn ? 'Card profile view' : 'Dạng thẻ hồ sơ trực quan'}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
@@ -733,7 +760,7 @@ export default function AdminVisitorControl() {
           <div className="p-3.5 bg-[#121820] border border-[#222B35] rounded-none flex flex-wrap items-center justify-between gap-3">
             {/* Bộ lọc tình trạng */}
             <div className="flex flex-wrap items-center gap-1.5 text-xs">
-              <span className="text-gray-400 font-mono text-[11px] mr-1">Lọc:</span>
+              <span className="text-gray-400 font-mono text-[11px] mr-1">{isEn ? 'Filter:' : 'Lọc:'}</span>
               {[
                 { id: 'ALL', label: `Tất Cả (${totalPasses})` },
                 { id: 'CHECKED_IN', label: `🟢 Đang Ở Trong (${inBuildingCount})` },
@@ -763,7 +790,7 @@ export default function AdminVisitorControl() {
                 type="text"
                 value={tableSearch}
                 onChange={(e) => setTableSearch(e.target.value)}
-                placeholder="Tìm tên khách, PIN, căn CH-06, biển số..."
+                placeholder={isEn ? 'Search visitor, PIN, apt CH-06, plate...' : 'Tìm tên khách, PIN, căn CH-06, biển số...'}
                 className="w-full bg-[#161B22] border border-[#2D3748] pl-9 pr-8 py-1.5 text-xs text-white placeholder-gray-500 rounded-none focus:border-[#C5A880] outline-none"
               />
               {tableSearch && (
@@ -784,13 +811,13 @@ export default function AdminVisitorControl() {
               <table className="w-full text-left text-xs text-gray-300">
                 <thead className="bg-[#161D26] text-gray-400 uppercase text-[10px] tracking-wider border-y border-[#222B35]">
                   <tr>
-                    <th className="py-3 px-3">Mã Vé & PIN</th>
-                    <th className="py-3 px-3">Khách Thăm</th>
-                    <th className="py-3 px-3">Chủ Hộ Bảo Lãnh</th>
-                    <th className="py-3 px-3">Căn Hộ</th>
-                    <th className="py-3 px-3">Thời Hạn Hiệu Lực</th>
-                    <th className="py-3 px-3">Trạng Thái</th>
-                    <th className="py-3 px-3 text-right">Thao Tác Tiếp Đón</th>
+                    <th className="py-3 px-3">{t('Mã Vé & PIN', 'Pass Code & PIN')}</th>
+                    <th className="py-3 px-3">{t('Khách Thăm', 'Visitor')}</th>
+                    <th className="py-3 px-3">{t('Chủ Hộ Bảo Lãnh', 'Sponsoring Host')}</th>
+                    <th className="py-3 px-3">{t('Căn Hộ', 'Apartment')}</th>
+                    <th className="py-3 px-3">{t('Thời Hạn Hiệu Lực', 'Validity Period')}</th>
+                    <th className="py-3 px-3">{t('Trạng Thái', 'Status')}</th>
+                    <th className="py-3 px-3 text-right">{t('Thao Tác Tiếp Đón', 'Reception Action')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#222B35]">
@@ -798,7 +825,7 @@ export default function AdminVisitorControl() {
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-gray-400 text-xs">
                         <Users className="w-8 h-8 text-gray-500 mx-auto mb-2" />
-                        <div>Không có khách thăm nào phù hợp với bộ lọc hiện tại.</div>
+                        <div>{t('Không có khách thăm nào phù hợp với bộ lọc hiện tại.', 'No visitors match the current filter.')}</div>
                         <button
                           type="button"
                           onClick={() => { setFilterStatus('ALL'); setTableSearch(''); }}
@@ -826,7 +853,7 @@ export default function AdminVisitorControl() {
                             {pass.phoneNumber ? (
                               <span>{pass.phoneNumber}</span>
                             ) : (
-                              <span className="text-gray-500">Chưa có SĐT</span>
+                              <span className="text-gray-500">{isEn ? 'No phone' : 'Chưa có SĐT'}</span>
                             )}
                             {pass.licensePlate && (
                               <span className="text-[#C5A880] font-mono">• Xe: {pass.licensePlate}</span>
@@ -888,7 +915,7 @@ export default function AdminVisitorControl() {
                                 type="button"
                                 onClick={() => handleCheckIn(pass.id)}
                                 className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-none text-[11px] shadow transition-colors cursor-pointer flex items-center gap-1"
-                                title="Đón tiếp và mời khách vào"
+                                title={isEn ? 'Check-in visitor' : 'Đón tiếp và mời khách vào'}
                               >
                                 <LogIn className="w-3 h-3" /> Mời Vào
                               </button>
@@ -899,7 +926,7 @@ export default function AdminVisitorControl() {
                                 type="button"
                                 onClick={() => handleCheckOut(pass.id)}
                                 className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-none text-[11px] shadow transition-colors cursor-pointer flex items-center gap-1"
-                                title="Ghi nhận khách rời tòa nhà"
+                                title={isEn ? 'Record visitor departure' : 'Ghi nhận khách rời tòa nhà'}
                               >
                                 <LogOut className="w-3 h-3" /> Rời Đi
                               </button>
@@ -909,7 +936,7 @@ export default function AdminVisitorControl() {
                               type="button"
                               onClick={() => openPassDetail(pass)}
                               className="px-2.5 py-1 bg-[#161B22] hover:bg-[#1E2530] text-gray-300 hover:text-white border border-[#2D3748] rounded-none text-[11px] transition-colors cursor-pointer"
-                              title="Xem chi tiết thẻ và mã QR"
+                              title={isEn ? 'View pass details and QR code' : 'Xem chi tiết thẻ và mã QR'}
                             >
                               Thẻ QR
                             </button>
@@ -918,7 +945,7 @@ export default function AdminVisitorControl() {
                               type="button"
                               onClick={() => handleDeletePass(pass)}
                               className="p-1 hover:bg-rose-950/60 text-gray-500 hover:text-rose-400 transition-colors cursor-pointer"
-                              title="Hủy thẻ khách"
+                              title={isEn ? 'Cancel visitor pass' : 'Hủy thẻ khách'}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -938,7 +965,7 @@ export default function AdminVisitorControl() {
               {filteredPasses.length === 0 ? (
                 <div className="col-span-full py-12 text-center text-gray-400 bg-[#121820] border border-[#222B35] p-6">
                   <Users className="w-8 h-8 text-gray-500 mx-auto mb-2" />
-                  <div>Không có khách thăm nào phù hợp với bộ lọc hiện tại.</div>
+                  <div>{t('Không có khách thăm nào phù hợp với bộ lọc hiện tại.', 'No visitors match the current filter.')}</div>
                 </div>
               ) : (
                 filteredPasses.map((pass) => (
@@ -988,10 +1015,10 @@ export default function AdminVisitorControl() {
                       {/* Khách Thăm & Chủ Hộ */}
                       <div className="pt-2.5 space-y-1.5 text-xs">
                         <div>
-                          <div className="text-gray-400 text-[10.5px]">Khách Thăm:</div>
+                          <div className="text-gray-400 text-[10.5px]">{isEn ? 'Visitor:' : 'Khách Thăm:'}</div>
                           <div className="font-bold text-white text-sm">{pass.visitorName}</div>
                           <div className="text-[11px] text-gray-400 flex items-center gap-1">
-                            <span>{pass.phoneNumber || 'Không có SĐT'}</span>
+                            <span>{pass.phoneNumber || t('Không có SĐT', 'No phone')}</span>
                             {pass.licensePlate && (
                               <span className="text-[#C5A880] font-mono">• {pass.licensePlate}</span>
                             )}
@@ -999,7 +1026,7 @@ export default function AdminVisitorControl() {
                         </div>
 
                         <div className="pt-1">
-                          <div className="text-gray-400 text-[10.5px]">Chủ Hộ Bảo Lãnh:</div>
+                          <div className="text-gray-400 text-[10.5px]">{isEn ? 'Host Resident:' : 'Chủ Hộ Bảo Lãnh:'}</div>
                           <div className="font-medium text-gray-200">{pass.hostName}</div>
                           <div className="text-[10.5px] text-gray-400 font-mono">{pass.hostPhone}</div>
                         </div>
@@ -1007,11 +1034,11 @@ export default function AdminVisitorControl() {
                         {/* PIN & Thời Hạn */}
                         <div className="pt-2 p-2 bg-[#161D26] border border-[#222B35] flex items-center justify-between text-[11px]">
                           <div>
-                            <span className="text-gray-400 text-[10px] block">MÃ PIN:</span>
+                            <span className="text-gray-400 text-[10px] block">{t('MÃ PIN:', 'PIN CODE:')}</span>
                             <span className="font-mono font-bold text-[#C5A880] text-sm tracking-wider">{pass.pinCode}</span>
                           </div>
                           <div className="text-right">
-                            <span className="text-gray-400 text-[10px] block">HIỆU LỰC:</span>
+                            <span className="text-gray-400 text-[10px] block">{t('HIỆU LỰC:', 'VALID UNTIL:')}</span>
                             <span className="text-emerald-300 font-mono text-[10.5px]">
                               Đến {new Date(pass.validUntil).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                             </span>
@@ -1144,7 +1171,7 @@ export default function AdminVisitorControl() {
                           <CameraOff className="w-6 h-6" />
                         </div>
                         <div className="space-y-0.5">
-                          <div className="font-bold text-white text-xs">Camera Tiếp Tân Đang Tắt</div>
+                          <div className="font-bold text-white text-xs">{t('Camera Tiếp Tân Đang Tắt', 'Reception Camera is Off')}</div>
                           <p className="text-[11px] text-gray-400 max-w-xs">
                             Bật camera để quét trực tiếp mã QR trên điện thoại của khách thăm khi đến sảnh.
                           </p>
@@ -1163,7 +1190,7 @@ export default function AdminVisitorControl() {
                       <div className="absolute inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center text-white z-20 animate-fadeIn">
                         <div className="text-center space-y-1.5">
                           <RefreshCw className="w-6 h-6 text-[#C5A880] animate-spin mx-auto" />
-                          <div className="text-xs font-bold text-[#C5A880]">Đang Đối Chiếu Thông Tin...</div>
+                          <div className="text-xs font-bold text-[#C5A880]">{t('Đang Đối Chiếu Thông Tin...', 'Matching Visitor Details...')}</div>
                         </div>
                       </div>
                     )}
@@ -1198,7 +1225,7 @@ export default function AdminVisitorControl() {
                     <div className="w-12 h-12 rounded-none bg-[#161D26] border border-[#2D3748] group-hover:border-[#C5A880] flex items-center justify-center text-[#C5A880] mb-2">
                       <Upload className="w-6 h-6" />
                     </div>
-                    <div className="font-bold text-white text-xs">Nhấn Để Tải Ảnh Mã QR Lên</div>
+                    <div className="font-bold text-white text-xs">{t('Nhấn Để Tải Ảnh Mã QR Lên', 'Click to Upload QR Code Image')}</div>
                     <p className="text-[11px] text-gray-400 mt-1 max-w-xs">
                       Hỗ trợ ảnh chụp màn hình thư mời Zalo, Messenger hoặc file ảnh thẻ mời do chủ hộ gửi.
                     </p>
@@ -1232,7 +1259,7 @@ export default function AdminVisitorControl() {
                       type="text"
                       value={pinSearchInput}
                       onChange={(e) => setPinSearchInput(e.target.value)}
-                      placeholder="VD: 849201 hoặc SKY-PASS-..."
+                      placeholder={isEn ? 'e.g. 849201 or SKY-PASS-...' : 'VD: 849201 hoặc SKY-PASS-...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] rounded-none px-3 py-2 text-xs text-white placeholder-gray-500 font-mono focus:border-[#C5A880] outline-none pl-8"
                     />
                     <KeyRound className="w-3.5 h-3.5 text-gray-500 absolute left-2.5 top-2.5" />
@@ -1249,7 +1276,7 @@ export default function AdminVisitorControl() {
 
               {/* Phím bấm tra cứu nhanh cho khách mẫu */}
               <div className="pt-2 border-t border-[#222B35]/60 text-[11px] space-y-1.5">
-                <span className="text-gray-400 block font-mono text-[10.5px]">Thử nhanh với khách thực tế:</span>
+                <span className="text-gray-400 block font-mono text-[10.5px]">{t('Thử nhanh với khách thực tế:', 'Quick test with real visitor:')}</span>
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     type="button"
@@ -1346,17 +1373,17 @@ export default function AdminVisitorControl() {
 
                     <div className="space-y-2 text-xs">
                       <div>
-                        <div className="text-gray-400 text-[10.5px]">Chủ Hộ Căn Hộ:</div>
+                        <div className="text-gray-400 text-[10.5px]">{isEn ? 'Apartment Host:' : 'Chủ Hộ Căn Hộ:'}</div>
                         <div className="font-bold text-white text-sm">
                           {scanResult.host?.hostName || 'Chưa xác định'}
                         </div>
                       </div>
 
                       <div>
-                        <div className="text-gray-400 text-[10.5px]">Căn Hộ Điểm Đến:</div>
+                        <div className="text-gray-400 text-[10.5px]">{isEn ? 'Destination Unit:' : 'Căn Hộ Điểm Đến:'}</div>
                         <div className="font-bold text-[#C5A880] text-sm flex items-center gap-1">
                           <Building2 className="w-3.5 h-3.5" />
-                          <span>Căn {scanResult.host?.apartmentCode}</span>
+                          <span>{t('Căn', 'Unit')} {scanResult.host?.apartmentCode}</span>
                           <span className="text-xs text-gray-300 font-normal">
                             ({scanResult.host?.towerName})
                           </span>
@@ -1364,7 +1391,7 @@ export default function AdminVisitorControl() {
                       </div>
 
                       <div>
-                        <div className="text-gray-400 text-[10.5px]">Số Điện Thoại Chủ Hộ:</div>
+                        <div className="text-gray-400 text-[10.5px]">{isEn ? 'Host Phone:' : 'Số Điện Thoại Chủ Hộ:'}</div>
                         <div className="font-mono text-gray-200 flex items-center gap-1">
                           <Phone className="w-3 h-3 text-gray-400" />
                           <span>{scanResult.host?.hostPhone || '0908.888.888'}</span>
@@ -1373,7 +1400,7 @@ export default function AdminVisitorControl() {
 
                       <div className="pt-1 text-[10.5px] text-emerald-400 flex items-center gap-1">
                         <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>Tư cách cư trú: Hợp pháp • Đã duyệt e-KYC</span>
+                        <span>{t('Tư cách cư trú: Hợp pháp • Đã duyệt e-KYC', 'Residency: Lawful • e-KYC Verified')}</span>
                       </div>
                     </div>
                   </div>
@@ -1391,7 +1418,7 @@ export default function AdminVisitorControl() {
 
                     <div className="space-y-2 text-xs">
                       <div>
-                        <div className="text-gray-400 text-[10.5px]">Họ Tên Khách Thăm:</div>
+                        <div className="text-gray-400 text-[10.5px]">{isEn ? 'Visitor Name:' : 'Họ Tên Khách Thăm:'}</div>
                         <div className="font-bold text-white text-sm">
                           {scanResult.visitor?.visitorName || 'Khách Thăm'}
                         </div>
@@ -1399,13 +1426,13 @@ export default function AdminVisitorControl() {
 
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <div className="text-gray-400 text-[10.5px]">Số Điện Thoại:</div>
+                          <div className="text-gray-400 text-[10.5px]">{isEn ? 'Phone Number:' : 'Số Điện Thoại:'}</div>
                           <div className="font-mono text-gray-200">
                             {scanResult.visitor?.phoneNumber || 'Không có SĐT'}
                           </div>
                         </div>
                         <div>
-                          <div className="text-gray-400 text-[10.5px]">Biển Số Xe:</div>
+                          <div className="text-gray-400 text-[10.5px]">{isEn ? 'License Plate:' : 'Biển Số Xe:'}</div>
                           <div className="font-mono font-bold text-[#C5A880]">
                             {scanResult.visitor?.licensePlate || 'Đi bộ / Taxi'}
                           </div>
@@ -1413,7 +1440,7 @@ export default function AdminVisitorControl() {
                       </div>
 
                       <div>
-                        <div className="text-gray-400 text-[10.5px]">Thời Hạn Hiệu Lực Thẻ:</div>
+                        <div className="text-gray-400 text-[10.5px]">{isEn ? 'Pass Validity:' : 'Thời Hạn Hiệu Lực Thẻ:'}</div>
                         <div className="text-emerald-400 font-medium text-[11px] flex items-center gap-1">
                           <Clock className="w-3 h-3 shrink-0" />
                           <span>
@@ -1424,8 +1451,8 @@ export default function AdminVisitorControl() {
                       </div>
 
                       <div className="pt-1 flex items-center justify-between text-[10.5px] text-gray-400 font-mono">
-                        <span>Mã PIN: <strong className="text-[#C5A880] text-xs">{scanResult.visitor?.pinCode}</strong></span>
-                        <span>Mã vé: {scanResult.visitor?.passId}</span>
+                        <span>{isEn ? 'PIN Code:' : 'Mã PIN:'} <strong className="text-[#C5A880] text-xs">{scanResult.visitor?.pinCode}</strong></span>
+                        <span>{t('Mã vé:', 'Pass ID:')} {scanResult.visitor?.passId}</span>
                       </div>
                     </div>
                   </div>
@@ -1482,7 +1509,7 @@ export default function AdminVisitorControl() {
                   <QrCode className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">
-                  <div className="font-serif font-bold text-white text-base">Chưa Có Khách Được Quét</div>
+                  <div className="font-serif font-bold text-white text-base">{t('Chưa Có Khách Được Quét', 'No Visitor Scanned Yet')}</div>
                   <p className="text-xs text-gray-400 max-w-sm leading-relaxed">
                     Vui lòng đưa mã QR thẻ mời của khách vào camera bên trái hoặc nhập mã PIN 6 số. Thông tin đối chiếu của chủ hộ và khách thăm sẽ hiển thị lập tức tại đây.
                   </p>
@@ -1519,7 +1546,7 @@ export default function AdminVisitorControl() {
                 type="text"
                 value={logSearch}
                 onChange={(e) => setLogSearch(e.target.value)}
-                placeholder="Tìm tên khách, căn hộ, ghi chú..."
+                placeholder={isEn ? 'Search visitor, unit, note...' : 'Tìm tên khách, căn hộ, ghi chú...'}
                 className="w-full bg-[#161B22] border border-[#2D3748] pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 rounded-none focus:border-[#C5A880] outline-none"
               />
             </div>
@@ -1529,12 +1556,12 @@ export default function AdminVisitorControl() {
             <table className="w-full text-left text-xs text-gray-300">
               <thead className="bg-[#161D26] text-gray-400 uppercase text-[10px] tracking-wider border-y border-[#222B35]">
                 <tr>
-                  <th className="py-3 px-3">Thời Gian</th>
-                  <th className="py-3 px-3">Căn Hộ & Chủ Hộ</th>
-                  <th className="py-3 px-3">Khách Thăm</th>
-                  <th className="py-3 px-3">Hành Động</th>
-                  <th className="py-3 px-3">Kết Quả</th>
-                  <th className="py-3 px-3">Chi Tiết Ghi Nhận</th>
+                  <th className="py-3 px-3">{isEn ? 'Time' : 'Thời Gian'}</th>
+                  <th className="py-3 px-3">{isEn ? 'Apartment & Host' : 'Căn Hộ & Chủ Hộ'}</th>
+                  <th className="py-3 px-3">{t('Khách Thăm', 'Visitor')}</th>
+                  <th className="py-3 px-3">{isEn ? 'Action' : 'Hành Động'}</th>
+                  <th className="py-3 px-3">{isEn ? 'Result' : 'Kết Quả'}</th>
+                  <th className="py-3 px-3">{isEn ? 'Log Details' : 'Chi Tiết Ghi Nhận'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#222B35]">
@@ -1551,11 +1578,11 @@ export default function AdminVisitorControl() {
                         {log.timestamp}
                       </td>
                       <td className="py-3 px-3">
-                        <span className="font-mono font-bold text-[#C5A880]">Căn {log.apartmentCode}</span>
+                        <span className="font-mono font-bold text-[#C5A880]">{t('Căn', 'Unit')} {log.apartmentCode}</span>
                         {log.hostName && <div className="text-[10px] text-gray-400">{log.hostName}</div>}
                       </td>
                       <td className="py-3 px-3">
-                        <div className="font-bold text-white text-xs">{log.visitorName || 'Vãng lai'}</div>
+                        <div className="font-bold text-white text-xs">{log.visitorName || t('Vãng lai', 'Walk-in visitor')}</div>
                         {log.licensePlate && <div className="text-[10px] text-[#C5A880] font-mono">Xe: {log.licensePlate}</div>}
                       </td>
                       <td className="py-3 px-3">
@@ -1624,11 +1651,10 @@ export default function AdminVisitorControl() {
                     onChange={(e) => setNewPassApt(e.target.value)}
                     className="w-full bg-[#161B22] border border-[#2D3748] text-[#C5A880] font-bold p-2.5 outline-none"
                   >
-                    <option value="CH-06">Căn CH-06 - Tòa BS-07 (Chủ hộ: Trần Hữu Lực • 0364967082)</option>
-                    <option value="CH-01">Căn CH-01 - Tòa BS-07 (Chủ hộ: Trần Hữu Lực • 0364967082)</option>
-                    <option value="CH-08">Căn CH-08 - Tòa BS-07 (Chủ hộ: 0364967081)</option>
-                    <option value="10A03">Căn 10A03 (BQL Nghiệm Thu Kỹ Thuật)</option>
-                    {apartments.filter(u => u.code !== 'CH-06' && u.code !== 'CH-01' && u.code !== 'CH-08' && u.code !== '10A03').slice(0, 15).map(u => (
+                    <option value="CH-06">{isEn ? 'Apt CH-06 - Tower BS-07 (Host: Tran Huu Luc - Floor 30)' : 'Căn CH-06 - Tòa BS-07 (Chủ hộ: Trần Hữu Lực - Tầng 30)'}</option>
+                    <option value="CH-01">{isEn ? 'Apt CH-01 - Tower BS-07 (Corner 2BR - Floor 30)' : 'Căn CH-01 - Tòa BS-07 (Căn hộ góc 2PN - Tầng 30)'}</option>
+                    <option value="CH-08">{isEn ? 'Apt CH-08 - Tower BS-07 (1BR+ Multi-use - Floor 30)' : 'Căn CH-08 - Tòa BS-07 (Căn hộ 1PN+ Đa Năng - Tầng 30)'}</option>
+                    {apartments.filter(u => u.code !== 'CH-06' && u.code !== 'CH-01' && u.code !== 'CH-08').slice(0, 15).map(u => (
                       <option key={u.code} value={u.code}>
                         Căn {u.code} (Tầng {u.floor})
                       </option>
@@ -1646,7 +1672,7 @@ export default function AdminVisitorControl() {
                       required
                       value={newPassVisitorName}
                       onChange={(e) => setNewPassVisitorName(e.target.value)}
-                      placeholder="VD: Nguyễn Văn An"
+                      placeholder={isEn ? 'e.g. Nguyen Van An' : 'VD: Nguyễn Văn An'}
                       className="w-full bg-[#161B22] border border-[#2D3748] text-white p-2.5 outline-none focus:border-[#C5A880]"
                     />
                   </div>
@@ -1679,7 +1705,7 @@ export default function AdminVisitorControl() {
                       type="text"
                       value={newPassPlate}
                       onChange={(e) => setNewPassPlate(e.target.value)}
-                      placeholder="VD: 51G-123.45 hoặc để trống"
+                      placeholder={isEn ? 'e.g. 51G-123.45 or leave blank' : 'VD: 51G-123.45 hoặc để trống'}
                       className="w-full bg-[#161B22] border border-[#2D3748] text-[#C5A880] font-mono uppercase p-2.5 outline-none focus:border-[#C5A880]"
                     />
                   </div>
@@ -1692,10 +1718,10 @@ export default function AdminVisitorControl() {
                       onChange={(e) => setNewPassHours(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] text-white p-2.5 outline-none"
                     >
-                      <option value="2">2 Giờ (Giao nhận nhanh)</option>
-                      <option value="4">4 Giờ (Thăm gia đình tiêu chuẩn)</option>
-                      <option value="8">8 Giờ (Làm việc / Sửa chữa)</option>
-                      <option value="24">24 Giờ (Trong ngày)</option>
+                      <option value="2">2 {t('Giờ (Giao nhận nhanh)', 'Hours (Quick Delivery)')}</option>
+                      <option value="4">4 {t('Giờ (Thăm gia đình tiêu chuẩn)', 'Hours (Standard Family Visit)')}</option>
+                      <option value="8">8 {t('Giờ (Làm việc / Sửa chữa)', 'Hours (Working / Repair)')}</option>
+                      <option value="24">24 {t('Giờ (Trong ngày)', 'Hours (Same Day)')}</option>
                     </select>
                   </div>
                 </div>
@@ -1708,7 +1734,7 @@ export default function AdminVisitorControl() {
                     type="text"
                     value={newPassNote}
                     onChange={(e) => setNewPassNote(e.target.value)}
-                    placeholder="VD: Khách lên bàn việc với chủ hộ..."
+                    placeholder={isEn ? 'e.g. Guest meeting host...' : 'VD: Khách lên bàn việc với chủ hộ...'}
                     className="w-full bg-[#161B22] border border-[#2D3748] text-white p-2.5 outline-none focus:border-[#C5A880]"
                   />
                 </div>
@@ -1734,23 +1760,23 @@ export default function AdminVisitorControl() {
               <div className="space-y-4 text-center animate-fadeIn">
                 <div className="p-3 bg-emerald-950/70 border border-emerald-500 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>Đã cấp thẻ khách thăm thành công!</span>
+                  <span>{t('Đã cấp thẻ khách thăm thành công!', 'Visitor pass issued successfully!')}</span>
                 </div>
 
                 <div className="p-4 bg-[#161D26] border border-[#2D3748] rounded-none flex flex-col items-center space-y-3">
                   {createdQrUrl && (
-                    <img src={createdQrUrl} alt="Mã QR Khách" className="w-44 h-44 border-4 border-white shadow-lg" />
+                    <img src={createdQrUrl} alt={isEn ? 'Visitor QR Code' : 'Mã QR Khách'} className="w-44 h-44 border-4 border-white shadow-lg" />
                   )}
                   <div className="text-center space-y-1">
-                    <div className="text-xs text-gray-400">MÃ PIN BÀN PHÍM CỬA / THANG MÁY:</div>
+                    <div className="text-xs text-gray-400">{t('MÃ PIN BÀN PHÍM CỬA / THANG MÁY:', 'DOOR / ELEVATOR KEYPAD PIN:')}</div>
                     <div className="text-2xl font-mono font-extrabold text-[#C5A880] tracking-widest bg-[#121820] px-4 py-1 border border-[#2D3748]">
                       {createdQuickPass.pinCode}
                     </div>
                   </div>
 
                   <div className="text-xs text-gray-300 text-center space-y-0.5">
-                    <div>Khách: <strong className="text-white">{createdQuickPass.visitorName}</strong> • Căn: <strong className="text-[#C5A880]">{createdQuickPass.apartmentCode}</strong></div>
-                    <div className="text-[11px] text-gray-400">Chủ hộ: {createdQuickPass.hostName}</div>
+                    <div>{isEn ? 'Visitor:' : 'Khách:'} <strong className="text-white">{createdQuickPass.visitorName}</strong> • {isEn ? 'Unit:' : 'Căn:'} <strong className="text-[#C5A880]">{createdQuickPass.apartmentCode}</strong></div>
+                    <div className="text-[11px] text-gray-400">{t('Chủ hộ:', 'Host:')} {createdQuickPass.hostName}</div>
                   </div>
                 </div>
 
@@ -1805,48 +1831,48 @@ export default function AdminVisitorControl() {
 
             <div className="p-4 bg-[#161D26] border border-[#2D3748] rounded-none flex flex-col items-center space-y-3">
               {detailQrDataUrl && (
-                <img src={detailQrDataUrl} alt="Mã QR" className="w-48 h-48 border-4 border-white shadow-lg" />
+                <img src={detailQrDataUrl} alt={isEn ? 'QR Code' : 'Mã QR'} className="w-48 h-48 border-4 border-white shadow-lg" />
               )}
               
               <div className="text-center space-y-1 w-full">
-                <span className="text-[10px] text-gray-400 uppercase tracking-widest block font-mono">Mã PIN 6 Số Tra Cứu:</span>
+                <span className="text-[10px] text-gray-400 uppercase tracking-widest block font-mono">{t('Mã PIN 6 Số Tra Cứu:', '6-Digit Search PIN:')}</span>
                 <div className="text-2xl font-mono font-extrabold text-[#C5A880] tracking-widest bg-[#121820] py-1 border border-[#2D3748]">
                   {selectedPassForDetail.pinCode}
                 </div>
-                <div className="text-[10.5px] text-gray-400 font-mono">Mã vé: {selectedPassForDetail.id}</div>
+                <div className="text-[10.5px] text-gray-400 font-mono">{t('Mã vé:', 'Pass ID:')} {selectedPassForDetail.id}</div>
               </div>
             </div>
 
             {/* Thông tin đối chiếu */}
             <div className="p-3 bg-[#121820] border border-[#222B35] space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-gray-400">Khách Thăm:</span>
+                <span className="text-gray-400">{isEn ? 'Visitor:' : 'Khách Thăm:'}</span>
                 <span className="font-bold text-white">{selectedPassForDetail.visitorName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Số Điện Thoại:</span>
-                <span className="font-mono text-gray-200">{selectedPassForDetail.phoneNumber || 'Không có'}</span>
+                <span className="text-gray-400">{isEn ? 'Phone:' : 'Số Điện Thoại:'}</span>
+                <span className="font-mono text-gray-200">{selectedPassForDetail.phoneNumber || t('Không có', 'None')}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Biển Số Xe:</span>
-                <span className="font-mono text-[#C5A880]">{selectedPassForDetail.licensePlate || 'Đi bộ / Taxi'}</span>
+                <span className="text-gray-400">{isEn ? 'License Plate:' : 'Biển Số Xe:'}</span>
+                <span className="font-mono text-[#C5A880]">{selectedPassForDetail.licensePlate || t('Đi bộ / Taxi', 'Pedestrian / Taxi')}</span>
               </div>
               <div className="flex justify-between border-t border-[#222B35] pt-1.5">
-                <span className="text-gray-400">Căn Hộ Điểm Đến:</span>
-                <span className="font-bold text-[#C5A880]">Căn {selectedPassForDetail.apartmentCode}</span>
+                <span className="text-gray-400">{isEn ? 'Destination Unit:' : 'Căn Hộ Điểm Đến:'}</span>
+                <span className="font-bold text-[#C5A880]">{t('Căn', 'Unit')} {selectedPassForDetail.apartmentCode}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Chủ Hộ Bảo Lãnh:</span>
+                <span className="text-gray-400">{isEn ? 'Host Resident:' : 'Chủ Hộ Bảo Lãnh:'}</span>
                 <span className="text-white">{selectedPassForDetail.hostName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Thời Hạn:</span>
+                <span className="text-gray-400">{isEn ? 'Validity:' : 'Thời Hạn:'}</span>
                 <span className="text-emerald-400 font-mono">
                   Đến {new Date(selectedPassForDetail.validUntil).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ({new Date(selectedPassForDetail.validUntil).toLocaleDateString('vi-VN')})
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Trạng Thái:</span>
+                <span className="text-gray-400">{isEn ? 'Status:' : 'Trạng Thái:'}</span>
                 <span className="font-bold text-amber-400">{selectedPassForDetail.status}</span>
               </div>
             </div>
@@ -1893,6 +1919,17 @@ export default function AdminVisitorControl() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModalConfig.isOpen}
+        onClose={() => setDeleteModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={deleteModalConfig.onConfirm}
+        title={deleteModalConfig.title}
+        message={deleteModalConfig.message}
+        itemCode={deleteModalConfig.itemCode}
+        itemName={deleteModalConfig.itemName}
+      />
 
     </div>
   );

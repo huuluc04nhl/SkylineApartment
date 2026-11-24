@@ -31,7 +31,7 @@ import {
   rotateImageDataUrl,
   extractCccdFromClientQr 
 } from '@/lib/ocrParser';
-import { nksUpdateCccd } from '@/lib/nksApiClient';
+import { skylineUpdateCccd } from '@/lib/skylineApiClient';
 import { useLanguage } from '@/lib/languageContext';
 import { cleanCccdNumber, isValidCccdNumber, getCccdValidationError } from '@/lib/validationUtils';
 
@@ -50,7 +50,7 @@ export default function CccdOcrScannerModal({
   initialFrontImage,
   initialBackImage,
 }: CccdOcrScannerModalProps) {
-  const { t } = useLanguage();
+  const { t, isEn } = useLanguage();
   const [frontImage, setFrontImage] = useState<string>(initialFrontImage || '');
   const [backImage, setBackImage] = useState<string>(initialBackImage || '');
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
@@ -337,7 +337,7 @@ export default function CccdOcrScannerModal({
 
     // Tự động đồng bộ ngay lên API
     try {
-      await nksUpdateCccd({
+      await skylineUpdateCccd({
         number: finalResult.idNumber,
         date: finalResult.idDate,
         place: finalResult.idPlace,
@@ -659,7 +659,7 @@ export default function CccdOcrScannerModal({
                   value={editIdNumber}
                   onChange={(e) => setEditIdNumber(cleanCccdNumber(e.target.value))}
                   className="w-full bg-[#0D1117] border border-gray-700 p-2 text-[#C5A880] font-mono font-bold rounded-none focus:border-[#C5A880] outline-none"
-                  placeholder="12 số định danh..."
+                  placeholder={isEn ? '12-digit ID number...' : '12 số định danh...'}
                 />
               </div>
 
@@ -670,7 +670,7 @@ export default function CccdOcrScannerModal({
                   value={editFullName}
                   onChange={(e) => setEditFullName(e.target.value)}
                   className="w-full bg-[#0D1117] border border-gray-700 p-2 text-white font-bold rounded-none focus:border-[#C5A880] outline-none uppercase"
-                  placeholder="Họ và tên..."
+                  placeholder={isEn ? 'Full name...' : 'Họ và tên...'}
                 />
               </div>
 
@@ -703,7 +703,7 @@ export default function CccdOcrScannerModal({
                   value={editPob}
                   onChange={(e) => setEditPob(e.target.value)}
                   className="w-full bg-[#0D1117] border border-gray-700 p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
-                  placeholder="Xã/Phường, Quận/Huyện, Tỉnh/Thành phố..."
+                  placeholder={isEn ? 'Ward, District, City/Province...' : 'Xã/Phường, Quận/Huyện, Tỉnh/Thành phố...'}
                 />
               </div>
 
@@ -724,7 +724,7 @@ export default function CccdOcrScannerModal({
                   value={editIdPlace}
                   onChange={(e) => setEditIdPlace(e.target.value)}
                   className="w-full bg-[#0D1117] border border-gray-700 p-2 text-cyan-400 rounded-none focus:border-[#C5A880] outline-none"
-                  placeholder="Cục Cảnh sát QLHC về TTXH..."
+                  placeholder={isEn ? 'Police Dept of Administrative Management...' : 'Cục Cảnh sát QLHC về TTXH...'}
                 />
               </div>
             </div>

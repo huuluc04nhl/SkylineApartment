@@ -60,7 +60,7 @@ import {
 } from '@/lib/smartHomeStore';
 import ApartmentModel3DViewer from '@/components/portal/shared/ApartmentModel3DViewer';
 import { getEnrolledFaceProfile, EnrolledFaceProfile } from '@/lib/faceEnrollStore';
-import { nksGetFamilyMembers } from '@/lib/nksApiClient';
+import { skylineGetFamilyMembers } from '@/lib/skylineApiClient';
 import { 
   getResidentCards, 
   toggleCardStatus, 
@@ -152,7 +152,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
     };
     loadRealData();
 
-    nksGetFamilyMembers().then(res => {
+    skylineGetFamilyMembers().then(res => {
       if (res.success && res.members) {
         setFamilyMembers(res.members);
       }
@@ -648,7 +648,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[#121820] border border-[#222B35]">
             <div className="text-xs text-gray-300 flex items-center gap-2">
               <Layers className="w-4 h-4 text-[#C5A880] shrink-0" />
-              <span>Chế độ hiển thị không gian:</span>
+              <span>{isEn ? 'Spatial Display Mode:' : 'Chế độ hiển thị không gian:'}</span>
             </div>
             <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
               <button
@@ -660,7 +660,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                     : 'bg-[#161D26] hover:bg-[#1C2533] border border-[#2D3A4B] text-gray-300 hover:text-white'
                 }`}
               >
-                <span>Bảng Thẻ Nhanh</span>
+                <span>{isEn ? 'Quick Cards' : 'Bảng Thẻ Nhanh'}</span>
               </button>
               <button
                 type="button"
@@ -672,7 +672,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                 }`}
               >
                 <Maximize2 className="w-3.5 h-3.5 shrink-0" /> 
-                <span className="truncate">Mô Hình 3D<span className="hidden sm:inline"> Xoay Lật</span></span>
+                <span className="truncate">{isEn ? '3D Model' : 'Mô Hình 3D'}<span className="hidden sm:inline"> {isEn ? 'Rotate' : 'Xoay Lật'}</span></span>
               </button>
             </div>
           </div>
@@ -710,13 +710,13 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                 <h3 className="font-bold text-sm text-white flex items-center gap-2">
                   <Sun className="w-4 h-4 text-amber-400" /> Phòng Khách & Ban Công
                 </h3>
-                <span className="text-[10px] font-mono text-[#C5A880]">Khu Vực Chính</span>
+                <span className="text-[10px] font-mono text-[#C5A880]">{isEn ? 'Living Area' : 'Khu Vực Chính'}</span>
               </div>
 
               {/* Đèn Phòng Khách */}
               <div className="flex items-center justify-between p-3 bg-[#0D1117] border border-[#1C2533]">
                 <div>
-                  <div className="text-xs font-bold text-white">Đèn Chùm Thông Minh</div>
+                  <div className="text-xs font-bold text-white">{isEn ? 'Smart Chandelier' : 'Đèn Chùm Thông Minh'}</div>
                   <div className="text-[10px] text-gray-400 font-mono">Dimmable 0 - 100%</div>
                 </div>
                 <LuxurySwitch
@@ -730,8 +730,8 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
               <div className="p-3 bg-[#0D1117] border border-[#1C2533] space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-xs font-bold text-white">Điều Hòa Daikin VRV-S Multi</div>
-                    <div className="text-[10px] text-sky-400 font-mono">Công nghệ lọc Ion Streamer 99%</div>
+                    <div className="text-xs font-bold text-white">{isEn ? 'Daikin VRV-S Multi Air Conditioner' : 'Điều Hòa Daikin VRV-S Multi'}</div>
+                    <div className="text-[10px] text-sky-400 font-mono">{isEn ? 'Ion Streamer 99% air purification' : 'Công nghệ lọc Ion Streamer 99%'}</div>
                   </div>
                   <LuxurySwitch
                     checked={acPower}
@@ -743,13 +743,13 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
 
                 {acPower && (
                   <div className="pt-2 flex items-center justify-between border-t border-[#1C2533]">
-                    <span className="text-xs text-gray-400">Nhiệt độ cài đặt:</span>
+                    <span className="text-xs text-gray-400">{isEn ? 'Set temperature:' : 'Nhiệt độ cài đặt:'}</span>
                     <div className="flex items-center gap-2.5">
                       <button
                         type="button"
                         onClick={() => handleChangeTemp(-1)}
                         className="w-8 h-8 bg-[#161D26] hover:bg-[#C5A880] hover:text-[#0D1117] border border-[#2D3A4B] text-gray-200 font-bold text-sm transition-all flex items-center justify-center active:scale-95 shadow-sm"
-                        title="Giảm nhiệt độ"
+                        title={isEn ? 'Decrease temperature' : 'Giảm nhiệt độ'}
                       >
                         -
                       </button>
@@ -758,7 +758,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                         type="button"
                         onClick={() => handleChangeTemp(1)}
                         className="w-8 h-8 bg-[#161D26] hover:bg-[#C5A880] hover:text-[#0D1117] border border-[#2D3A4B] text-gray-200 font-bold text-sm transition-all flex items-center justify-center active:scale-95 shadow-sm"
-                        title="Tăng nhiệt độ"
+                        title={isEn ? 'Increase temperature' : 'Tăng nhiệt độ'}
                       >
                         +
                       </button>
@@ -770,7 +770,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
               {/* Rèm Cửa Tự Động */}
               <div className="flex items-center justify-between p-3 bg-[#0D1117] border border-[#1C2533]">
                 <div>
-                  <div className="text-xs font-bold text-white">Rèm Cửa Kính Panorama</div>
+                  <div className="text-xs font-bold text-white">{isEn ? 'Panorama Glass Curtains' : 'Rèm Cửa Kính Panorama'}</div>
                   <div className="text-[10px] text-gray-400 font-mono">
                     {curtainsOpen ? 'Đang Mở 100%' : 'Đang Đóng Kín'}
                   </div>
@@ -790,14 +790,14 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                 <h3 className="font-bold text-sm text-white flex items-center gap-2">
                   <Moon className="w-4 h-4 text-indigo-400" /> Phòng Ngủ Master
                 </h3>
-                <span className="text-[10px] font-mono text-indigo-400">Không Gian Nghỉ Ngơi</span>
+                <span className="text-[10px] font-mono text-indigo-400">{isEn ? 'Master Bedroom' : 'Không Gian Nghỉ Ngơi'}</span>
               </div>
 
               {/* Đèn Phòng Ngủ */}
               <div className="flex items-center justify-between p-3 bg-[#0D1117] border border-[#1C2533]">
                 <div>
-                  <div className="text-xs font-bold text-white">Đèn Ngủ Ấm Áp</div>
-                  <div className="text-[10px] text-gray-400 font-mono">Ánh sáng vàng 2700K dịu mắt</div>
+                  <div className="text-xs font-bold text-white">{isEn ? 'Warm Night Light' : 'Đèn Ngủ Ấm Áp'}</div>
+                  <div className="text-[10px] text-gray-400 font-mono">{isEn ? 'Warm 2700K soft illumination' : 'Ánh sáng vàng 2700K dịu mắt'}</div>
                 </div>
                 <LuxurySwitch
                   checked={lights.bedroomMaster}
@@ -809,8 +809,8 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
               {/* Gian Bếp */}
               <div className="flex items-center justify-between p-3 bg-[#0D1117] border border-[#1C2533]">
                 <div>
-                  <div className="text-xs font-bold text-white">Đèn Gian Bếp & Bàn Ăn</div>
-                  <div className="text-[10px] text-gray-400 font-mono">Bếp Hafele cảm ứng an toàn</div>
+                  <div className="text-xs font-bold text-white">{isEn ? 'Kitchen & Dining Lights' : 'Đèn Gian Bếp & Bàn Ăn'}</div>
+                  <div className="text-[10px] text-gray-400 font-mono">{isEn ? 'Hafele safe induction range' : 'Bếp Hafele cảm ứng an toàn'}</div>
                 </div>
                 <LuxurySwitch
                   checked={lights.kitchen}
@@ -822,8 +822,8 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
               {/* Ban Công */}
               <div className="flex items-center justify-between p-3 bg-[#0D1117] border border-[#1C2533]">
                 <div>
-                  <div className="text-xs font-bold text-white">Đèn Ban Công Sinh Thái</div>
-                  <div className="text-[10px] text-gray-400 font-mono">View công viên The Tropical</div>
+                  <div className="text-xs font-bold text-white">{isEn ? 'Eco Balcony Lighting' : 'Đèn Ban Công Sinh Thái'}</div>
+                  <div className="text-[10px] text-gray-400 font-mono">{isEn ? 'The Tropical park view' : 'View công viên The Tropical'}</div>
                 </div>
                 <LuxurySwitch
                   checked={lights.balcony}
@@ -849,7 +849,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-bold text-white flex items-center gap-2">
                     <Video className="w-4 h-4 text-[#C5A880]" />
-                    <span>Chuông Hình Camera Ngoài Cửa</span>
+                    <span>{isEn ? 'Outdoor Video Intercom Camera' : 'Chuông Hình Camera Ngoài Cửa'}</span>
                     <span className="w-2 h-2 rounded-none bg-red-500 animate-ping" />
                   </div>
                   <span className="text-[10px] font-mono text-gray-400">{cameraTime}</span>
@@ -889,7 +889,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                       }`}
                     >
                       {isIntercomActive ? <MicOff className="w-3.5 h-3.5 shrink-0" /> : <Mic className="w-3.5 h-3.5 shrink-0" />}
-                      <span className="truncate">{isIntercomActive ? 'Ngắt Mic' : 'Đàm Thoại'}</span>
+                      <span className="truncate">{isIntercomActive ? (isEn ? 'Mute Mic' : 'Ngắt Mic') : (isEn ? 'Talk' : 'Đàm Thoại')}</span>
                     </button>
 
                     <button
@@ -898,7 +898,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                       className="flex-1 sm:flex-initial h-9 sm:h-8 px-3.5 bg-[#161D26] hover:bg-[#C5A880] hover:text-[#0D1117] border border-[#2D3A4B] text-gray-200 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 truncate"
                     >
                       <Camera className="w-3.5 h-3.5 text-[#C5A880] shrink-0" />
-                      <span className="truncate">Chụp Ảnh ({snapshotCount})</span>
+                      <span className="truncate">{isEn ? 'Snapshot' : 'Chụp Ảnh'} ({snapshotCount})</span>
                     </button>
                   </div>
                 </div>
@@ -909,7 +909,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                 <div className="space-y-0.5">
                   <div className="text-xs font-bold text-white flex items-center gap-2">
                     <DoorClosed className="w-4 h-4 text-[#C5A880]" />
-                    <span>Khóa Thông Minh Skyline FaceID v4.2</span>
+                    <span>{isEn ? 'Skyline Smart FaceID Lock v4.2' : 'Khóa Thông Minh Skyline FaceID v4.2'}</span>
                   </div>
                   <div className="text-[11px] text-gray-400 font-mono">
                     Pin khóa: <span className="text-emerald-400 font-bold">{doorBatteryLevel}%</span> • Tín hiệu: Sóng mạnh
@@ -926,7 +926,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                   }`}
                 >
                   {masterDoorLocked ? <Lock className="w-4 h-4" /> : <DoorOpen className="w-4 h-4" />}
-                  <span>{masterDoorLocked ? 'Đang Khóa • Chạm Để Mở' : 'Đang Mở • Chạm Để Khóa'}</span>
+                  <span>{masterDoorLocked ? (isEn ? 'Locked • Tap to Unlock' : 'Đang Khóa • Chạm Để Mở') : (isEn ? 'Unlocked • Tap to Lock' : 'Đang Mở • Chạm Để Khóa')}</span>
                 </button>
               </div>
             </div>
@@ -939,7 +939,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                   <h3 className="font-bold text-xs uppercase tracking-wider text-white flex items-center gap-1.5">
                     <KeyRound className="w-3.5 h-3.5 text-cyan-400" /> Cấp Mã Khách / Shipper (OTP)
                   </h3>
-                  <span className="text-[9px] font-mono text-emerald-400">1-Chạm Tự Hủy</span>
+                  <span className="text-[9px] font-mono text-emerald-400">{isEn ? '1-Tap Self-Destruct' : '1-Chạm Tự Hủy'}</span>
                 </div>
 
                 {/* 3 Nút Chọn Nhanh Thời Lượng (Thống nhất Button Style) */}
@@ -949,7 +949,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                     onClick={() => handleQuickCreatePin(15, 'Giao Hàng Shipper')}
                     className="p-2 sm:p-2.5 bg-[#0D1117] hover:bg-[#161D26] hover:border-[#C5A880] border border-[#222B35] text-left transition-all active:scale-[0.98]"
                   >
-                    <div className="text-[11px] sm:text-xs font-bold text-white">15 Phút</div>
+                    <div className="text-[11px] sm:text-xs font-bold text-white">{isEn ? '15 Mins' : '15 Phút'}</div>
                     <div className="text-[8.5px] sm:text-[9px] text-[#C5A880] truncate">Shipper</div>
                   </button>
 
@@ -958,8 +958,8 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                     onClick={() => handleQuickCreatePin(60, 'Bạn Bè Viếng Thăm')}
                     className="p-2 sm:p-2.5 bg-[#0D1117] hover:bg-[#161D26] hover:border-[#C5A880] border border-[#222B35] text-left transition-all active:scale-[0.98]"
                   >
-                    <div className="text-[11px] sm:text-xs font-bold text-white">1 Giờ</div>
-                    <div className="text-[8.5px] sm:text-[9px] text-cyan-400 truncate">Bạn bè</div>
+                    <div className="text-[11px] sm:text-xs font-bold text-white">{isEn ? '1 Hour' : '1 Giờ'}</div>
+                    <div className="text-[8.5px] sm:text-[9px] text-cyan-400 truncate">{isEn ? 'Friends' : 'Bạn bè'}</div>
                   </button>
 
                   <button
@@ -967,14 +967,14 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                     onClick={() => handleQuickCreatePin(1440, 'Khách Ở Lại Qua Đêm')}
                     className="p-2 sm:p-2.5 bg-[#0D1117] hover:bg-[#161D26] hover:border-[#C5A880] border border-[#222B35] text-left transition-all active:scale-[0.98]"
                   >
-                    <div className="text-[11px] sm:text-xs font-bold text-white">24 Giờ</div>
-                    <div className="text-[8.5px] sm:text-[9px] text-indigo-400 truncate">Qua đêm</div>
+                    <div className="text-[11px] sm:text-xs font-bold text-white">{isEn ? '24 Hours' : '24 Giờ'}</div>
+                    <div className="text-[8.5px] sm:text-[9px] text-indigo-400 truncate">{isEn ? 'Overnight' : 'Qua đêm'}</div>
                   </button>
                 </div>
 
                 {/* Danh sách mã PIN đang có hiệu lực */}
                 <div className="space-y-2 pt-1">
-                  <div className="text-[10px] text-gray-400 font-mono">Mã PIN đang hoạt động ({guestPins.length}):</div>
+                  <div className="text-[10px] text-gray-400 font-mono">{isEn ? `Active Guest PINs (${guestPins.length}):` : `Mã PIN đang hoạt động (${guestPins.length}):`}</div>
                   {guestPins.length === 0 ? (
                     <div className="p-3 text-center bg-[#0D1117] text-[11px] text-gray-500 font-mono border border-[#1C2533]">
                       Chưa có mã PIN tạm thời nào. Bấm nút trên để tạo nhanh.
@@ -997,7 +997,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                             type="button"
                             onClick={() => handleCopyPin(pin.pin, pin.id)}
                             className="w-7 h-7 bg-[#161D26] hover:bg-[#C5A880] hover:text-[#0D1117] border border-[#2D3A4B] text-gray-300 transition-all flex items-center justify-center active:scale-95 shadow-sm"
-                            title="Sao chép mã gửi khách"
+                            title={isEn ? 'Copy PIN to send guest' : 'Sao chép mã gửi khách'}
                           >
                             <Copy className="w-3.5 h-3.5" />
                           </button>
@@ -1005,7 +1005,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                             type="button"
                             onClick={() => handleRevokePin(pin.id)}
                             className="w-7 h-7 bg-[#161D26] hover:bg-red-950 hover:border-red-500 hover:text-red-300 border border-[#2D3A4B] text-gray-400 transition-all flex items-center justify-center active:scale-95 shadow-sm"
-                            title="Hủy mã ngay"
+                            title={isEn ? 'Revoke PIN immediately' : 'Hủy mã ngay'}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1022,7 +1022,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                   <h3 className="font-bold text-xs uppercase tracking-wider text-white flex items-center gap-1.5">
                     <CreditCard className="w-3.5 h-3.5 text-emerald-400" /> Thẻ Cư Dân NFC Mifare EV3
                   </h3>
-                  <span className="text-[10px] font-mono text-gray-400">{residentCards.length} Thẻ</span>
+                  <span className="text-[10px] font-mono text-gray-400">{residentCards.length} {isEn ? 'Cards' : 'Thẻ'}</span>
                 </div>
 
                 <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">

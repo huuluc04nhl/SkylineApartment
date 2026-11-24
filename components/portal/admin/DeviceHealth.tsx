@@ -37,34 +37,28 @@ import {
 } from 'lucide-react';
 import { exportMaintenanceTicketPdf } from '@/lib/pdfExport';
 import { useLanguage } from '@/lib/languageContext';
+import ConfirmDeleteModal from '@/components/portal/shared/ConfirmDeleteModal';
 
-const STORAGE_KEY = 'skyline_bms_devices';
+let inMemoryDevices: Device[] = [...DEMO_DEVICES];
 
 function getStoredDevices(): Device[] {
-  if (typeof window === 'undefined') return DEMO_DEVICES;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch (err) {
-    console.warn('Lỗi đọc skyline_bms_devices:', err);
-  }
-  return DEMO_DEVICES;
+  return inMemoryDevices;
 }
 
 function saveStoredDevices(devices: Device[]) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(devices));
-  } catch (err) {
-    console.warn('Lỗi lưu skyline_bms_devices:', err);
-  }
+  inMemoryDevices = [...devices];
 }
 
 export default function DeviceHealth() {
   const { t, isEn } = useLanguage();
+  const [deleteModalConfig, setDeleteModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    itemCode?: string;
+    itemName?: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
   const [devices, setDevices] = useState<Device[]>([]);
   const [technicians, setTechnicians] = useState<TechnicianProfile[]>([]);
   
@@ -91,7 +85,7 @@ export default function DeviceHealth() {
 
   // Form tạo phiếu bảo trì
   const [selectedTechId, setSelectedTechId] = useState('');
-  const [techName, setTechName] = useState('Lê Văn Kỹ Thuật (Kỹ Sư Trưởng BMS)');
+  const [techName, setTechName] = useState('Lê Quốc Tuấn (Kỹ Sư Cơ Điện & Nước)');
   const [priority, setPriority] = useState<'Cấp bách' | 'Cao' | 'Bình thường'>('Cao');
   const [scheduledDate, setScheduledDate] = useState('');
   const [notes, setNotes] = useState('');
@@ -164,7 +158,7 @@ export default function DeviceHealth() {
       try {
         await createTicketAsync({
           apt_code: device.location.includes('BS-') ? device.location.split(' ')[0] : 'Kỹ Thuật BMS',
-          resident_name: t('Ban Quản Lý Tòa Nhà', 'Property Management Board'),
+          resident_name: 'VinHomes Manager',
           resident_phone: '1900 8899',
           content: `[BMS PREVENTIVE WORK ORDER] ${device.name} (${device.location}). Scope: ${notes}`,
           ticket_type: 'REPAIR',
@@ -287,21 +281,41 @@ export default function DeviceHealth() {
 
   // Xóa Thiết Bị
   const handleDeleteDevice = (device: Device) => {
-    if (!window.confirm(t(`Xác nhận xóa hoặc thanh lý thiết bị "${device.name}" khỏi hệ thống BMS?`, `Confirm deleting equipment "${device.name}" from BMS registry?`))) {
-      return;
-    }
-    const filtered = devices.filter(d => d.id !== device.id);
-    setDevices(filtered);
-    saveStoredDevices(filtered);
-    showToast(t('Đã Xóa Thiết Bị', 'Equipment Deleted'), t(`Thiết bị #${device.id.toUpperCase()} đã được gỡ khỏi danh sách quản lý.`, `Equipment #${device.id.toUpperCase()} removed from registry.`), 'info');
+    setDeleteModalConfig({
+      isOpen: true,
+      title: t('Xác Nhận Xóa / Thanh Lý Thiết Bị', 'Confirm Equipment Removal'),
+      message: t(
+        `Bạn có chắc chắn muốn xóa thiết bị "${device.name}" khỏi hệ thống quản lý BMS? Dữ liệu bảo dưỡng và lịch sử đo lường sẽ không còn hiệu lực.`,
+        `Are you sure you want to delete equipment "${device.name}" from BMS registry?`
+      ),
+      itemCode: device.id.toUpperCase(),
+      itemName: `${device.name} (${device.location})`,
+      onConfirm: () => {
+        const filtered = devices.filter(d => d.id !== device.id);
+        setDevices(filtered);
+        saveStoredDevices(filtered);
+        showToast(t('Đã Xóa Thiết Bị', 'Equipment Deleted'), t(`Thiết bị #${device.id.toUpperCase()} đã được gỡ khỏi danh sách quản lý.`, `Equipment #${device.id.toUpperCase()} removed from registry.`), 'info');
+      }
+    });
   };
 
   // Reset về demo ban đầu nếu cần
   const handleResetDemo = () => {
-    if (!window.confirm(t('Khôi phục danh sách thiết bị về mặc định ban đầu của tòa nhà?', 'Restore equipment registry to default Tropical specifications?'))) return;
-    setDevices(DEMO_DEVICES);
-    saveStoredDevices(DEMO_DEVICES);
-    showToast(t('Đã Khôi Phục', 'Restored'), t('Đã tải lại cấu hình thiết bị chuẩn hạ tầng The Tropical.', 'Reloaded standard The Tropical facility specifications.'));
+    setDeleteModalConfig({
+      isOpen: true,
+      title: t('Khôi Phục Danh Sách Thiết Bị Mặc Định', 'Restore Default Equipment Registry'),
+      message: t(
+        'Khôi phục danh sách thiết bị về mặc định ban đầu chuẩn hạ tầng The Tropical?',
+        'Restore equipment registry to default Tropical specifications?'
+      ),
+      itemCode: 'BMS_DEFAULT',
+      itemName: 'Hạ tầng thiết bị The Tropical',
+      onConfirm: () => {
+        setDevices(DEMO_DEVICES);
+        saveStoredDevices(DEMO_DEVICES);
+        showToast(t('Đã Khôi Phục', 'Restored'), t('Đã tải lại cấu hình thiết bị chuẩn hạ tầng The Tropical.', 'Reloaded standard The Tropical facility specifications.'));
+      }
+    });
   };
 
   // Filtered devices
@@ -1276,6 +1290,16 @@ export default function DeviceHealth() {
           </form>
         </div>
       )}
+      {/* Confirm Delete / Reset Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModalConfig.isOpen}
+        onClose={() => setDeleteModalConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={deleteModalConfig.onConfirm}
+        title={deleteModalConfig.title}
+        message={deleteModalConfig.message}
+        itemCode={deleteModalConfig.itemCode}
+        itemName={deleteModalConfig.itemName}
+      />
     </div>
   );
 }

@@ -21,9 +21,9 @@ export default function HomePage() {
     if (role === 'OWNER' || role === 'CH-06') {
       setDefaultAccount('huuluc04@gmail.com');
     } else if (role === 'ADMIN') {
-      setDefaultAccount('nks.manager01@gmail.com');
+      setDefaultAccount('admin@skyline.vn');
     } else if (role === 'TECHNICIAN') {
-      setDefaultAccount('nks.manager02@gmail.com');
+      setDefaultAccount('0901888998');
     } else if (typeof role === 'string' && role.includes('@')) {
       setDefaultAccount(role);
     } else {

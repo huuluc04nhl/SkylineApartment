@@ -510,12 +510,12 @@ Chỉ trả về nội dung đã viết lại, không giải thích thêm hay d�
       const urgency = classification.urgent ? 'HIGH' : 'NORMAL';
       const estimatedSla = classification.urgent ? '15 - 30 phút' : 'Trong vòng 45 - 60 phút';
 
-      let suggestedTech = 'Lê Văn Kỹ Thuật (Chuyên trách Cơ Điện & Nước)';
+      let suggestedTech = 'Lê Quốc Tuấn (Chuyên môn Cơ Điện & Nước)';
       const lower = content.toLowerCase();
       if (lower.includes('lạnh') || lower.includes('điều hòa') || lower.includes('thang') || lower.includes('nhà hàng')) {
         suggestedTech = 'Trần Đình Trọng (Chuyên môn Điện Lạnh & Thiết Bị Tòa Nhà)';
       } else if (lower.includes('vệ sinh') || lower.includes('rác') || lower.includes('mùi') || lower.includes('bàn ghế')) {
-        suggestedTech = 'Hoàng (Tổ trưởng Vệ sinh & Cảnh quan)';
+        suggestedTech = 'Nguyễn Huy Hoàng (Tổ trưởng Vệ sinh & Cảnh quan)';
       }
 
       return NextResponse.json({
@@ -539,8 +539,8 @@ Chỉ trả về nội dung đã viết lại, không giải thích thêm hay d�
       const cleanContent = (content || '').split('•')[0].trim() || content;
 
       try {
-        const systemPrompt = `Bạn là Trưởng Ban Quản Lý Chung Cư The Tropical (BS-07, BS-08, BS-09, BS-10) thuộc phân khu Beverly Solari (Vinhomes Grand Park, TP. Thủ Đức, TP.HCM).
-Nhiệm vụ: Soạn thảo thư phản hồi chính thức từ Ban Quản Lý gửi đến cư dân dựa trên NỘI DUNG PHẢN ÁNH CỤ THỂ của họ.
+        const systemPrompt = `Bạn là VinHomes Manager - Ban Quản Lý Chung Cư The Tropical (BS-07, BS-08, BS-09, BS-10) thuộc phân khu Beverly Solari (Vinhomes Grand Park, TP. Thủ Đức, TP.HCM).
+Nhiệm vụ: Soạn thảo thư phản hồi chính thức từ VinHomes Manager gửi đến cư dân dựa trên NỘI DUNG PHẢN ÁNH CỤ THỂ của họ.
 Độ dài: 80–120 từ. Chỉ trả về nội dung thư, KHÔNG thêm tiêu đề hay dấu ngoặc kép.`;
 
         const userPrompt = `Cư dân ${resident} tại ${apt} gửi phản ánh (hạng mục: ${category || 'Phản ánh dịch vụ'}):

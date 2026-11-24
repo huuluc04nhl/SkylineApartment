@@ -40,3 +40,4 @@ assert.strictEqual(testOcrSample.confidence >= 0 && testOcrSample.confidence <= 
 console.log('✅ Test 3: OCR Data Structure Schema PASSED');
 
 console.log('🎉 ALL 3 B2 UNIT TESTS PASSED SUCCESSFULLY!');
+

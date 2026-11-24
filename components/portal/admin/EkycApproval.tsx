@@ -39,7 +39,7 @@ import { getEnrolledFaceProfile, updateEnrolledFaceStatus, saveEnrolledFaceProfi
 import { useLanguage } from '@/lib/languageContext';
 
 export default function EkycApproval() {
-  const { t, language } = useLanguage();
+  const { t, language, isEn } = useLanguage();
   const [requests, setRequests] = useState<EkycRequest[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -51,7 +51,7 @@ export default function EkycApproval() {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string>('Ảnh chụp CCCD bị lóa sáng/mờ nét, vui lòng chụp lại rõ nét');
   const [revokingId, setRevokingId] = useState<string | null>(null);
-  const [revokeReason, setRevokeReason] = useState<string>('Ban Quản Lý tạm thu hồi quyền ra vào FaceID để đối soát lại hồ sơ');
+  const [revokeReason, setRevokeReason] = useState<string>('VinHomes Manager tạm thu hồi quyền ra vào FaceID để đối soát lại hồ sơ');
   const [justApprovedId, setJustApprovedId] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -105,7 +105,7 @@ export default function EkycApproval() {
           body: JSON.stringify({
             action: 'APPROVE',
             id,
-            approverName: 'Ban Quản Lý Skyline',
+            approverName: 'VinHomes Manager',
           }),
         });
         const data = await res.json();
@@ -115,7 +115,7 @@ export default function EkycApproval() {
       }
 
       // 2. Cập nhật local storage
-      const updated = approveEkycRequest(id, 'Ban Quản Lý Skyline');
+      const updated = approveEkycRequest(id, 'VinHomes Manager');
       if (updated) {
         updateEnrolledFaceStatus(updated.userId, 'ACTIVE');
         if (updated.phone) updateEnrolledFaceStatus(updated.phone, 'ACTIVE');
@@ -152,7 +152,7 @@ export default function EkycApproval() {
             action: 'REJECT',
             id: rejectingId,
             reason: rejectionReason,
-            approverName: 'Ban Quản Lý Skyline',
+            approverName: 'VinHomes Manager',
           }),
         });
         const data = await res.json();
@@ -162,7 +162,7 @@ export default function EkycApproval() {
       }
 
       // 2. Cập nhật local storage
-      const updated = rejectEkycRequest(rejectingId, rejectionReason, 'Ban Quản Lý Skyline');
+      const updated = rejectEkycRequest(rejectingId, rejectionReason, 'VinHomes Manager');
       if (updated) {
         updateEnrolledFaceStatus(updated.userId, 'REVOKED');
         if (updated.phone) updateEnrolledFaceStatus(updated.phone, 'REVOKED');
@@ -197,7 +197,7 @@ export default function EkycApproval() {
             action: 'REVOKE',
             id: revokingId,
             reason: revokeReason,
-            approverName: 'Ban Quản Lý Skyline',
+            approverName: 'VinHomes Manager',
           }),
         });
         const data = await res.json();
@@ -206,7 +206,7 @@ export default function EkycApproval() {
         console.warn('API revoke error:', e);
       }
 
-      const updated = rejectEkycRequest(revokingId, revokeReason, 'Ban Quản Lý Skyline');
+      const updated = rejectEkycRequest(revokingId, revokeReason, 'VinHomes Manager');
       if (updated) {
         updateEnrolledFaceStatus(updated.userId, 'REVOKED');
         if (updated.phone) updateEnrolledFaceStatus(updated.phone, 'REVOKED');
@@ -252,7 +252,7 @@ export default function EkycApproval() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222B35] pb-4">
         <div>
           <div className="text-[10px] uppercase tracking-[0.25em] text-[#C5A880] font-semibold flex items-center gap-1.5">
-            <UserCheck className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Xác Thực Cư Dân • Ban Quản Lý', 'Resident Verification • Management')}
+            <UserCheck className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Xác Thực Cư Dân • VinHomes Manager', 'Resident Verification • VinHomes Manager')}
           </div>
           <h2 className="font-serif text-2xl text-white font-bold mt-1">
             {t('Xác Thực Căn Cước Công Dân & Kích Hoạt Quyền Ra Vào', 'Citizen ID Verification & Access Activation')}
@@ -380,8 +380,8 @@ export default function EkycApproval() {
         {filteredRequests.length === 0 ? (
           <div className="p-12 text-center text-gray-400 bg-[#121820] border border-[#222B35] rounded-none space-y-2">
             <UserCheck className="w-10 h-10 text-gray-600 mx-auto" />
-            <div className="font-semibold text-white text-sm">Không tìm thấy hồ sơ cư dân nào</div>
-            <div className="text-xs text-gray-500">Hồ sơ gửi từ cư dân sẽ tự động xuất hiện tại đây theo thời gian thực.</div>
+            <div className="font-semibold text-white text-sm">{t('Không tìm thấy hồ sơ cư dân nào', 'No resident records found')}</div>
+            <div className="text-xs text-gray-500">{t('Hồ sơ gửi từ cư dân sẽ tự động xuất hiện tại đây theo thời gian thực.', 'Submissions from residents will appear here automatically in real time.')}</div>
           </div>
         ) : (
           filteredRequests.map((req) => {
@@ -406,12 +406,12 @@ export default function EkycApproval() {
                   <div className="lg:col-span-4 flex items-center gap-4">
                     <div className="relative flex-shrink-0">
                       <img
-                        src={req.avatarUrl || 'https://data.nks.vn/storage/users/default.png'}
+                        src={req.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(req.fullName)}&background=1C2533&color=C5A880`}
                         alt={req.fullName}
                         onError={(e) => {
-                          e.currentTarget.src = 'https://data.nks.vn/storage/users/default.png';
+                          e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(req.fullName)}&background=1C2533&color=C5A880`;
                         }}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-[#C5A880] shadow"
+                        className="w-16 h-16 rounded-none object-cover border-2 border-[#C5A880] shadow"
                       />
                       <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 bg-emerald-950 border border-emerald-500 text-emerald-400 text-[9px] font-mono font-bold rounded-none">
                         {req.faceScore}%
@@ -450,7 +450,7 @@ export default function EkycApproval() {
                       <div className="flex items-center gap-2 text-[10.5px] text-gray-300">
                         <span>{t('Cấp', 'Issued')}: <span className="font-mono">{req.idDate || 'N/A'}</span></span>
                         <span>•</span>
-                        <span className="truncate">{req.idPlace || 'Cục Cảnh sát QLHC'}</span>
+                        <span className="truncate">{req.idPlace || (isEn ? 'Police Dept of Administrative Management' : 'Cục Cảnh sát QLHC')}</span>
                       </div>
                       <button
                         type="button"
@@ -473,7 +473,7 @@ export default function EkycApproval() {
                           className="w-14 h-9 bg-black border border-gray-700 hover:border-[#C5A880] overflow-hidden cursor-pointer relative group"
                           title={t('Xem mặt trước CCCD')}
                         >
-                          <img src={req.idCardFrontUrl} alt="Trước" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <img src={req.idCardFrontUrl} alt={isEn ? 'Front' : 'Trước'} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                           <span className="absolute bottom-0 inset-x-0 bg-black/80 text-[7px] text-gray-300 text-center font-mono">{t('Trước')}</span>
                         </div>
                       )}
@@ -519,7 +519,7 @@ export default function EkycApproval() {
                             type="button"
                             onClick={() => {
                               setRevokingId(req.id);
-                              setRevokeReason('Ban Quản Lý tạm thu hồi quyền ra vào FaceID để đối soát lại hồ sơ.');
+                              setRevokeReason('VinHomes Manager tạm thu hồi quyền ra vào FaceID để đối soát lại hồ sơ.');
                             }}
                             className="text-rose-400 hover:text-rose-300 underline cursor-pointer"
                           >
@@ -660,7 +660,7 @@ export default function EkycApproval() {
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                   <span>
-                    <strong>{t('Phê duyệt thành công!', 'Approval Successful!')}</strong> {t('Đã kích hoạt sinh trắc học FaceID và nạp dữ liệu nhận diện vào Camera AI cổng Barrier và Thang máy toà nhà.', 'FaceID biometrics activated and recognition data loaded to AI barrier gate and building elevators.')}
+                    <strong>{t('Phê duyệt thành công!', 'Approval Successful!')}</strong> {t('Đã kích hoạt nhận diện khuôn mặt mở cổng và thang máy tòa nhà.', 'Face recognition activated for building gates and elevators.')}
                   </span>
                 </div>
                 <span className="text-[10px] font-mono text-emerald-400 bg-emerald-900/50 px-2 py-0.5">{t('Thời gian thực', 'Real-time')}</span>
@@ -706,7 +706,7 @@ export default function EkycApproval() {
                       <div className="w-36 h-44 sm:w-40 sm:h-48 mx-auto rounded-none overflow-hidden border-2 border-[#C5A880] shadow-lg bg-[#0A0E14] relative group cursor-pointer"
                            onClick={() => setZoomImage({ url: samples?.front || inspectingRequest.avatarUrl || '', title: `${t('Chân dung FaceID (Mặt trước)', 'FaceID Front Portrait')} - ${inspectingRequest.fullName}` })}>
                         <img
-                          src={samples?.front || inspectingRequest.avatarUrl || 'https://data.nks.vn/storage/users/default.png'}
+                          src={samples?.front || inspectingRequest.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(inspectingRequest.fullName)}&background=1C2533&color=C5A880`}
                           alt="FaceID Portrait"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />
@@ -714,7 +714,7 @@ export default function EkycApproval() {
                           <ZoomIn className="w-6 h-6 text-white" />
                         </div>
                         <div className="absolute bottom-2 inset-x-2 bg-black/70 backdrop-blur text-[9px] font-mono text-[#C5A880] py-0.5 rounded-none">
-                          {samples?.front ? t('MẪU FACEID CHÍNH DIỆN', 'FRONT BIOMETRIC FACEID') : t('ẢNH ĐẠI DIỆN HỒ SƠ', 'PROFILE AVATAR')}
+                          {samples?.front ? t('ẢNH MẶT CHÍNH DIỆN', 'FRONT FACE PHOTO') : t('ẢNH ĐẠI DIỆN HỒ SƠ', 'PROFILE AVATAR')}
                         </div>
                       </div>
 
@@ -722,15 +722,15 @@ export default function EkycApproval() {
                       {samples && (
                         <div className="space-y-1.5 pt-2 border-t border-[#222B35]">
                           <div className="text-[10px] uppercase font-bold text-[#C5A880] tracking-wider flex items-center justify-between">
-                            <span>{t('Bộ Mẫu Thu Thập 4 Góc Mặt:', '4-Angle Face Enrollment Set:')}</span>
-                            <span className="text-emerald-400 font-mono text-[9px]">{t('Liveness 100%', 'Liveness 100%')}</span>
+                            <span>{t('4 Góc Khuôn Mặt Cư Dân:', '4-Angle Face Photo Set:')}</span>
+                            <span className="text-emerald-400 font-mono text-[9px]">{t('Đạt Chuẩn', 'Valid')}</span>
                           </div>
                           <div className="grid grid-cols-4 gap-1.5">
                             {[
                               { label: t('Chính diện', 'Front'), img: samples.front },
-                              { label: t('Trái (-25°)', 'Left (-25°)'), img: samples.left },
-                              { label: t('Phải (+25°)', 'Right (+25°)'), img: samples.right },
-                              { label: t('Xác thực', 'Verify'), img: samples.smile },
+                              { label: t('Nghiêng trái', 'Left'), img: samples.left },
+                              { label: t('Nghiêng phải', 'Right'), img: samples.right },
+                              { label: t('Tiến gần', 'Closer'), img: samples.smile },
                             ].map((s, idx) => (
                               <div key={idx} 
                                    onClick={() => s.img && setZoomImage({ url: s.img, title: `${s.label} - ${inspectingRequest.fullName}` })}
@@ -750,7 +750,7 @@ export default function EkycApproval() {
                       )}
 
                       <div className="text-[11px] text-gray-400">
-                        {samples ? t('Dữ liệu nhận diện khuôn mặt đã sẵn sàng kích hoạt quyền ra vào sảnh & thang máy', 'Face biometric data ready to activate lobby & elevator access') : t('Ảnh chân dung chụp trực tiếp từ thiết bị', 'Portrait captured directly from device')}
+                        {samples ? t('Khuôn mặt đã sẵn sàng kích hoạt quyền mở cổng & thang máy', 'Face photo ready to activate lobby & elevator access') : t('Ảnh chân dung chụp trực tiếp từ thiết bị', 'Portrait captured directly from device')}
                       </div>
                     </div>
 
@@ -859,6 +859,8 @@ export default function EkycApproval() {
               const card = validateCccdCard(inspectingRequest.idCardFrontUrl, 'Mặt trước CCCD');
               const displayScore = inspectingRequest.faceScore || bio.similarity;
               const isEligible = displayScore >= 85.0 && card.isValid;
+              const isSimulated = !!(inspectingRequest as any).isSimulation || !!bio.isSimulation;
+              const algorithmTag = isSimulated ? 'MÔ PHỎNG (Demo Preset)' : 'THUẬT TOÁN THẬT (Cosine Sim)';
 
               return (
                 <div className={`p-4 rounded-none border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-md ${
@@ -867,7 +869,7 @@ export default function EkycApproval() {
                     : 'bg-rose-950/40 border-rose-500/60 text-rose-200'
                 }`}>
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[11px]">
+                    <div className="flex flex-wrap items-center gap-2 font-bold uppercase tracking-wider text-[11px]">
                       {isEligible ? (
                         <span className="text-emerald-400 flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -879,6 +881,13 @@ export default function EkycApproval() {
                           {t('Cần Kiểm Tra: Ảnh Khuôn Mặt Chưa Khớp Hoặc Thẻ CCCD Mờ', 'Needs Review: Face Mismatch or Blurry ID')}
                         </span>
                       )}
+                      <span className={`px-2 py-0.5 text-[10px] rounded-none border font-mono ${
+                        isSimulated 
+                          ? 'bg-amber-950/70 text-amber-300 border-amber-600/70' 
+                          : 'bg-cyan-950/70 text-cyan-300 border-cyan-500/70'
+                      }`}>
+                        ⚙ {algorithmTag}
+                      </span>
                     </div>
                     <p className="text-[11.5px] text-gray-300">
                       {isEligible
@@ -982,7 +991,7 @@ export default function EkycApproval() {
                     disabled={isProcessing}
                     onClick={() => {
                       setRevokingId(inspectingRequest.id);
-                      setRevokeReason('Ban Quản Lý tạm thu hồi quyền ra vào FaceID để đối soát lại hồ sơ.');
+                      setRevokeReason('VinHomes Manager tạm thu hồi quyền ra vào FaceID để đối soát lại hồ sơ.');
                     }}
                     className="h-8 px-4 bg-rose-950/80 hover:bg-rose-900 border border-rose-600/80 text-rose-300 hover:text-rose-100 text-xs font-semibold rounded-none transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow disabled:opacity-50 whitespace-nowrap"
                   >
@@ -1136,8 +1145,8 @@ export default function EkycApproval() {
                 className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white rounded-none outline-none focus:border-rose-500"
               >
                 <option value="Chuyển nơi cư trú / Không còn sinh sống tại căn hộ">{t('Chuyển nơi cư trú / Không còn sinh sống tại căn hộ', 'Relocated / No longer resident in unit')}</option>
-                <option value="Ban Quản Lý tạm thu hồi quyền ra vào FaceID để đối soát lại hồ sơ">{t('Ban Quản Lý tạm thu hồi để đối soát lại hồ sơ', 'Management temporary suspension for auditing')}</option>
-                <option value="Phát hiện thông tin CCCD hoặc ảnh sinh trắc học có sai lệch">{t('Phát hiện thông tin CCCD có sai lệch', 'Discrepancy detected in ID information')}</option>
+                <option value="VinHomes Manager tạm thu hồi quyền ra vào FaceID để đối soát lại hồ sơ">{t('VinHomes Manager tạm thu hồi để đối soát lại hồ sơ', 'Management temporary suspension for auditing')}</option>
+                <option value="Phát hiện thông tin CCCD hoặc ảnh khuôn mặt có sai lệch">{t('Phát hiện thông tin CCCD có sai lệch', 'Discrepancy detected in ID information')}</option>
                 <option value="Vi phạm quy định vận hành an ninh toà nhà">{t('Vi phạm quy định vận hành an ninh toà nhà', 'Violation of building security regulations')}</option>
               </select>
 

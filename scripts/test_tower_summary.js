@@ -47,3 +47,4 @@ assert.strictEqual(totalBilled, 14000000);
 console.log('✅ Test 3: Total billed across 4 towers PASSED');
 
 console.log('🎉 ALL B5 TOWER COLLECTION TESTS PASSED!');
+

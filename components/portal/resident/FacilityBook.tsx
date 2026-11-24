@@ -9,12 +9,14 @@ import {
   getFacilityBookings,
   FacilityBooking 
 } from '@/lib/facilityStore';
+import { useLanguage } from '@/lib/languageContext';
 
 interface FacilityBookProps {
   currentUser?: User;
 }
 
 export default function FacilityBook({ currentUser }: FacilityBookProps) {
+  const { t, isEn } = useLanguage();
   const aptCode = currentUser?.apartment_code || 'CH-06';
   const userName = currentUser?.full_name || (currentUser as any)?.fullname || 'Cư Dân';
 
@@ -32,7 +34,7 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
   const handleBooking = (e: React.FormEvent) => {
     e.preventDefault();
     if (quota.remaining <= 0) {
-      alert('Căn hộ của Quý cư dân đã sử dụng hết hạn mức tiện ích trong tháng!');
+      alert(t('Căn hộ của Quý cư dân đã sử dụng hết hạn mức tiện ích trong tháng!', 'Your apartment has used up its monthly amenity booking quota!'));
       return;
     }
 
@@ -53,7 +55,7 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
     );
 
     if (!result.success || !result.newBooking) {
-      alert(`⚠️ Không thể đặt chỗ: ${result.error || 'Khung giờ này đã kín hoặc bị trùng lịch.'}`);
+      alert(t(`⚠️ Không thể đặt chỗ: ${result.error || 'Khung giờ này đã kín hoặc bị trùng lịch.'}`, `⚠️ Booking failed: ${result.error || 'This time slot is full or has a scheduling conflict.'}`));
       return;
     }
 
@@ -67,17 +69,17 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222B35] pb-4">
         <div>
           <div className="text-[10px] uppercase tracking-[0.25em] text-[#C5A880] font-semibold">
-            Tiện Ích Cao Cấp • Dành Cho Cư Dân
+            {t('Tiện Ích Cao Cấp • Dành Cho Cư Dân', 'Luxury Amenities • Exclusive for Residents')}
           </div>
           <h2 className="font-serif text-2xl text-white font-bold mt-1">
-            Đặt Chỗ Tiện Ích Đặc Quyền
+            {t('Đặt Chỗ Tiện Ích Đặc Quyền', 'Reserve Exclusive Amenities')}
           </h2>
         </div>
 
         <div className="text-xs text-gray-300">
-          Hạn Mức Tháng Căn {aptCode}:{' '}
+          {t('Hạn Mức Tháng Căn', 'Monthly Quota Unit')} {aptCode}:{' '}
           <strong className="text-[#C5A880] font-mono">
-            {quota.remaining} / {quota.max} lượt còn lại
+            {quota.remaining} / {quota.max} {t('lượt còn lại', 'slots remaining')}
           </strong>
         </div>
       </div>
@@ -86,11 +88,11 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
         <div className="p-4 bg-emerald-950 border border-emerald-500 text-emerald-300 text-xs space-y-2 animate-fadeIn">
           <div className="flex items-center gap-2 font-bold text-sm">
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-            <span>Đặt chỗ thành công! Mã vé điện tử: {createdTicket.ticketCode}</span>
+            <span>{t('Đặt chỗ thành công! Mã vé điện tử:', 'Booking successful! Electronic ticket code:')} {createdTicket.ticketCode}</span>
           </div>
           <p className="text-gray-300 text-xs">
-            Tiện ích: <strong>{createdTicket.facilityName}</strong> • Ngày: <strong>{createdTicket.bookingDate}</strong> • Khung giờ: <strong>{createdTicket.timeSlot}</strong>.
-            Vé đã được lưu vào hệ thống kiểm soát ra vào của Ban Quản Lý.
+            {t('Tiện ích:', 'Facility:')} <strong>{t(createdTicket.facilityName)}</strong> • {t('Ngày:', 'Date:')} <strong>{createdTicket.bookingDate}</strong> • {t('Khung giờ:', 'Time slot:')} <strong>{t(createdTicket.timeSlot)}</strong>.
+            {' '}{t('Vé đã được lưu vào hệ thống kiểm soát ra vào của Ban Quản Lý.', 'Pass has been recorded into the Management Access Control system.')}
           </p>
         </div>
       )}
@@ -113,8 +115,8 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
                   <Star className="w-3 h-3 fill-[#C5A880]" /> {f.rating_score}
                 </div>
               </div>
-              <h4 className="font-serif text-sm font-bold text-white line-clamp-1">{f.name}</h4>
-              <div className="text-[11px] text-gray-400">Hạn mức: {f.max_quota_per_month} lượt/tháng</div>
+              <h4 className="font-serif text-sm font-bold text-white line-clamp-1">{t(f.name)}</h4>
+              <div className="text-[11px] text-gray-400">{t('Hạn mức:', 'Quota:')} {f.max_quota_per_month} {t('lượt/tháng', 'slots/month')}</div>
             </div>
           );
         })}
@@ -123,12 +125,12 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
       {/* Booking Form */}
       <form onSubmit={handleBooking} className="p-6 bg-[#121820] border border-[#222B35] space-y-4">
         <h3 className="font-serif text-lg font-bold text-white border-b border-[#222B35] pb-2">
-          Xác Nhận Đặt Chỗ: {selectedFacility.name}
+          {t('Xác Nhận Đặt Chỗ:', 'Confirm Reservation:')} {t(selectedFacility.name)}
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div className="space-y-1.5">
-            <label className="text-gray-400">Chọn ngày sử dụng:</label>
+            <label className="text-gray-400">{t('Chọn ngày sử dụng:', 'Select Date:')}</label>
             <input
               type="date"
               value={bookingDate}
@@ -140,21 +142,21 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-gray-400">Khung giờ đặt:</label>
+            <label className="text-gray-400">{t('Khung giờ đặt:', 'Select Time Slot:')}</label>
             <select
               value={timeSlot}
               onChange={(e) => setTimeSlot(e.target.value)}
               className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white focus:outline-none focus:border-[#C5A880]"
             >
-              <option>06:00 - 08:00 (Sáng sớm)</option>
-              <option>16:00 - 18:00 (Buổi chiều)</option>
-              <option>18:00 - 20:00 (Buổi tối - Giờ đẹp)</option>
-              <option>20:00 - 22:00 (Đêm muộn)</option>
+              <option value="06:00 - 08:00 (Buổi sáng)">{t('06:00 - 08:00 (Sáng sớm)', '06:00 - 08:00 (Early Morning)')}</option>
+              <option value="16:00 - 18:00 (Buổi chiều)">{t('16:00 - 18:00 (Buổi chiều)', '16:00 - 18:00 (Afternoon)')}</option>
+              <option value="18:00 - 20:00 (Buổi tối)">{t('18:00 - 20:00 (Buổi tối - Giờ đẹp)', '18:00 - 20:00 (Evening - Prime Time)')}</option>
+              <option value="20:00 - 22:00 (Đêm muộn)">{t('20:00 - 22:00 (Đêm muộn)', '20:00 - 22:00 (Late Night)')}</option>
             </select>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-gray-400">Số lượng người tham gia:</label>
+            <label className="text-gray-400">{t('Số lượng người tham gia:', 'Number of Guests:')}</label>
             <input
               type="number"
               min={1}
@@ -168,16 +170,16 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
         </div>
 
         <div className="p-3 bg-[#161B22] border border-[#222B35] flex items-center justify-between text-xs">
-          <span className="text-gray-400">Biểu phí áp dụng:</span>
-          <span className="text-[#C5A880] font-bold">{selectedFacility.pricing}</span>
+          <span className="text-gray-400">{t('Biểu phí áp dụng:', 'Applicable Pricing:')}</span>
+          <span className="text-[#C5A880] font-bold">{t(selectedFacility.pricing)}</span>
         </div>
 
         <div className="flex justify-end pt-2">
           <button
             type="submit"
-            className="px-6 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-colors shadow-lg"
+            className="px-6 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-colors shadow-lg cursor-pointer"
           >
-            Xác Nhận Đặt Tiện Ích
+            {t('Xác Nhận Đặt Tiện Ích', 'Confirm Amenity Reservation')}
           </button>
         </div>
       </form>

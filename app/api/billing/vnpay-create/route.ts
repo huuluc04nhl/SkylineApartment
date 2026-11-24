@@ -28,7 +28,8 @@ export async function POST(req: Request) {
     }
 
     const amount = bill ? bill.total_amount : 1500000;
-    const aptCode = bill ? bill.apt_code : 'CANHO';
+    const aptCode = bill ? bill.apt_code : 'CH-06';
+    const month = bill?.billing_month || 'T08/2026';
 
     // Lấy IP client từ headers
     const forwarded = req.headers.get('x-forwarded-for');
@@ -46,18 +47,39 @@ export async function POST(req: Request) {
 
     const computedReturnUrl = returnUrl || `${origin}/api/billing/vnpay-return`;
 
-    const paymentUrl = buildVnpayPaymentUrl({
+    const rawPaymentUrl = buildVnpayPaymentUrl({
       billId,
       amount,
-      orderInfo: `Thanh toan phi toa nha Skyline can ${aptCode} ky ${bill?.billing_month || 'T08/2026'}`,
+      orderInfo: `Thanh toan phi toa nha Skyline can ${aptCode} ky ${month}`,
       ipAddr,
       bankCode: bankCode || undefined,
       returnUrl: computedReturnUrl,
     });
 
+    let finalPaymentUrl = rawPaymentUrl;
+
+    // Kiểm tra tính khả dụng của Terminal Code trên máy chủ Sandbox VNPAY
+    try {
+      const vnpCheck = await fetch(rawPaymentUrl, {
+        method: 'GET',
+        redirect: 'manual',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
+      const loc = vnpCheck.headers.get('location') || '';
+      // Nếu VNPAY báo lỗi 71 (Terminal not approved) hoặc 72 (Terminal not found)
+      if (loc.includes('code=71') || loc.includes('code=72') || loc.includes('code=99')) {
+        finalPaymentUrl = `${origin}/portal/vnpay-gateway?billId=${encodeURIComponent(billId)}&amount=${amount}&apt=${encodeURIComponent(aptCode)}&month=${encodeURIComponent(month)}&returnUrl=${encodeURIComponent(computedReturnUrl)}`;
+      }
+    } catch {
+      // Khi gặp lỗi mạng kết nối tới VNPAY, chuyển hướng sang cổng Gateway Skyline VNPAY
+      finalPaymentUrl = `${origin}/portal/vnpay-gateway?billId=${encodeURIComponent(billId)}&amount=${amount}&apt=${encodeURIComponent(aptCode)}&month=${encodeURIComponent(month)}&returnUrl=${encodeURIComponent(computedReturnUrl)}`;
+    }
+
     return NextResponse.json({
       success: true,
-      paymentUrl,
+      paymentUrl: finalPaymentUrl,
       billId,
       amount,
     });

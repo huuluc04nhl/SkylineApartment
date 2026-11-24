@@ -3,6 +3,7 @@
 import React from 'react';
 import { X, KeyRound } from 'lucide-react';
 import { User } from '@/lib/dataStore';
+import { useLanguage } from '@/lib/languageContext';
 import AccountPasswordSection from './AccountPasswordSection';
 
 interface AccountPasswordModalProps {
@@ -16,6 +17,7 @@ export default function AccountPasswordModal({
   isOpen,
   onClose,
 }: AccountPasswordModalProps) {
+  const { t } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -32,10 +34,10 @@ export default function AccountPasswordModal({
             </div>
             <div>
               <h3 className="font-serif text-lg font-bold text-white tracking-wide">
-                Đổi Mật Khẩu Tài Khoản Cá Nhân
+                {t('Đổi Mật Khẩu Tài Khoản Cá Nhân', 'Change Personal Account Password')}
               </h3>
               <p className="text-[11px] text-gray-400">
-                Toàn quyền thay đổi mật khẩu và sử dụng trình tạo mật khẩu tự động an toàn
+                {t('Toàn quyền thay đổi mật khẩu và sử dụng trình tạo mật khẩu tự động an toàn', 'Manage your password and use the secure automated password generator')}
               </p>
             </div>
           </div>

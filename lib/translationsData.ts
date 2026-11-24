@@ -25,8 +25,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Greetings, dear Residents! I am Skyline AI Concierge 24/7 (powered by Google Gemini). I am here to provide information about the four The Tropical apartment buildings (BS-07, BS-08, BS-09, BS-10), ground floor restaurant services, the resort-style swimming pool complex, living expenses, and to receive technical incident reports."
   ],
   [
-    "Hệ thống kỹ thuật căn hộ thông minh tại 4 chung cư The Tropical được bảo bọc bởi trạm kỹ thuật NKS đặt ngay tại tầng hầm và cụm kỹ thuật BS-07. Mọi sự cố về điện sinh hoạt, rò rỉ nước ngầm, khóa cửa FaceID hay điều hòa không khí đều được tiếp nhận và xử lý cấp tốc.",
-    "The smart apartment technical system at 4 apartments of The Tropical is protected by NKS technical station located in the basement and technical cluster BS-07. Any problems with domestic electricity, groundwater leakage, FaceID door lock or air conditioning are received and dealt with quickly."
+    "Hệ thống kỹ thuật căn hộ thông minh tại 4 chung cư The Tropical được bảo bọc bởi trạm kỹ thuật Skyline đặt ngay tại tầng hầm và cụm kỹ thuật BS-07. Mọi sự cố về điện sinh hoạt, rò rỉ nước ngầm, khóa cửa FaceID hay điều hòa không khí đều được tiếp nhận và xử lý cấp tốc.",
+    "The smart apartment technical system at 4 apartments of The Tropical is protected by Skyline technical station located in the basement and technical cluster BS-07. Any problems with domestic electricity, groundwater leakage, FaceID door lock or air conditioning are received and dealt with quickly."
   ],
   [
     "Chiến dịch lấy ý kiến hợp pháp của các Chủ sở hữu căn hộ về việc trích Quỹ Bảo trì để trang bị camera AI LPR đọc biển số tự động tốc độ cao và mở rộng làn xe máy giờ cao điểm tại Hầm B1/B2 Tòa BS-07. Dự toán thực hiện: 150.000.000 VNĐ theo báo giá cạnh tranh.",
@@ -41,8 +41,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "During a busy day, residents can effortlessly book dining tables at 1st-floor restaurants or reserve Sky BBQ grill slots & VIP sauna rooms on amenity floors. Skyline AI Concierge 24/7 automatically verifies apartment quota, generates QR ticket passes, and confirms reservations instantaneously."
   ],
   [
-    "Đặc quyền chuẩn sống thảnh thơi tại 4 chung cư The Tropical (BS-07, BS-08, BS-09, BS-10). Từ dọn dẹp, giặt là, chăm sóc xe đến đội ngũ kỹ thuật NKS thường trực xử lý sự cố trong 15 phút, tất cả đều được vận hành chuẩn hóa trên ứng dụng di động.",
-    "Exclusive effortless living at 4 towers of The Tropical (BS-07, BS-08, BS-09, BS-10). From housekeeping, laundry, and car care to on-duty NKS technical engineers responding in 15 minutes, all standardized on the mobile portal."
+    "Đặc quyền chuẩn sống thảnh thơi tại 4 chung cư The Tropical (BS-07, BS-08, BS-09, BS-10). Từ dọn dẹp, giặt là, chăm sóc xe đến đội ngũ kỹ thuật Skyline thường trực xử lý sự cố trong 15 phút, tất cả đều được vận hành chuẩn hóa trên ứng dụng di động.",
+    "Exclusive effortless living at 4 towers of The Tropical (BS-07, BS-08, BS-09, BS-10). From housekeeping, laundry, and car care to on-duty Skyline technical engineers responding in 15 minutes, all standardized on the mobile portal."
   ],
   [
     "Dạ thưa Quý cư dân, hiện tại hệ thống dữ liệu tòa nhà chưa có thông tin chính thức về nội dung này. Quý cư dân vui lòng liên hệ trực tiếp Hotline Ban Quản Lý (1900 8899) hoặc Quầy lễ tân Grand Lobby Tầng 1 để được hỗ trợ kiểm tra trực tiếp ạ.",
@@ -1109,8 +1109,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Camera is preparing video feed. Please wait a moment or click \"Restart Camera\"."
   ],
   [
-    "Đội ngũ kỹ sư NKS túc trực 24/7 tại tầng hầm chung cư BS-07, có mặt trong vòng 15 phút.",
-    "On-duty NKS engineers stationed 24/7 at BS-07 basement, responding on-site within 15 minutes."
+    "Đội ngũ kỹ sư Skyline túc trực 24/7 tại tầng hầm chung cư BS-07, có mặt trong vòng 15 phút.",
+    "On-duty Skyline engineers stationed 24/7 at BS-07 basement, responding on-site within 15 minutes."
   ],
   [
     "Xác nhận xóa sạch toàn bộ dữ liệu khách và nhật ký thử nghiệm để bắt đầu mới hoàn toàn?",
@@ -2045,8 +2045,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "The 2nd bedroom upstairs has a mezzanine balcony overlooking the living room."
   ],
   [
-    "Dữ liệu chuẩn NKS SCRMAI & Quy hoạch The Tropical (Beverly Solari)",
-    "NKS SCRMAI Standard Data & The Tropical Plan (Beverly Solari)"
+    "Dữ liệu chuẩn Skyline SCRMAI & Quy hoạch The Tropical (Beverly Solari)",
+    "Skyline SCRMAI Standard Data & The Tropical Plan (Beverly Solari)"
   ],
   [
     "Đã xảy ra lỗi trong quá trình tiếp nhận dữ liệu phản hồi từ VNPAY.",
@@ -3001,8 +3001,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "The confirmation password does not match the new password entered."
   ],
   [
-    "Không thể kết nối NKS API, sử dụng dữ liệu lưu cục bộ:",
-    "Failed to connect NKS API, using local saved data:"
+    "Không thể kết nối Skyline API, sử dụng dữ liệu lưu cục bộ:",
+    "Failed to connect Skyline API, using local saved data:"
   ],
   [
     "Vui lòng nhập mật khẩu hiện tại để xác thực tài khoản.",
@@ -3105,8 +3105,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Please provide a phone number or login email."
   ],
   [
-    "Cập nhật căn cước công dân 2 mặt e-KYC NKS thành công",
-    "Successfully updated NKS e-KYC dual-faced citizen identification"
+    "Cập nhật căn cước công dân 2 mặt e-KYC Skyline thành công",
+    "Successfully updated Skyline e-KYC dual-faced citizen identification"
   ],
   [
     "Kiểm tra tiếp địa an toàn PCCC và rơ-le chống rò điện",
@@ -3333,8 +3333,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Please select a valid image file (JPG, PNG, WebP)"
   ],
   [
-    "Đội Ngũ Kỹ Sư NKS Thường Trực — Có Mặt Sau 15 Phút",
-    "NKS Team of Engineers Standing — Present After 15 Minutes"
+    "Đội Ngũ Kỹ Sư Skyline Thường Trực — Có Mặt Sau 15 Phút",
+    "Skyline Team of Engineers Standing — Present After 15 Minutes"
   ],
   [
     "21 Căn hộ • 6 Thang máy khách • 2 Thang thoát hiểm",
@@ -3389,8 +3389,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "600,000 VND /party (Set Weber kitchen & clean up after the party)"
   ],
   [
-    "Đã cập nhật vé lên hệ thống NKS SCRMAI thành công.",
-    "Ticket successfully updated to NKS SCRMAI system."
+    "Đã cập nhật vé lên hệ thống Skyline SCRMAI thành công.",
+    "Ticket successfully updated to Skyline SCRMAI system."
   ],
   [
     "Vui lòng cung cấp họ tên chủ hộ / người tiếp nhận.",
@@ -3949,8 +3949,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Real-time IoT Sensor Data (Telemetrics)"
   ],
   [
-    "Dịch Vụ Quản Gia & Kỹ Thuật NKS Túc Trực 24/7",
-    "24/7 Butler & NKS Technical Support Services"
+    "Dịch Vụ Quản Gia & Kỹ Thuật Skyline Túc Trực 24/7",
+    "24/7 Butler & Skyline Technical Support Services"
   ],
   [
     "Hỗ trợ cả cư dân chủ hộ và người nhà",
@@ -4245,12 +4245,12 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "2-way conversation with doorbell 🎙️ enabled."
   ],
   [
-    "Đã cập nhật trực tiếp lên NKS API thành công",
-    "Successfully updated directly to NKS API"
+    "Đã cập nhật trực tiếp lên Skyline API thành công",
+    "Successfully updated directly to Skyline API"
   ],
   [
-    "Cập nhật thông tin thành viên NKS thành công",
-    "NKS member information updated successfully"
+    "Cập nhật thông tin thành viên Skyline thành công",
+    "Skyline member information updated successfully"
   ],
   [
     "Xác Nhận Hợp Lệ &amp; Kích Hoạt Quyền Ra Vào",
@@ -4297,8 +4297,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Privacy Policy • Skyline Operating Regulations"
   ],
   [
-    "Dữ liệu NKS SCRMAI • Chung Cư BS-07 Tầng 30",
-    "NKS SCRMAI Data • Tower BS-07 Floor 30"
+    "Dữ liệu Skyline SCRMAI • Chung Cư BS-07 Tầng 30",
+    "Skyline SCRMAI Data • Tower BS-07 Floor 30"
   ],
   [
     "FaceID Cư Dân: Nhận diện thành công (99.8%)",
@@ -4777,8 +4777,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Answer questions about rules / utilities 24/7"
   ],
   [
-    "NKS API trả về phản hồi không thành công.",
-    "NKS API return response failed."
+    "Skyline API trả về phản hồi không thành công.",
+    "Skyline API return response failed."
   ],
   [
     "Xông Hơi Đá Muối Phòng Gia Đình (2 Người)",
@@ -4965,8 +4965,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Simulate closing or opening the physical door"
   ],
   [
-    "Cập nhật ảnh đại diện NKS API thành công",
-    "NKS API profile photo updated successfully"
+    "Cập nhật ảnh đại diện Skyline API thành công",
+    "Skyline API profile photo updated successfully"
   ],
   [
     "Ánh sáng tối ưu cho nhận diện khuôn mặt.",
@@ -5381,8 +5381,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Update Member Information"
   ],
   [
-    "Lỗi cập nhật NKS User Info từ máy chủ.",
-    "Error updating NKS User Info from server."
+    "Lỗi cập nhật Skyline User Info từ máy chủ.",
+    "Error updating Skyline User Info from server."
   ],
   [
     "Rung &lt; 2.8 mm/s, Nhiệt độ &lt; 65°C",
@@ -5613,8 +5613,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Member ID to unlink is missing."
   ],
   [
-    "NKS API cập nhật vé không thành công.",
-    "NKS API ticket update failed."
+    "Skyline API cập nhật vé không thành công.",
+    "Skyline API ticket update failed."
   ],
   [
     "PT Bơi Lội Kèm Riêng (1 Buổi 60 Phút)",
@@ -5705,8 +5705,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Book swimming pool, gym, and BBQ area."
   ],
   [
-    "Bảng Điều Phối Kỹ Thuật NKS (Kanban)",
-    "NKS Technical Kanban Coordination Board"
+    "Bảng Điều Phối Kỹ Thuật Skyline (Kanban)",
+    "Skyline Technical Kanban Coordination Board"
   ],
   [
     "Sổ Quản Lý Hóa Đơn & Thu Phí Dịch Vụ",
@@ -6097,8 +6097,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "The front ID photo does not match."
   ],
   [
-    "Lỗi kết nối NKS Project Detail API:",
-    "NKS Project Detail API connection error:"
+    "Lỗi kết nối Skyline Project Detail API:",
+    "Skyline Project Detail API connection error:"
   ],
   [
     "Đang đọc thông tin Mặt Trước thẻ...",
@@ -6381,8 +6381,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Basement media hold fee"
   ],
   [
-    "🔧 Báo Hỏng & Dịch Vụ Kỹ Thuật NKS",
-    "NKS 🔧 Fault Reports & Technical Services"
+    "🔧 Báo Hỏng & Dịch Vụ Kỹ Thuật Skyline",
+    "Skyline 🔧 Fault Reports & Technical Services"
   ],
   [
     "Hoàn tất quét đọc thông tin 2 mặt!",
@@ -6585,8 +6585,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Check-in QR: TROPICAL-BBQ-2026"
   ],
   [
-    "Báo Sự Cố Thiết Bị & Sửa Chữa NKS",
-    "NKS Appliance Incident & Repair Report"
+    "Báo Sự Cố Thiết Bị & Sửa Chữa Skyline",
+    "Skyline Appliance Incident & Repair Report"
   ],
   [
     "Thẻ Tiện Ích & Đặt Chỗ Thông Minh",
@@ -6733,8 +6733,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Missing member ID to update."
   ],
   [
-    "Lỗi cập nhật CCCD NKS từ máy chủ.",
-    "Error updating NKS CCCD from server."
+    "Lỗi cập nhật CCCD Skyline từ máy chủ.",
+    "Error updating Skyline CCCD from server."
   ],
   [
     "Ban Quản Lý Phân Khu The Tropical",
@@ -6753,8 +6753,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "18:00 - 20:00 (2 Hours - Tonight)"
   ],
   [
-    "Lỗi kết nối NKS Block Detail API:",
-    "NKS Block Detail API connection error:"
+    "Lỗi kết nối Skyline Block Detail API:",
+    "Skyline Block Detail API connection error:"
   ],
   [
     "Đang đọc thông tin Mặt Sau thẻ...",
@@ -6898,7 +6898,7 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
   ],
   [
     "Mobile Banking của 35+ ngân hàng",
-    "Mobile banking of 35+ banks"
+    "Mobile banking of 35+ baskyline"
   ],
   [
     "MÃ PIN BÀN PHÍM CỬA / THANG MÁY:",
@@ -7389,8 +7389,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Hosting at the checkpoint"
   ],
   [
-    "Bảng Việc Kỹ Thuật (NKS SCRMAI)",
-    "NKS SCRMAI Technical Work Order"
+    "Bảng Việc Kỹ Thuật (Skyline SCRMAI)",
+    "Skyline SCRMAI Technical Work Order"
   ],
   [
     "Lỗi đồng bộ tickets lên server:",
@@ -7533,8 +7533,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Face authentication server error."
   ],
   [
-    "Lỗi kết nối NKS Apartments API:",
-    "NKS Apartments API connection error:"
+    "Lỗi kết nối Skyline Apartments API:",
+    "Skyline Apartments API connection error:"
   ],
   [
     "Lỗi khi xuất PDF phiếu bảo trì:",
@@ -8409,12 +8409,12 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "No ticket found"
   ],
   [
-    "Lỗi cập nhật ảnh đại diện NKS",
-    "Error updating NKS avatar"
+    "Lỗi cập nhật ảnh đại diện Skyline",
+    "Error updating Skyline avatar"
   ],
   [
-    "Lỗi kết nối NKS Projects API:",
-    "NKS Projects API connection error:"
+    "Lỗi kết nối Skyline Projects API:",
+    "Skyline Projects API connection error:"
   ],
   [
     "Giặt Hấp Chăn Ga Gối & Topper",
@@ -8837,8 +8837,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "1PN Pool View (Apartment)"
   ],
   [
-    "Lỗi kết nối NKS Tickets API:",
-    "NKS Tickets API connection error:"
+    "Lỗi kết nối Skyline Tickets API:",
+    "Skyline Tickets API connection error:"
   ],
   [
     "Tháp BS-07 Skyline Residence",
@@ -9105,7 +9105,7 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Create Visitor & Door Management Passes"
   ],
   [
-    "Yêu Cầu Hỗ Trợ Kỹ Thuật NKS",
+    "Yêu Cầu Hỗ Trợ Kỹ Thuật Skyline",
     "Requirements for technical assistance:"
   ],
   [
@@ -9154,7 +9154,7 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
   ],
   [
     "Hầm B2 • Trạm Bơm & Bể PCCC",
-    "Tunnel B2 • Pumping Stations & Fire Protection Tanks"
+    "Tunnel B2 • Pumping Stations & Fire Protection Taskyline"
   ],
   [
     "Chưa Tải Ảnh Mặt Trước CCCD",
@@ -9289,8 +9289,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Loading pictures failed."
   ],
   [
-    "Lỗi kết nối NKS Blocks API:",
-    "NKS Blocks API connection error:"
+    "Lỗi kết nối Skyline Blocks API:",
+    "Skyline Blocks API connection error:"
   ],
   [
     "Đã Bàn Giao (Cư Dân Đang Ở)",
@@ -9633,8 +9633,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Reception Desk / Security Checkpoint"
   ],
   [
-    "Lỗi gọi API tạo phiếu NKS:",
-    "Error calling NKS ticket creation API:"
+    "Lỗi gọi API tạo phiếu Skyline:",
+    "Error calling Skyline ticket creation API:"
   ],
   [
     "KHÁCH ĐANG Ở TRONG TÒA NHÀ",
@@ -9777,8 +9777,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "E-KYC record not found"
   ],
   [
-    "Lỗi sync AI reply lên NKS:",
-    "Sync AI reply to NKS error:"
+    "Lỗi sync AI reply lên Skyline:",
+    "Sync AI reply to Skyline error:"
   ],
   [
     "Lỗi đồng bộ nghiệm thu AI:",
@@ -10209,8 +10209,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Palm Garden & Meditation Courtyard View"
   ],
   [
-    "🏊 Tiện Ích & Dịch Vụ NKS",
-    "NKS 🏊 Utilities & Services"
+    "🏊 Tiện Ích & Dịch Vụ Skyline",
+    "Skyline 🏊 Utilities & Services"
   ],
   [
     "Mở Thẻ & Đăng Ký Tiện Ích",
@@ -10581,8 +10581,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Apartment & Resident Management"
   ],
   [
-    "Báo Sự Cố Kỹ Thuật (NKS)",
-    "Report Technical Issue (NKS)"
+    "Báo Sự Cố Kỹ Thuật (Skyline)",
+    "Report Technical Issue (Skyline)"
   ],
   [
     "Đánh giá hài lòng cư dân",
@@ -12285,8 +12285,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Detect After 15 Minutes"
   ],
   [
-    "Ứng Trực Kỹ Thuật NKS",
-    "NKS Technical Direct Application"
+    "Ứng Trực Kỹ Thuật Skyline",
+    "Skyline Technical Direct Application"
   ],
   [
     "Tự phục vụ bằng mã số",
@@ -12485,8 +12485,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "GET /api/tickets error:"
   ],
   [
-    "Lỗi sync KTV lên NKS:",
-    "Sync KTV to NKS error:"
+    "Lỗi sync KTV lên Skyline:",
+    "Sync KTV to Skyline error:"
   ],
   [
     "Kỹ thuật viên đa năng",
@@ -13217,8 +13217,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Logout successful"
   ],
   [
-    "Lỗi kết nối NKS API.",
-    "NKS API connection error."
+    "Lỗi kết nối Skyline API.",
+    "Skyline API connection error."
   ],
   [
     "ĐÃ THANH TOÁN (PAID)",
@@ -14017,8 +14017,8 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "the remaining amount to be paid"
   ],
   [
-    "Lỗi tạo NKS Ticket:",
-    "Error creating NKS Ticket:"
+    "Lỗi tạo Skyline Ticket:",
+    "Error creating Skyline Ticket:"
   ],
   [
     "Phân loại hệ thống:",
@@ -14949,7 +14949,7 @@ export const TRANSLATIONS_DATA: Array<[string, string]> = [
     "Generating New Code..."
   ],
   [
-    "Mã Hóa NKS 256-bit",
+    "Mã Hóa Skyline 256-bit",
     "AES 256-bit Encryption"
   ],
   [

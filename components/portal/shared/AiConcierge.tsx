@@ -71,7 +71,7 @@ export default function AiConcierge() {
     'Căn hộ CH-06 và CH-01 diện tích bao nhiêu, ở tầng mấy?',
     'Dịch vụ nhà hàng & cụm hồ bơi resort mở cửa mấy giờ?',
     'Hóa đơn điện nước & phí quản lý tháng này',
-    'Hotline Ban Quản Lý khẩn cấp 1900 8899',
+    'Hotline VinHomes Manager khẩn cấp 1900 8899',
   ];
 
   const handleSend = async (textToSend?: string) => {
@@ -207,7 +207,7 @@ export default function AiConcierge() {
         <button
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 z-50 p-3.5 bg-gradient-to-br from-[#242F3E] via-[#161F2C] to-[#0D1117] text-[#C5A880] shadow-[0_10px_35px_rgba(0,0,0,0.9),0_0_20px_rgba(197,168,128,0.2)] hover:text-white transition-all flex items-center gap-2 font-semibold text-xs uppercase tracking-wider group rounded-none border-0"
-          title="Trợ lý ảo Skyline AI"
+          title={isEn ? 'Skyline AI Virtual Assistant' : 'Trợ lý ảo Skyline AI'}
         >
           <div className="relative">
             <Bot className="w-5 h-5 group-hover:rotate-12 transition-transform" />

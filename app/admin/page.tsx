@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
+import { useLanguage } from '@/lib/languageContext';
 import { RefreshCw } from 'lucide-react';
 
 /**
@@ -12,6 +13,7 @@ import { RefreshCw } from 'lucide-react';
 export default function AdminRedirectPage() {
   const router = useRouter();
   const { currentUser, isLoading } = useAuth();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!isLoading) {
@@ -27,7 +29,7 @@ export default function AdminRedirectPage() {
     <div className="min-h-screen bg-[#070A0E] text-white flex items-center justify-center p-4 font-sans">
       <div className="text-center space-y-3">
         <RefreshCw className="w-8 h-8 text-[#C5A880] animate-spin mx-auto" />
-        <p className="text-xs text-gray-400 font-mono">Đang chuyển tiếp đến trung tâm điều hành...</p>
+        <p className="text-xs text-gray-400 font-mono">{t('Đang chuyển tiếp đến trung tâm điều hành...', 'Redirecting to management console...')}</p>
       </div>
     </div>
   );

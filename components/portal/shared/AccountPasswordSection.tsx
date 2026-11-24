@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { User } from '@/lib/dataStore';
 import { getUserApiAvatar } from '@/lib/avatarHelper';
-import { nksUpdatePassword } from '@/lib/nksApiClient';
+import { skylineUpdatePassword } from '@/lib/skylineApiClient';
 import { useLanguage } from '@/lib/languageContext';
 
 interface AccountPasswordSectionProps {
@@ -191,7 +191,7 @@ export default function AccountPasswordSection({
 
     setIsSubmitting(true);
     try {
-      const res = await nksUpdatePassword(oldPassword, newPassword, {
+      const res = await skylineUpdatePassword(oldPassword, newPassword, {
         confirmPass: confirmPassword,
         targetUserId: currentUser.id,
         targetUsername: currentUser.username || currentUser.phone || currentUser.email,
@@ -225,7 +225,7 @@ export default function AccountPasswordSection({
               src={getUserApiAvatar(currentUser)}
               alt={currentUser.full_name || currentUser.username}
               onError={(e) => {
-                e.currentTarget.src = 'https://data.nks.vn/storage/users/default.png';
+                e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=1C2533&color=C5A880&bold=true';
               }}
               className="w-full h-full object-cover"
             />
@@ -235,7 +235,7 @@ export default function AccountPasswordSection({
               <span className="text-[10px] text-[#C5A880] font-mono uppercase tracking-wider font-bold truncate">
                 {isEn 
                   ? <>AUTONOMOUS ACCOUNT • <span className="hidden sm:inline">PERSONAL PASSWORD MANAGEMENT</span></>
-                  : <>Tài Khoản Tự Chủ • <span className="hidden sm:inline">Quyền Đổi Mật Khẩu Cá Nhân</span></>}
+                  : <>{isEn ? 'Self-service Account • ' : 'Tài Khoản Tự Chủ • '}<span className="hidden sm:inline">{isEn ? 'Personal Password Management' : 'Quyền Đổi Mật Khẩu Cá Nhân'}</span></>}
               </span>
             </div>
             <h2 className="font-serif text-base sm:text-xl font-bold text-white tracking-wide truncate">
@@ -248,7 +248,7 @@ export default function AccountPasswordSection({
               <span>•</span>
               <span className="text-[#C5A880] font-medium truncate">
                 {isAdmin 
-                  ? (isEn ? 'Management Board' : 'Ban Quản Lý') 
+                  ? 'VinHomes Manager' 
                   : isOwner 
                   ? (isEn ? `Apartment Owner (Unit ${aptCode})` : `Chủ Hộ (Căn ${aptCode})`) 
                   : (isEn ? `Resident (Unit ${aptCode})` : `Cư Dân (Căn ${aptCode})`)}
@@ -259,7 +259,7 @@ export default function AccountPasswordSection({
 
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="px-3 py-1.5 bg-[#161D26] border border-emerald-500/50 text-emerald-300 text-xs font-semibold rounded-none flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" /> {isEn ? 'AES 256-bit Encryption' : 'Mã Hóa NKS 256-bit'}
+            <ShieldCheck className="w-4 h-4 text-emerald-400" /> {isEn ? 'AES 256-bit Encryption' : 'Mã Hóa Chuẩn AES 256-bit'}
           </span>
         </div>
       </div>
@@ -418,7 +418,7 @@ export default function AccountPasswordSection({
                 <div className="min-w-0">
                   <div className="text-[10px] text-gray-400 font-mono flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                    <span className="truncate">Đã sinh chuỗi an toàn 100% &amp; tự động điền vào cả 2 ô:</span>
+                    <span className="truncate">{isEn ? 'Secure password generated & auto-filled into both fields:' : 'Đã sinh chuỗi an toàn 100% & tự động điền vào cả 2 ô:'}</span>
                   </div>
                   <div className="text-xs sm:text-sm font-mono font-bold text-[#C5A880] tracking-wider truncate select-all mt-0.5">
                     {lastGeneratedPassword}
@@ -434,12 +434,12 @@ export default function AccountPasswordSection({
                     {copiedNotice ? (
                       <>
                         <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-300">Đã chép</span>
+                        <span className="text-emerald-300">{isEn ? 'Copied' : 'Đã chép'}</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-3.5 h-3.5 text-[#C5A880]" />
-                        <span>Sao chép</span>
+                        <span>{isEn ? 'Copy' : 'Sao chép'}</span>
                       </>
                     )}
                   </button>
@@ -447,7 +447,7 @@ export default function AccountPasswordSection({
                   <button
                     type="button"
                     onClick={() => handleGenerate()}
-                    title="Sinh lại chuỗi ngẫu nhiên khác"
+                    title={isEn ? 'Generate another random string' : 'Sinh lại chuỗi ngẫu nhiên khác'}
                     className="h-7 w-7 bg-[#161B22] hover:bg-[#202936] text-gray-300 hover:text-white border border-[#2D3748] flex items-center justify-center rounded-none transition-colors"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
@@ -463,9 +463,9 @@ export default function AccountPasswordSection({
                   <div className="space-y-0.5">
                     <span className="text-gray-300 text-[11px] font-semibold flex items-center gap-1.5">
                       <SlidersHorizontal className="w-3 h-3 text-[#C5A880]" /> Độ Dài Mật Khẩu:
-                      <strong className="text-[#C5A880] font-mono text-xs">{genLength} ký tự</strong>
+                      <strong className="text-[#C5A880] font-mono text-xs">{genLength} {isEn ? 'characters' : 'ký tự'}</strong>
                     </span>
-                    <span className="text-[10.5px] text-gray-500 block">Khuyến nghị từ 12 - 16 ký tự để bảo mật tối ưu.</span>
+                    <span className="text-[10.5px] text-gray-500 block">{isEn ? 'Recommended 12 - 16 characters for maximum security.' : 'Khuyến nghị từ 12 - 16 ký tự để bảo mật tối ưu.'}</span>
                   </div>
 
                   <div className="w-full sm:w-48 flex items-center gap-2">
@@ -503,7 +503,7 @@ export default function AccountPasswordSection({
                       onChange={(e) => setGenLowercase(e.target.checked)}
                       className="rounded-none accent-[#C5A880] cursor-pointer"
                     />
-                    <span>Thường (a-z)</span>
+                    <span>{isEn ? 'Lowercase (a-z)' : 'Thường (a-z)'}</span>
                   </label>
                   <label className="flex items-center gap-1.5 text-gray-300 cursor-pointer select-none">
                     <input
@@ -512,7 +512,7 @@ export default function AccountPasswordSection({
                       onChange={(e) => setGenNumbers(e.target.checked)}
                       className="rounded-none accent-[#C5A880] cursor-pointer"
                     />
-                    <span>Số (0-9)</span>
+                    <span>{isEn ? 'Numbers (0-9)' : 'Số (0-9)'}</span>
                   </label>
                   <label className="flex items-center gap-1.5 text-gray-300 cursor-pointer select-none">
                     <input
@@ -521,7 +521,7 @@ export default function AccountPasswordSection({
                       onChange={(e) => setGenSymbols(e.target.checked)}
                       className="rounded-none accent-[#C5A880] cursor-pointer"
                     />
-                    <span>Ký tự (!@#$)</span>
+                    <span>{isEn ? 'Symbols (!@#$)' : 'Ký tự (!@#$)'}</span>
                   </label>
                 </div>
               </div>
@@ -532,7 +532,7 @@ export default function AccountPasswordSection({
           <div className="space-y-2">
             <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-gray-400" /> Nhập Lại Mật Khẩu Mới <span className="text-rose-400">*</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-gray-400" /> {isEn ? 'Confirm New Password' : 'Nhập Lại Mật Khẩu Mới'} <span className="text-rose-400">*</span>
               </span>
               {confirmPassword && (
                 <span className={`text-[10px] font-mono font-bold ${newPassword === confirmPassword ? 'text-emerald-400' : 'text-rose-400'}`}>
@@ -545,7 +545,7 @@ export default function AccountPasswordSection({
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Xác nhận lại mật khẩu mới..."
+                placeholder={isEn ? 'Confirm new password...' : 'Xác nhận lại mật khẩu mới...'}
                 required
                 minLength={6}
                 className={`w-full bg-[#161B22] border p-3 pr-10 text-white text-xs focus:outline-none transition-colors rounded-none font-mono ${
@@ -610,19 +610,19 @@ export default function AccountPasswordSection({
             <div className="space-y-2.5 sm:space-y-3 text-xs">
               <div className={`flex items-center gap-2.5 ${newPassword.length >= 8 ? 'text-emerald-400' : 'text-gray-400'}`}>
                 <Check className={`w-3.5 h-3.5 ${newPassword.length >= 8 ? 'text-emerald-400' : 'text-gray-500'}`} />
-                <span>Độ dài từ 8 ký tự trở lên (tối thiểu 6 ký tự)</span>
+                <span>{isEn ? 'Length of 8+ characters (minimum 6 characters)' : 'Độ dài từ 8 ký tự trở lên (tối thiểu 6 ký tự)'}</span>
               </div>
               <div className={`flex items-center gap-2.5 ${/[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) ? 'text-emerald-400' : 'text-gray-400'}`}>
                 <Check className={`w-3.5 h-3.5 ${/[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) ? 'text-emerald-400' : 'text-gray-500'}`} />
-                <span>Kết hợp chữ in hoa (A-Z) và chữ thường (a-z)</span>
+                <span>{isEn ? 'Combination of uppercase (A-Z) and lowercase (a-z)' : 'Kết hợp chữ in hoa (A-Z) và chữ thường (a-z)'}</span>
               </div>
               <div className={`flex items-center gap-2.5 ${/\d/.test(newPassword) ? 'text-emerald-400' : 'text-gray-400'}`}>
                 <Check className={`w-3.5 h-3.5 ${/\d/.test(newPassword) ? 'text-emerald-400' : 'text-gray-500'}`} />
-                <span>Chứa ít nhất một chữ số (0-9)</span>
+                <span>{isEn ? 'At least one number (0-9)' : 'Chứa ít nhất một chữ số (0-9)'}</span>
               </div>
               <div className={`flex items-center gap-2.5 ${/[^A-Za-z0-9]/.test(newPassword) ? 'text-emerald-400' : 'text-gray-400'}`}>
                 <Check className={`w-3.5 h-3.5 ${/[^A-Za-z0-9]/.test(newPassword) ? 'text-emerald-400' : 'text-gray-500'}`} />
-                <span>Ký tự đặc biệt (!@#$%^&*)</span>
+                <span>{isEn ? 'Special characters (!@#$%^&*)' : 'Ký tự đặc biệt (!@#$%^&*)'}</span>
               </div>
             </div>
           </div>
@@ -636,9 +636,9 @@ export default function AccountPasswordSection({
               Sau khi cập nhật thành công, mật khẩu mới của bạn sẽ có hiệu lực đồng bộ trên toàn bộ nền tảng:
             </p>
             <ul className="space-y-1.5 text-gray-400 text-[11px] pl-4 list-disc">
-              <li>Cổng dịch vụ số Skyline Web Portal</li>
-              <li>Ứng dụng cư dân Skyline Smart Resident Mobile App</li>
-              <li>Hệ thống khóa thông minh &amp; xác thực danh tính FaceID</li>
+              <li>{isEn ? 'Skyline Resident Web Portal' : 'Cổng dịch vụ số Skyline Web Portal'}</li>
+              <li>{isEn ? 'Skyline Smart Resident Mobile App' : 'Ứng dụng cư dân Skyline Smart Resident Mobile App'}</li>
+              <li>{isEn ? 'Smart lock system & FaceID identity verification' : 'Hệ thống khóa thông minh & xác thực danh tính FaceID'}</li>
             </ul>
           </div>
         </div>

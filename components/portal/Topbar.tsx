@@ -28,7 +28,7 @@ import SkylineLogo from '@/components/shared/SkylineLogo';
 import { useAuth } from '@/lib/authContext';
 import { useLanguage } from '@/lib/languageContext';
 import { getUserApiAvatar, formatApiAvatarUrl } from '@/lib/avatarHelper';
-import { nksGetUserInfo } from '@/lib/nksApiClient';
+import { skylineGetUserInfo } from '@/lib/skylineApiClient';
 import AccountPasswordModal from './shared/AccountPasswordModal';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 
@@ -75,8 +75,8 @@ export default function Topbar({
     // 1. Initial sync from currentUser
     setLiveAvatar(getUserApiAvatar(currentUser));
 
-    // 2. Fetch live data from NKS API endpoint
-    nksGetUserInfo().then((apiUser) => {
+    // 2. Fetch live data from Skyline API endpoint
+    skylineGetUserInfo().then((apiUser) => {
       if (apiUser?.avatar_url || apiUser?.avatar) {
         setLiveAvatar(formatApiAvatarUrl(apiUser.avatar_url || apiUser.avatar));
       }
@@ -273,7 +273,7 @@ export default function Topbar({
                 src={liveAvatar || getUserApiAvatar(currentUser)}
                 alt={userName}
                 onError={(e) => {
-                  e.currentTarget.src = 'https://data.nks.vn/storage/users/default.png';
+                  e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=1C2533&color=C5A880&bold=true';
                 }}
                 className="w-full h-full object-cover"
               />
@@ -283,7 +283,7 @@ export default function Topbar({
                 {userName}
               </div>
               <div className="text-[9px] text-[#C5A880] font-mono uppercase font-bold tracking-wider">
-                {isAdmin ? t('role.admin', 'Ban Quản Lý') : `${t('Căn')} ${currentUser.apartment_code || 'CH-06'} (${t(currentUser.role)})`}
+                {isAdmin ? 'VinHomes Manager' : `${t('Căn')} ${currentUser.apartment_code || 'CH-06'} (${t(currentUser.role)})`}
               </div>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-gray-400 ml-1" />
@@ -298,7 +298,7 @@ export default function Topbar({
                     src={liveAvatar || getUserApiAvatar(currentUser)}
                     alt={userName}
                     onError={(e) => {
-                      e.currentTarget.src = 'https://data.nks.vn/storage/users/default.png';
+                      e.currentTarget.src = 'https://ui-avatars.com/api/?name=User&background=1C2533&color=C5A880&bold=true';
                     }}
                     className="w-full h-full object-cover"
                   />
@@ -314,7 +314,7 @@ export default function Topbar({
                         ? 'bg-amber-950 text-amber-300 border-amber-600' 
                         : 'bg-blue-950 text-blue-300 border-blue-600'
                     }`}>
-                      {isAdmin ? `🛡️ ${t('role.admin', 'Ban Quản Lý')}` : isOwner ? `👑 ${t('role.owner', 'Chủ Hộ Căn Hộ')}` : `👤 ${t('role.family', 'Người Nhà Căn Hộ')}`}
+                      {isAdmin ? `🛡️ VinHomes Manager` : isOwner ? `👑 ${t('role.owner', 'Chủ Hộ Căn Hộ')}` : `👤 ${t('role.family', 'Người Nhà Căn Hộ')}`}
                     </span>
                   </div>
                 </div>

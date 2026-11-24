@@ -36,6 +36,7 @@ import { useAuth } from '@/lib/authContext';
 import { useLanguage } from '@/lib/languageContext';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { analyzeVideoLighting, LightingAnalysisResult, extractDescriptorFromPixels } from '@/lib/biometricFaceEngine';
+import { extractNeuralDescriptorFromBase64 } from '@/lib/realtimeFaceVision';
 import { cleanPhoneNumber, isValidPhoneNumber, getPhoneValidationError } from '@/lib/validationUtils';
 
 interface LoginModalProps {
@@ -49,7 +50,7 @@ type AuthMethod = 'CREDENTIALS' | 'PHONE_OTP' | 'FACE_ID';
 export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: LoginModalProps) {
   const router = useRouter();
   const { login, faceLogin } = useAuth();
-  const { t, language } = useLanguage();
+  const { t, language, isEn } = useLanguage();
 
   const [authMethod, setAuthMethod] = useState<AuthMethod>('CREDENTIALS');
   
@@ -117,13 +118,13 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
     const role = loggedUser.role;
     const name = loggedUser.full_name || loggedUser.fullname || loggedUser.name || '';
     const rawApt = loggedUser.apartment_code || '';
-    const cleanApt = (rawApt === '12A05' || rawApt === '12A5') ? 'CH-06' : rawApt;
+    const cleanApt = rawApt;
     const apt = cleanApt ? `${t('Căn')} ${cleanApt}` : '';
     let roleNotice = t('Đăng nhập thành công!');
     let redirectTab = 'resident-home';
 
     if (role === 'ADMIN') {
-      roleNotice = `${t('Chào mừng Quản trị viên Ban Quản Lý')}: ${name}`;
+      roleNotice = `${t('Chào mừng Quản trị viên')}: VinHomes Manager`;
       redirectTab = 'admin-dashboard';
     } else if (role === 'TECHNICIAN') {
       roleNotice = `${t('Chào mừng Kỹ thuật viên')}: ${name}`;
@@ -508,7 +509,17 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
     }
 
     setFaceScanStatus('SCANNING');
-    setScanStepText('Đang đối soát sinh trắc học FaceID...');
+    setScanStepText('Đang kiểm tra nhận diện khuôn mặt...');
+
+    // Ưu tiên trích xuất vector đặc trưng ResNet 128-D thực tế
+    try {
+      const neuralDesc = await extractNeuralDescriptorFromBase64(capturedImage);
+      if (neuralDesc && neuralDesc.length === 128) {
+        extractedFaceVector = Array.from(neuralDesc);
+      }
+    } catch (e) {
+      // Fallback sang vector pixel đã trích xuất
+    }
 
     try {
       const result = await faceLogin({
@@ -519,8 +530,8 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
 
       if (result.success && result.user) {
         setFaceScanStatus('SUCCESS');
-        setScanStepText('Nhận diện sinh trắc học thành công!');
-        const cleanApt = (!result.user.apartment_code || result.user.apartment_code === '12A05' || result.user.apartment_code === '12A5') ? 'CH-06' : result.user.apartment_code;
+        setScanStepText('Nhận diện khuôn mặt thành công!');
+        const cleanApt = result.user.apartment_code || 'CH-06';
         setMatchedFaceResult({
           name: result.user.full_name || (result.user as any).fullname || (result.user as any).name || '',
           apt: cleanApt,
@@ -562,7 +573,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
             onClose();
           }}
           className="absolute top-4 right-4 text-gray-400 hover:text-white p-1 rounded-none hover:bg-[#161B22] transition-colors"
-          title="Đóng cửa sổ"
+          title={isEn ? 'Close window' : 'Đóng cửa sổ'}
         >
           <X className="w-5 h-5" />
         </button>
@@ -574,7 +585,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
             {t('Cổng SKYLINE Smart Residence')}
           </h3>
           <p className="text-[11px] text-gray-400 font-light">
-            {t('Cổng đăng nhập hệ thống dành cho Cư Dân & Ban Quản Lý')}
+            {t('Cổng đăng nhập hệ thống dành cho Cư Dân & VinHomes Manager')}
           </p>
         </div>
 
@@ -758,7 +769,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                   maxLength={10}
                   value={phone}
                   onChange={(e) => setPhone(cleanPhoneNumber(e.target.value))}
-                  placeholder={t('Nhập số điện thoại 10 số (VD: 0364967082)')}
+                  placeholder={t('Nhập số điện thoại 10 số (VD: 0901234567)')}
                   className="flex-1 bg-[#161B22] border border-[#2D3748] p-2.5 text-white text-xs font-mono rounded-none focus:outline-none focus:border-[#C5A880]"
                   required
                 />
@@ -865,11 +876,11 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
               className="hidden"
             />
 
-            {/* Mode Indicator: Sinh Trắc Học Trực Tiếp Qua Camera (Bảo Mật Cao) */}
+            {/* Mode Indicator */}
             <div className="p-2.5 bg-[#121820] border border-[#222B35] rounded-none text-xs flex items-center justify-between select-none">
               <div className="flex items-center gap-2 text-[#C5A880] font-semibold text-[11px]">
                 {deviceType === 'MOBILE' ? <Smartphone className="w-3.5 h-3.5 text-[#C5A880]" /> : <Camera className="w-3.5 h-3.5 text-[#C5A880]" />}
-                <span>{t('Xác Thực Sinh Trắc Học Trực Tiếp')}</span>
+                <span>{t('Nhận Diện Khuôn Mặt Trực Tiếp')}</span>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-400">
                 <span className={`w-2 h-2 rounded-none ${isCameraActive ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
@@ -1120,17 +1131,17 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
               {faceScanStatus === 'SCANNING' || faceScanStatus === 'LIVENESS' || faceScanStatus === 'MATCHING' ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin text-[#0D1117]" />
-                  <span>{t('Đang Nhận Diện Sinh Trắc Học...')}</span>
+                  <span>{t('Đang Nhận Diện Khuôn Mặt...')}</span>
                 </>
               ) : (
                 <>
                   <ScanFace className="w-4 h-4" />
                   <span>
                     {faceInputMode === 'UPLOAD' && !uploadedFaceImage
-                      ? t('Chọn Ảnh Để Quét FaceID')
+                      ? t('Chọn Ảnh Để Nhận Diện')
                       : faceScanStatus === 'FAILED'
                       ? t('Quét Lại Khuôn Mặt')
-                      : t('Bắt Đầu Quét FaceID')}
+                      : t('Bắt Đầu Nhận Diện Khuôn Mặt')}
                   </span>
                 </>
               )}

@@ -7,7 +7,8 @@ export async function POST() {
   });
 
   // Clear HTTP cookie
-  res.cookies.delete('nks_token');
+  res.cookies.delete('skyline_token');
+  res.cookies.delete('skyline_user_role');
   return res;
 }
 
@@ -17,6 +18,7 @@ export async function GET() {
     message: 'Đăng xuất thành công',
   });
 
-  res.cookies.delete('nks_token');
+  res.cookies.delete('skyline_token');
+  res.cookies.delete('skyline_user_role');
   return res;
 }

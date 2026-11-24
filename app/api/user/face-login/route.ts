@@ -57,7 +57,7 @@ function parseImageDimensions(buf: Buffer): { width: number; height: number; typ
 }
 
 /**
- * POST /api/nks/user/face-login
+ * POST /api/user/face-login
  * API chuẩn xác thực sinh trắc học FaceID 1:N
  */
 export async function POST(req: Request) {
@@ -103,15 +103,17 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. Cơ sở dữ liệu FaceID ĐÃ ĐĂNG KÝ MẪU CHÍNH THỨC
+    // 3. Cơ sở dữ liệu FaceID ĐÃ ĐĂNG KÝ MẪU CHÍNH THỨC (Chỉ lấy hồ sơ có vector 128-D thật)
     const serverProfiles = getAllEnrolledFaceProfiles();
-    const enrolledProfiles = [...serverProfiles];
+    const enrolledProfiles = serverProfiles.filter(p =>
+      p && Array.isArray(p.descriptor) && p.descriptor.length === 128 && p.descriptor.some(v => v !== 0)
+    );
 
-    // Đồng bộ hồ sơ 4 mẫu quét từ client (nếu có)
+    // Đồng bộ hồ sơ 4 mẫu quét từ client (nếu có và phải có vector thật)
     if (Array.isArray(body.clientProfiles)) {
       body.clientProfiles.forEach((cp: any) => {
-        if (cp && cp.userId) {
-          if (cp.apartmentCode === '12A05' || cp.apartmentCode === '12A5' || !cp.apartmentCode) {
+        if (cp && cp.userId && Array.isArray(cp.descriptor) && cp.descriptor.length === 128 && cp.descriptor.some((v: number) => v !== 0)) {
+          if (!cp.apartmentCode) {
             cp.apartmentCode = 'CH-06';
           }
           if (!enrolledProfiles.some(p => p.userId === cp.userId)) {
@@ -126,9 +128,9 @@ export async function POST(req: Request) {
       });
     }
 
-    // Luôn chuẩn hóa toàn bộ hồ sơ đối soát sang mã căn hộ chuẩn API (CH-06)
+    // Đảm bảo hồ sơ có apartmentCode hợp lệ
     enrolledProfiles.forEach(p => {
-      if (p && (p.apartmentCode === '12A05' || p.apartmentCode === '12A5' || !p.apartmentCode)) {
+      if (p && !p.apartmentCode) {
         p.apartmentCode = 'CH-06';
       }
     });
@@ -138,7 +140,7 @@ export async function POST(req: Request) {
         {
           success: false,
           matchScore: 0,
-          message: 'Chưa có tài khoản nào hoàn tất thu thập đủ 4 mẫu FaceID trên hệ thống. Vui lòng đăng nhập bằng mật khẩu và vào mục Hồ Sơ Cá Nhân để đăng ký quét mặt.',
+          message: 'Chưa có hồ sơ sinh trắc học FaceID thực tế nào được kích hoạt trên hệ thống. Vui lòng đăng nhập bằng tài khoản và mật khẩu, sau đó hoàn tất quét 4 góc mặt tại mục Hồ Sơ Cá Nhân.',
         },
         { status: 401 }
       );
@@ -152,10 +154,8 @@ export async function POST(req: Request) {
     const threshold = isCameraCapture ? 68.0 : 72.0;
     const matchResult = identifyFaceAmongEnrolled(liveInput, enrolledProfiles, threshold);
 
-    if (matchResult.profile) {
-      if (matchResult.profile.apartmentCode === '12A05' || matchResult.profile.apartmentCode === '12A5' || !matchResult.profile.apartmentCode) {
-        matchResult.profile.apartmentCode = 'CH-06';
-      }
+    if (matchResult.profile && !matchResult.profile.apartmentCode) {
+      matchResult.profile.apartmentCode = 'CH-06';
     }
 
     // 5. Nếu không khớp bất kỳ khuôn mặt nào trong 4 mẫu
@@ -163,7 +163,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          matchScore: matchResult.score || 38.0,
+          matchScore: matchResult.score,
           bestAngle: matchResult.bestAngle,
           sampleScores: matchResult.sampleScores,
           message: matchResult.message || 'Khuôn mặt chưa được đăng ký FaceID trên hệ thống hoặc độ tương đồng không đạt chuẩn an toàn.',
@@ -204,7 +204,7 @@ export async function POST(req: Request) {
         {
           success: false,
           matchScore: matchResult.score,
-          message: `Quyền truy cập FaceID của cư dân ${matchResult.profile.fullName} đã bị thu hồi. Vui lòng liên hệ Ban Quản Lý Skyline để kích hoạt lại.`,
+          message: `Quyền truy cập FaceID của cư dân ${matchResult.profile.fullName} đã bị thu hồi. Vui lòng liên hệ VinHomes Manager để kích hoạt lại.`,
         },
         { status: 403 }
       );
@@ -235,24 +235,21 @@ export async function POST(req: Request) {
         role: (p.userId.includes('manager01') || p.email?.includes('admin'))
           ? 'ADMIN'
           : p.userId.includes('manager02')
-          ? 'TECHNICIAN'
-          : 'OWNER',
+            ? 'TECHNICIAN'
+            : 'OWNER',
         apartment_code: p.apartmentCode || 'CH-06',
         avatar_url: p.avatarUrl || '',
       };
     }
 
     // 7. CẤP PHIÊN ĐĂNG NHẬP SINH TRẮC HỌC CHÍNH THỨC (BIOMETRIC SESSION TOKEN)
-    // Cấp token phiên FaceID an toàn, tuyệt đối không hack mật khẩu '12345678'
-    const token = (matchedUserRecord as any).access_token || `NKS_FACEID_SESSION_${matchedUserRecord.id}_${matchedUserRecord.role || 'RESIDENT'}_${Date.now()}`;
+    const token = (matchedUserRecord as any).access_token || `SKYLINE_FACEID_SESSION_${matchedUserRecord.id}_${matchedUserRecord.role || 'RESIDENT'}_${Date.now()}`;
 
     let resolvedApt = matchedUserRecord.apartment_code || matchResult.profile?.apartmentCode || 'CH-06';
     if (matchedUserRecord.role === 'ADMIN') {
       resolvedApt = 'BQL_OFFICE';
     } else if (matchedUserRecord.role === 'TECHNICIAN') {
       resolvedApt = 'TECH_ROOM';
-    } else if (resolvedApt === '12A05' || resolvedApt === '12A5' || !resolvedApt) {
-      resolvedApt = 'CH-06';
     }
 
     const formattedUser = {
@@ -287,7 +284,7 @@ export async function POST(req: Request) {
       user: formattedUser,
     });
 
-    res.cookies.set('nks_token', token, {
+    res.cookies.set('skyline_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -295,7 +292,7 @@ export async function POST(req: Request) {
       maxAge: 60 * 60 * 24 * 30, // 30 ngày
     });
 
-    res.cookies.set('nks_user_role', formattedUser.role, {
+    res.cookies.set('skyline_user_role', formattedUser.role, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

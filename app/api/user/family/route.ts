@@ -11,14 +11,14 @@ import {
   getUserStore,
   updateUserStore
 } from '@/lib/userStore';
-import { DEMO_USERS } from '@/lib/dataStore';
+import { skylineDb } from '@/lib/db';
 import { submitEkycRequest } from '@/lib/ekycStore';
 
 /**
  * Lọc tài khoản cư dân hợp lệ để thêm người nhà:
- * 1. TRỪ TOÀN BỘ tài khoản ban quản lý, kỹ thuật hoặc có tiền tố/tên miền 'nks.'
+ * 1. TRỪ các tài khoản quản trị viên / nhân viên kỹ thuật (ADMIN, TECHNICIAN, STAFF)
  * 2. TRỪ tài khoản của chính Chủ Hộ đang đăng nhập
- * 3. Chỉ giữ lại các tài khoản cư dân / người nhà phù hợp (TENANT / RESIDENT / USER)
+ * 3. Chỉ giữ lại các tài khoản cư dân / người nhà phù hợp (TENANT, OWNER, RESIDENT)
  */
 function isEligibleFamilyAccount(u: any, hostUser?: any): boolean {
   if (!u) return false;
@@ -26,14 +26,8 @@ function isEligibleFamilyAccount(u: any, hostUser?: any): boolean {
   const email = (u.email || '').toLowerCase().trim();
   const role = (u.role || '').toUpperCase().trim();
 
-  // 1. Loại trừ triệt để toàn bộ tài khoản có tiền tố hoặc chứa "nks."
+  // Loại trừ tài khoản quản lý / kỹ thuật
   if (
-    username.startsWith('nks.') || 
-    email.startsWith('nks.') || 
-    username.includes('@nks.') || 
-    email.includes('@nks.') ||
-    username.includes('nks.vn') ||
-    email.includes('nks.vn') ||
     role === 'ADMIN' || 
     role === 'TECHNICIAN' || 
     role === 'RECEPTIONIST' || 
@@ -42,7 +36,7 @@ function isEligibleFamilyAccount(u: any, hostUser?: any): boolean {
     return false;
   }
 
-  // 2. Loại trừ chính tài khoản Chủ Hộ đang đăng nhập
+  // Loại trừ chính tài khoản Chủ Hộ đang đăng nhập
   if (hostUser) {
     if (u.id && hostUser.id && String(u.id) === String(hostUser.id)) return false;
     if (u.phone && hostUser.phone && u.phone === hostUser.phone) return false;
@@ -53,54 +47,31 @@ function isEligibleFamilyAccount(u: any, hostUser?: any): boolean {
 }
 
 /**
- * GET /api/nks/user/family
+ * GET /api/user/family
  * 1. Returns apartment members list
- * 2. Returns pre-verified family accounts from API for this apartment
- * 3. Supports ?search=... to lookup user profile from system API by phone, CCCD, or username
+ * 2. Returns pre-verified family accounts from database for this apartment
+ * 3. Supports ?search=... to lookup user profile from system database by phone, CCCD, or username
  */
 export async function GET(req: Request) {
   try {
     const cookieStore = cookies();
-    const token = cookieStore.get('nks_token')?.value || '';
-    let currentApiUser: any = null;
-
-    if (token && !token.startsWith('NKS_FACEID_SESSION_')) {
-      try {
-        const formData = new URLSearchParams();
-        formData.append('access_token', token);
-        const remoteRes = await fetch('https://account.nks.vn/api/nks/user', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: formData.toString(),
-        });
-        if (remoteRes.ok) {
-          const data = await remoteRes.json();
-          if (data.success && data.data) {
-            currentApiUser = data.data;
-          }
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
-
+    const token = cookieStore.get('skyline_token')?.value || '';
     const userId = extractUserIdFromToken(token);
     const localUser = userId ? getUserStore(userId) : getUserStore('user-owner-1');
     const url = new URL(req.url);
     const paramApt = url.searchParams.get('apartment') || url.searchParams.get('aptCode');
-    const rawApt = paramApt || currentApiUser?.apartment_code || localUser?.apartment_code || 'CH-06';
-    const aptCode = (rawApt === '12A05' || rawApt === '12A5') ? 'CH-06' : rawApt;
-    const ownerName = currentApiUser?.name || localUser?.fullname || 'Trần Hữu Lực';
-    const ownerPhone = currentApiUser?.phone || localUser?.phone || '0364967082';
+    const rawApt = paramApt || localUser?.apartment_code || 'CH-06';
+    const aptCode = rawApt;
+    const ownerName = localUser?.fullname || localUser?.full_name || 'Chủ Hộ';
     const searchQuery = url.searchParams.get('search')?.trim().toLowerCase();
     const actionQuery = url.searchParams.get('action');
 
-    // 0. Hỗ trợ xóa sạch dữ liệu người nhà ở local để đồng bộ lại hoàn toàn từ API
+    // Hỗ trợ xóa sạch dữ liệu người nhà ở căn hộ để đồng bộ lại
     if (actionQuery === 'CLEAR_LOCAL') {
       clearApartmentMembers(aptCode);
       return NextResponse.json({
         success: true,
-        message: `Đã dọn dẹp sạch dữ liệu lưu tạm của Căn hộ ${aptCode} để đồng bộ mới theo API.`,
+        message: `Đã dọn dẹp sạch dữ liệu lưu tạm của Căn hộ ${aptCode} để đồng bộ mới theo Database.`,
         members: [],
         bqlAccounts: []
       });
@@ -118,7 +89,10 @@ export async function GET(req: Request) {
       const qNorm = normalize(searchQuery);
       const qDigits = searchQuery.replace(/\D/g, '');
 
-      const matchedList = DEMO_USERS.filter((u) => {
+      const dbUsers = skylineDb.users.find();
+      const currentMembers = getApartmentMembers(aptCode);
+
+      const matchedList = dbUsers.filter((u) => {
         if (!isEligibleFamilyAccount(u, localUser)) return false;
 
         const phoneDigits = (u.phone || '').replace(/\D/g, '');
@@ -135,26 +109,23 @@ export async function GET(req: Request) {
           (qNorm.length >= 2 && fullNorm.includes(qNorm))
         );
       }).map((matched) => {
-        const userDetails = getUserStore(matched.id);
-        const rawAvatar = userDetails.avatar_url || matched.avatar_url || '';
-        const cleanAvatar = rawAvatar ? rawAvatar.replace('data.nks.vn//', 'data.nks.vn/') : 'https://data.nks.vn/storage/users/default.png';
-        const currentMembers = getApartmentMembers(aptCode);
+        const cleanAvatar = matched.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(matched.full_name)}&background=1C2533&color=C5A880`;
         return {
-          id: userDetails.id,
-          username: userDetails.username,
-          fullName: userDetails.fullname || userDetails.full_name,
-          phone: userDetails.phone,
-          idCard: userDetails.id_number || userDetails.id_card_no || '',
+          id: matched.id,
+          username: matched.username,
+          fullName: matched.full_name,
+          phone: matched.phone,
+          idCard: matched.id_card_no || '',
           avatarUrl: cleanAvatar,
-          licensePlate: userDetails.license_plate || '',
+          licensePlate: matched.license_plate || '',
           role: 'Family',
-          relationship: userDetails.relationship || 'Người Thân',
-          dob: userDetails.dob || matched.dob || '',
-          gender: userDetails.gender === 0 ? 'Nữ' : 'Nam',
-          pob: userDetails.pob || matched.pob || '',
-          apartmentCode: userDetails.apartment_code || aptCode,
+          relationship: matched.relationship || 'Người Thân',
+          dob: matched.dob || '',
+          gender: matched.gender === 0 ? 'Nữ' : 'Nam',
+          pob: matched.pob || '',
+          apartmentCode: matched.apartment_code || aptCode,
           isAlreadyInUnit: currentMembers.some(
-            (m) => m.id === userDetails.id || m.phone === userDetails.phone || m.username === userDetails.username
+            (m) => m.id === matched.id || m.phone === matched.phone || m.username === matched.username
           ),
         };
       });
@@ -171,48 +142,47 @@ export async function GET(req: Request) {
       return NextResponse.json({
         success: true,
         found: false,
-        message: `Không tìm thấy tài khoản người nhà nào khớp với "${searchQuery}" trên hệ thống API.`
+        message: `Không tìm thấy tài khoản người nhà nào khớp với "${searchQuery}" trên hệ thống.`
       });
     }
 
     // 2. Fetch current registered members for this apartment
     const members = getApartmentMembers(aptCode);
 
-    // 3. Eligible resident accounts registered in API (excluding all nks. and host accounts)
-    const bqlAccounts = DEMO_USERS
+    // 3. Eligible resident accounts registered in database
+    const dbUsers = skylineDb.users.find();
+    const bqlAccounts = dbUsers
       .filter((u) => isEligibleFamilyAccount(u, localUser))
       .map((u) => {
-        const liveUser = getUserStore(u.id);
-        const rawAvatar = liveUser.avatar_url || u.avatar_url || '';
-        const cleanAvatar = rawAvatar ? rawAvatar.replace('data.nks.vn//', 'data.nks.vn/') : 'https://data.nks.vn/storage/users/default.png';
+        const cleanAvatar = u.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.full_name)}&background=1C2533&color=C5A880`;
         return {
-          id: liveUser.id,
-          username: liveUser.username,
-          fullName: liveUser.fullname || liveUser.full_name,
-          email: liveUser.email,
-          phone: liveUser.phone,
-          idCard: liveUser.id_number || liveUser.id_card_no || '',
-          idDate: liveUser.id_date || '',
-          idPlace: liveUser.id_place || '',
-          dob: liveUser.dob || u.dob || '',
-          gender: liveUser.gender === 0 ? 'Nữ' : 'Nam',
-          pob: liveUser.pob || u.pob || '',
+          id: u.id,
+          username: u.username,
+          fullName: u.full_name,
+          email: u.email,
+          phone: u.phone,
+          idCard: u.id_card_no || '',
+          idDate: u.id_date || '',
+          idPlace: u.id_place || '',
+          dob: u.dob || '',
+          gender: u.gender === 0 ? 'Nữ' : 'Nam',
+          pob: u.pob || '',
           avatarUrl: cleanAvatar,
-          licensePlate: liveUser.license_plate || '',
+          licensePlate: u.license_plate || '',
           role: 'Family',
-          relationship: liveUser.relationship || 'Người Thân',
-          isAdded: members.some((m) => m.username === liveUser.username || m.phone === liveUser.phone || m.id === liveUser.id),
+          relationship: u.relationship || 'Người Thân',
+          isAdded: members.some((m) => m.username === u.username || m.phone === u.phone || m.id === u.id),
         };
       });
 
     const owner = {
-      id: currentApiUser ? String(currentApiUser.id) : (localUser?.id || 'usr-120'),
+      id: localUser?.id || 'user-owner-1',
       fullName: ownerName,
-      phone: currentApiUser?.phone || localUser?.phone || '0364967082',
-      email: currentApiUser?.email || localUser?.email || 'huuluc04@gmail.com',
-      idCard: currentApiUser?.id_number || localUser?.id_number || localUser?.id_card_no || '067204000961',
+      phone: localUser?.phone || '0364967082',
+      email: localUser?.email || 'huuluc04@gmail.com',
+      idCard: localUser?.id_number || localUser?.id_card_no || '067204000961',
       licensePlate: localUser?.license_plate || '51K-988.24',
-      avatarUrl: currentApiUser?.avatar ? (currentApiUser.avatar.startsWith('http') ? currentApiUser.avatar : `https://data.nks.vn/${currentApiUser.avatar}`) : (localUser?.avatar_url || 'https://data.nks.vn/storage/users/202609021654232258.jpg'),
+      avatarUrl: localUser?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(ownerName)}&background=1C2533&color=C5A880`,
       role: 'OWNER',
       relationship: 'Chủ Hộ (Chủ Sở Hữu)',
       faceStatus: 'Đã Kích Hoạt FaceID',
@@ -228,26 +198,26 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     return NextResponse.json(
-      { success: false, message: 'Lỗi tải danh sách thành viên gia đình từ API.' },
+      { success: false, message: 'Lỗi tải danh sách thành viên gia đình từ Database.' },
       { status: 500 }
     );
   }
 }
 
 /**
- * POST /api/nks/user/family
- * Add a family member strictly verified from API user records
+ * POST /api/user/family
+ * Add a family member strictly verified from database user records
  */
 export async function POST(req: Request) {
   try {
     const cookieStore = cookies();
-    const token = cookieStore.get('nks_token')?.value || '';
+    const token = cookieStore.get('skyline_token')?.value || '';
     const userId = extractUserIdFromToken(token);
     const currentUser = userId ? getUserStore(userId) : getUserStore('user-owner-1');
     const rawApt = currentUser?.apartment_code || 'CH-06';
-    const aptCode = (rawApt === '12A05' || rawApt === '12A5') ? 'CH-06' : rawApt;
-    const ownerName = currentUser?.fullname || currentUser?.full_name || 'Trần Hữu Lực';
-    const ownerPhone = currentUser?.phone || '0364967082';
+    const aptCode = rawApt;
+    const ownerName = currentUser?.fullname || currentUser?.full_name || 'Chủ Hộ';
+    const ownerPhone = currentUser?.phone || '';
 
     const body = await req.json();
     const { 
@@ -276,47 +246,42 @@ export async function POST(req: Request) {
     const identifier = accountId || username || phone;
     if (!identifier && !fullName) {
       return NextResponse.json(
-        { success: false, message: 'Vui lòng chọn tài khoản hợp lệ từ hệ thống API.' },
+        { success: false, message: 'Vui lòng chọn tài khoản hợp lệ từ hệ thống.' },
         { status: 400 }
       );
     }
 
-    // 1. Resolve user from API userStore
-    let resolvedUser = identifier ? getUserStore(identifier) : null;
-
-    // If not found in userStore, lookup from DEMO_USERS (trừ các tài khoản nks. và chủ hộ)
+    // 1. Resolve user from Database
+    let resolvedUser = identifier ? skylineDb.users.findById(identifier) : undefined;
     if (!resolvedUser && identifier) {
-      const demoMatch = DEMO_USERS.find(
+      resolvedUser = skylineDb.users.findOne(
         (u) => (u.id === identifier || u.username === identifier || u.phone === identifier) && isEligibleFamilyAccount(u, currentUser)
       );
-      if (demoMatch) {
-        resolvedUser = getUserStore(demoMatch.id);
-      }
     }
 
-    // Kiểm tra tính hợp lệ: Không cho phép thêm tài khoản nks. hoặc chính chủ hộ
+    // Kiểm tra tính hợp lệ: Không cho phép thêm tài khoản admin/kỹ thuật hoặc chính chủ hộ
     if (resolvedUser && !isEligibleFamilyAccount(resolvedUser, currentUser)) {
       return NextResponse.json(
-        { success: false, message: 'Tài khoản Ban Quản Lý / Kỹ Thuật (nks.) hoặc tài khoản Chủ Hộ không thể đăng ký làm người nhà.' },
+        { success: false, message: 'Tài khoản Ban Quản Lý / Kỹ Thuật hoặc tài khoản Chủ Hộ không thể đăng ký làm người nhà.' },
         { status: 400 }
       );
     }
 
-    // 2. Build verified member object from API record
-    const finalFullName = (resolvedUser?.fullname || resolvedUser?.full_name || fullName || '').trim();
+    // 2. Build verified member object from Database record
+    const finalFullName = (resolvedUser?.full_name || fullName || '').trim();
     const finalPhone = (resolvedUser?.phone || phone || '').trim();
-    const finalIdCard = (resolvedUser?.id_number || resolvedUser?.id_card_no || idCard || '').trim();
-    const finalAvatar = (resolvedUser?.avatar_url || avatarUrl || '').replace('data.nks.vn//', 'data.nks.vn/') || 'https://data.nks.vn/storage/users/default.png';
+    const finalIdCard = (resolvedUser?.id_card_no || idCard || '').trim();
+    const finalAvatar = resolvedUser?.avatar_url || avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(finalFullName)}&background=1C2533&color=C5A880`;
     const finalLicense = (licensePlate || resolvedUser?.license_plate || '').trim();
 
     if (!finalFullName || !finalPhone) {
       return NextResponse.json(
-        { success: false, message: 'Dữ liệu tài khoản API không hợp lệ (thiếu họ tên hoặc số điện thoại).' },
+        { success: false, message: 'Dữ liệu tài khoản không hợp lệ (thiếu họ tên hoặc số điện thoại).' },
         { status: 400 }
       );
     }
 
-    // 3. Update User Record in API User Store
+    // 3. Update User Record in Database
     if (resolvedUser) {
       updateUserStore(resolvedUser.id, {
         apartment_code: aptCode,
@@ -327,7 +292,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // 4. Register in apartment member store (Initial status pending BQL approval, populated with rich household sponsor data)
+    // 4. Register in apartment member store (Initial status pending BQL approval)
     const newMember: ApartmentMember = {
       id: resolvedUser?.id || `mem-${Date.now()}`,
       username: resolvedUser?.username || username || finalPhone,
@@ -392,24 +357,24 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     return NextResponse.json(
-      { success: false, message: 'Lỗi khi xử lý thêm thành viên qua API.' },
+      { success: false, message: 'Lỗi khi xử lý thêm thành viên vào hệ thống.' },
       { status: 500 }
     );
   }
 }
 
 /**
- * DELETE /api/nks/user/family
+ * DELETE /api/user/family
  * Unlink and revoke access of an apartment member
  */
 export async function DELETE(req: Request) {
   try {
     const cookieStore = cookies();
-    const token = cookieStore.get('nks_token')?.value || '';
+    const token = cookieStore.get('skyline_token')?.value || '';
     const userId = extractUserIdFromToken(token);
     const currentUser = userId ? getUserStore(userId) : getUserStore('user-owner-1');
     const rawApt = currentUser?.apartment_code || 'CH-06';
-    const aptCode = (rawApt === '12A05' || rawApt === '12A5') ? 'CH-06' : rawApt;
+    const aptCode = rawApt;
 
     const body = await req.json();
     const { memberId } = body;
@@ -443,11 +408,11 @@ export async function DELETE(req: Request) {
 export async function PUT(req: Request) {
   try {
     const cookieStore = cookies();
-    const token = cookieStore.get('nks_token')?.value || '';
+    const token = cookieStore.get('skyline_token')?.value || '';
     const userId = extractUserIdFromToken(token);
     const currentUser = userId ? getUserStore(userId) : getUserStore('user-owner-1');
     const rawApt = currentUser?.apartment_code || 'CH-06';
-    const aptCode = (rawApt === '12A05' || rawApt === '12A5') ? 'CH-06' : rawApt;
+    const aptCode = rawApt;
 
     const body = await req.json();
     const { 

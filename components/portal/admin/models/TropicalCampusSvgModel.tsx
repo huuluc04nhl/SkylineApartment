@@ -7,6 +7,7 @@ import {
   Eye, Info, Check, Navigation, SlidersHorizontal
 } from 'lucide-react';
 import { TropicalAmenity } from '../AdminBuildingApartmentManager';
+import { useLanguage } from '@/lib/languageContext';
 
 interface TropicalCampusSvgModelProps {
   amenities: TropicalAmenity[];
@@ -37,6 +38,7 @@ export default function TropicalCampusSvgModel({
   hideFooter = false,
   showHotspotsOverride
 }: TropicalCampusSvgModelProps) {
+  const { t, isEn } = useLanguage();
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [showHotspots, setShowHotspots] = useState<boolean>(true);
   const [activeAmenityCategory, setActiveAmenityCategory] = useState<'ALL' | 'POOL' | 'PARK' | 'SPORT' | 'ACCESS'>('ALL');
@@ -155,9 +157,9 @@ export default function TropicalCampusSvgModel({
         <div className="px-3 py-1.5 bg-[#0A0F17] border-b border-[#1E293B] flex items-center justify-between gap-2 text-xs font-mono shrink-0">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-gray-400 text-[11px]">Khối đang chọn:</span>
+            <span className="text-gray-400 text-[11px]">{t('Khối đang chọn:', 'Selected block:')}</span>
             <span className="px-2 py-0.5 bg-[#141E2D] border border-[#23354C] text-[#C5A880] font-bold text-[11px]">
-              Chung Cư {selectedBlock}
+              {t('Chung Cư', 'Block')} {selectedBlock}
             </span>
           </div>
 
@@ -172,10 +174,10 @@ export default function TropicalCampusSvgModel({
                   ? 'bg-[#182638] border-[#3B82F6] text-cyan-300'
                   : 'bg-[#0E1520] border-[#222E3E] text-gray-400 hover:text-white'
               }`}
-              title="Bật/tắt ghim định vị & viền tòa tháp"
+              title={t('Bật/tắt ghim định vị & viền tòa tháp', 'Toggle pins & tower outlines')}
             >
               <Eye className="w-3 h-3" />
-              <span className="hidden sm:inline">Lớp Phủ</span>
+              <span className="hidden sm:inline">{t('Lớp Phủ', 'Overlay')}</span>
             </button>
 
             {/* Cụm nút thu phóng */}
@@ -184,7 +186,7 @@ export default function TropicalCampusSvgModel({
                 type="button"
                 onClick={() => setZoomLevel(prev => Math.max(0.75, Number((prev - 0.15).toFixed(2))))}
                 className="p-1 hover:bg-[#1A2637] text-gray-300 hover:text-white"
-                title="Thu nhỏ"
+                title={t('Thu nhỏ', 'Zoom out')}
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </button>
@@ -200,7 +202,7 @@ export default function TropicalCampusSvgModel({
                 type="button"
                 onClick={() => setZoomLevel(prev => Math.min(2.2, Number((prev + 0.15).toFixed(2))))}
                 className="p-1 hover:bg-[#1A2637] text-gray-300 hover:text-white"
-                title="Phóng to"
+                title={t('Phóng to', 'Zoom in')}
               >
                 <ZoomIn className="w-3.5 h-3.5" />
               </button>
@@ -211,7 +213,7 @@ export default function TropicalCampusSvgModel({
                 type="button"
                 onClick={onOpenZoomModal}
                 className="p-1 bg-[#121A26] hover:bg-[#C5A880] hover:text-black border border-[#223247] text-gray-300 transition-all ml-0.5"
-                title="Phóng to toàn màn hình"
+                title={t('Phóng to toàn màn hình', 'Fullscreen view')}
               >
                 <Maximize2 className="w-3.5 h-3.5" />
               </button>
@@ -395,21 +397,21 @@ export default function TropicalCampusSvgModel({
         <div className="flex flex-wrap items-center justify-between gap-1.5">
           <div className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-[#C5A880] shrink-0" />
-            <span>23 TIỆN ÍCH NỘI KHU THE TROPICAL</span>
+            <span>{t('23 TIỆN ÍCH NỘI KHU THE TROPICAL', '23 THE TROPICAL AMENITIES')}</span>
           </div>
           <span className="text-[10px] text-gray-400 font-mono">
-            Hiển thị: <strong className="text-[#C5A880]">{filteredAmenities.length}</strong>/{amenities.length} mục
+            {t('Hiển thị:', 'Display:')} <strong className="text-[#C5A880]">{filteredAmenities.length}</strong>/{amenities.length} {t('mục', 'items')}
           </span>
         </div>
 
         {/* BỘ LỌC DANH MỤC TIỆN ÍCH NHANH */}
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
           {[
-            { id: 'ALL', label: 'Tất Cả', count: amenities.length },
-            { id: 'POOL', label: 'Bể Bơi & Chòi', count: amenities.filter(a => a.category === 'POOL').length },
-            { id: 'PARK', label: 'Cảnh Quan & Vườn', count: amenities.filter(a => a.category === 'PARK').length },
-            { id: 'SPORT', label: 'Sân Thể Thao', count: amenities.filter(a => a.category === 'SPORT').length },
-            { id: 'ACCESS', label: 'Hạ Tầng & Sảnh', count: amenities.filter(a => a.category === 'ACCESS').length },
+            { id: 'ALL', label: t('Tất Cả', 'All'), count: amenities.length },
+            { id: 'POOL', label: t('Bể Bơi & Chòi', 'Pools & Cabanas'), count: amenities.filter(a => a.category === 'POOL').length },
+            { id: 'PARK', label: t('Cảnh Quan & Vườn', 'Gardens & Landscape'), count: amenities.filter(a => a.category === 'PARK').length },
+            { id: 'SPORT', label: t('Sân Thể Thao', 'Sports Arenas'), count: amenities.filter(a => a.category === 'SPORT').length },
+            { id: 'ACCESS', label: t('Hạ Tầng & Sảnh', 'Infrastructure & Lobbies'), count: amenities.filter(a => a.category === 'ACCESS').length },
           ].map(cat => (
             <button
               key={cat.id}
@@ -452,7 +454,7 @@ export default function TropicalCampusSvgModel({
                       ? 'bg-[#1C2838] border border-[#C5A880] text-white shadow'
                       : 'bg-[#0E1522] border border-transparent hover:border-gray-600 text-gray-300'
                   }`}
-                  title={`${item.name} - Bấm để xem vị trí trên bản đồ`}
+                  title={`${item.name} - ${t('Bấm để xem vị trí trên bản đồ', 'Click to view location on map')}`}
                 >
                   <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                     <span className={`w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full font-mono text-[9px] font-bold flex items-center justify-center shrink-0 ${
@@ -496,7 +498,7 @@ export default function TropicalCampusSvgModel({
                       ? 'bg-[#1C2838] border border-[#C5A880] text-white shadow'
                       : 'bg-[#0E1522] border border-transparent hover:border-gray-600 text-gray-300'
                   }`}
-                  title={`${item.name} - Bấm để xem vị trí trên bản đồ`}
+                  title={`${item.name} - ${t('Bấm để xem vị trí trên bản đồ', 'Click to view location on map')}`}
                 >
                   <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                     <span className={`w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full font-mono text-[9px] font-bold flex items-center justify-center shrink-0 ${

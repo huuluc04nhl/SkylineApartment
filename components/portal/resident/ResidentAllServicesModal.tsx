@@ -146,7 +146,7 @@ export default function ResidentAllServicesModal({
           {
             id: 'resident-tickets',
             label: t('Báo Hỏng Kỹ Thuật'),
-            desc: t('Gửi yêu cầu sửa chữa NKS 24/7 trực tuyến'),
+            desc: t('Gửi yêu cầu sửa chữa Skyline 24/7 trực tuyến'),
             icon: Wrench,
             iconColor: 'text-amber-500',
             action: () => {
@@ -295,7 +295,7 @@ export default function ResidentAllServicesModal({
             type="button"
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1C2533] border border-[#2D3A4B] transition-colors active:scale-95"
-            aria-label="Đóng"
+            aria-label={isEn ? 'Close' : 'Đóng'}
           >
             <X className="w-4 h-4" />
           </button>

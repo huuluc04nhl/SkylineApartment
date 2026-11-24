@@ -156,40 +156,15 @@ const DEFAULT_RULES: AutomationRule[] = [
   }
 ];
 
-const STORAGE_STATE_KEY = 'skyline_smarthome_state_';
-const STORAGE_RULES_KEY = 'skyline_smarthome_rules_';
+
+const inMemorySmartHomeMap = new Map<string, SmartHomeState>();
+const inMemoryRulesMap = new Map<string, AutomationRule[]>();
 
 export function getSmartHomeState(aptCode: string = 'CH-06'): SmartHomeState {
-  if (typeof window === 'undefined') return { ...DEFAULT_STATE, apartmentCode: aptCode };
-  try {
-    const raw = localStorage.getItem(`${STORAGE_STATE_KEY}${aptCode}`);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-
-      // Lọc sạch toàn bộ dữ liệu ảo mẫu cũ nếu từng lưu trong localStorage
-      const rawPins = Array.isArray(parsed.guestPins) ? parsed.guestPins : [];
-      const cleanPins = rawPins.filter((p: any) => p && p.id && !p.id.startsWith('pin_01') && !p.id.startsWith('pin_02'));
-
-      const rawLogs = Array.isArray(parsed.doorAccessLogs) ? parsed.doorAccessLogs : [];
-      const cleanLogs = rawLogs.filter((l: any) => l && l.id && !l.id.startsWith('log_01') && !l.id.startsWith('log_02') && !l.id.startsWith('log_03') && !l.id.startsWith('log_04'));
-
-      return {
-        ...DEFAULT_STATE,
-        ...parsed,
-        lights: { ...DEFAULT_STATE.lights, ...(parsed.lights || {}) },
-        guestPins: cleanPins,
-        doorAccessLogs: cleanLogs,
-        doorBatteryLevel: typeof parsed.doorBatteryLevel === 'number' ? parsed.doorBatteryLevel : DEFAULT_STATE.doorBatteryLevel,
-        doorAutoLock: typeof parsed.doorAutoLock === 'boolean' ? parsed.doorAutoLock : DEFAULT_STATE.doorAutoLock,
-        doorNightLatch: typeof parsed.doorNightLatch === 'boolean' ? parsed.doorNightLatch : DEFAULT_STATE.doorNightLatch,
-        doorAntiTamper: typeof parsed.doorAntiTamper === 'boolean' ? parsed.doorAntiTamper : DEFAULT_STATE.doorAntiTamper,
-        apartmentCode: aptCode
-      };
-    }
-  } catch (e) {
-    console.error('Error reading smart home state:', e);
+  if (!inMemorySmartHomeMap.has(aptCode)) {
+    inMemorySmartHomeMap.set(aptCode, { ...DEFAULT_STATE, apartmentCode: aptCode });
   }
-  return { ...DEFAULT_STATE, apartmentCode: aptCode };
+  return inMemorySmartHomeMap.get(aptCode)!;
 }
 
 export function saveSmartHomeState(aptCode: string, patch: Partial<SmartHomeState>): SmartHomeState {
@@ -201,17 +176,14 @@ export function saveSmartHomeState(aptCode: string, patch: Partial<SmartHomeStat
     lastUpdated: new Date().toISOString()
   };
 
+  inMemorySmartHomeMap.set(aptCode, updated);
   if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(`${STORAGE_STATE_KEY}${aptCode}`, JSON.stringify(updated));
-      window.dispatchEvent(new CustomEvent('skyline_smarthome_update', { detail: updated }));
-    } catch (e) {
-      console.error('Error saving smart home state:', e);
-    }
+    window.dispatchEvent(new CustomEvent('skyline_smarthome_update', { detail: updated }));
   }
 
   return updated;
 }
+
 
 export function createGuestPin(
   aptCode: string, 
@@ -457,29 +429,21 @@ export function applyScene(aptCode: string, scene: SceneType): { state: SmartHom
   return { state: updated, message };
 }
 
+
 export function getAutomationRules(aptCode: string = 'CH-06'): AutomationRule[] {
-  if (typeof window === 'undefined') return DEFAULT_RULES;
-  try {
-    const raw = localStorage.getItem(`${STORAGE_RULES_KEY}${aptCode}`);
-    if (raw) {
-      return JSON.parse(raw);
-    }
-  } catch (e) {
-    console.error('Error reading automation rules:', e);
+  if (!inMemoryRulesMap.has(aptCode)) {
+    inMemoryRulesMap.set(aptCode, [...DEFAULT_RULES]);
   }
-  return DEFAULT_RULES;
+  return inMemoryRulesMap.get(aptCode)!;
 }
 
 export function toggleAutomationRule(aptCode: string, ruleId: string): AutomationRule[] {
   const rules = getAutomationRules(aptCode);
   const updated = rules.map(r => r.id === ruleId ? { ...r, enabled: !r.enabled } : r);
+  inMemoryRulesMap.set(aptCode, updated);
   if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(`${STORAGE_RULES_KEY}${aptCode}`, JSON.stringify(updated));
-      window.dispatchEvent(new CustomEvent('skyline_automation_rules_update', { detail: updated }));
-    } catch (e) {
-      console.error('Error saving automation rules:', e);
-    }
+    window.dispatchEvent(new CustomEvent('skyline_automation_rules_update', { detail: updated }));
   }
   return updated;
 }
+

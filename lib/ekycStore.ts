@@ -1,9 +1,12 @@
 /**
  * e-KYC Resident Identity Verification & FaceID Access Store
- * 
- * Synchronizes resident e-KYC submissions (CCCD OCR & FaceID photos)
- * with Ban Quản Lý (BQL) approval desk in real-time.
+ * Pure In-Database Architecture. Single Source of Truth from skylineDb.
+ * Zero LocalStorage. Zero External Mock APIs.
  */
+
+import { updateApartmentMember } from './userStore';
+import { skylineDb } from './db';
+import { EkycSubmissionRecord } from './db/schema';
 
 export type EkycStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'VERIFIED' | 'PENDING_OWNER';
 
@@ -35,160 +38,88 @@ export interface EkycRequest {
   reviewedAt?: string;
   reviewedBy?: string;
   rejectionReason?: string;
+  isSimulation?: boolean;
+  algorithm?: string;
 }
 
-import { updateApartmentMember } from './userStore';
-
-const STORAGE_KEY = 'skyline_ekyc_requests_v4';
-
-export const INITIAL_EKYC_REQUESTS: EkycRequest[] = [
-  {
-    id: 'EKYC-120',
-    userId: 'user-owner-1',
-    fullName: 'Trần Hữu Lực',
-    roleLabel: 'Chủ Hộ (Căn CH-06 - Tòa BS-07)',
-    apartmentCode: 'CH-06',
-    phone: '0364967082',
-    email: 'huuluc04@gmail.com',
-    idCardNo: '067204000961',
-    idDate: '18/08/2022',
-    idPlace: 'Cục Cảnh sát QLHC về TTXH',
-    dob: '18/08/2004',
-    pob: 'Triệu Trạch, Triệu Phong, Quảng Trị',
-    faceScore: 99.5,
-    avatarUrl: 'https://data.nks.vn/storage/users/202609021654232258.jpg',
-    idCardFrontUrl: '',
-    idCardBackUrl: '',
-    submittedAt: '02/09/2026 14:30',
-    status: 'APPROVED',
-    reviewedAt: '02/09/2026 15:10',
-    reviewedBy: 'Ban Quản Lý Skyline (Trực Ban)',
-  },
-  {
-    id: 'EKYC-121',
-    userId: 'user-tenant-1',
-    fullName: 'Nguyễn Hữu Nhựt',
-    roleLabel: 'Người Nhà (Căn CH-06 - Tòa BS-07)',
-    apartmentCode: 'CH-06',
-    phone: '0917795211',
-    email: 'nguyenhuunhut1309@gmail.com',
-    idCardNo: '079198005678',
-    idDate: '10/01/2023',
-    idPlace: 'Cục Cảnh sát QLHC về TTXH',
-    dob: '02/09/2004',
-    pob: 'TP. Hồ Chí Minh',
-    faceScore: 99.5,
-    avatarUrl: 'https://data.nks.vn/storage/users/202607191405195335.jpg',
-    idCardFrontUrl: '',
-    idCardBackUrl: '',
-    submittedAt: '12/10/2026 09:15',
-    status: 'PENDING',
-  },
-  {
-    id: 'EKYC-122',
-    userId: 'user-member-1',
-    fullName: 'Nguyễn Văn Cường',
-    roleLabel: 'Người Nhà (Căn CH-06 - Tòa BS-07)',
-    apartmentCode: 'CH-06',
-    phone: '0325524482',
-    email: 'vanncuong1614@gmail.com',
-    idCardNo: '074204001708',
-    idDate: '20/11/2022',
-    idPlace: 'Cục Cảnh sát QLHC về TTXH',
-    dob: '16/01/2004',
-    pob: 'Tỉnh Thanh Hóa',
-    faceScore: 99.5,
-    avatarUrl: 'https://data.nks.vn/storage/users/202608301345022366.jpg',
-    idCardFrontUrl: '',
-    idCardBackUrl: '',
-    submittedAt: '12/10/2026 10:45',
-    status: 'PENDING',
-  }
-];
-
-// In-memory global store for server-side Next.js route handlers
-const globalScope = (typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : {}) as any;
-
-/**
- * Đọc hồ sơ e-KYC bền vững từ file .skyline_ekyc.json trên Server Node.js
- */
-function loadEkycFromFile(): EkycRequest[] {
-  if (typeof window !== 'undefined') return [];
-  try {
-    const req = eval('require');
-    const fs = req('fs');
-    const path = req('path');
-    const filePath = path.join(process.cwd(), '.skyline_ekyc.json');
-    if (fs.existsSync(filePath)) {
-      const raw = fs.readFileSync(filePath, 'utf-8');
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch (e) {
-    // Ignore in browser
-  }
-  return INITIAL_EKYC_REQUESTS;
+export function submissionRecordToRequest(rec: EkycSubmissionRecord): EkycRequest {
+  return {
+    id: rec.id,
+    userId: rec.userId,
+    fullName: rec.fullName,
+    roleLabel: rec.roleLabel,
+    apartmentCode: rec.apartmentCode,
+    phone: rec.phone,
+    email: rec.email,
+    idCardNo: rec.idCardNo,
+    idDate: rec.idDate || '',
+    idPlace: rec.idPlace || '',
+    dob: rec.dob,
+    pob: rec.pob,
+    faceScore: rec.faceScore || 0,
+    avatarUrl: rec.avatarUrl,
+    idCardFrontUrl: rec.idCardFrontUrl || '',
+    idCardBackUrl: rec.idCardBackUrl || '',
+    faceSamples: rec.faceSamples as any,
+    submittedAt: rec.submittedAt,
+    status: rec.status as EkycStatus,
+    reviewedAt: rec.reviewedAt,
+    reviewedBy: rec.reviewedBy,
+    rejectionReason: rec.rejectionReason,
+    isSimulation: rec.isSimulation,
+    algorithm: rec.algorithm
+  };
 }
 
-/**
- * Ghi hồ sơ e-KYC bền vững ra file .skyline_ekyc.json trên Server Node.js
- */
-function saveEkycToFile(requests: EkycRequest[]): void {
-  if (typeof window !== 'undefined') return;
-  try {
-    const req = eval('require');
-    const fs = req('fs');
-    const path = req('path');
-    const filePath = path.join(process.cwd(), '.skyline_ekyc.json');
-    fs.writeFileSync(filePath, JSON.stringify(requests, null, 2), 'utf-8');
-  } catch (e) {
-    // Ignore in browser
-  }
-}
-
-if (!globalScope.__SKYLINE_EKYC_STORE) {
-  globalScope.__SKYLINE_EKYC_STORE = loadEkycFromFile();
-}
+export const INITIAL_EKYC_REQUESTS: EkycRequest[] = skylineDb.ekycSubmissions.find().map(submissionRecordToRequest);
 
 export function getEkycRequests(): EkycRequest[] {
-  if (typeof window !== 'undefined') {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_EKYC_REQUESTS));
-    } catch (e) {
-      console.warn('e-KYC localStorage read error', e);
-    }
-  }
-
-  if (typeof window === 'undefined') {
-    if (!globalScope.__SKYLINE_EKYC_STORE || globalScope.__SKYLINE_EKYC_STORE.length === 0) {
-      globalScope.__SKYLINE_EKYC_STORE = loadEkycFromFile();
-    }
-  }
-
-  return globalScope.__SKYLINE_EKYC_STORE || INITIAL_EKYC_REQUESTS;
+  return skylineDb.ekycSubmissions.find().map(submissionRecordToRequest);
 }
 
 export function saveEkycRequests(requests: EkycRequest[]): void {
-  globalScope.__SKYLINE_EKYC_STORE = requests;
-  saveEkycToFile(requests);
+  requests.forEach(r => {
+    const existing = skylineDb.ekycSubmissions.findById(r.id);
+    const rec: EkycSubmissionRecord = {
+      id: r.id,
+      userId: r.userId,
+      fullName: r.fullName,
+      roleLabel: r.roleLabel,
+      apartmentCode: r.apartmentCode,
+      phone: r.phone,
+      email: r.email,
+      idCardNo: r.idCardNo,
+      idDate: r.idDate,
+      idPlace: r.idPlace,
+      dob: r.dob,
+      pob: r.pob,
+      faceScore: r.faceScore,
+      avatarUrl: r.avatarUrl,
+      idCardFrontUrl: r.idCardFrontUrl,
+      idCardBackUrl: r.idCardBackUrl,
+      faceSamples: r.faceSamples,
+      submittedAt: r.submittedAt,
+      status: r.status,
+      reviewedAt: r.reviewedAt,
+      reviewedBy: r.reviewedBy,
+      rejectionReason: r.rejectionReason,
+      isSimulation: r.isSimulation,
+      algorithm: r.algorithm
+    };
+    if (existing) {
+      skylineDb.ekycSubmissions.update(r.id, rec);
+    } else {
+      skylineDb.ekycSubmissions.insert(rec);
+    }
+  });
 
   if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
-      // Dispatch storage event for real-time reactive sync across browser tabs
-      window.dispatchEvent(new Event('skyline_ekyc_updated'));
-    } catch (e) {
-      console.warn('e-KYC localStorage write error', e);
-    }
+    window.dispatchEvent(new Event('skyline_ekyc_updated'));
   }
 }
 
 /**
- * Find the latest e-KYC record for a specific resident by phone, email, or user ID
+ * Tìm hồ sơ e-KYC theo số điện thoại, email hoặc user ID
  */
 export function getEkycForUser(userIdentifier: string): EkycRequest | undefined {
   const requests = getEkycRequests();
@@ -202,12 +133,11 @@ export function getEkycForUser(userIdentifier: string): EkycRequest | undefined 
 }
 
 /**
- * Update the exact real uploaded card images for a resident
+ * Cập nhật ảnh thẻ CCCD
  */
 export function updateEkycCardImages(userIdentifier: string, front: string, back: string): void {
-  const requests = getEkycRequests();
   const clean = (userIdentifier || '').toLowerCase().trim();
-  const existing = requests.find(r => 
+  const existing = skylineDb.ekycSubmissions.findOne(r => 
     r.userId.toLowerCase() === clean || 
     r.phone.toLowerCase() === clean || 
     (r.email && r.email.toLowerCase() === clean) ||
@@ -215,14 +145,19 @@ export function updateEkycCardImages(userIdentifier: string, front: string, back
   );
 
   if (existing) {
-    if (front) existing.idCardFrontUrl = front;
-    if (back) existing.idCardBackUrl = back;
-    saveEkycRequests(requests);
+    const patch: Partial<EkycSubmissionRecord> = {};
+    if (front) patch.idCardFrontUrl = front;
+    if (back) patch.idCardBackUrl = back;
+    skylineDb.ekycSubmissions.update(existing.id, patch);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('skyline_ekyc_updated'));
+    }
   }
 }
 
 /**
- * Resident submits or updates their e-KYC dossier
+ * Nộp hồ sơ e-KYC mới
  */
 export function submitEkycRequest(data: {
   userId: string;
@@ -247,21 +182,22 @@ export function submitEkycRequest(data: {
   };
   faceScore?: number;
   status?: EkycStatus;
+  isSimulation?: boolean;
+  algorithm?: string;
 }): EkycRequest {
-  const requests = getEkycRequests();
-  const existingIdx = requests.findIndex(r => 
-    r.userId === data.userId || 
-    r.phone === data.phone || 
-    (data.email && r.email === data.email) ||
-    (data.idCardNo && r.idCardNo === data.idCardNo)
+  const existing = skylineDb.ekycSubmissions.findOne(r => 
+    Boolean(
+      r.userId === data.userId || 
+      r.phone === data.phone || 
+      (data.email && r.email === data.email) ||
+      (data.idCardNo && r.idCardNo === data.idCardNo)
+    )
   );
-
-  const existing = existingIdx >= 0 ? requests[existingIdx] : null;
 
   const now = new Date();
   const submittedAt = `${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${now.toLocaleDateString('vi-VN')}`;
 
-  const newRequest: EkycRequest = {
+  const rec: EkycSubmissionRecord = {
     id: existing ? existing.id : `EKYC-${Date.now().toString().slice(-4)}`,
     userId: data.userId,
     fullName: data.fullName,
@@ -275,55 +211,58 @@ export function submitEkycRequest(data: {
     dob: data.dob || '',
     pob: data.pob || '',
     faceScore: data.faceScore !== undefined ? data.faceScore : 0,
-    avatarUrl: data.avatarUrl ? data.avatarUrl.replace('data.nks.vn//', 'data.nks.vn/') : 'https://data.nks.vn/storage/users/default.png',
+    avatarUrl: data.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.fullName)}&background=1C2533&color=C5A880`,
     idCardFrontUrl: data.idCardFrontUrl || existing?.idCardFrontUrl || '',
     idCardBackUrl: data.idCardBackUrl || existing?.idCardBackUrl || '',
     faceSamples: data.faceSamples || existing?.faceSamples,
     submittedAt,
     status: data.status || 'PENDING',
+    isSimulation: data.isSimulation,
+    algorithm: data.algorithm,
   };
 
-  let updatedList: EkycRequest[];
-  if (existingIdx >= 0) {
-    updatedList = [...requests];
-    updatedList[existingIdx] = newRequest;
+  if (existing) {
+    skylineDb.ekycSubmissions.update(existing.id, rec);
   } else {
-    updatedList = [newRequest, ...requests];
+    skylineDb.ekycSubmissions.insert(rec);
   }
 
-  saveEkycRequests(updatedList);
-  return newRequest;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('skyline_ekyc_updated'));
+  }
+
+  return submissionRecordToRequest(rec);
 }
 
 /**
- * BQL approves resident's e-KYC dossier -> Activates FaceID and barrier access
+ * BQL duyệt hồ sơ e-KYC
  */
-export function approveEkycRequest(id: string, approverName: string = 'Ban Quản Lý Skyline'): EkycRequest | null {
-  const requests = getEkycRequests();
-  const req = requests.find(r => r.id === id);
-  if (!req) return null;
+export function approveEkycRequest(id: string, approverName: string = 'VinHomes Manager'): EkycRequest | null {
+  const existing = skylineDb.ekycSubmissions.findById(id);
+  if (!existing) return null;
 
   const now = new Date();
-  req.status = 'APPROVED';
-  req.reviewedAt = `${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${now.toLocaleDateString('vi-VN')}`;
-  req.reviewedBy = approverName;
-  delete req.rejectionReason;
+  const reviewedAt = `${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${now.toLocaleDateString('vi-VN')}`;
 
-  saveEkycRequests(requests);
+  const updatedRec = skylineDb.ekycSubmissions.update(id, {
+    status: 'APPROVED',
+    reviewedAt,
+    reviewedBy: approverName,
+    rejectionReason: undefined
+  });
 
-  // Synchronize family member face status
-  if (req.apartmentCode) {
+  if (existing.apartmentCode) {
     try {
-      updateApartmentMember(req.apartmentCode, req.userId, {
+      updateApartmentMember(existing.apartmentCode, existing.userId, {
         faceStatus: 'Đã Kích Hoạt FaceID',
-        avatarUrl: req.avatarUrl,
-        idCard: req.idCardNo,
+        avatarUrl: existing.avatarUrl,
+        idCard: existing.idCardNo,
       });
-      if (req.phone) {
-        updateApartmentMember(req.apartmentCode, req.phone, {
+      if (existing.phone) {
+        updateApartmentMember(existing.apartmentCode, existing.phone, {
           faceStatus: 'Đã Kích Hoạt FaceID',
-          avatarUrl: req.avatarUrl,
-          idCard: req.idCardNo,
+          avatarUrl: existing.avatarUrl,
+          idCard: existing.idCardNo,
         });
       }
     } catch (e) {
@@ -331,33 +270,37 @@ export function approveEkycRequest(id: string, approverName: string = 'Ban Quả
     }
   }
 
-  return req;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('skyline_ekyc_updated'));
+  }
+
+  return updatedRec ? submissionRecordToRequest(updatedRec) : null;
 }
 
 /**
- * BQL rejects resident's e-KYC dossier with specific feedback
+ * BQL từ chối hồ sơ e-KYC
  */
-export function rejectEkycRequest(id: string, reason: string, approverName: string = 'Ban Quản Lý Skyline'): EkycRequest | null {
-  const requests = getEkycRequests();
-  const req = requests.find(r => r.id === id);
-  if (!req) return null;
+export function rejectEkycRequest(id: string, reason: string, approverName: string = 'VinHomes Manager'): EkycRequest | null {
+  const existing = skylineDb.ekycSubmissions.findById(id);
+  if (!existing) return null;
 
   const now = new Date();
-  req.status = 'REJECTED';
-  req.reviewedAt = `${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${now.toLocaleDateString('vi-VN')}`;
-  req.reviewedBy = approverName;
-  req.rejectionReason = reason || 'Ảnh chụp CCCD hoặc khuôn mặt không đạt tiêu chuẩn độ nét.';
+  const reviewedAt = `${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${now.toLocaleDateString('vi-VN')}`;
 
-  saveEkycRequests(requests);
+  const updatedRec = skylineDb.ekycSubmissions.update(id, {
+    status: 'REJECTED',
+    reviewedAt,
+    reviewedBy: approverName,
+    rejectionReason: reason || 'Ảnh chụp CCCD hoặc khuôn mặt không đạt tiêu chuẩn độ nét.'
+  });
 
-  // Synchronize family member rejection status
-  if (req.apartmentCode) {
+  if (existing.apartmentCode) {
     try {
-      updateApartmentMember(req.apartmentCode, req.userId, {
+      updateApartmentMember(existing.apartmentCode, existing.userId, {
         faceStatus: 'BQL Yêu Cầu Chụp Lại',
       });
-      if (req.phone) {
-        updateApartmentMember(req.apartmentCode, req.phone, {
+      if (existing.phone) {
+        updateApartmentMember(existing.apartmentCode, existing.phone, {
           faceStatus: 'BQL Yêu Cầu Chụp Lại',
         });
       }
@@ -366,28 +309,32 @@ export function rejectEkycRequest(id: string, reason: string, approverName: stri
     }
   }
 
-  return req;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('skyline_ekyc_updated'));
+  }
+
+  return updatedRec ? submissionRecordToRequest(updatedRec) : null;
 }
 
 /**
- * Chủ hộ phê duyệt hồ sơ người nhà -> Chuyển tiếp tới Ban Quản Lý (PENDING)
+ * Chủ hộ duyệt người nhà
  */
 export function confirmEkycByOwner(userId: string): EkycRequest | null {
-  const requests = getEkycRequests();
   const clean = userId.toLowerCase().trim();
-  const req = requests.find(r => r.userId.toLowerCase() === clean || r.phone.toLowerCase() === clean);
-  if (!req) return null;
+  const existing = skylineDb.ekycSubmissions.findOne(r => r.userId.toLowerCase() === clean || r.phone.toLowerCase() === clean);
+  if (!existing) return null;
 
-  req.status = 'PENDING';
-  saveEkycRequests(requests);
+  const updatedRec = skylineDb.ekycSubmissions.update(existing.id, {
+    status: 'PENDING'
+  });
 
-  if (req.apartmentCode) {
+  if (existing.apartmentCode) {
     try {
-      updateApartmentMember(req.apartmentCode, req.userId, {
+      updateApartmentMember(existing.apartmentCode, existing.userId, {
         faceStatus: 'Đang Chờ BQL Phê Duyệt',
       });
-      if (req.phone) {
-        updateApartmentMember(req.apartmentCode, req.phone, {
+      if (existing.phone) {
+        updateApartmentMember(existing.apartmentCode, existing.phone, {
           faceStatus: 'Đang Chờ BQL Phê Duyệt',
         });
       }
@@ -396,5 +343,9 @@ export function confirmEkycByOwner(userId: string): EkycRequest | null {
     }
   }
 
-  return req;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('skyline_ekyc_updated'));
+  }
+
+  return updatedRec ? submissionRecordToRequest(updatedRec) : null;
 }

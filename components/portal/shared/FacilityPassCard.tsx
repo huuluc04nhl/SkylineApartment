@@ -3,6 +3,7 @@
 import React from 'react';
 import { Calendar, Clock, Users, QrCode, CheckCircle2, XCircle, ArrowUpRight, Flame, Sparkles } from 'lucide-react';
 import { FacilityBooking } from '@/lib/facilityStore';
+import { useLanguage } from '@/lib/languageContext';
 
 interface FacilityPassCardProps {
   booking?: FacilityBooking;
@@ -21,8 +22,11 @@ export default function FacilityPassCard({
   booking,
   cancelled,
   onOpenDetails,
-  isEn = false
+  isEn: propIsEn
 }: FacilityPassCardProps) {
+  const { t, isEn: contextIsEn } = useLanguage();
+  const isEn = propIsEn ?? contextIsEn;
+
   if (cancelled) {
     return (
       <div className="mt-2.5 p-3.5 bg-gradient-to-br from-[#1E1719] via-[#161215] to-[#0D0A0C] border border-rose-500/40 rounded-none shadow-xl text-xs space-y-2.5 animate-fadeIn">
@@ -30,7 +34,7 @@ export default function FacilityPassCard({
           <div className="flex items-center gap-2">
             <XCircle className="w-4 h-4 text-rose-400" />
             <span className="font-bold text-rose-200 tracking-wide uppercase text-[11px]">
-              {isEn ? 'Facility Pass Revoked & Refunded' : 'Đã Hủy Vé & Hoàn Tiền Tiện Ích'}
+              {t('Đã Hủy Vé & Hoàn Tiền Tiện Ích', 'Facility Pass Revoked & Refunded')}
             </span>
           </div>
           <span className="px-2 py-0.5 bg-rose-950/80 text-rose-300 font-mono text-[9px] font-bold border border-rose-500/30">
@@ -40,14 +44,14 @@ export default function FacilityPassCard({
 
         <div className="space-y-1">
           <div className="text-white font-semibold text-xs flex items-center justify-between">
-            <span>{cancelled.facilityName || (isEn ? 'Reserved Facility' : 'Tiện Ích Đã Đặt')}</span>
+            <span>{t(cancelled.facilityName || 'Tiện Ích Đã Đặt', cancelled.facilityName || 'Reserved Facility')}</span>
             <span className="text-emerald-400 font-mono font-bold">
-              +{cancelled.refundAmount.toLocaleString('vi-VN')} đ
+              +{cancelled.refundAmount.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}
             </span>
           </div>
           <div className="text-[10.5px] text-gray-400 font-mono flex items-center justify-between">
             <span>Ticket: {cancelled.ticketCode || cancelled.bookingId}</span>
-            <span className="text-gray-400">{isEn ? 'Credited to next bill' : 'Trừ vào hóa đơn tháng tới'}</span>
+            <span className="text-gray-400">{t('Trừ vào hóa đơn tháng tới', 'Credited to next bill')}</span>
           </div>
         </div>
       </div>
@@ -72,14 +76,14 @@ export default function FacilityPassCard({
               SKYLINE RESIDENTIAL PASS
             </div>
             <div className="text-xs font-bold text-white leading-tight font-serif">
-              {booking.facilityName}
+              {t(booking.facilityName)}
             </div>
           </div>
         </div>
 
         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950/80 text-emerald-400 text-[9px] font-mono font-bold border border-emerald-500/30">
           <CheckCircle2 className="w-2.5 h-2.5" />
-          {isEn ? 'CONFIRMED' : 'ĐÃ XÁC NHẬN'}
+          {t('ĐÃ XÁC NHẬN', 'CONFIRMED')}
         </span>
       </div>
 
@@ -87,33 +91,33 @@ export default function FacilityPassCard({
       <div className="grid grid-cols-2 gap-2 text-[11px] relative z-10">
         <div className="p-2 bg-[#0E131B]/80 border border-white/5 space-y-1">
           <span className="text-gray-400 text-[10px] flex items-center gap-1">
-            <Calendar className="w-3 h-3 text-[#C5A880]" /> {isEn ? 'Date' : 'Ngày đặt'}
+            <Calendar className="w-3 h-3 text-[#C5A880]" /> {t('Ngày đặt', 'Date')}
           </span>
           <span className="font-mono text-white font-bold block">{booking.bookingDate}</span>
         </div>
 
         <div className="p-2 bg-[#0E131B]/80 border border-white/5 space-y-1">
           <span className="text-gray-400 text-[10px] flex items-center gap-1">
-            <Clock className="w-3 h-3 text-[#C5A880]" /> {isEn ? 'Time Slot' : 'Khung giờ'}
+            <Clock className="w-3 h-3 text-[#C5A880]" /> {t('Khung giờ', 'Time Slot')}
           </span>
           <span className="font-mono text-white font-bold block">{booking.timeSlot}</span>
         </div>
 
         <div className="p-2 bg-[#0E131B]/80 border border-white/5 space-y-1">
           <span className="text-gray-400 text-[10px] flex items-center gap-1">
-            <Users className="w-3 h-3 text-[#C5A880]" /> {isEn ? 'Guests' : 'Số khách'}
+            <Users className="w-3 h-3 text-[#C5A880]" /> {t('Số khách', 'Guests')}
           </span>
           <span className="text-white font-medium block">
-            {booking.guestCount || 2} {isEn ? 'persons' : 'người'}
+            {booking.guestCount || 2} {isEn ? (booking.guestCount === 1 ? 'person' : 'persons') : t('người')}
           </span>
         </div>
 
         <div className="p-2 bg-[#0E131B]/80 border border-white/5 space-y-1">
           <span className="text-gray-400 text-[10px] flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-[#C5A880]" /> {isEn ? 'Deposit' : 'Giữ chỗ'}
+            <Sparkles className="w-3 h-3 text-[#C5A880]" /> {t('Giữ chỗ', 'Deposit')}
           </span>
           <span className="text-emerald-400 font-mono font-bold block">
-            {(booking.depositAmount || 0).toLocaleString('vi-VN')} đ
+            {(booking.depositAmount || 0).toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}
           </span>
         </div>
       </div>
@@ -121,7 +125,7 @@ export default function FacilityPassCard({
       {/* Ticket Barcode & Code */}
       <div className="pt-2 border-t border-white/10 flex items-center justify-between relative z-10">
         <div>
-          <div className="text-[9px] text-gray-500 font-mono uppercase">{isEn ? 'Smart Ticket Code' : 'Mã Vé Điện Tử'}</div>
+          <div className="text-[9px] text-gray-500 font-mono uppercase">{t('Mã Vé Điện Tử', 'Smart Ticket Code')}</div>
           <div className="text-xs font-mono font-bold text-[#C5A880] tracking-wider">
             {booking.ticketCode}
           </div>
@@ -133,7 +137,7 @@ export default function FacilityPassCard({
             onClick={onOpenDetails}
             className="px-2.5 py-1.5 bg-[#C5A880] hover:bg-white text-[#0A0E14] font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 transition-all rounded-none shadow border-0"
           >
-            <span>{isEn ? 'Open Pass' : 'Xem Thẻ'}</span>
+            <span>{t('Xem Thẻ', 'Open Pass')}</span>
             <ArrowUpRight className="w-3 h-3" />
           </button>
         )}

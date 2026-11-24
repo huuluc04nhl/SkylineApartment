@@ -40,13 +40,13 @@ import {
 } from 'lucide-react';
 import { User as UserType } from '@/lib/dataStore';
 import { 
-  nksGetFamilyMembers, 
-  nksAddFamilyMember, 
-  nksUpdateFamilyMember,
-  nksRemoveFamilyMember, 
-  nksSearchFamilyAccount,
-  nksConfirmFamilyFaceIdByOwner 
-} from '@/lib/nksApiClient';
+  skylineGetFamilyMembers, 
+  skylineAddFamilyMember, 
+  skylineUpdateFamilyMember,
+  skylineRemoveFamilyMember, 
+  skylineSearchFamilyAccount,
+  skylineConfirmFamilyFaceIdByOwner 
+} from '@/lib/skylineApiClient';
 import { 
   getEkycForUser, 
   submitEkycRequest, 
@@ -55,9 +55,10 @@ import {
 import { validateCccdCard, verifyFaceWithCccd } from '@/lib/ekycValidator';
 import CccdOcrScannerModal from './CccdOcrScannerModal';
 import { OcrCccdResult, formatToDateInput } from '@/lib/ocrParser';
-import BankFaceEnrollModal from './BankFaceEnrollModal';
+import FaceEnrollModal from './FaceEnrollModal';
 import { getEnrolledFaceProfile } from '@/lib/faceEnrollStore';
 import { useLanguage } from '@/lib/languageContext';
+import ConfirmDeleteModal from '@/components/portal/shared/ConfirmDeleteModal';
 import { clearApartmentMembers } from '@/lib/userStore';
 import { 
   cleanPhoneNumber, 
@@ -139,7 +140,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [bankEnrollTarget, setBankEnrollTarget] = useState<FamilyMemberItem | null>(null);
+  const [faceEnrollTarget, setfaceEnrollTarget] = useState<FamilyMemberItem | null>(null);
   const [confirmTargetMember, setConfirmTargetMember] = useState<FamilyMemberItem | null>(null);
   const [isConfirmingFace, setIsConfirmingFace] = useState<boolean>(false);
 
@@ -183,22 +184,25 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
   // Custom Remove Member Confirmation State
   const [removeTargetMember, setRemoveTargetMember] = useState<FamilyMemberItem | null>(null);
   const [isRemoving, setIsRemoving] = useState<boolean>(false);
+  const [isClearDataConfirmOpen, setIsClearDataConfirmOpen] = useState<boolean>(false);
 
   // Clear local temporary cache and re-sync strictly from API
-  const handleClearLocalData = async () => {
-    if (confirm(isEn ? 'Clear local temporary family cache and reload fresh from server API?' : 'Xác nhận dọn dẹp bộ nhớ tạm local và đồng bộ lại danh sách người nhà từ máy chủ API?')) {
-      setIsLoading(true);
-      try {
-        await fetch(`/api/user/family?aptCode=${encodeURIComponent(aptCode)}&action=CLEAR_LOCAL`);
-        clearApartmentMembers(aptCode);
-        await fetchMembers();
-        setActionSuccess(isEn ? '✓ Cleared local cache and synchronized with API.' : '✓ Đã dọn dẹp dữ liệu lưu tạm ở local và đồng bộ lại từ API thành công.');
-        setTimeout(() => setActionSuccess(null), 3500);
-      } catch (e) {
-        console.warn('Clear local data error', e);
-      } finally {
-        setIsLoading(false);
-      }
+  const handleClearLocalData = () => {
+    setIsClearDataConfirmOpen(true);
+  };
+
+  const executeClearLocalData = async () => {
+    setIsLoading(true);
+    try {
+      await fetch(`/api/user/family?aptCode=${encodeURIComponent(aptCode)}&action=CLEAR_LOCAL`);
+      clearApartmentMembers(aptCode);
+      await fetchMembers();
+      setActionSuccess(isEn ? '✓ Cleared local cache and synchronized with API.' : '✓ Đã dọn dẹp dữ liệu lưu tạm ở local và đồng bộ lại từ API thành công.');
+      setTimeout(() => setActionSuccess(null), 3500);
+    } catch (e) {
+      console.warn('Clear local data error', e);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -290,7 +294,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
   const fetchMembers = async () => {
     setIsLoading(true);
     try {
-      const res = await nksGetFamilyMembers();
+      const res = await skylineGetFamilyMembers();
       if (res.success) {
         if (res.members) {
           setMembers(res.members);
@@ -475,11 +479,11 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     if (existing?.avatarUrl && !existing.avatarUrl.includes('default.png') && !existing.avatarUrl.startsWith('data:image/')) {
       resolvedAvatar = existing.avatarUrl;
     } else if (member.avatarUrl && !member.avatarUrl.includes('default.png') && !member.avatarUrl.startsWith('data:image/')) {
-      resolvedAvatar = member.avatarUrl.replace('data.nks.vn//', 'data.nks.vn/');
+      resolvedAvatar = member.avatarUrl;
     } else if (profile?.avatarUrl && !profile.avatarUrl.includes('default.png') && !profile.avatarUrl.startsWith('data:image/')) {
       resolvedAvatar = profile.avatarUrl;
     } else {
-      resolvedAvatar = 'https://data.nks.vn/storage/users/default.png';
+      resolvedAvatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80';
     }
     setEkycAvatarUrl(resolvedAvatar);
 
@@ -518,29 +522,33 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
       return;
     }
 
-    // 1. Kiểm tra ảnh CCCD Mặt Trước
+    // 1. Kiểm tra ảnh {t('CCCD Mặt Trước', 'National ID Front')}
     if (ekycFrontImage) {
       const frontCheck = validateCccdCard(ekycFrontImage, 'FRONT');
       if (!frontCheck.valid) {
-        setEkycModalError(frontCheck.error || 'Ảnh CCCD Mặt Trước không đúng tiêu chuẩn.');
+        setEkycModalError(frontCheck.error || (isEn ? 'National ID Front photo is invalid.' : 'Ảnh CCCD Mặt Trước không đúng tiêu chuẩn.'));
         return;
       }
     }
 
-    // 2. Kiểm tra ảnh CCCD Mặt Sau
+    // 2. Kiểm tra ảnh {t('CCCD Mặt Sau', 'National ID Back')}
     if (ekycBackImage) {
       const backCheck = validateCccdCard(ekycBackImage, 'BACK');
       if (!backCheck.valid) {
-        setEkycModalError(backCheck.error || 'Ảnh CCCD Mặt Sau không đúng tiêu chuẩn.');
+        setEkycModalError(backCheck.error || (isEn ? 'National ID Back photo is invalid.' : 'Ảnh CCCD Mặt Sau không đúng tiêu chuẩn.'));
         return;
       }
     }
 
-    // 3. Đối chiếu sinh trắc học: Ảnh Chân Dung vs Ảnh Thẻ CCCD
-    let calculatedFaceScore = 98.6;
+    // 3. Đối chiếu sinh trắc học: Ảnh Chân Dung vs Ảnh Thẻ CCCD (Thuật toán thật)
+    let calculatedFaceScore = 0;
+    let isSimulatedBio = false;
+    let bioAlgorithm = 'PERCEPTUAL_COSINE_SIMILARITY';
     if (ekycAvatarUrl && ekycFrontImage) {
       const bioCheck = verifyFaceWithCccd(ekycAvatarUrl, ekycFrontImage);
       calculatedFaceScore = bioCheck.score;
+      isSimulatedBio = !!bioCheck.isSimulation;
+      bioAlgorithm = bioCheck.algorithm || 'PERCEPTUAL_COSINE_SIMILARITY';
       if (!bioCheck.matched) {
         setEkycModalError(bioCheck.reason);
         return;
@@ -568,6 +576,8 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         idCardFrontUrl: ekycFrontImage,
         idCardBackUrl: ekycBackImage,
         faceScore: calculatedFaceScore,
+        isSimulation: isSimulatedBio,
+        algorithm: bioAlgorithm,
       };
 
       // 1. Submit to local e-KYC Store
@@ -609,7 +619,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
       // 4. Feedback
       setActionSuccess(
         isEn
-          ? `✓ Identity & biometric face records for family member "${ekycFullName}" successfully submitted to Management Office! Pending review.`
+          ? `✓ Identity & face photo records for family member "${ekycFullName}" successfully submitted to Management Office! Pending review.`
           : `✓ Đã gửi thông tin căn cước & khuôn mặt của người nhà "${ekycFullName}" lên Ban Quản Lý thành công! Hồ sơ đang chờ Ban Quản Lý phê duyệt.`
       );
       setTimeout(() => setActionSuccess(null), 5000);
@@ -644,7 +654,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     setActionError(null);
 
     try {
-      const res = await nksSearchFamilyAccount(query);
+      const res = await skylineSearchFamilyAccount(query);
       if (res.success && res.found) {
         const list = Array.isArray((res as any).accounts) && (res as any).accounts.length > 0
           ? (res as any).accounts
@@ -687,7 +697,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     setActionError(null);
 
     try {
-      const res = await nksAddFamilyMember({
+      const res = await skylineAddFamilyMember({
         accountId: selectedAccount.id,
         username: selectedAccount.username,
         phone: selectedAccount.phone,
@@ -741,7 +751,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     if (!removeTargetMember) return;
     setIsRemoving(true);
     try {
-      const res = await nksRemoveFamilyMember(removeTargetMember.id);
+      const res = await skylineRemoveFamilyMember(removeTargetMember.id);
       if (res.success) {
         setMembers((prev) => prev.filter((m) => m.id !== removeTargetMember.id));
         setActionSuccess(
@@ -786,13 +796,13 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     setActionError(null);
 
     try {
-      const res = await nksAddFamilyMember({
+      const res = await skylineAddFamilyMember({
         fullName: directFullName.trim(),
         phone: directPhone.trim(),
         idCard: directIdCard.trim() || '079' + Math.floor(100000000 + Math.random() * 900000000),
         relationship: directRelationship,
         licensePlate: directLicensePlate.trim(),
-        avatarUrl: 'https://data.nks.vn/storage/users/default.png',
+        avatarUrl: 'https://ui-avatars.com/api/?name=User&background=1C2533&color=C5A880&bold=true',
         residenceType: directResidenceType,
         temporaryResidenceStatus: directTemporaryResidenceStatus,
         relationshipProof: directRelationshipProof,
@@ -884,17 +894,17 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
             <button
               type="button"
               onClick={() => {
-                setBankEnrollTarget({
+                setfaceEnrollTarget({
                   id: currentUser.id || 'usr-120',
                   fullName: currentUser.full_name || 'Trần Hữu Lực',
-                  phone: currentUser.phone || '0364967082',
+                  phone: currentUser.phone || '',
                   email: currentUser.email || 'huuluc04@gmail.com',
                   role: 'Family',
                   relationship: 'Chủ Hộ (Chủ Sở Hữu)',
                 });
               }}
               className="px-3 py-2 bg-[#161D26] hover:bg-[#1E2631] border border-[#C5A880] text-[#C5A880] hover:text-white text-xs font-bold rounded-none flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95"
-              title="Quét lại FaceID Chủ Hộ"
+              title={isEn ? 'Rescan Primary Resident FaceID' : 'Quét lại FaceID Chủ Hộ'}
             >
               <Camera className="w-3.5 h-3.5 text-[#C5A880]" />
               <span>{t('Quét FaceID')}</span>
@@ -927,22 +937,22 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="p-3.5 bg-[#121820] border border-[#222B35] rounded-none">
           <div className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold flex items-center justify-between">
-            <span>Nhân Khẩu</span>
+            <span>{t('Nhân Khẩu', 'Total Residents')}</span>
             <Users className="w-3.5 h-3.5 text-gray-500" />
           </div>
           <div className="text-2xl font-bold font-serif text-white mt-1 flex items-baseline gap-1.5">
             <span>{totalResidents}</span>
-            <span className="text-xs text-gray-400 font-normal">người</span>
+            <span className="text-xs text-gray-400 font-normal">{t('người', 'residents')}</span>
           </div>
         </div>
 
         <div className="p-3.5 bg-[#121820] border border-[#222B35] rounded-none">
           <div className="text-[10px] uppercase tracking-wider text-emerald-300 font-semibold flex items-center justify-between">
-            <span>Đã FaceID</span>
+            <span>{t('Đã FaceID', 'FaceID Enrolled')}</span>
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
           </div>
           <div className="text-2xl font-bold font-serif text-emerald-400 mt-1">
-            {1 + totalApproved} <span className="text-xs font-sans text-gray-400 font-normal">người</span>
+            {1 + totalApproved} <span className="text-xs font-sans text-gray-400 font-normal">{t('người', 'residents')}</span>
           </div>
         </div>
 
@@ -953,15 +963,15 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
             : 'bg-[#121820] border border-[#222B35]'
         }`}>
           <div className="text-[10px] uppercase tracking-wider text-amber-300 font-bold flex items-center justify-between">
-            <span>Chờ Duyệt</span>
+            <span>{t('Chờ Duyệt', 'Pending Review')}</span>
             <Clock className="w-3.5 h-3.5 text-amber-400" />
           </div>
           <div className="text-2xl font-bold font-serif text-amber-400 mt-1 flex items-baseline gap-1.5">
             <span>{totalPendingOwner}</span>
-            <span className="text-xs font-sans text-gray-400 font-normal">hồ sơ</span>
+            <span className="text-xs font-sans text-gray-400 font-normal">{t('hồ sơ', 'profiles')}</span>
             {totalPendingOwner > 0 && (
               <span className="text-[9px] px-1.5 py-0.5 bg-amber-500 text-[#0D1117] font-bold uppercase">
-                Cần duyệt
+                {t('Cần duyệt', 'Action needed')}
               </span>
             )}
           </div>
@@ -969,21 +979,21 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
 
         <div className="p-3.5 bg-[#121820] border border-[#222B35] rounded-none">
           <div className="text-[10px] uppercase tracking-wider text-cyan-300 font-semibold flex items-center justify-between">
-            <span>Chờ BQL</span>
+            <span>{t('Chờ BQL', 'Pending Mgmt')}</span>
             <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
           </div>
           <div className="text-2xl font-bold font-serif text-cyan-400 mt-1">
-            {totalPendingBql} <span className="text-xs font-sans text-gray-400 font-normal">hồ sơ</span>
+            {totalPendingBql} <span className="text-xs font-sans text-gray-400 font-normal">{t('hồ sơ', 'profiles')}</span>
           </div>
         </div>
 
         <div className="p-3.5 bg-[#121820] border border-[#222B35] rounded-none col-span-2 sm:col-span-1">
           <div className="text-[10px] uppercase tracking-wider text-purple-300 font-semibold flex items-center justify-between">
-            <span>Phương Tiện</span>
+            <span>{t('Phương Tiện', 'Vehicles')}</span>
             <Car className="w-3.5 h-3.5 text-purple-400" />
           </div>
           <div className="text-2xl font-bold font-serif text-purple-400 mt-1">
-            {totalVehicles} <span className="text-xs font-sans text-gray-400 font-normal">xe</span>
+            {totalVehicles} <span className="text-xs font-sans text-gray-400 font-normal">{t('xe', 'vehicles')}</span>
           </div>
         </div>
       </div>
@@ -997,7 +1007,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
             </div>
             <div>
               <div className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> Cần duyệt FaceID người nhà ({totalPendingOwner})
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> {t('Cần duyệt FaceID người nhà', 'Pending Family FaceID Review')} ({totalPendingOwner})
               </div>
               <p className="text-xs text-gray-300 mt-0.5">
                 Thành viên đã quét đủ 4 mẫu FaceID. Vui lòng kiểm tra và duyệt để BQL kích hoạt.
@@ -1080,7 +1090,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         ) : members.length === 0 ? (
           <div className="p-10 text-center text-gray-400 text-xs space-y-2">
             <Users className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-            <p>Chưa có thành viên nào trong căn hộ {aptCode}.</p>
+            <p>{t('Chưa có thành viên nào trong căn hộ', 'No members found in unit')} {aptCode}.</p>
             {isOwner && (
               <button
                 type="button"
@@ -1094,7 +1104,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         ) : filteredMembers.length === 0 ? (
           <div className="p-8 text-center text-gray-400 text-xs space-y-2">
             <Filter className="w-6 h-6 text-gray-600 mx-auto mb-1" />
-            <p>Không tìm thấy kết quả phù hợp.</p>
+            <p>{t('Không tìm thấy kết quả phù hợp.', 'No matching results found.')}</p>
             <button
               type="button"
               onClick={() => {
@@ -1116,8 +1126,8 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                 (ekyc?.avatarUrl && !ekyc.avatarUrl.startsWith('data:image/'))
                   ? ekyc.avatarUrl
                   : (m.avatarUrl && !m.avatarUrl.startsWith('data:image/'))
-                    ? m.avatarUrl.replace('data.nks.vn//', 'data.nks.vn/')
-                    : 'https://data.nks.vn/storage/users/default.png';
+                    ? m.avatarUrl
+                    : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80';
 
               return (
                 <div
@@ -1131,7 +1141,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                         src={avatarSrc}
                         alt={m.fullName}
                         onError={(e) => {
-                          e.currentTarget.src = 'https://data.nks.vn/storage/users/default.png';
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80';
                         }}
                         className="w-full h-full object-cover"
                       />
@@ -1193,7 +1203,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
 
                       {/* Thông tin cư trú & Pháp lý */}
                       <div className="text-[11px] text-gray-300 flex flex-wrap items-center gap-x-3 gap-y-1 pt-0.5">
-                        <span>{t('Hình thức:', 'Type:')} <strong className="text-gray-200">{m.residenceType || 'Thường trú cùng chủ hộ'}</strong></span>
+                        <span>{t('Hình thức:', 'Type:')} <strong className="text-gray-200">{m.residenceType || (isEn ? 'Permanent resident with owner' : 'Thường trú cùng chủ hộ')}</strong></span>
                         <span>• {t('Tạm trú:', 'Status:')} <strong className="text-emerald-400">{m.temporaryResidenceStatus || 'Đang làm thủ tục'}</strong></span>
                         {m.dob && <span>• {t('Sinh:', 'DOB:')} <strong className="font-mono text-gray-300">{m.dob}</strong></span>}
                         {m.gender && <span>({m.gender})</span>}
@@ -1204,7 +1214,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                         <div className="p-1.5 bg-rose-950/50 border border-rose-800/80 rounded-none text-[11px] text-rose-300 flex items-start gap-1.5">
                           <AlertTriangle className="w-3.5 h-3.5 text-rose-400 flex-shrink-0 mt-0.5" />
                           <span>
-                            <strong>Lý do từ BQL:</strong> {ekyc.rejectionReason}
+                            <strong>{t('Lý do từ BQL:', 'Reason from Management:')}</strong> {ekyc.rejectionReason}
                           </span>
                         </div>
                       )}
@@ -1243,7 +1253,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                     {(isOwner || (m.id === currentUser.id || m.phone === currentUser.phone || m.username === currentUser.username)) && (
                       <button
                         type="button"
-                        onClick={() => setBankEnrollTarget(m)}
+                        onClick={() => setfaceEnrollTarget(m)}
                         className={`px-3 py-1.5 text-xs font-semibold rounded-none flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95 ${
                           getEnrolledFaceProfile(m.phone || m.id || m.username || '')
                             ? 'bg-[#121820] hover:bg-[#1E2631] border border-cyan-500/80 text-cyan-300'
@@ -1338,7 +1348,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
             {/* Legal Representation Guarantee Box */}
             <div className="p-2.5 bg-[#121820] border border-[#C5A880]/50 rounded-none text-xs text-gray-300 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-[#C5A880] flex-shrink-0" />
-              <span>Chủ hộ <strong className="text-white">{ownerName}</strong> bảo lãnh thông tin cho <strong className="text-white">{ekycFullName || ekycTargetMember.fullName}</strong> gửi BQL duyệt FaceID.</span>
+              <span>{t('Chủ hộ', 'Owner')} <strong className="text-white">{ownerName}</strong> {t('bảo lãnh thông tin cho', 'guarantees information for')} <strong className="text-white">{ekycFullName || ekycTargetMember.fullName}</strong> {t('gửi BQL duyệt FaceID.', 'to submit for BQL FaceID approval.')}</span>
             </div>
 
             {/* Error Message */}
@@ -1370,26 +1380,26 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       required
                       value={ekycFullName}
                       onChange={(e) => setEkycFullName(e.target.value)}
-                      placeholder="Nhập họ và tên theo CCCD"
+                      placeholder={isEn ? 'Enter full name as on ID card' : 'Nhập họ và tên theo CCCD'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white rounded-none focus:border-[#C5A880] outline-none font-medium"
                     />
                   </div>
 
                   <div>
                     <label className="text-gray-300 font-semibold block mb-1">
-                      Mối Quan Hệ Với Chủ Hộ: *
+                      {t('Mối Quan Hệ Với Chủ Hộ:', 'Relationship to Owner:')} *
                     </label>
                     <select
                       value={ekycRelationship}
                       onChange={(e) => setEkycRelationship(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="Vợ / Chồng">Vợ / Chồng</option>
-                      <option value="Con Cái">Con Cái</option>
-                      <option value="Bố / Mẹ">Bố / Mẹ</option>
-                      <option value="Anh / Chị / Em">Anh / Chị / Em</option>
-                      <option value="Người Thân Cùng Căn Hộ">Người Thân Cùng Căn Hộ</option>
-                      <option value="Người Nhà / Thành Viên Khác">Người Nhà / Thành Viên Khác</option>
+                      <option value="{t('Vợ / Chồng', 'Spouse')}">{t('Vợ / Chồng', 'Spouse')}</option>
+                      <option value="{t('Con Cái', 'Children')}">{t('Con Cái', 'Children')}</option>
+                      <option value="{t('Bố / Mẹ', 'Parents')}">{t('Bố / Mẹ', 'Parents')}</option>
+                      <option value="{t('Anh / Chị / Em', 'Siblings')}">{t('Anh / Chị / Em', 'Siblings')}</option>
+                      <option value="{t('Người Thân Cùng Căn Hộ', 'Co-resident Relatives')}">{t('Người Thân Cùng Căn Hộ', 'Co-resident Relatives')}</option>
+                      <option value="{t('Người Nhà / Thành Viên Khác', 'Other Family Members')}">{t('Người Nhà / Thành Viên Khác', 'Other Family Members')}</option>
                     </select>
                   </div>
 
@@ -1403,7 +1413,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       maxLength={10}
                       value={ekycPhone}
                       onChange={(e) => setEkycPhone(cleanPhoneNumber(e.target.value))}
-                      placeholder="Nhập 10 số điện thoại"
+                      placeholder={isEn ? 'Enter 10-digit phone number' : 'Nhập 10 số điện thoại'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white font-mono rounded-none focus:border-[#C5A880] outline-none"
                     />
                     {ekycPhone && !isValidPhoneNumber(ekycPhone) && (
@@ -1423,7 +1433,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       maxLength={12}
                       value={ekycIdCard}
                       onChange={(e) => setEkycIdCard(cleanCccdNumber(e.target.value))}
-                      placeholder="Nhập 12 số CCCD"
+                      placeholder={isEn ? 'Enter 12-digit ID card number' : 'Nhập 12 số CCCD'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-[#C5A880] font-mono font-bold rounded-none focus:border-[#C5A880] outline-none"
                     />
                     {ekycIdCard && !isValidCccdNumber(ekycIdCard) && (
@@ -1453,7 +1463,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       type="text"
                       value={ekycPob}
                       onChange={(e) => setEkycPob(e.target.value)}
-                      placeholder="Nhập quê quán / nơi thường trú"
+                      placeholder={isEn ? 'Enter hometown / permanent address' : 'Nhập quê quán / nơi thường trú'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white rounded-none focus:border-[#C5A880] outline-none"
                     />
                   </div>
@@ -1478,7 +1488,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       type="text"
                       value={ekycLicensePlate}
                       onChange={(e) => setEkycLicensePlate(e.target.value)}
-                      placeholder="Nhập biển số xe (nếu có)"
+                      placeholder={isEn ? 'Enter license plate (if any)' : 'Nhập biển số xe (nếu có)'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-cyan-300 font-mono rounded-none focus:border-[#C5A880] outline-none"
                     />
                   </div>
@@ -1489,7 +1499,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
               <div className="space-y-4 p-4 bg-[#121820] border border-[#222B35] rounded-none">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-[#C5A880] flex items-center justify-between border-b border-[#222B35] pb-2.5">
                   <span className="flex items-center gap-2">
-                    <User className="w-4 h-4" /> 2. Ảnh Đại Diện (Avatar) & CCCD 2 Mặt Gửi BQL
+                    <User className="w-4 h-4" /> 2. {t('Ảnh Đại Diện (Avatar)', 'Profile Avatar')} & CCCD 2 Mặt Gửi BQL
                   </span>
                 </div>
 
@@ -1498,8 +1508,8 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                   <div className="p-3 bg-[#161B22] border border-[#2D3748] rounded-none space-y-2.5 flex flex-col justify-between">
                     <div>
                       <div className="font-bold text-white flex items-center justify-between">
-                        <span>Ảnh Đại Diện (Avatar)</span>
-                        <span className="text-[10px] text-[#C5A880]">Hồ sơ cá nhân</span>
+                        <span>{t('Ảnh Đại Diện (Avatar)', 'Profile Avatar')}</span>
+                        <span className="text-[10px] text-[#C5A880]">{t('Hồ sơ cá nhân', 'Personal Profile')}</span>
                       </div>
                       <p className="text-[10.5px] text-gray-400 mt-0.5">
                         Ảnh chân dung hiển thị trang cá nhân. Mở cửa dùng tính năng Quét FaceID 4 mẫu độc lập.
@@ -1518,10 +1528,10 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       ) : (
                         <>
                           <img
-                            src={ekycAvatarUrl || 'https://data.nks.vn/storage/users/default.png'}
+                            src={ekycAvatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80'}
                             alt="Resident Avatar"
                             onError={(e) => {
-                              e.currentTarget.src = 'https://data.nks.vn/storage/users/default.png';
+                              e.currentTarget.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80';
                             }}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                           />
@@ -1585,12 +1595,12 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                     </div>
                   </div>
 
-                  {/* Photo 2: CCCD Mặt Trước */}
+                  {/* Photo 2: {t('CCCD Mặt Trước', 'National ID Front')} */}
                   <div className="p-3 bg-[#161D26] border border-[#2D3748] rounded-none space-y-2.5 flex flex-col justify-between">
                     <div>
                       <div className="font-bold text-white flex items-center justify-between">
-                        <span>CCCD Mặt Trước</span>
-                        <span className="text-[10px] text-cyan-400">Mặt có ảnh</span>
+                        <span>{t('CCCD Mặt Trước', 'National ID Front')}</span>
+                        <span className="text-[10px] text-cyan-400">{t('Mặt có ảnh', 'Photo side')}</span>
                       </div>
                       <p className="text-[10.5px] text-gray-400 mt-0.5">
                         Chụp đủ 4 góc thẻ, không lóa sáng hoặc mất góc.
@@ -1601,14 +1611,14 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       {ekycFrontImage ? (
                         <img
                           src={ekycFrontImage}
-                          alt="CCCD Mặt Trước"
+                          alt="{t('CCCD Mặt Trước', 'National ID Front')}"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />
                       ) : (
                         <div className="flex flex-col items-center justify-center text-center p-3 text-gray-500 space-y-1">
                           <CreditCard className="w-7 h-7 text-cyan-500/60" />
-                          <span className="text-[11px] text-gray-400 font-medium">Chưa có ảnh mặt trước thẻ CCCD</span>
-                          <span className="text-[9.5px] text-gray-600">Bấm &quot;Tải Lên Mặt Trước&quot; bên dưới</span>
+                          <span className="text-[11px] text-gray-400 font-medium">{t('Chưa có ảnh mặt trước thẻ CCCD', 'No ID front photo yet')}</span>
+                          <span className="text-[9.5px] text-gray-600">{t('Bấm "Tải Lên Mặt Trước" bên dưới', 'Click "Upload Front Photo" below')}</span>
                         </div>
                       )}
                       <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/75 backdrop-blur rounded-none text-[9.5px] font-mono text-cyan-300 border border-cyan-500/30">
@@ -1639,12 +1649,12 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                     </div>
                   </div>
 
-                  {/* Photo 3: CCCD Mặt Sau */}
+                  {/* Photo 3: {t('CCCD Mặt Sau', 'National ID Back')} */}
                   <div className="p-3 bg-[#161D26] border border-[#2D3748] rounded-none space-y-2.5 flex flex-col justify-between">
                     <div>
                       <div className="font-bold text-white flex items-center justify-between">
-                        <span>CCCD Mặt Sau</span>
-                        <span className="text-[10px] text-purple-400">Chip & Vân tay</span>
+                        <span>{t('CCCD Mặt Sau', 'National ID Back')}</span>
+                        <span className="text-[10px] text-purple-400">{t('Chip & Vân tay', 'Chip & Fingerprint side')}</span>
                       </div>
                       <p className="text-[10.5px] text-gray-400 mt-0.5">
                         Chụp rõ chip điện tử, mã QR và ngày cấp.
@@ -1655,14 +1665,14 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       {ekycBackImage ? (
                         <img
                           src={ekycBackImage}
-                          alt="CCCD Mặt Sau"
+                          alt="{t('CCCD Mặt Sau', 'National ID Back')}"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />
                       ) : (
                         <div className="flex flex-col items-center justify-center text-center p-3 text-gray-500 space-y-1">
                           <CreditCard className="w-7 h-7 text-purple-500/60" />
-                          <span className="text-[11px] text-gray-400 font-medium">Chưa có ảnh mặt sau thẻ CCCD (Chip)</span>
-                          <span className="text-[9.5px] text-gray-600">Bấm &quot;Tải Lên Mặt Sau&quot; bên dưới</span>
+                          <span className="text-[11px] text-gray-400 font-medium">{t('Chưa có ảnh mặt sau thẻ CCCD (Chip)', 'No ID back photo (Chip) yet')}</span>
+                          <span className="text-[9.5px] text-gray-600">{t('Bấm "Tải Lên Mặt Sau" bên dưới', 'Click "Upload Back Photo" below')}</span>
                         </div>
                       )}
                       <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/75 backdrop-blur rounded-none text-[9.5px] font-mono text-purple-300 border border-purple-500/30">
@@ -1783,7 +1793,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                 }`}
               >
                 <ShieldCheck className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">Có Sẵn ({bqlAccounts.length})</span>
+                <span className="truncate">{t('Có Sẵn', 'Pre-registered')} ({bqlAccounts.length})</span>
               </button>
 
               <button
@@ -1800,7 +1810,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                 }`}
               >
                 <Search className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">Tra Cứu</span>
+                <span className="truncate">{t('Tra Cứu', 'Search')}</span>
               </button>
 
               <button
@@ -1817,7 +1827,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                 }`}
               >
                 <UserPlus className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">Nhập Mới</span>
+                <span className="truncate">{t('Nhập Mới', 'Add New')}</span>
               </button>
             </div>
 
@@ -1841,7 +1851,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
               return (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between text-[11px] text-gray-400">
-                    <span>Tài khoản người nhà đã đăng ký trong hệ thống:</span>
+                    <span>{t('Tài khoản người nhà đã đăng ký trong hệ thống:', 'Registered family accounts in system:')}</span>
                     <span className="text-[#C5A880] font-mono font-bold">
                       {filteredBqlAccounts.length} / {bqlAccounts.length} tài khoản
                     </span>
@@ -1854,7 +1864,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       type="text"
                       value={preApprovedFilter}
                       onChange={(e) => setPreApprovedFilter(e.target.value)}
-                      placeholder="Lọc nhanh theo họ tên, SĐT hoặc CCCD..."
+                      placeholder={isEn ? 'Filter by name, phone or ID...' : 'Lọc nhanh theo họ tên, SĐT hoặc CCCD...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] pl-9 pr-8 py-2 text-white text-xs font-mono rounded-none focus:border-[#C5A880] outline-none"
                     />
                     {preApprovedFilter && (
@@ -1870,7 +1880,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
 
                   {filteredBqlAccounts.length === 0 ? (
                     <div className="p-5 bg-[#161D26] border border-[#222B35] rounded-none text-center text-xs text-gray-400 space-y-1.5">
-                      <p>Không tìm thấy tài khoản phù hợp với từ khóa "{preApprovedFilter}".</p>
+                      <p>{t('Không tìm thấy tài khoản phù hợp với từ khóa', 'No accounts found matching keyword')} "{preApprovedFilter}".</p>
                       <button
                         type="button"
                         onClick={() => setPreApprovedFilter('')}
@@ -1902,10 +1912,10 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                             <div className="flex items-center gap-2.5 min-w-0">
                               <div className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-none overflow-hidden border border-[#C5A880]/60 flex-shrink-0 bg-[#0D1117]">
                                 <img
-                                  src={acc.avatarUrl || 'https://data.nks.vn/storage/users/default.png'}
+                                  src={acc.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80'}
                                   alt={acc.fullName}
                                   onError={(e) => {
-                                    e.currentTarget.src = 'https://data.nks.vn/storage/users/default.png';
+                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80';
                                   }}
                                   className="w-full h-full object-cover"
                                 />
@@ -1924,7 +1934,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                                   )}
                                 </div>
                                 <div className="text-[11px] text-gray-400 flex items-center gap-2 font-mono flex-wrap">
-                                  <span className="text-gray-300">SĐT: {acc.phone}</span>
+                                  <span className="text-gray-300">{t('SĐT:', 'Phone:')} {acc.phone}</span>
                                   {acc.idCard && <span>• CCCD: {acc.idCard}</span>}
                                 </div>
                               </div>
@@ -1932,7 +1942,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
 
                             <div className="flex-shrink-0">
                               {isAlreadyInUnit ? (
-                                <span className="text-[10px] text-gray-500 italic">Đã có</span>
+                                <span className="text-[10px] text-gray-500 italic">{t('Đã có', 'Added')}</span>
                               ) : isSelected ? (
                                 <span className="px-2.5 py-1 bg-[#C5A880] text-[#0D1117] text-[10px] font-bold rounded-none flex items-center gap-1">
                                   <Check className="w-3 h-3 stroke-[3]" /> Đã chọn
@@ -1965,7 +1975,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Nhập SĐT, CCCD hoặc họ tên người nhà..."
+                    placeholder={isEn ? 'Enter phone, ID or member name...' : 'Nhập SĐT, CCCD hoặc họ tên người nhà...'}
                     className="flex-1 bg-[#161B22] border border-[#2D3748] p-2 text-white text-xs font-mono rounded-none focus:border-[#C5A880] outline-none"
                   />
                   <button
@@ -1984,7 +1994,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
 
                 {/* Quick Suggestion Pills */}
                 <div className="space-y-1">
-                  <div className="text-[10px] text-gray-400 font-mono">Tài khoản mẫu có sẵn trong hệ thống:</div>
+                  <div className="text-[10px] text-gray-400 font-mono">{t('Tài khoản mẫu có sẵn trong hệ thống:', 'Available sample accounts in system:')}</div>
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       { name: 'Nguyễn Hữu Nhựt', q: '0917795211' },
@@ -2041,10 +2051,10 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                             <div className="flex items-center gap-2.5 min-w-0">
                               <div className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-none overflow-hidden border border-[#C5A880]/60 flex-shrink-0 bg-[#0D1117]">
                                 <img
-                                  src={acc.avatarUrl || 'https://data.nks.vn/storage/users/default.png'}
+                                  src={acc.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80'}
                                   alt={acc.fullName}
                                   onError={(e) => {
-                                    e.currentTarget.src = 'https://data.nks.vn/storage/users/default.png';
+                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80';
                                   }}
                                   className="w-full h-full object-cover"
                                 />
@@ -2059,7 +2069,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                                   )}
                                 </div>
                                 <div className="text-[11px] text-gray-400 flex items-center gap-2 font-mono flex-wrap">
-                                  <span>SĐT: {acc.phone}</span>
+                                  <span>{t('SĐT:', 'Phone:')} {acc.phone}</span>
                                   {acc.idCard && <span>• CCCD: {acc.idCard}</span>}
                                 </div>
                               </div>
@@ -2067,7 +2077,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
 
                             <div className="flex-shrink-0">
                               {isAlreadyInUnit ? (
-                                <span className="text-[10px] text-gray-500 italic">Đã có</span>
+                                <span className="text-[10px] text-gray-500 italic">{t('Đã có', 'Added')}</span>
                               ) : isSelected ? (
                                 <span className="px-2.5 py-1 bg-[#C5A880] text-[#0D1117] text-[10px] font-bold rounded-none flex items-center gap-1">
                                   <Check className="w-3 h-3 stroke-[3]" /> Đã chọn
@@ -2105,7 +2115,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       required
                       value={directFullName}
                       onChange={(e) => setDirectFullName(e.target.value)}
-                      placeholder="Nhập họ và tên..."
+                      placeholder={isEn ? 'Enter full name...' : 'Nhập họ và tên...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     />
                   </div>
@@ -2120,7 +2130,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       maxLength={10}
                       value={directPhone}
                       onChange={(e) => setDirectPhone(cleanPhoneNumber(e.target.value))}
-                      placeholder="Nhập 10 số điện thoại..."
+                      placeholder={isEn ? 'Enter 10-digit phone number...' : 'Nhập 10 số điện thoại...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white font-mono rounded-none focus:border-[#C5A880] outline-none"
                     />
                     {directPhone && !isValidPhoneNumber(directPhone) && (
@@ -2139,16 +2149,16 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       onChange={(e) => setDirectRelationship(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="Vợ / Chồng">Vợ / Chồng</option>
-                      <option value="Con ruột">Con ruột</option>
-                      <option value="Con nuôi">Con nuôi</option>
-                      <option value="Bố / Mẹ ruột">Bố / Mẹ ruột</option>
-                      <option value="Bố / Mẹ vợ / chồng">Bố / Mẹ vợ / chồng</option>
-                      <option value="Anh / Chị / Em ruột">Anh / Chị / Em ruột</option>
-                      <option value="Cháu ruột">Cháu ruột</option>
-                      <option value="Người thân khác">Người thân khác</option>
-                      <option value="Người giúp việc / Bảo mẫu">Người giúp việc / Bảo mẫu</option>
-                      <option value="Lái xe riêng">Lái xe riêng</option>
+                      <option value="{t('Vợ / Chồng', 'Spouse')}">{t('Vợ / Chồng', 'Spouse')}</option>
+                      <option value="{t('Con ruột', 'Biological child')}">{t('Con ruột', 'Biological child')}</option>
+                      <option value="{t('Con nuôi', 'Adopted child')}">{t('Con nuôi', 'Adopted child')}</option>
+                      <option value="{t('Bố / Mẹ', 'Parents')} ruột">{t('Bố / Mẹ', 'Parents')} ruột</option>
+                      <option value="{t('Bố / Mẹ', 'Parents')} vợ / chồng">{t('Bố / Mẹ', 'Parents')} vợ / chồng</option>
+                      <option value="{t('Anh / Chị / Em', 'Siblings')} ruột">{t('Anh / Chị / Em', 'Siblings')} ruột</option>
+                      <option value="{t('Cháu ruột', 'Niece / Nephew')}">{t('Cháu ruột', 'Niece / Nephew')}</option>
+                      <option value="{t('Người thân khác', 'Other relative')}">{t('Người thân khác', 'Other relative')}</option>
+                      <option value="{t('Người giúp việc / Bảo mẫu', 'Housekeeper / Nanny')}">{t('Người giúp việc / Bảo mẫu', 'Housekeeper / Nanny')}</option>
+                      <option value="{t('Lái xe riêng', 'Private driver')}">{t('Lái xe riêng', 'Private driver')}</option>
                     </select>
                   </div>
 
@@ -2161,7 +2171,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       maxLength={12}
                       value={directIdCard}
                       onChange={(e) => setDirectIdCard(cleanCccdNumber(e.target.value))}
-                      placeholder="Nhập 12 số CCCD..."
+                      placeholder={isEn ? 'Enter 12-digit ID card number...' : 'Nhập 12 số CCCD...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white font-mono rounded-none focus:border-[#C5A880] outline-none"
                     />
                     {directIdCard && !isValidCccdNumber(directIdCard) && (
@@ -2172,35 +2182,35 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">Hình Thức Cư Trú:</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Hình Thức Cư Trú:', 'Residency Status:')}</label>
                     <select
                       value={directResidenceType}
                       onChange={(e) => setDirectResidenceType(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="Thường trú cùng chủ hộ">Thường trú cùng chủ hộ</option>
-                      <option value="Tạm trú dài hạn">Tạm trú dài hạn</option>
-                      <option value="Lưu trú có thời hạn">Lưu trú có thời hạn</option>
+                      <option value="{t('Thường trú cùng chủ hộ', 'Permanent resident with owner')}">{t('Thường trú cùng chủ hộ', 'Permanent resident with owner')}</option>
+                      <option value="{t('Tạm trú dài hạn', 'Long-term temporary resident')}">{t('Tạm trú dài hạn', 'Long-term temporary resident')}</option>
+                      <option value="{t('Lưu trú có thời hạn', 'Fixed-term stay')}">{t('Lưu trú có thời hạn', 'Fixed-term stay')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">Căn Cứ Bảo Lãnh / Chứng Minh:</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Căn Cứ Bảo Lãnh / Chứng Minh:', 'Proof of Relationship:')}</label>
                     <select
                       value={directRelationshipProof}
                       onChange={(e) => setDirectRelationshipProof(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="Sổ Hộ Khẩu / Xác nhận CT07">Sổ Hộ Khẩu / Xác nhận CT07</option>
-                      <option value="Giấy chứng nhận kết hôn">Giấy chứng nhận kết hôn</option>
-                      <option value="Giấy khai sinh">Giấy khai sinh</option>
-                      <option value="Hợp đồng lao động bảo mẫu / lái xe">Hợp đồng lao động bảo mẫu / lái xe</option>
-                      <option value="Văn bản bảo lãnh của chủ hộ">Văn bản bảo lãnh của chủ hộ</option>
+                      <option value="{t('Sổ Hộ Khẩu / Xác nhận CT07', 'Household Registry / CT07')}">{t('Sổ Hộ Khẩu / Xác nhận CT07', 'Household Registry / CT07')}</option>
+                      <option value="{t('Giấy chứng nhận kết hôn', 'Marriage Certificate')}">{t('Giấy chứng nhận kết hôn', 'Marriage Certificate')}</option>
+                      <option value="{t('Giấy khai sinh', 'Birth Certificate')}">{t('Giấy khai sinh', 'Birth Certificate')}</option>
+                      <option value="{t('Hợp đồng lao động bảo mẫu / lái xe', 'Labor Contract for Nanny / Driver')}">{t('Hợp đồng lao động bảo mẫu / lái xe', 'Labor Contract for Nanny / Driver')}</option>
+                      <option value="{t('Văn bản bảo lãnh của chủ hộ', 'Owner Sponsorship Letter')}">{t('Văn bản bảo lãnh của chủ hộ', 'Owner Sponsorship Letter')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">Ngày Sinh (DOB):</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Ngày Sinh (DOB):', 'Date of Birth (DOB):')}</label>
                     <input
                       type="date"
                       value={directDob}
@@ -2210,31 +2220,31 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">Giới Tính:</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Giới Tính:', 'Gender:')}</label>
                     <select
                       value={directGender}
                       onChange={(e) => setDirectGender(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="Nam">Nam</option>
-                      <option value="Nữ">Nữ</option>
+                      <option value="Nam">{t('Nam', 'Male')}</option>
+                      <option value="Nữ">{t('Nữ', 'Female')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">Nơi Sinh / Quê Quán:</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Nơi Sinh / Quê Quán:', 'Place of Birth / Origin:')}</label>
                     <input
                       type="text"
                       value={directPob}
                       onChange={(e) => setDirectPob(e.target.value)}
-                      placeholder="Nhập nơi sinh / quê quán..."
+                      placeholder={isEn ? 'Enter place of birth / hometown...' : 'Nhập nơi sinh / quê quán...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-gray-300 font-medium block mb-1">Biển Số Xe:</label>
+                      <label className="text-gray-300 font-medium block mb-1">{t('Biển Số Xe:', 'License Plate:')}</label>
                       <input
                         type="text"
                         value={directLicensePlate}
@@ -2244,15 +2254,15 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                       />
                     </div>
                     <div>
-                      <label className="text-gray-300 font-medium block mb-1">Loại Phương Tiện:</label>
+                      <label className="text-gray-300 font-medium block mb-1">{t('Loại Phương Tiện:', 'Vehicle Type:')}</label>
                       <select
                         value={directVehicleType}
                         onChange={(e) => setDirectVehicleType(e.target.value)}
                         className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                       >
-                        <option value="Xe máy">Xe máy</option>
-                        <option value="Ô tô">Ô tô</option>
-                        <option value="Xe đạp điện">Xe đạp điện</option>
+                        <option value="Xe máy">{t('Xe máy', 'Motorcycle')}</option>
+                        <option value="Ô tô">{t('Ô tô', 'Car')}</option>
+                        <option value="Xe đạp điện">{t('Xe đạp điện', 'Electric bike')}</option>
                       </select>
                     </div>
                   </div>
@@ -2260,7 +2270,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
 
                 <div className="p-2.5 bg-[#161D26] border border-[#C5A880]/30 text-[11px] text-[#C5A880] flex items-center gap-2">
                   <Crown className="w-4 h-4 flex-shrink-0 text-[#C5A880]" />
-                  <span>Chủ Hộ Bảo Lãnh: <strong>{ownerName}</strong> (Căn {aptCode} - The Tropical BS-07)</span>
+                  <span>{t('Chủ Hộ Bảo Lãnh:', 'Sponsoring Owner:')} <strong>{ownerName}</strong> (Căn {aptCode} - The Tropical BS-07)</span>
                 </div>
 
                 <div className="pt-3 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 sm:gap-3 border-t border-[#222B35]">
@@ -2308,55 +2318,55 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">Mối Quan Hệ Với Chủ Hộ:</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Mối Quan Hệ Với Chủ Hộ:', 'Relationship to Owner:')}</label>
                     <select
                       value={newRelationship}
                       onChange={(e) => setNewRelationship(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="Vợ / Chồng">Vợ / Chồng</option>
-                      <option value="Con ruột">Con ruột</option>
-                      <option value="Con nuôi">Con nuôi</option>
-                      <option value="Bố / Mẹ ruột">Bố / Mẹ ruột</option>
-                      <option value="Bố / Mẹ vợ / chồng">Bố / Mẹ vợ / chồng</option>
-                      <option value="Anh / Chị / Em ruột">Anh / Chị / Em ruột</option>
-                      <option value="Cháu ruột">Cháu ruột</option>
-                      <option value="Người thân khác">Người thân khác</option>
-                      <option value="Người giúp việc / Bảo mẫu">Người giúp việc / Bảo mẫu</option>
-                      <option value="Lái xe riêng">Lái xe riêng</option>
+                      <option value="{t('Vợ / Chồng', 'Spouse')}">{t('Vợ / Chồng', 'Spouse')}</option>
+                      <option value="{t('Con ruột', 'Biological child')}">{t('Con ruột', 'Biological child')}</option>
+                      <option value="{t('Con nuôi', 'Adopted child')}">{t('Con nuôi', 'Adopted child')}</option>
+                      <option value="{t('Bố / Mẹ', 'Parents')} ruột">{t('Bố / Mẹ', 'Parents')} ruột</option>
+                      <option value="{t('Bố / Mẹ', 'Parents')} vợ / chồng">{t('Bố / Mẹ', 'Parents')} vợ / chồng</option>
+                      <option value="{t('Anh / Chị / Em', 'Siblings')} ruột">{t('Anh / Chị / Em', 'Siblings')} ruột</option>
+                      <option value="{t('Cháu ruột', 'Niece / Nephew')}">{t('Cháu ruột', 'Niece / Nephew')}</option>
+                      <option value="{t('Người thân khác', 'Other relative')}">{t('Người thân khác', 'Other relative')}</option>
+                      <option value="{t('Người giúp việc / Bảo mẫu', 'Housekeeper / Nanny')}">{t('Người giúp việc / Bảo mẫu', 'Housekeeper / Nanny')}</option>
+                      <option value="{t('Lái xe riêng', 'Private driver')}">{t('Lái xe riêng', 'Private driver')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">Hình Thức Cư Trú:</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Hình Thức Cư Trú:', 'Residency Status:')}</label>
                     <select
                       value={newResidenceType}
                       onChange={(e) => setNewResidenceType(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="Thường trú cùng chủ hộ">Thường trú cùng chủ hộ</option>
-                      <option value="Tạm trú dài hạn">Tạm trú dài hạn</option>
-                      <option value="Lưu trú có thời hạn">Lưu trú có thời hạn</option>
+                      <option value="{t('Thường trú cùng chủ hộ', 'Permanent resident with owner')}">{t('Thường trú cùng chủ hộ', 'Permanent resident with owner')}</option>
+                      <option value="{t('Tạm trú dài hạn', 'Long-term temporary resident')}">{t('Tạm trú dài hạn', 'Long-term temporary resident')}</option>
+                      <option value="{t('Lưu trú có thời hạn', 'Fixed-term stay')}">{t('Lưu trú có thời hạn', 'Fixed-term stay')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">Căn Cứ Bảo Lãnh:</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Căn Cứ Bảo Lãnh:', 'Proof of Relationship:')}</label>
                     <select
                       value={newRelationshipProof}
                       onChange={(e) => setNewRelationshipProof(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="Sổ Hộ Khẩu / Xác nhận CT07">Sổ Hộ Khẩu / Xác nhận CT07</option>
-                      <option value="Giấy chứng nhận kết hôn">Giấy chứng nhận kết hôn</option>
-                      <option value="Giấy khai sinh">Giấy khai sinh</option>
-                      <option value="Hợp đồng lao động bảo mẫu / lái xe">Hợp đồng lao động bảo mẫu / lái xe</option>
-                      <option value="Văn bản bảo lãnh của chủ hộ">Văn bản bảo lãnh của chủ hộ</option>
+                      <option value="{t('Sổ Hộ Khẩu / Xác nhận CT07', 'Household Registry / CT07')}">{t('Sổ Hộ Khẩu / Xác nhận CT07', 'Household Registry / CT07')}</option>
+                      <option value="{t('Giấy chứng nhận kết hôn', 'Marriage Certificate')}">{t('Giấy chứng nhận kết hôn', 'Marriage Certificate')}</option>
+                      <option value="{t('Giấy khai sinh', 'Birth Certificate')}">{t('Giấy khai sinh', 'Birth Certificate')}</option>
+                      <option value="{t('Hợp đồng lao động bảo mẫu / lái xe', 'Labor Contract for Nanny / Driver')}">{t('Hợp đồng lao động bảo mẫu / lái xe', 'Labor Contract for Nanny / Driver')}</option>
+                      <option value="{t('Văn bản bảo lãnh của chủ hộ', 'Owner Sponsorship Letter')}">{t('Văn bản bảo lãnh của chủ hộ', 'Owner Sponsorship Letter')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">Biển Số Xe (tùy chọn):</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Biển Số Xe (tùy chọn):', 'License Plate (optional):')}</label>
                     <input
                       type="text"
                       value={newLicensePlate}
@@ -2407,22 +2417,22 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         initialBackImage={ekycBackImage}
       />
 
-      {/* Official 4-Step Banking-Grade FaceID Biometric Enrollment Modal for Family Member */}
-      {bankEnrollTarget && (
-        <BankFaceEnrollModal
-          isOpen={!!bankEnrollTarget}
-          onClose={() => setBankEnrollTarget(null)}
-          userId={bankEnrollTarget.phone || bankEnrollTarget.id || bankEnrollTarget.username || bankEnrollTarget.fullName}
-          fullName={bankEnrollTarget.fullName}
+      {/* Official 4-Step FaceID Biometric Enrollment Modal for Family Member */}
+      {faceEnrollTarget && (
+        <FaceEnrollModal
+          isOpen={!!faceEnrollTarget}
+          onClose={() => setfaceEnrollTarget(null)}
+          userId={faceEnrollTarget.phone || faceEnrollTarget.id || faceEnrollTarget.username || faceEnrollTarget.fullName}
+          fullName={faceEnrollTarget.fullName}
           apartmentCode={aptCode}
-          phone={bankEnrollTarget.phone || ''}
-          email={bankEnrollTarget.email || ''}
+          phone={faceEnrollTarget.phone || ''}
+          email={faceEnrollTarget.email || ''}
           isFamilyMemberSelfEnroll={!isOwner}
           submittedByRole={currentUser.role}
           onEnrollSuccess={() => {
             setMembers((prev) =>
               prev.map((m) => {
-                if (m.id === bankEnrollTarget.id || m.phone === bankEnrollTarget.phone) {
+                if (m.id === faceEnrollTarget.id || m.phone === faceEnrollTarget.phone) {
                   return {
                     ...m,
                     faceStatus: !isOwner ? 'Chờ Chủ Hộ Xác Nhận' : 'Đang Chờ BQL Phê Duyệt',
@@ -2434,11 +2444,11 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
             fetchMembers();
             setActionSuccess(
               !isOwner
-                ? `✓ Đã thu thập đủ 4 mẫu FaceID cho ${bankEnrollTarget.fullName}! Hồ sơ đang chờ Chủ Hộ xác nhận.`
-                : `✓ Đã thu thập đủ 4 mẫu FaceID chuẩn ngân hàng cho ${bankEnrollTarget.fullName}!`
+                ? `✓ Đã chụp đủ 4 góc khuôn mặt cho ${faceEnrollTarget.fullName}! Hồ sơ đang chờ Chủ Hộ xác nhận.`
+                : `✓ Đã chụp đủ 4 góc khuôn mặt thành công cho ${faceEnrollTarget.fullName}!`
             );
             setTimeout(() => setActionSuccess(null), 5000);
-            setBankEnrollTarget(null);
+            setfaceEnrollTarget(null);
           }}
         />
       )}
@@ -2452,7 +2462,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
           setIsConfirmingFace(true);
           try {
             // 1. Xác nhận FaceID trong hồ sơ sinh trắc học
-            await nksConfirmFamilyFaceIdByOwner(
+            await skylineConfirmFamilyFaceIdByOwner(
               confirmTargetMember.id || confirmTargetMember.phone || '', 
               aptCode,
               confirmTargetMember.phone
@@ -2521,20 +2531,20 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
               {/* Member Brief Info */}
               <div className="p-3 bg-[#161B22] border border-[#222B35] text-xs grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div>
-                  <span className="text-gray-400 block text-[11px]">Thành viên:</span>
+                  <span className="text-gray-400 block text-[11px]">{t('Thành viên:', 'Member:')}</span>
                   <strong className="text-white">{confirmTargetMember.fullName}</strong>
                 </div>
                 <div>
-                  <span className="text-gray-400 block text-[11px]">Quan hệ:</span>
+                  <span className="text-gray-400 block text-[11px]">{t('Quan hệ:', 'Relationship:')}</span>
                   <span className="text-[#C5A880] font-semibold">{confirmTargetMember.relationship}</span>
                 </div>
                 <div>
-                  <span className="text-gray-400 block text-[11px]">SĐT:</span>
+                  <span className="text-gray-400 block text-[11px]">{t('SĐT:', 'Phone:')}</span>
                   <span className="font-mono text-gray-200">{confirmTargetMember.phone}</span>
                 </div>
                 <div>
                   <span className="text-gray-400 block text-[11px]">CCCD:</span>
-                  <span className="font-mono text-gray-200">{confirmTargetMember.idCard || 'Đang cập nhật'}</span>
+                  <span className="font-mono text-gray-200">{confirmTargetMember.idCard || t('Đang cập nhật', 'Updating')}</span>
                 </div>
               </div>
 
@@ -2546,18 +2556,18 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                   </span>
                   <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
                     <CheckCircle className="w-3 h-3 text-emerald-400" />
-                    Độ khớp: {enrolled?.faceScore || 99.4}%
+                    Độ khớp: {enrolled?.faceScore ? `${enrolled.faceScore}%` : 'Chưa quét'}
                   </span>
                 </div>
 
                 {samples ? (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div 
-                      onClick={() => setSelectedAnglePreview({ title: '1. Chính Diện', src: samples.front })}
+                      onClick={() => setSelectedAnglePreview({ title: isEn ? '1. Front View' : '1. Chính Diện', src: samples.front })}
                       className="p-1.5 bg-[#121820] border border-gray-700 hover:border-[#C5A880] text-center space-y-1 group cursor-pointer transition-all relative"
                     >
                       <div className="text-[10px] font-mono text-[#C5A880] flex items-center justify-between">
-                        <span>1. Chính Diện</span>
+                        <span>{t('1. Chính Diện', '1. Front View')}</span>
                         <ZoomIn className="w-3 h-3 text-gray-500 group-hover:text-[#C5A880]" />
                       </div>
                       <div className="aspect-square bg-black border border-gray-800 overflow-hidden relative">
@@ -2566,11 +2576,11 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                     </div>
 
                     <div 
-                      onClick={() => setSelectedAnglePreview({ title: '2. Quay Trái', src: samples.left })}
+                      onClick={() => setSelectedAnglePreview({ title: isEn ? '2. Turn Left' : '2. Quay Trái', src: samples.left })}
                       className="p-1.5 bg-[#121820] border border-gray-700 hover:border-[#C5A880] text-center space-y-1 group cursor-pointer transition-all relative"
                     >
                       <div className="text-[10px] font-mono text-[#C5A880] flex items-center justify-between">
-                        <span>2. Quay Trái</span>
+                        <span>{t('2. Quay Trái', '2. Turn Left')}</span>
                         <ZoomIn className="w-3 h-3 text-gray-500 group-hover:text-[#C5A880]" />
                       </div>
                       <div className="aspect-square bg-black border border-gray-800 overflow-hidden relative">
@@ -2579,11 +2589,11 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                     </div>
 
                     <div 
-                      onClick={() => setSelectedAnglePreview({ title: '3. Quay Phải', src: samples.right })}
+                      onClick={() => setSelectedAnglePreview({ title: isEn ? '3. Turn Right' : '3. Quay Phải', src: samples.right })}
                       className="p-1.5 bg-[#121820] border border-gray-700 hover:border-[#C5A880] text-center space-y-1 group cursor-pointer transition-all relative"
                     >
                       <div className="text-[10px] font-mono text-[#C5A880] flex items-center justify-between">
-                        <span>3. Quay Phải</span>
+                        <span>{t('3. Quay Phải', '3. Turn Right')}</span>
                         <ZoomIn className="w-3 h-3 text-gray-500 group-hover:text-[#C5A880]" />
                       </div>
                       <div className="aspect-square bg-black border border-gray-800 overflow-hidden relative">
@@ -2592,11 +2602,11 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                     </div>
 
                     <div 
-                      onClick={() => setSelectedAnglePreview({ title: '4. Mỉm Cười', src: samples.smile })}
+                      onClick={() => setSelectedAnglePreview({ title: isEn ? '4. Smile' : '4. Mỉm Cười', src: samples.smile })}
                       className="p-1.5 bg-[#121820] border border-gray-700 hover:border-[#C5A880] text-center space-y-1 group cursor-pointer transition-all relative"
                     >
                       <div className="text-[10px] font-mono text-[#C5A880] flex items-center justify-between">
-                        <span>4. Mỉm Cười</span>
+                        <span>{t('4. Mỉm Cười', '4. Smile')}</span>
                         <ZoomIn className="w-3 h-3 text-gray-500 group-hover:text-[#C5A880]" />
                       </div>
                       <div className="aspect-square bg-black border border-gray-800 overflow-hidden relative">
@@ -2614,7 +2624,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
               {/* Owner Legal Responsibility Notice */}
               <div className="p-2.5 bg-[#121820] border border-[#C5A880]/50 rounded-none text-xs text-gray-300 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-[#C5A880] flex-shrink-0" />
-                <span>Xác nhận thành viên <strong>{confirmTargetMember.fullName}</strong> thuộc căn <strong>{aptCode}</strong> để gửi BQL kích hoạt FaceID.</span>
+                <span>{t('Xác nhận thành viên', 'Confirm Member')} <strong>{confirmTargetMember.fullName}</strong> thuộc căn <strong>{aptCode}</strong> để gửi BQL kích hoạt FaceID.</span>
               </div>
 
               {/* Action Buttons */}
@@ -2623,7 +2633,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                   type="button"
                   onClick={() => {
                     setConfirmTargetMember(null);
-                    setBankEnrollTarget(confirmTargetMember);
+                    setfaceEnrollTarget(confirmTargetMember);
                   }}
                   className="w-full sm:w-auto px-3.5 py-2 bg-[#161B22] hover:bg-[#202936] text-gray-300 hover:text-white border border-[#2D3748] text-xs font-semibold rounded-none transition-colors cursor-pointer"
                 >
@@ -2699,14 +2709,14 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
             <div className="p-2.5 bg-[#161D26] border border-[#222B35] flex items-center gap-2.5 text-xs">
               <div className="w-9 h-9 rounded-none overflow-hidden border border-gray-700 bg-black flex-shrink-0">
                 <img
-                  src={removeTargetMember.avatarUrl || 'https://data.nks.vn/storage/users/default.png'}
+                  src={removeTargetMember.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80'}
                   alt={removeTargetMember.fullName}
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="space-y-0.5 min-w-0">
                 <div className="font-bold text-white">{removeTargetMember.fullName}</div>
-                <div className="text-gray-400 font-mono text-[11px]">SĐT: {removeTargetMember.phone} • {removeTargetMember.relationship}</div>
+                <div className="text-gray-400 font-mono text-[11px]">{t('SĐT:', 'Phone:')} {removeTargetMember.phone} • {removeTargetMember.relationship}</div>
               </div>
             </div>
 
@@ -2791,26 +2801,41 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
       {/* =================================================================== */}
       {/* MODAL: SINH TRẮC HỌC FACEID 4 BƯỚC CHO THÀNH VIÊN                   */}
       {/* =================================================================== */}
-      {bankEnrollTarget && (
-        <BankFaceEnrollModal
-          isOpen={Boolean(bankEnrollTarget)}
-          onClose={() => setBankEnrollTarget(null)}
-          userId={bankEnrollTarget.phone || bankEnrollTarget.id || bankEnrollTarget.username || ''}
-          fullName={bankEnrollTarget.fullName || ''}
+      {faceEnrollTarget && (
+        <FaceEnrollModal
+          isOpen={Boolean(faceEnrollTarget)}
+          onClose={() => setfaceEnrollTarget(null)}
+          userId={faceEnrollTarget.phone || faceEnrollTarget.id || faceEnrollTarget.username || ''}
+          fullName={faceEnrollTarget.fullName || ''}
           apartmentCode={aptCode}
-          phone={bankEnrollTarget.phone || ''}
-          email={bankEnrollTarget.email || ''}
-          isFamilyMemberSelfEnroll={bankEnrollTarget.id !== currentUser.id && bankEnrollTarget.phone !== currentUser.phone}
+          phone={faceEnrollTarget.phone || ''}
+          email={faceEnrollTarget.email || ''}
+          isFamilyMemberSelfEnroll={faceEnrollTarget.id !== currentUser.id && faceEnrollTarget.phone !== currentUser.phone}
           submittedByRole={currentUser.role}
           onEnrollSuccess={(profile) => {
-            setActionSuccess(`✓ Đã thu thập và lưu thành công 4 mẫu FaceID cho "${bankEnrollTarget.fullName}"!`);
+            setActionSuccess(`✓ Đã thu thập và lưu thành công 4 mẫu FaceID cho "${faceEnrollTarget.fullName}"!`);
             setTimeout(() => setActionSuccess(null), 5000);
-            setBankEnrollTarget(null);
+            setfaceEnrollTarget(null);
             fetchMembers();
           }}
         />
       )}
 
+      {/* Confirm Clear Cache Modal */}
+      <ConfirmDeleteModal
+        isOpen={isClearDataConfirmOpen}
+        onClose={() => setIsClearDataConfirmOpen(false)}
+        onConfirm={executeClearLocalData}
+        title={isEn ? 'Clear Cache & Sync Family' : 'Đồng Bộ & Dọn Dẹp Bộ Nhớ Tạm'}
+        message={isEn 
+          ? 'Clear temporary client memory and synchronize family member profiles fresh from the server store?' 
+          : 'Xác nhận dọn dẹp bộ nhớ tạm và đồng bộ lại danh sách hồ sơ thành viên gia đình trực tiếp từ máy chủ?'
+        }
+        itemCode={aptCode}
+        itemName={isEn ? 'Unit Family Cache' : 'Bộ nhớ tạm hồ sơ căn hộ'}
+        confirmText={isEn ? 'Sync Fresh' : 'Đồng Bộ Lại'}
+        isDanger={false}
+      />
     </div>
   );
 }

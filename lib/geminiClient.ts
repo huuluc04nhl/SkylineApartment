@@ -300,7 +300,7 @@ export function buildProjectSystemPrompt(contextOrAptCode: string | ConciergeCon
   const ticketsStr = activeTickets.length > 0
     ? activeTickets.slice(0, 5).map((t: any) => {
         const statusLabel = t.status === 'In_Progress' ? 'Đang xử lý' : t.status === 'Assigned' ? 'Đã phân công' : t.status === 'Resolved' ? 'Đã giải quyết' : 'Mới tiếp nhận';
-        return `- Phiếu #${t.nks_id || t.id} [${t.ai_category || t.ticket_type_label || 'Kỹ thuật'}]: "${(t.content || '').replace(/\n/g, ' ')}" -> Trạng thái: ${statusLabel}, Kỹ thuật viên phụ trách: ${t.assigned_technician || 'Lê Văn Nam (Cơ Điện & Nước)'}, Cam kết hỗ trợ: Có mặt trong 15 - 60 phút`;
+        return `- Phiếu #${t.id} [${t.ai_category || t.ticket_type_label || 'Kỹ thuật'}]: "${(t.content || '').replace(/\n/g, ' ')}" -> Trạng thái: ${statusLabel}, Kỹ thuật viên phụ trách: ${t.assigned_technician || 'Lê Văn Nam (Cơ Điện & Nước)'}, Cam kết hỗ trợ: Có mặt trong 15 - 60 phút`;
       }).join('\n')
     : '- Không có phiếu báo hỏng nào đang xử lý';
 
@@ -350,7 +350,7 @@ export function buildProjectSystemPrompt(contextOrAptCode: string | ConciergeCon
   return `
 Bạn là "Skyline AI Concierge" - Trợ lý số thông minh, tận tâm 24/7 của Quý cư dân tại Khu Phức Hợp Căn Hộ Cao Cấp The Tropical (Thuộc Đại Đô Thị Beverly Solari - Vận hành bởi Skyline Smart Residence, TP. Thủ Đức, TP. Hồ Chí Minh).
 
-DƯỚI ĐÂY LÀ DỮ LIỆU THỰC TẾ CHUẨN MỰC TỪ HỆ THỐNG CƠ SỞ DỮ LIỆU NKS SCRMAI VÀ QUY HOẠCH KIẾN TRÚC DỰ ÁN:
+DƯỚI ĐÂY LÀ DỮ LIỆU THỰC TẾ CHUẨN MỰC TỪ HỆ THỐNG CƠ SỞ DỮ LIỆU Skyline Smart Residence VÀ QUY HOẠCH KIẾN TRÚC DỰ ÁN:
 
 0. QUY MÔ DỰ ÁN BEVERLY SOLARI & PHÂN KHU THE TROPICAL:
 - Tên dự án: Khu Phức Hợp Căn Hộ Cao Cấp The Tropical - Phân khu trọng điểm thuộc Đại Đô Thị Beverly Solari (Vận hành thông minh bởi Skyline Smart Residence).
@@ -379,7 +379,7 @@ DƯỚI ĐÂY LÀ DỮ LIỆU THỰC TẾ CHUẨN MỰC TỪ HỆ THỐNG CƠ S�
 
 1. THÔNG TIN CĂN HỘ & CƯ DÂN ĐANG TRÒ CHUYỆN:
 - Căn hộ chính đang trao đổi: ${aptDisplayName}
-- Diện tích chuẩn xác từ hệ thống NKS: ${aptAreaClear} m² (diện tích thông thủy) / ${aptAreaWall} m² (diện tích tim tường). Loại căn: ${aptBedrooms}PN - ${aptBathrooms}WC. Tầng: 30, Tòa: The Tropical BS-07.
+- Diện tích chuẩn xác từ hệ thống Skyline: ${aptAreaClear} m² (diện tích thông thủy) / ${aptAreaWall} m² (diện tích tim tường). Loại căn: ${aptBedrooms}PN - ${aptBathrooms}WC. Tầng: 30, Tòa: The Tropical BS-07.
 - Căn hộ phụ cùng sở hữu: CH-01 (Tòa The Tropical BS-07, Tầng 30, Diện tích 50.0 m², 2PN - 1WC).
 - Tình trạng: Đã bàn giao (Biên bản bàn giao BBBG-SKYLINE-${targetAptCode}-20260115 do KTS. Lê Quang Minh bàn giao, 3 chìa cơ, 2 thẻ cư dân).
 - Cư dân đang trò chuyện: ${residentName} (${residentRole === 'OWNER' ? 'Chủ hộ' : 'Thành viên cư dân'}) | SĐT: ${residentPhone} | CCCD: ${residentIdCard}.
@@ -397,8 +397,8 @@ ${billsStr || '- Không có hóa đơn nợ'}
 
 - THÔNG TIN THANH TOÁN BAN QUẢN LÝ (BIDV & VIETQR NAPAS247):
   + Ngân hàng: Ngân hàng TMCP Đầu tư và Phát triển Việt Nam (BIDV)
-  + Số tài khoản: ${SKYLINE_BANK_INFO.accountNumber} (0364967082)
-  + Tên chủ tài khoản: ${SKYLINE_BANK_INFO.accountHolder} (NGUYEN HUU LUC)
+  + Số tài khoản: ${SKYLINE_BANK_INFO.accountNumber}
+  + Tên chủ tài khoản: ${SKYLINE_BANK_INFO.accountHolder}
   + Cú pháp chuyển khoản: [Mã căn] [Họ tên] [Tháng] (VD: CH-06 Tran Huu Luc T8)
   + Thanh toán trực tuyến: Quét mã VietQR trên cổng cư dân hoặc chuyển khoản ngân hàng 24/7. Hạn nộp tiền từ ngày 20 đến ngày 30 hàng tháng.
 
@@ -440,7 +440,7 @@ ${bookingsStr}
 
 NGUYÊN TẮC GIAO TIẾP VÀ DẠNG TỪ BẮT BUỘC:
 - Luôn TRẢ LỜI ĐÚNG TRỌNG TÂM câu hỏi. Không tuôn ra các dữ liệu cư dân không yêu cầu.
-- Luôn ưu tiên dùng CHÍNH XÁC các con số và thông tin thực tế từ dữ liệu trên (số tiền hóa đơn 2.505.000 VNĐ, diện tích chuẩn 42.0 m² / 46.0 m² căn CH-06 và 50.0 m² căn CH-01, thành viên gia đình, biển số xe ${residentLicensePlate}, thẻ khách thăm, phiếu sự cố NKS #925, #924, #921, lịch đặt...).
+- Luôn ưu tiên dùng CHÍNH XÁC các con số và thông tin thực tế từ dữ liệu trên (số tiền hóa đơn 2.505.000 VNĐ, diện tích chuẩn 42.0 m² / 46.0 m² căn CH-06 và 50.0 m² căn CH-01, thành viên gia đình, biển số xe ${residentLicensePlate}, thẻ khách thăm, phiếu sự cố #925, #924, #921, lịch đặt...).
 - Xưng hô: "Tôi" và gọi cư dân là "Quý cư dân" hoặc "Quý vị".
 - Giọng văn ấm áp, lịch sự, ân cần như quản gia 5 sao.
 - TUYỆT ĐỐI KHÔNG dùng các từ kỹ thuật: "RAG", "SLA", "AES-256", "Matter", "Zigbee", "Turnstile", "UID", "eKYC", "IoT", "Token". Thay bằng: "cổng vào tiện ích", "cam kết hỗ trợ trong 60 phút", "nhận diện khuôn mặt", "thẻ cư dân", "hệ thống bảo mật an toàn".
@@ -709,7 +709,7 @@ Quý cư dân cần tôi hỗ trợ thông tin nào về căn hộ hôm nay ạ?
     text.includes('địa chỉ') ||
     text.includes('chủ đầu tư')
   ) {
-    return `Dạ thưa Quý cư dân ${residentName}, theo dữ liệu kiến trúc chuẩn xác từ hệ thống NKS SCRMAI và quy hoạch dự án:
+    return `Dạ thưa Quý cư dân ${residentName}, theo dữ liệu kiến trúc chuẩn xác từ hệ thống Skyline Smart Residence và quy hoạch dự án:
 
 🏢 **1. Quy mô tổng thể Đại đô thị Beverly Solari:**
 * **Tổng số tòa tháp:** **13 tòa tháp chung cư cao cấp**.
@@ -803,8 +803,8 @@ ${detailsList || '  - Tiền điện, tiền nước và phí quản lý vận h
 
 💳 **Kênh thanh toán trực tiếp Ban Quản Lý (BIDV / VietQR):**
 * **Ngân hàng:** BIDV (Ngân hàng TMCP Đầu tư và Phát triển Việt Nam)
-* **Số tài khoản:** **${SKYLINE_BANK_INFO.accountNumber}** (0364967082)
-* **Chủ tài khoản:** **${SKYLINE_BANK_INFO.accountHolder}** (NGUYEN HUU LUC)
+* **Số tài khoản:** **${SKYLINE_BANK_INFO.accountNumber}**
+* **Chủ tài khoản:** **${SKYLINE_BANK_INFO.accountHolder}**
 * **Quét mã VietQR:** Quý cư dân có thể vào mục **Hóa Đơn & Biểu Phí** để quét mã VietQR Napas247 tự động điền số tiền và nội dung chuyển khoản ạ!
 
 [SUGGESTIONS: Chi tiết tiền điện và tiền nước | Hướng dẫn thanh toán quét mã QR | Biểu phí gửi xe hàng tháng]`;
@@ -819,18 +819,18 @@ ${detailsList || '  - Tiền điện, tiền nước và phí quản lý vận h
   if (text.includes('sửa') || text.includes('hỏng') || text.includes('vòi') || text.includes('rò rỉ') || text.includes('kỹ thuật') || text.includes('sự cố') || text.includes('thợ') || text.includes('phiếu') || text.includes('ticket')) {
     const activeTicket = activeTickets[0] || DEMO_TICKETS[0];
     if (activeTicket) {
-      const ticketId = activeTicket.nks_id ? `#${activeTicket.nks_id}` : (activeTicket.id ? `#${activeTicket.id}` : '#925');
+      const ticketId = activeTicket.id ? `#${activeTicket.id}` : "#925";
       const ticketContent = (activeTicket.content || activeTicket.description || '').replace(/\n/g, ' ');
       const techName = activeTicket.assigned_technician || activeTicket.engineername || 'Trần Đình Trọng (Chuyên viên Kỹ thuật & Thiết bị)';
       
       const ticketsList = activeTickets.slice(0, 3).map((t: any) => {
-        const tId = t.nks_id ? `#${t.nks_id}` : (t.id ? `#${t.id}` : '');
+        const tId = t.id ? `#${t.id}` : "";
         const st = (t.status === 'Resolved' || t.status === 'resolved' || t.status === 'publish') ? '✅ Đã hoàn thành' : '🛠️ Đang xử lý';
         const tech = t.assigned_technician || t.engineername || 'Trần Đình Trọng';
         return `* **Phiếu ${tId} [${t.service || t.ai_category || 'Kỹ thuật'}]:** "${(t.content || t.description || '').replace(/\n/g, ' ')}" -> Trạng thái: ${st} (${tech})`;
       }).join('\n');
 
-      return `Dạ thưa Quý cư dân ${residentName}, tôi đã tra cứu danh sách phiếu yêu cầu kỹ thuật thực tế từ hệ thống NKS của căn hộ ${aptDisplayName}:
+      return `Dạ thưa Quý cư dân ${residentName}, tôi đã tra cứu danh sách phiếu yêu cầu kỹ thuật thực tế từ hệ thống Skyline của căn hộ ${aptDisplayName}:
 
 ${ticketsList || `* **Phiếu ${ticketId} [${activeTicket.ai_category || 'Kỹ thuật'}]:** "${ticketContent}" -> Trạng thái: ✅ Đã hoàn thành (${techName})`}
 
@@ -850,7 +850,7 @@ ${ticketsList || `* **Phiếu ${ticketId} [${activeTicket.ai_category || 'Kỹ t
       ? familyMembers.map((m) => `  - **${m.fullName}** (${m.relationship || 'Thành viên'}): SĐT ${m.phone || 'Chưa cập nhật'}, CCCD ${m.idCard || 'Đã định danh'}${m.licensePlate ? `, Biển số: ${m.licensePlate}` : ''} (${m.faceStatus || 'Đã xác thực'})`).join('\n')
       : `  - Hiện chưa có thành viên nào khác đăng ký cùng cư trú (Chỉ có Chủ Hộ).`;
 
-    return `Dạ thưa Quý cư dân ${residentName}, thông tin cư trú và căn hộ của Quý vị từ hệ thống NKS như sau:
+    return `Dạ thưa Quý cư dân ${residentName}, thông tin cư trú và căn hộ của Quý vị từ hệ thống Skyline như sau:
 
 * 🏠 **Căn hộ chính (${targetAptCode}):** Tòa The Tropical BS-07, Tầng 30. Diện tích thông thủy **${aptAreaClear} m²** (tim tường **${aptAreaWall} m²**), thiết kế **${aptBedrooms}PN - ${aptBathrooms}WC**, hướng ban công Đông Nam view hồ bơi và sông Sài Gòn.
 * 🏢 **Căn hộ sở hữu kèm theo:** Căn hộ **CH-01** (Tòa The Tropical BS-07, Tầng 30, Diện tích **50.0 m²**, thiết kế **2PN - 1WC**).
@@ -1050,10 +1050,10 @@ Quý cư dân có thể vào tab **Đăng Ký Đặt Chỗ & Vé Điện Tử** 
   if (text.includes('tiện ích') || text.includes('hồ bơi') || text.includes('gym') || text.includes('pool') || text.includes('nhà hàng') || text.includes('technogym') || text.includes('giờ mở cửa') || text.includes('dịch vụ')) {
     return `Dạ thưa Quý cư dân ${residentName}, hệ thống **Dịch Vụ & Tiện Ích 5 Sao** của Khu Phức Hợp The Tropical (Beverly Solari) như sau:
 
-🍽️ **1. Dịch Vụ Nhà Hàng (NKS Service):**
+🍽️ **1. Dịch Vụ Nhà Hàng (Skyline Service):**
 * **Nhà Hàng Ẩm Thực Skyline (Tầng 1 - Sảnh The Tropical BS-07):** Mở cửa **06:30 - 22:30**, phục vụ ẩm thực, cà phê, tiệc gia đình, ưu đãi 10% cho thẻ cư dân.
 
-🏊 **2. Cụm Bể Bơi & Tiện Ích Nước (NKS Service):**
+🏊 **2. Cụm Bể Bơi & Tiện Ích Nước (Skyline Service):**
 * **Cụm Bể Bơi Nhiệt Đới & Bể Bơi Ốc Đảo Resort (Nội khu The Tropical):** Mở cửa **06:00 - 22:00**, lọc ozone 28°C, kiểm tra chất lượng nước định kỳ, miễn phí vào bằng FaceID/Thẻ.
 * **Hồ Bơi Vô Cực Chân Mây:** Mở cửa **06:00 - 22:00**, view toàn cảnh trên cao, miễn phí theo thẻ cư dân.
 
@@ -1065,9 +1065,9 @@ Quý cư dân có thể vào tab **Đăng Ký Đặt Chỗ & Vé Điện Tử** 
 * **Vườn Tiệc Nướng BBQ Ngoài Trời:** Mở cửa **17:00 - 23:00**, biểu phí **600.000 đ / ca** (**cần đặt trước theo ca**).
 * **Khu Vui Chơi Trẻ Em Sky Kids Zone (Tầng 1):** Mở cửa **07:00 - 21:00** hàng ngày, miễn phí theo thẻ cư dân.
 
-🧹 **5. Dịch Vụ Vệ Sinh & Kỹ Thuật Tòa Nhà (NKS Service):**
+🧹 **5. Dịch Vụ Vệ Sinh & Kỹ Thuật Tòa Nhà (Skyline Service):**
 * **Dịch vụ Vệ sinh chung cư:** Thu gom và tập kết rác thải Block 07, khử khuẩn khu kỹ thuật định kỳ (KTV Hoàng phụ trách).
-* **Đội Kỹ thuật túc trực 24/7:** Cam kết có mặt trong 15 - 60 phút hỗ trợ điện, nước, điều hòa (KTV Trần Đình Trọng & Lê Văn Kỹ Thuật).
+* **Đội Kỹ thuật túc trực 24/7:** Cam kết có mặt trong 15 - 60 phút hỗ trợ điện, nước, điều hòa (KTV Trần Đình Trọng & Lê Quốc Tuấn).
 
 [SUGGESTIONS: Tiện ích nào cần đăng ký trước? | Bảng giá phòng xông hơi VIP Tầng 3 | Giờ mở cửa nhà hàng tầng 1]`;
   }

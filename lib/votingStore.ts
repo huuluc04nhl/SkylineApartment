@@ -7,6 +7,9 @@
  * - Cập nhật tỷ lệ phiếu thời gian thực và đồng bộ hai chiều giữa Ban Quản Lý & Cư Dân
  */
 
+import { skylineDb } from './db';
+import { VotingTopicRecord, VotingRecordItem } from './db/schema';
+
 export type VotingLegalType = 
   | 'Bầu Ban Quản Trị' 
   | 'Đóng góp Quỹ Bảo trì' 
@@ -143,55 +146,96 @@ function notifyVotingUpdated() {
 /**
  * Lấy toàn bộ danh sách cuộc biểu quyết
  */
+
+export function topicRecordToTopic(rec: VotingTopicRecord): VotingTopic {
+  const voters = skylineDb.votingRecords.find(v => v.topic_id === rec.id).map(v => ({
+    aptCode: v.apartment_code,
+    voterName: v.user_id ? (skylineDb.users.findById(v.user_id)?.full_name || 'Cư dân') : 'Cư dân',
+    optionId: v.option_id,
+    votedAt: v.voted_at
+  }));
+
+  return {
+    id: rec.id,
+    code: rec.code,
+    title: rec.title,
+    description: rec.description,
+    legalType: rec.legal_type as any,
+    createdBy: rec.created_by,
+    createdAt: rec.created_at,
+    deadline: rec.deadline,
+    status: rec.status,
+    isOwnerOnly: rec.is_owner_only,
+    totalEligibleApartments: rec.total_eligible_apartments,
+    totalVotes: voters.length || rec.total_votes,
+    options: rec.options.map(opt => ({
+      id: opt.id,
+      text: opt.text,
+      votes: voters.filter(v => v.optionId === opt.id).length || opt.votes
+    })),
+    voters,
+    summaryReport: rec.summary_report
+  };
+}
+
+let inMemoryVotingTopics: VotingTopic[] = skylineDb.votingTopics.find().map(topicRecordToTopic);
+
 export function getVotingTopics(): VotingTopic[] {
-  if (typeof window === 'undefined') return INITIAL_VOTING_TOPICS;
-  try {
-    // Dọn dẹp cache dữ liệu ảo phiên bản cũ
-    localStorage.removeItem('skyline_voting_topics_v1');
-    localStorage.removeItem('skyline_voting_topics_v2');
-
-    const raw = localStorage.getItem(VOTING_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(VOTING_STORAGE_KEY, JSON.stringify(INITIAL_VOTING_TOPICS));
-      return INITIAL_VOTING_TOPICS;
-    }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      // Đảm bảo tính toán chính xác 100% từ danh sách cử tri thực tế (không dữ liệu ảo)
-      return parsed.map((topic: VotingTopic) => {
-        const voters = Array.isArray(topic.voters) ? topic.voters : [];
-        return {
-          ...topic,
-          totalVotes: voters.length,
-          options: (topic.options || []).map(opt => ({
-            ...opt,
-            votes: voters.filter(v => v.optionId === opt.id).length,
-          })),
-        };
-      });
-    }
-    return INITIAL_VOTING_TOPICS;
-  } catch {
-    return INITIAL_VOTING_TOPICS;
+  if (inMemoryVotingTopics.length === 0) {
+    inMemoryVotingTopics = skylineDb.votingTopics.find().map(topicRecordToTopic);
   }
+  return inMemoryVotingTopics;
 }
 
-/**
- * Lấy chi tiết một cuộc biểu quyết theo ID
- */
-export function getVotingTopicById(id: string): VotingTopic | undefined {
-  return getVotingTopics().find(t => t.id === id);
-}
-
-/**
- * Lưu danh sách các cuộc biểu quyết
- */
 export function saveVotingTopics(topics: VotingTopic[]): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(VOTING_STORAGE_KEY, JSON.stringify(topics));
-    notifyVotingUpdated();
-  }
+  inMemoryVotingTopics = [...topics];
+  topics.forEach(t => {
+    const existing = skylineDb.votingTopics.findById(t.id);
+    const rec: VotingTopicRecord = {
+      id: t.id,
+      code: t.code,
+      title: t.title,
+      description: t.description,
+      legal_type: t.legalType,
+      created_by: t.createdBy,
+      deadline: t.deadline,
+      status: t.status,
+      is_owner_only: t.isOwnerOnly,
+      total_eligible_apartments: t.totalEligibleApartments,
+      total_votes: t.totalVotes,
+      summary_report: t.summaryReport,
+      created_at: t.createdAt,
+      options: t.options
+    };
+    if (existing) {
+      skylineDb.votingTopics.update(t.id, rec);
+    } else {
+      skylineDb.votingTopics.insert(rec);
+    }
+
+    // Cập nhật votingRecords trong DB
+    t.voters.forEach(v => {
+      const vRec = skylineDb.votingRecords.findOne(item => item.topic_id === t.id && item.apartment_code.toUpperCase() === v.aptCode.toUpperCase());
+      if (vRec) {
+        skylineDb.votingRecords.update(vRec.id, {
+          option_id: v.optionId,
+          voted_at: v.votedAt
+        });
+      } else {
+        skylineDb.votingRecords.insert({
+          id: `vr-${t.id}-${v.aptCode.toLowerCase()}`,
+          topic_id: t.id,
+          user_id: undefined,
+          apartment_code: v.aptCode,
+          option_id: v.optionId,
+          voted_at: v.votedAt
+        });
+      }
+    });
+  });
+  notifyVotingUpdated();
 }
+
 
 /**
  * Cư dân / Chủ hộ thực hiện bỏ phiếu biểu quyết
