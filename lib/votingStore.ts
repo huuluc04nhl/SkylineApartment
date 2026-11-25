@@ -7,8 +7,10 @@
  * - Cập nhật tỷ lệ phiếu thời gian thực và đồng bộ hai chiều giữa Ban Quản Lý & Cư Dân
  */
 
-import { skylineDb } from './db';
 import { VotingTopicRecord, VotingRecordItem } from './db/schema';
+
+const votingTopicsCache: VotingTopicRecord[] = [];
+const votingRecordsCache: VotingRecordItem[] = [];
 
 export type VotingLegalType = 
   | 'Bầu Ban Quản Trị' 
@@ -148,9 +150,9 @@ function notifyVotingUpdated() {
  */
 
 export function topicRecordToTopic(rec: VotingTopicRecord): VotingTopic {
-  const voters = skylineDb.votingRecords.find(v => v.topic_id === rec.id).map(v => ({
+  const voters = votingRecordsCache.filter(v => v.topic_id === rec.id).map(v => ({
     aptCode: v.apartment_code,
-    voterName: v.user_id ? (skylineDb.users.findById(v.user_id)?.full_name || 'Cư dân') : 'Cư dân',
+    voterName: 'Cư dân',
     optionId: v.option_id,
     votedAt: v.voted_at
   }));
@@ -178,19 +180,16 @@ export function topicRecordToTopic(rec: VotingTopicRecord): VotingTopic {
   };
 }
 
-let inMemoryVotingTopics: VotingTopic[] = skylineDb.votingTopics.find().map(topicRecordToTopic);
+let inMemoryVotingTopics: VotingTopic[] = [];
 
 export function getVotingTopics(): VotingTopic[] {
-  if (inMemoryVotingTopics.length === 0) {
-    inMemoryVotingTopics = skylineDb.votingTopics.find().map(topicRecordToTopic);
-  }
   return inMemoryVotingTopics;
 }
 
 export function saveVotingTopics(topics: VotingTopic[]): void {
   inMemoryVotingTopics = [...topics];
   topics.forEach(t => {
-    const existing = skylineDb.votingTopics.findById(t.id);
+    const existingIdx = votingTopicsCache.findIndex(item => item.id === t.id);
     const rec: VotingTopicRecord = {
       id: t.id,
       code: t.code,
@@ -207,22 +206,20 @@ export function saveVotingTopics(topics: VotingTopic[]): void {
       created_at: t.createdAt,
       options: t.options
     };
-    if (existing) {
-      skylineDb.votingTopics.update(t.id, rec);
+    if (existingIdx >= 0) {
+      votingTopicsCache[existingIdx] = rec;
     } else {
-      skylineDb.votingTopics.insert(rec);
+      votingTopicsCache.push(rec);
     }
 
-    // Cập nhật votingRecords trong DB
+    // Cập nhật votingRecords trong cache
     t.voters.forEach(v => {
-      const vRec = skylineDb.votingRecords.findOne(item => item.topic_id === t.id && item.apartment_code.toUpperCase() === v.aptCode.toUpperCase());
+      const vRec = votingRecordsCache.find(item => item.topic_id === t.id && item.apartment_code.toUpperCase() === v.aptCode.toUpperCase());
       if (vRec) {
-        skylineDb.votingRecords.update(vRec.id, {
-          option_id: v.optionId,
-          voted_at: v.votedAt
-        });
+        vRec.option_id = v.optionId;
+        vRec.voted_at = v.votedAt;
       } else {
-        skylineDb.votingRecords.insert({
+        votingRecordsCache.push({
           id: `vr-${t.id}-${v.aptCode.toLowerCase()}`,
           topic_id: t.id,
           user_id: undefined,

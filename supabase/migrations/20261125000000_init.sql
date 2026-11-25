@@ -131,7 +131,7 @@ CREATE TABLE users (
     full_name VARCHAR(150) NOT NULL,
     phone VARCHAR(20) NOT NULL,
     email VARCHAR(100),
-    password_hash VARCHAR(255) DEFAULT '12345678',
+    password_hash VARCHAR(255),
     id_card_no VARCHAR(20),
     id_date DATE,
     id_place VARCHAR(150),

@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/guard';
 import {
-  getEkycRequests,
-  getEkycForUser,
-  submitEkycRequest,
-  approveEkycRequest,
-  rejectEkycRequest,
-  confirmEkycByOwner,
-} from '@/lib/ekycStore';
-import { updateUserStore, updateApartmentMember } from '@/lib/userStore';
-import { updateEnrolledFaceStatus } from '@/lib/faceEnrollStore';
-import { validateCccdCard, verifyFaceWithCccd } from '@/lib/ekycValidator';
+  listEkycSubmissionsDb,
+  getEkycForUserDb,
+  submitEkycRequestDb,
+  approveEkycRequestDb,
+  rejectEkycRequestDb,
+  revokeEkycRequestDb,
+  confirmEkycByOwnerDb,
+  updateEnrolledFaceStatusDb,
+  EkycRpcError,
+} from '@/lib/server/ekycDb';
+import { updateUserProfileDb, updateApartmentMemberDb } from '@/lib/server/userDb';
+import { verifyFaceWithCccd } from '@/lib/ekycValidator';
 
 /**
  * GET /api/ekyc
@@ -24,7 +26,7 @@ export async function GET(req: Request) {
   const userId = searchParams.get('userId');
 
   if (guard.session.role !== 'ADMIN') {
-    const ownEkyc = getEkycForUser(guard.session.profile.id);
+    const ownEkyc = await getEkycForUserDb(guard.session.profile.id);
     return NextResponse.json({
       success: true,
       ekyc: ownEkyc || null,
@@ -32,14 +34,14 @@ export async function GET(req: Request) {
   }
 
   if (userId) {
-    const userEkyc = getEkycForUser(userId);
+    const userEkyc = await getEkycForUserDb(userId);
     return NextResponse.json({
       success: true,
       ekyc: userEkyc || null,
     });
   }
 
-  const allRequests = getEkycRequests();
+  const allRequests = await listEkycSubmissionsDb();
   return NextResponse.json({
     success: true,
     requests: allRequests,
@@ -58,7 +60,7 @@ export async function POST(req: Request) {
     let sessionRole: string | undefined;
     let sessionApt: string | null = null;
 
-    if (action === 'APPROVE' || action === 'REJECT') {
+    if (action === 'APPROVE' || action === 'REJECT' || action === 'REVOKE') {
       const adminGuard = await requireAuth(['ADMIN']);
       if (!adminGuard.ok) return adminGuard.response;
       sessionRole = adminGuard.session.role;
@@ -119,7 +121,7 @@ export async function POST(req: Request) {
       const isPendingOwner = isFamilyMemberSelfEnroll || (submittedByRole === 'TENANT');
       const targetStatus = isPendingOwner ? 'PENDING_OWNER' : 'PENDING';
 
-      const newRequest = submitEkycRequest({
+      const newRequest = await submitEkycRequestDb({
         userId: userId || phone,
         fullName,
         roleLabel,
@@ -143,12 +145,12 @@ export async function POST(req: Request) {
 
       // Synchronize apartment member face status
       try {
-        updateApartmentMember(resolvedApt, userId || phone, {
+        await updateApartmentMemberDb(resolvedApt, userId || phone, {
           faceStatus: isPendingOwner ? 'Chờ Chủ Hộ Xác Nhận' : 'Đang Chờ BQL Phê Duyệt',
           avatarUrl: avatarUrl,
           idCard: idCardNo,
         });
-        updateEnrolledFaceStatus(userId || phone, targetStatus);
+        await updateEnrolledFaceStatusDb(userId || phone, targetStatus);
       } catch (memErr) {
         console.warn('Sync member face status on submit error:', memErr);
       }
@@ -162,19 +164,18 @@ export async function POST(req: Request) {
       });
     }
 
-    // 1b. Owner Confirms Family Member e-KYC
+    // 1b. Owner Confirms Family Member e-KYC (chỉ xác nhận cho thành viên cùng apartment_code từ phiên)
     if (action === 'CONFIRM_BY_OWNER') {
       const { userId, phone } = body;
       const targetId = userId || phone;
-      const confirmed = confirmEkycByOwner(targetId);
+      const actorApt = sessionRole === 'ADMIN' ? null : (sessionApt || '__NONE__');
+      const confirmed = await confirmEkycByOwnerDb(targetId, actorApt);
 
       if (confirmed) {
         try {
-          updateApartmentMember(confirmed.apartmentCode, confirmed.userId, {
+          await updateApartmentMemberDb(confirmed.apartmentCode, confirmed.userId, {
             faceStatus: 'Đang Chờ BQL Phê Duyệt',
           });
-          updateEnrolledFaceStatus(confirmed.userId, 'PENDING');
-          if (confirmed.phone) updateEnrolledFaceStatus(confirmed.phone, 'PENDING');
         } catch (e) {
           console.warn('Sync confirm by owner error:', e);
         }
@@ -187,17 +188,16 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. BQL Approves e-KYC
+    // 2. BQL Approves e-KYC (cập nhật đồng thời ekyc_submissions + face_enrollments trong 1 RPC transaction)
     if (action === 'APPROVE') {
       const { id, approverName } = body;
-      const approved = approveEkycRequest(id, approverName || 'VinHomes Manager');
+      const approved = await approveEkycRequestDb(id, approverName || 'VinHomes Manager');
       if (!approved) {
         return NextResponse.json({ success: false, message: 'Không tìm thấy hồ sơ e-KYC' }, { status: 404 });
       }
 
-      // Synchronize approved legal identity to user store
       try {
-        updateUserStore(approved.userId, {
+        await updateUserProfileDb(approved.userId, {
           fullname: approved.fullName,
           full_name: approved.fullName,
           id_number: approved.idCardNo,
@@ -209,7 +209,7 @@ export async function POST(req: Request) {
           avatar_url: approved.avatarUrl,
         });
         if (approved.apartmentCode) {
-          updateApartmentMember(approved.apartmentCode, approved.userId, {
+          await updateApartmentMemberDb(approved.apartmentCode, approved.userId, {
             faceStatus: 'Đã Kích Hoạt FaceID',
             avatarUrl: approved.avatarUrl,
             idCard: approved.idCardNo,
@@ -217,16 +217,6 @@ export async function POST(req: Request) {
         }
       } catch (err) {
         console.warn('Sync userStore on ekyc approve error:', err);
-      }
-
-      // Kích hoạt hồ sơ FaceID trong FaceEnrollStore sang ACTIVE
-      try {
-        updateEnrolledFaceStatus(approved.userId, 'ACTIVE');
-        if (approved.phone) {
-          updateEnrolledFaceStatus(approved.phone, 'ACTIVE');
-        }
-      } catch (faceErr) {
-        console.warn('Sync face profile status error:', faceErr);
       }
 
       return NextResponse.json({
@@ -239,20 +229,16 @@ export async function POST(req: Request) {
     // 3. BQL Rejects e-KYC
     if (action === 'REJECT') {
       const { id, reason, approverName } = body;
-      const rejected = rejectEkycRequest(id, reason, approverName);
+      const rejected = await rejectEkycRequestDb(id, reason, approverName);
       if (!rejected) {
         return NextResponse.json({ success: false, message: 'Không tìm thấy hồ sơ e-KYC' }, { status: 404 });
       }
 
       try {
         if (rejected.apartmentCode) {
-          updateApartmentMember(rejected.apartmentCode, rejected.userId, {
+          await updateApartmentMemberDb(rejected.apartmentCode, rejected.userId, {
             faceStatus: 'BQL Yêu Cầu Chụp Lại',
           });
-        }
-        updateEnrolledFaceStatus(rejected.userId, 'REVOKED');
-        if (rejected.phone) {
-          updateEnrolledFaceStatus(rejected.phone, 'REVOKED');
         }
       } catch (memErr) {
         console.warn('Sync member face status on reject error:', memErr);
@@ -265,10 +251,10 @@ export async function POST(req: Request) {
       });
     }
 
-    // 4. BQL Revokes e-KYC (Tạm khóa / Thu hồi quyền sau khi đã duyệt)
+    // 4. BQL Revokes e-KYC (Tạm khóa / Thu hồi quyền sau khi đã duyệt - Chỉ ADMIN)
     if (action === 'REVOKE') {
       const { id, reason, approverName } = body;
-      const revoked = rejectEkycRequest(
+      const revoked = await revokeEkycRequestDb(
         id,
         reason || 'Ban Quản Lý đã tạm khóa / thu hồi quyền ra vào FaceID theo quy định vận hành.',
         approverName || 'VinHomes Manager'
@@ -279,13 +265,9 @@ export async function POST(req: Request) {
 
       try {
         if (revoked.apartmentCode) {
-          updateApartmentMember(revoked.apartmentCode, revoked.userId, {
+          await updateApartmentMemberDb(revoked.apartmentCode, revoked.userId, {
             faceStatus: 'BQL Tạm Khóa / Thu Hồi Quyền',
           });
-        }
-        updateEnrolledFaceStatus(revoked.userId, 'REVOKED');
-        if (revoked.phone) {
-          updateEnrolledFaceStatus(revoked.phone, 'REVOKED');
         }
       } catch (memErr) {
         console.warn('Sync member face status on revoke error:', memErr);
@@ -300,6 +282,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: false, message: 'Action không hợp lệ' }, { status: 400 });
   } catch (error: any) {
+    if (error instanceof EkycRpcError) {
+      return NextResponse.json({ success: false, message: error.message }, { status: error.status });
+    }
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

@@ -1,7 +1,0 @@
--- ============================================================================
--- DEPRECATED POINTER — SINGLE SOURCE OF TRUTH MOVED TO `supabase/seed.sql`
--- ============================================================================
--- Seed data chính thức của SKYLINE Smart Residence đã được chuyển sang:
---   * supabase/seed.sql
--- Chạy ở local bằng: supabase db reset
--- ============================================================================

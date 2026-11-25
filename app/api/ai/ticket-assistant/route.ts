@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth/guard';
+import { checkRateLimit } from '@/lib/server/rateLimit';
 import { GEMINI_API_KEY } from '@/lib/geminiClient';
 import { classifyTicket, findInquiryAnswer, generateSuggestedAdminReply } from '@/lib/ticketClassification';
 
@@ -298,6 +300,17 @@ function getLocalPolishedDescription(content: string, area?: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    const guard = await requireAuth();
+    if (!guard.ok) return guard.response;
+
+    const allowed = await checkRateLimit(`ai:${guard.session.authUserId}`, 20, 60);
+    if (!allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Bạn gửi quá nhiều yêu cầu AI. Vui lòng thử lại sau 1 phút.' },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { action, content, area, category, aptCode, residentName, imageBase64, imageMimeType } = body;
 

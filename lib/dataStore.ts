@@ -1,17 +1,16 @@
 // ============================================================================
 // DATA STORE & TYPE DEFINITIONS - SKYLINE SMART RESIDENCE
-// Single Source of Truth from skylineDb. Zero LocalStorage. Zero Fake Mocks.
+// Client-side types and helpers for Skyline Smart Residence.
 // ============================================================================
 
-import { skylineDb } from '@/lib/db';
-import { 
-  UserRecord, 
-  ApartmentRecord, 
-  BillRecord, 
-  ServiceTicketRecord, 
-  FacilityRecord, 
-  CommunityPostRecord, 
-  VotingTopicRecord 
+import {
+  UserRecord,
+  ApartmentRecord,
+  BillRecord,
+  ServiceTicketRecord,
+  FacilityRecord,
+  CommunityPostRecord,
+  VotingTopicRecord
 } from '@/lib/db/schema';
 
 export type UserRole = 'ADMIN' | 'OWNER' | 'TENANT' | 'TECHNICIAN' | 'RECEPTIONIST';
@@ -75,20 +74,20 @@ export interface Apartment {
   smart_widgets: SmartWidget[];
 }
 
-export type BillServiceType = 
-  | 'Electricity' 
-  | 'Water' 
-  | 'Management_Fee' 
-  | 'Parking' 
-  | 'Internet' 
-  | 'Facility' 
-  | 'Laundry' 
-  | 'Housekeeping' 
-  | 'Personal_Trainer' 
-  | 'Car_Care' 
-  | 'Spa' 
-  | 'Dining' 
-  | 'Transport' 
+export type BillServiceType =
+  | 'Electricity'
+  | 'Water'
+  | 'Management_Fee'
+  | 'Parking'
+  | 'Internet'
+  | 'Facility'
+  | 'Laundry'
+  | 'Housekeeping'
+  | 'Personal_Trainer'
+  | 'Car_Care'
+  | 'Spa'
+  | 'Dining'
+  | 'Transport'
   | 'Other';
 
 export interface BillDetail {
@@ -410,13 +409,13 @@ export function votingTopicRecordToSurvey(v: VotingTopicRecord): Survey {
 // LIVE REPOSITORY ADAPTERS DIRECTLY WIRED TO DATABASE
 // ============================================================================
 
-export const DEMO_USERS: User[] = skylineDb.users.find().map(userRecordToUser);
-export const DEMO_APARTMENTS: Apartment[] = skylineDb.apartments.find().map(apartmentRecordToApartment);
-export const DEMO_BILLS: Bill[] = skylineDb.bills.find().map(billRecordToBill);
-export const DEMO_TICKETS: ServiceRequest[] = skylineDb.tickets.find().map(ticketRecordToServiceRequest);
-export const DEMO_FACILITIES: Facility[] = skylineDb.facilities.find().map(facilityRecordToFacility);
-export const DEMO_COMMUNITY_POSTS: CommunityPost[] = skylineDb.communityPosts.find().map(communityPostRecordToPost);
-export const DEMO_SURVEYS: Survey[] = skylineDb.votingTopics.find().map(votingTopicRecordToSurvey);
+export const DEMO_USERS: User[] = [];
+export const DEMO_APARTMENTS: Apartment[] = [];
+export const DEMO_BILLS: Bill[] = [];
+export const DEMO_TICKETS: ServiceRequest[] = [];
+export const DEMO_FACILITIES: Facility[] = [];
+export const DEMO_COMMUNITY_POSTS: CommunityPost[] = [];
+export const DEMO_SURVEYS: Survey[] = [];
 
 export const DEMO_DEVICES: Device[] = [
   {
@@ -510,33 +509,7 @@ export const DEMO_SECURITY_ALERTS: SecurityAlert[] = [
  */
 export function updateDemoUser(identifier: string, updates: Partial<User>): User | null {
   const norm = identifier.toLowerCase().trim();
-  
-  // 1. Update in Database
-  const dbMatch = skylineDb.users.findOne(u => 
-    u.id.toLowerCase() === norm ||
-    u.username.toLowerCase() === norm ||
-    (u.phone && u.phone.toLowerCase() === norm) ||
-    (u.email && u.email.toLowerCase() === norm) ||
-    u.role.toLowerCase() === norm
-  );
-
-  if (dbMatch) {
-    const patch: Partial<UserRecord> = {};
-    if (updates.full_name) patch.full_name = updates.full_name;
-    if (updates.email) patch.email = updates.email;
-    if (updates.phone) patch.phone = updates.phone;
-    if (updates.id_card_no || updates.id_card_number) patch.id_card_no = updates.id_card_no || updates.id_card_number;
-    if (updates.avatar_url) patch.avatar_url = updates.avatar_url;
-    if (updates.license_plate) patch.license_plate = updates.license_plate;
-    if (updates.dob) patch.dob = updates.dob;
-    if (updates.pob) patch.pob = updates.pob;
-    if (updates.password) patch.password_hash = updates.password;
-
-    skylineDb.users.update(dbMatch.id, patch);
-  }
-
-  // 2. Update cached array
-  const matched = DEMO_USERS.find(u => 
+  const matched = DEMO_USERS.find(u =>
     u.id === identifier ||
     (u.username && u.username.toLowerCase().trim() === norm) ||
     (u.email && u.email.toLowerCase().trim() === norm) ||
@@ -560,55 +533,9 @@ export function updateDemoUser(identifier: string, updates: Partial<User>): User
   return null;
 }
 
-/**
- * Add or update user - updates authoritative database and cache
- */
 export function addOrUpdateDemoUser(user: User): User {
   const normUser = user.username ? user.username.toLowerCase().trim() : '';
-
-  // 1. Sync to Database
-  const dbMatch = skylineDb.users.findOne(u => 
-    Boolean(
-      u.id === user.id ||
-      (normUser && u.username.toLowerCase() === normUser) ||
-      (user.phone && u.phone === user.phone)
-    )
-  );
-
-  if (dbMatch) {
-    skylineDb.users.update(dbMatch.id, {
-      full_name: user.full_name,
-      email: user.email,
-      phone: user.phone,
-      id_card_no: user.id_card_no || user.id_card_number,
-      avatar_url: user.avatar_url,
-      license_plate: user.license_plate,
-      dob: user.dob,
-      pob: user.pob,
-      password_hash: user.password,
-    });
-  } else {
-    skylineDb.users.insert({
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      full_name: user.full_name,
-      phone: user.phone || user.username,
-      email: user.email || `${user.username}@skyline.vn`,
-      password_hash: user.password || '',
-      id_card_no: user.id_card_no || user.id_card_number || '',
-      avatar_url: user.avatar_url,
-      relationship: user.relationship,
-      apartment_code: user.apartment_code,
-      license_plate: user.license_plate,
-      dob: user.dob,
-      pob: user.pob,
-      gender: (user as any).gender ?? 1
-    });
-  }
-
-  // 2. Sync to array
-  const index = DEMO_USERS.findIndex(u => 
+  const index = DEMO_USERS.findIndex(u =>
     Boolean(
       u.id === user.id ||
       (normUser && u.username.toLowerCase() === normUser) ||

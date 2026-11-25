@@ -7,8 +7,9 @@
  */
 
 import { UserRole } from './dataStore';
-import { skylineDb } from './db';
 import { CommunityPostRecord } from './db/schema';
+
+const communityPostsCache: CommunityPostRecord[] = [];
 
 export type PostCategory = 'ANNOUNCEMENT' | 'VOTING' | 'MARKETPLACE' | 'DISCUSSION';
 
@@ -173,19 +174,16 @@ export function communityRecordToPost(r: CommunityPostRecord): CommunityPost {
   };
 }
 
-let inMemoryCommunityPosts: CommunityPost[] = skylineDb.communityPosts.find().map(communityRecordToPost);
+let inMemoryCommunityPosts: CommunityPost[] = [];
 
 export function getCommunityPosts(): CommunityPost[] {
-  if (inMemoryCommunityPosts.length === 0) {
-    inMemoryCommunityPosts = skylineDb.communityPosts.find().map(communityRecordToPost);
-  }
   return inMemoryCommunityPosts;
 }
 
 function saveCommunityPosts(posts: CommunityPost[]) {
   inMemoryCommunityPosts = [...posts];
   posts.forEach(p => {
-    const existing = skylineDb.communityPosts.findById(p.id);
+    const existingIdx = communityPostsCache.findIndex(item => item.id === p.id);
     const rec: CommunityPostRecord = {
       id: p.id,
       author_name: p.authorName,
@@ -203,10 +201,10 @@ function saveCommunityPosts(posts: CommunityPost[]) {
       is_pinned: p.isPinned,
       created_at: p.createdAt
     };
-    if (existing) {
-      skylineDb.communityPosts.update(p.id, rec);
+    if (existingIdx >= 0) {
+      communityPostsCache[existingIdx] = rec;
     } else {
-      skylineDb.communityPosts.insert(rec);
+      communityPostsCache.push(rec);
     }
   });
   if (typeof window !== 'undefined') {

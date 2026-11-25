@@ -243,7 +243,7 @@ export default function AssignResidentModal({
   };
 
   const handleCopyCredentials = () => {
-    const accText = `THÔNG TIN TÀI KHOẢN CƯ DÂN SKYLINE RESIDENCE\nCăn hộ: ${unit.code} (${unit.towerName})\nChủ hộ: ${name}\nSố điện thoại đăng nhập: ${phone}\nSố CCCD: ${cccd}\nMật khẩu mặc định: 12345678\nCổng cư dân: https://skyline.residence.vn/portal`;
+    const accText = `THÔNG TIN TÀI KHOẢN CƯ DÂN SKYLINE RESIDENCE\nCăn hộ: ${unit.code} (${unit.towerName})\nChủ hộ: ${name}\nSố điện thoại đăng nhập: ${phone}\nSố CCCD: ${cccd}\nMật khẩu: Do Supabase Auth cấp qua email kích hoạt / Quên mật khẩu\nCổng cư dân: https://skyline.residence.vn/portal`;
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(accText);
       setCopied(true);
@@ -745,8 +745,8 @@ export default function AssignResidentModal({
                     <strong className="text-white">{cccd}</strong>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">{t('Mật khẩu mặc định:', 'Default Password:')}</span>
-                    <strong className="text-amber-300">12345678</strong>
+                    <span className="text-gray-400">{t('Thiết lập mật khẩu:', 'Password Setup:')}</span>
+                    <strong className="text-amber-300">{t('Qua email kích hoạt / Quên mật khẩu', 'Via activation email / Reset')}</strong>
                   </div>
                 </div>
 

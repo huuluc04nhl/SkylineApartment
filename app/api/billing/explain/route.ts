@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/guard';
+import { checkRateLimit } from '@/lib/server/rateLimit';
 import { getBillWithDetailsByIdDb, listBillsWithDetailsDb } from '@/lib/server/billingDb';
 import { GEMINI_API_KEY } from '@/lib/geminiClient';
 import { InvoiceExplanationSchema } from '@/lib/billingAiService';
@@ -11,6 +12,14 @@ export async function POST(req: Request) {
     const guard = await requireAuth(['ADMIN', 'OWNER', 'TENANT']);
     if (!guard.ok) return guard.response;
     const user = guard.session.profile;
+
+    const allowed = await checkRateLimit(`ai:${guard.session.authUserId}`, 20, 60);
+    if (!allowed) {
+      return NextResponse.json(
+        { success: false, message: 'Bạn gửi quá nhiều yêu cầu AI. Vui lòng thử lại sau 1 phút.' },
+        { status: 429 }
+      );
+    }
 
     const body = await req.json().catch(() => ({}));
     const billId = body.billId;

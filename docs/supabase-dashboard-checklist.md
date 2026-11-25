@@ -15,7 +15,11 @@
 - **Prevent use of leaked passwords (HaveIBeenPwned):** Bật ON.
 
 ## 3. Authentication -> Rate Limits & Brute-Force Protection
-- **Sign-in / Token refresh rate limit:** Bật giới hạn số lần thử sai (mặc định Supabase Auth giới hạn theo IP; kiểm tra `Rate Limits` trong *Authentication -> Rate Limits*).
+- **Migration `20261125080000_ekyc_face_sync_rpc.sql` & `20261125090000_rate_limits.sql`:** Đã bật bảng `public.login_attempts` (RLS enabled) và RPC `check_rate_limit` / `reset_rate_limit` cho:
+  - `/api/user/login`: tối đa **5 lần thử sai / 5 phút** theo cặp `IP + identifier` (tự reset khi đăng nhập thành công).
+  - `/api/user/face-login`: giới hạn thử sai FaceID theo IP qua `check_face_login_rate_limit`.
+  - Các route AI/Gemini (`/api/ai/*`, `/api/billing/explain`, `/api/billing/meter-ocr`, `/api/billing/ai-assistant`): giới hạn **20 request / phút / user**.
+- **Sign-in / Token refresh rate limit (Supabase Auth):** Bật giới hạn số lần thử sai trên Supabase Dashboard (*Authentication -> Rate Limits*, khuyến nghị đặt *Sign-in / Token refresh* ≤ 30 req / 5 phút theo IP).
 - **Email / OTP rate limit:** Giới hạn số email gửi/giờ để chống spam.
 - **CAPTCHA (Attack Protection):** Bật hCaptcha hoặc Cloudflare Turnstile cho đăng nhập/đăng ký khi triển khai production.
 ## 4. Authentication -> URL Configuration & Email/Phone Confirmation

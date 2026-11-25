@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/guard';
-import { 
-  generateVisitorPassToken, 
-  verifyVisitorQr,
-  getPassRegistry,
-  getAllVisitorPasses,
-  checkInVisitorPass,
-  checkOutVisitorPass
-} from '@/lib/visitorStore';
+import {
+  findVisitorPassByIdOrPinDb,
+  createVisitorPassDb,
+  verifyVisitorQrDb,
+  checkInVisitorPassDb,
+  checkOutVisitorPassDb,
+} from '@/lib/server/visitorDb';
 
 /**
  * GET /api/visitor
@@ -22,13 +21,7 @@ export async function GET(request: Request) {
   const pin = searchParams.get('pin');
 
   if (id || pin) {
-    const registry = getPassRegistry();
-    let pass = id ? registry.get(id) : undefined;
-    if (!pass && pin) pass = registry.get(pin);
-    if (!pass) {
-      const all = getAllVisitorPasses();
-      pass = all.find(p => p.id === id || p.pinCode === pin);
-    }
+    const pass = await findVisitorPassByIdOrPinDb((id || pin)!);
 
     if (pass) {
       if (
@@ -82,7 +75,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, message: 'Thiếu mã căn hộ hợp lệ.' }, { status: 400 });
       }
 
-      const pass = generateVisitorPassToken({
+      const pass = await createVisitorPassDb({
         apartmentCode: effectiveApt,
         visitorName: visitorName || 'Khách Thăm Nhà',
         phoneNumber,
@@ -105,7 +98,7 @@ export async function POST(request: Request) {
 
     if (action === 'VERIFY' || action === 'VERIFY_SCAN') {
       const { qrCode } = body;
-      const result = verifyVisitorQr(qrCode || '');
+      const result = await verifyVisitorQrDb(qrCode || '');
       return NextResponse.json({
         success: true,
         ...result,
@@ -115,7 +108,7 @@ export async function POST(request: Request) {
     // 3. Confirm Check-In
     if (action === 'CHECK_IN') {
       const { passId } = body;
-      const updated = checkInVisitorPass(passId);
+      const updated = await checkInVisitorPassDb(passId);
       if (updated) {
         return NextResponse.json({
           success: true,
@@ -129,7 +122,7 @@ export async function POST(request: Request) {
     // 4. Confirm Check-Out
     if (action === 'CHECK_OUT') {
       const { passId } = body;
-      const updated = checkOutVisitorPass(passId);
+      const updated = await checkOutVisitorPassDb(passId);
       if (updated) {
         return NextResponse.json({
           success: true,

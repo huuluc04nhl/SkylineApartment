@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { findUserStore } from '@/lib/userStore';
+import { findUserByIdentifierDb } from '@/lib/server/userDb';
+import { checkRateLimit, resetRateLimit, extractClientIp } from '@/lib/server/rateLimit';
 
 const INVALID_CREDENTIALS_MESSAGE = 'Thông tin đăng nhập không chính xác.';
 
@@ -66,8 +67,20 @@ export async function POST(req: Request) {
     }
 
     const identifier = username.trim();
+    const clientIp = extractClientIp(req);
+    const loginRateKey = `login:${clientIp}:${identifier.toLowerCase()}`;
+
+    const isAllowed = await checkRateLimit(loginRateKey, 5, 300, false);
+    if (!isAllowed) {
+      return NextResponse.json(
+        { success: false, message: 'Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 5 phút.' },
+        { status: 429 }
+      );
+    }
+
     const email = await resolveEmailForLogin(identifier);
     if (!email) {
+      await checkRateLimit(loginRateKey, 5, 300, true);
       return NextResponse.json(
         { success: false, message: INVALID_CREDENTIALS_MESSAGE },
         { status: 401 }
@@ -81,6 +94,7 @@ export async function POST(req: Request) {
     });
 
     if (error || !data.user) {
+      await checkRateLimit(loginRateKey, 5, 300, true);
       return NextResponse.json(
         { success: false, message: INVALID_CREDENTIALS_MESSAGE },
         { status: 401 }
@@ -100,13 +114,23 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!profileRow || !profileRow.role) {
+      await supabase.auth.signOut().catch(() => {});
+      return NextResponse.json(
+        { success: false, message: 'Tài khoản chưa được cấp hồ sơ cư dân trên hệ thống.' },
+        { status: 401 }
+      );
+    }
+
+    await resetRateLimit(loginRateKey);
+
     const legacyUser =
-      (profileRow?.legacy_user_id && findUserStore(profileRow.legacy_user_id)) ||
-      findUserStore(email) ||
+      (profileRow.legacy_user_id && (await findUserByIdentifierDb(profileRow.legacy_user_id))) ||
+      (await findUserByIdentifierDb(email)) ||
       undefined;
 
-    const role = (profileRow?.role || legacyUser?.role || 'TENANT') as string;
-    const apartmentCode = profileRow?.apartment_code ?? legacyUser?.apartment_code ?? null;
+    const role = profileRow.role as string;
+    const apartmentCode = profileRow.apartment_code ?? null;
 
     const formattedUser = {
       id: legacyUser?.id || data.user.id,

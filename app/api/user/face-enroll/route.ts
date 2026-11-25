@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { analyzeBiometric4Samples, EnrolledFaceProfile } from '@/lib/biometricFaceEngine';
 import { getAuthenticatedUser } from '@/lib/server/auth';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { updateUserStore, updateApartmentMember } from '@/lib/userStore';
-import { submitEkycRequest } from '@/lib/ekycStore';
+import { updateUserProfileDb, updateApartmentMemberDb } from '@/lib/server/userDb';
+import { submitEkycRequestDb } from '@/lib/server/ekycDb';
 
 /**
  * GET /api/user/face-enroll?userId=...
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
       if (!targetApt) {
         return NextResponse.json({ success: false, message: 'Thiếu mã căn hộ hợp lệ.' }, { status: 400 });
       }
-      updateApartmentMember(targetApt, userId, {
+      await updateApartmentMemberDb(targetApt, userId, {
         faceStatus: 'Đang Chờ BQL Phê Duyệt',
       });
 
@@ -209,19 +209,17 @@ export async function POST(req: Request) {
     }
 
     // 3. Cập nhật trạng thái FaceID trong ApartmentMember
-    updateApartmentMember(targetApt, userId, {
+    await updateApartmentMemberDb(targetApt, userId, {
       faceStatus: isPendingOwner ? 'Chờ Chủ Hộ Xác Nhận' : 'Đang Chờ BQL Phê Duyệt',
     });
 
-    // 4. Cập nhật User Store
-    updateUserStore(userId, {
-      updated_at: new Date().toISOString(),
-    });
+    // 4. Cập nhật User Profile
+    await updateUserProfileDb(userId, {});
 
     // 5. Nếu không phải chờ chủ hộ xác nhận (đã được Chủ hộ bảo lãnh), gửi thẳng BQL
     if (!isPendingOwner) {
       try {
-        submitEkycRequest({
+        await submitEkycRequestDb({
           userId,
           fullName: faceProfile.fullName,
           roleLabel: existingUser?.role === 'OWNER' ? 'Chủ Hộ' : 'Cư Dân',

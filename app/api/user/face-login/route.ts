@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { identifyFaceAmongEnrolled, EnrolledFaceProfile } from '@/lib/biometricFaceEngine';
-import { findUserStore } from '@/lib/userStore';
+import { findUserByIdentifierDb } from '@/lib/server/userDb';
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_ATTEMPTS = 5;
@@ -14,7 +14,18 @@ function getClientIp(req: Request): string {
   return req.headers.get('x-real-ip') || 'unknown';
 }
 
-function checkRateLimit(ip: string): boolean {
+async function checkRateLimit(ip: string): Promise<boolean> {
+  if (typeof (supabaseAdmin as any).rpc === 'function') {
+    const { data, error } = await supabaseAdmin.rpc('check_face_login_rate_limit', {
+      p_ip: ip,
+      p_max_attempts: RATE_LIMIT_MAX_ATTEMPTS,
+      p_window_seconds: Math.round(RATE_LIMIT_WINDOW_MS / 1000),
+    });
+    if (!error && typeof data === 'boolean') {
+      return data;
+    }
+  }
+
   const now = Date.now();
   const entry = ipAttempts.get(ip);
   if (!entry || now > entry.resetAt) {
@@ -66,7 +77,7 @@ function parseImageDimensions(buf: Buffer): { width: number; height: number; typ
 export async function POST(req: Request) {
   const ip = getClientIp(req);
 
-  if (!checkRateLimit(ip)) {
+  if (!(await checkRateLimit(ip))) {
     logFailedAttempt(ip, 'RATE_LIMIT_EXCEEDED');
     return NextResponse.json(
       { success: false, message: 'Quá nhiều lần thử đăng nhập FaceID. Vui lòng thử lại sau 1 phút.' },
@@ -221,8 +232,8 @@ export async function POST(req: Request) {
     }
 
     const legacyUser =
-      (profileRow.legacy_user_id && findUserStore(profileRow.legacy_user_id)) ||
-      findUserStore(profileRow.email) ||
+      (profileRow.legacy_user_id && (await findUserByIdentifierDb(profileRow.legacy_user_id))) ||
+      (await findUserByIdentifierDb(profileRow.email)) ||
       undefined;
 
     const formattedUser = {

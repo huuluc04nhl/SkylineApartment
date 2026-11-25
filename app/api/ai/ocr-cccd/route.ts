@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth/guard';
+import { checkRateLimit } from '@/lib/server/rateLimit';
 import { parseVietnameseCccdQr, parseCccdText } from '@/lib/ocrParser';
 import jpeg from 'jpeg-js';
 import jsQR from 'jsqr';
@@ -54,6 +56,17 @@ function decodeQrFromBase64(base64Data: string): string | null {
 
 export async function POST(req: NextRequest) {
   try {
+    const guard = await requireAuth(['ADMIN', 'OWNER', 'TENANT']);
+    if (!guard.ok) return guard.response;
+
+    const allowed = await checkRateLimit(`ai:${guard.session.authUserId}`, 20, 60);
+    if (!allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Bạn gửi quá nhiều yêu cầu AI. Vui lòng thử lại sau 1 phút.' },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { frontImage, backImage } = body;
 

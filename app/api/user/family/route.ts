@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/server/auth';
-import { 
-  getApartmentMembers, 
-  addApartmentMember, 
-  updateApartmentMember,
-  removeApartmentMember, 
-  clearApartmentMembers,
-  ApartmentMember,
-  getUserStore,
-  updateUserStore
-} from '@/lib/userStore';
+import { type ApartmentMember } from '@/lib/userStore';
+import {
+  listApartmentMembersDb,
+  upsertApartmentMemberDb,
+  updateApartmentMemberDb,
+  removeApartmentMemberDb,
+  findUserByIdentifierDb,
+  updateUserProfileDb,
+} from '@/lib/server/userDb';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { submitEkycRequest } from '@/lib/ekycStore';
+import { submitEkycRequestDb } from '@/lib/server/ekycDb';
 
 /**
  * Lọc tài khoản cư dân hợp lệ để thêm người nhà:
@@ -27,9 +26,9 @@ function isEligibleFamilyAccount(u: any, hostUser?: any): boolean {
 
   // Loại trừ tài khoản quản lý / kỹ thuật
   if (
-    role === 'ADMIN' || 
-    role === 'TECHNICIAN' || 
-    role === 'RECEPTIONIST' || 
+    role === 'ADMIN' ||
+    role === 'TECHNICIAN' ||
+    role === 'RECEPTIONIST' ||
     role === 'STAFF'
   ) {
     return false;
@@ -71,11 +70,11 @@ export async function GET(req: Request) {
 
     // Hỗ trợ xóa sạch dữ liệu người nhà ở căn hộ để đồng bộ lại
     if (actionQuery === 'CLEAR_LOCAL') {
-      clearApartmentMembers(aptCode);
+      const members = await listApartmentMembersDb(aptCode);
       return NextResponse.json({
         success: true,
-        message: `Đã dọn dẹp sạch dữ liệu lưu tạm của Căn hộ ${aptCode} để đồng bộ mới theo Database.`,
-        members: [],
+        message: `Đã đồng bộ danh sách thành viên Căn hộ ${aptCode} từ Database.`,
+        members,
         bqlAccounts: []
       });
     }
@@ -95,7 +94,7 @@ export async function GET(req: Request) {
       const { data: dbUsersData, error: usersErr } = await supabaseAdmin.from('users').select('*');
       if (usersErr) throw new Error(`Supabase users select error: ${usersErr.message}`);
       const dbUsers = dbUsersData || [];
-      const currentMembers = getApartmentMembers(aptCode);
+      const currentMembers = await listApartmentMembersDb(aptCode);
 
       const matchedList = dbUsers.filter((u) => {
         if (!isEligibleFamilyAccount(u, localUser)) return false;
@@ -152,7 +151,7 @@ export async function GET(req: Request) {
     }
 
     // 2. Fetch current registered members for this apartment
-    const members = getApartmentMembers(aptCode);
+    const members = await listApartmentMembersDb(aptCode);
 
     // 3. Eligible resident accounts registered in database
     const { data: dbUsersData, error: usersErr } = await supabaseAdmin.from('users').select('*');
@@ -231,12 +230,12 @@ export async function POST(req: Request) {
     const ownerPhone = currentUser?.phone || '';
 
     const body = await req.json();
-    const { 
-      accountId, 
-      username, 
-      phone, 
-      fullName, 
-      relationship = 'Vợ / Chồng', 
+    const {
+      accountId,
+      username,
+      phone,
+      fullName,
+      relationship = 'Vợ / Chồng',
       licensePlate,
       idCard,
       avatarUrl,
@@ -297,7 +296,7 @@ export async function POST(req: Request) {
 
     // 3. Update User Record in Database
     if (resolvedUser) {
-      updateUserStore(resolvedUser.id, {
+      await updateUserProfileDb(resolvedUser.id, {
         apartment_code: aptCode,
         relationship: relationship,
         license_plate: finalLicense || resolvedUser.license_plate,
@@ -341,11 +340,11 @@ export async function POST(req: Request) {
       note: note || '',
     };
 
-    const updated = addApartmentMember(aptCode, newMember);
+    const updated = await upsertApartmentMemberDb(aptCode, newMember);
 
     // 5. Automatically create/sync e-KYC dossier for BQL to review and approve
     try {
-      submitEkycRequest({
+      await submitEkycRequestDb({
         userId: newMember.id,
         fullName: finalFullName,
         roleLabel: `Người Nhà (${relationship} - Căn ${aptCode}) - Chủ Hộ ${ownerName} Bảo Lãnh`,
@@ -404,7 +403,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const updated = removeApartmentMember(aptCode, memberId);
+    const updated = await removeApartmentMemberDb(aptCode, memberId);
 
     return NextResponse.json({
       success: true,
@@ -437,13 +436,13 @@ export async function PUT(req: Request) {
     const aptCode = rawApt;
 
     const body = await req.json();
-    const { 
-      memberId, 
-      relationship, 
-      licensePlate, 
-      fullName, 
-      phone, 
-      idCard 
+    const {
+      memberId,
+      relationship,
+      licensePlate,
+      fullName,
+      phone,
+      idCard
     } = body;
 
     if (!memberId) {
@@ -460,14 +459,14 @@ export async function PUT(req: Request) {
     if (phone !== undefined && phone.trim()) updates.phone = phone.trim();
     if (idCard !== undefined && idCard.trim()) updates.idCard = idCard.trim();
 
-    // 1. Update apartment member store
-    const updated = updateApartmentMember(aptCode, memberId, updates);
+    // 1. Update apartment member in Supabase
+    const updated = await updateApartmentMemberDb(aptCode, memberId, updates);
 
-    // 2. Also update in userStore if matched
+    // 2. Also update in user/profiles if matched
     try {
-      const liveUser = getUserStore(memberId);
+      const liveUser = await findUserByIdentifierDb(memberId);
       if (liveUser && liveUser.id) {
-        updateUserStore(liveUser.id, {
+        await updateUserProfileDb(liveUser.id, {
           relationship: updates.relationship || liveUser.relationship,
           license_plate: updates.licensePlate !== undefined ? updates.licensePlate : liveUser.license_plate,
           full_name: updates.fullName || liveUser.full_name,

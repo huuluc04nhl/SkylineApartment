@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/server/auth';
-import { updateUserStore } from '@/lib/userStore';
+import { updateUserProfileDb } from '@/lib/server/userDb';
 
 function formatToDateInput(d?: string): string {
   if (!d) return '';
@@ -57,10 +57,7 @@ export async function POST(req: Request) {
     }
 
     const resolvedFullname = fullname || `${computedLastname} ${computedFirstname}`.trim();
-    const extractedId = session.profile.id;
-    const userIdentifier = extractedId || body.username || email || phone || 'user-owner-1';
-
-    const updatedUser = updateUserStore(userIdentifier, {
+    const updatedUser = await updateUserProfileDb(session.authUserId, {
       firstname: computedFirstname,
       lastname: computedLastname,
       fullname: resolvedFullname,

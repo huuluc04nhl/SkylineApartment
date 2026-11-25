@@ -30,7 +30,7 @@ export interface EnrolledFaceProfile {
     smile: number[];
   };
   enrolledAt: string;
-  status: 'ACTIVE' | 'PENDING' | 'PENDING_OWNER' | 'REVOKED';
+  status: 'ACTIVE' | 'APPROVED' | 'PENDING' | 'PENDING_OWNER' | 'REVOKED';
   faceScore: number;
   confirmedByOwner?: boolean;
   confirmedByOwnerAt?: string;
@@ -621,7 +621,7 @@ export function identifyFaceAmongEnrolled(
   let bestSampleScores = { front: 0, left: 0, right: 0, smile: 0 };
 
   for (const profile of enrolledProfiles) {
-    if (profile.status !== 'ACTIVE') continue;
+    if (profile.status !== 'ACTIVE' && profile.status !== 'APPROVED') continue;
 
     const matchRes = matchLiveFaceWithProfile(liveDescriptor, profile);
     if (matchRes.matchScore > highestScore) {
@@ -644,7 +644,17 @@ export function identifyFaceAmongEnrolled(
     };
   }
 
-  const displayApt = bestProfile.apartmentCode || 'CH-06';
+  const displayApt = (bestProfile.apartmentCode || '').trim();
+  if (!displayApt) {
+    return {
+      matched: false,
+      score: Number(highestScore.toFixed(1)),
+      bestAngle: matchedAngle,
+      bestAngleKey: matchedAngleKey,
+      sampleScores: bestSampleScores,
+      message: 'Hồ sơ FaceID thiếu mã căn hộ hợp lệ. Vui lòng liên hệ Ban Quản Lý.',
+    };
+  }
   bestProfile.apartmentCode = displayApt;
 
   return {

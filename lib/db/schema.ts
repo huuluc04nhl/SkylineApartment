@@ -426,7 +426,7 @@ export interface FaceEnrollmentRecord {
   avatarUrl?: string;
   descriptor: number[];
   faceScore?: number;
-  status: 'ACTIVE' | 'PENDING' | 'PENDING_OWNER' | 'REVOKED';
+  status: 'ACTIVE' | 'APPROVED' | 'PENDING' | 'PENDING_OWNER' | 'REVOKED';
   enrolledAt: string;
   samples?: any;
   metadata?: any;

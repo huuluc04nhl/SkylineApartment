@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/server/auth';
+import { checkRateLimit } from '@/lib/server/rateLimit';
 import { type StoredUser } from '@/lib/userStore';
 import { 
-  checkBillingAiRateLimit, 
   BILLING_TOOLS, 
   GEMINI_BILLING_TOOL_DECLARATIONS, 
   buildResidentSystemPrompt 
@@ -22,9 +22,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Rate Limiting
-    const rateCheck = checkBillingAiRateLimit(user.id);
-    if (!rateCheck.allowed) {
+    // Rate Limiting (Postgres-backed, 20 req/min/user)
+    const allowed = await checkRateLimit(`ai:${session!.authUserId}`, 20, 60);
+    if (!allowed) {
       return NextResponse.json(
         { success: false, message: 'Bạn gửi quá nhiều yêu cầu. Vui lòng chờ 1 phút trước khi hỏi tiếp.' },
         { status: 429 }

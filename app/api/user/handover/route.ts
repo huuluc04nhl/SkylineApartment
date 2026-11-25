@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/guard';
-import { registerNewOwnerUser } from '@/lib/userStore';
-import { assignApartmentResident, ApartmentHandoverProtocol, ApartmentResidentOwner } from '@/lib/apartmentStore';
+import { registerOwnerUserDb } from '@/lib/server/userDb';
+import { assignApartmentResidentDb } from '@/lib/server/apartmentDb';
+import { ApartmentHandoverProtocol } from '@/lib/apartmentStore';
 
 /**
  * POST /api/user/handover
@@ -61,8 +62,8 @@ export async function POST(req: Request) {
     const cleanEmail = email?.trim() || `${cleanPhone}@skyline.residence.vn`;
     const cleanAvatar = avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop&crop=face';
 
-    // 2. Cấp tài khoản Cư Dân chính thức trên Server User Store & DEMO_USERS
-    const provisionedUser = registerNewOwnerUser({
+    // 2. Cấp tài khoản Cư Dân chính thức trên Supabase Auth + profiles + users
+    const provisionedUser = await registerOwnerUserDb({
       name: cleanName,
       phone: cleanPhone,
       email: cleanEmail,
@@ -89,21 +90,13 @@ export async function POST(req: Request) {
       notes: handoverProtocol?.notes || 'Đã nghiệm thu kỹ thuật bàn giao căn hộ, bàn giao chìa khóa cơ và cấp thẻ từ cư dân.'
     };
 
-    // 4. Cập nhật hồ sơ căn hộ sang trạng thái ĐANG SINH SỐNG
-    const ownerObj: ApartmentResidentOwner = {
-      name: cleanName,
-      phone: cleanPhone,
-      email: cleanEmail,
-      cccd: cleanIdCard,
-      avatar: cleanAvatar,
-      eKycApproved: true,
-      handoverDate: finalProtocol.handoverDate,
-      dob: provisionedUser.dob,
-      pob: provisionedUser.pob,
-      handoverProtocol: finalProtocol
-    };
-
-    assignApartmentResident(cleanCode, ownerObj, finalProtocol);
+    // 4. Cập nhật hồ sơ căn hộ trong Supabase sang trạng thái OCCUPIED
+    await assignApartmentResidentDb({
+      aptCode: cleanCode,
+      ownerId: provisionedUser.id,
+      handoverDate: new Date().toISOString().slice(0, 10),
+      protocolCode: finalProtocol.protocolCode,
+    });
 
     return NextResponse.json({
       success: true,

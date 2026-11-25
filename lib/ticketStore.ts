@@ -1,19 +1,21 @@
 /**
  * Skyline Smart Residence - Centralized Maintenance Ticket & Technician Payroll Store
- * Client/Server Ticket Store powered by skylineDb and /api/tickets.
+ * Client Ticket Store backed by /api/tickets & Supabase Postgres.
  * Syncs with Supabase Postgres via /api/tickets.
  */
 
 import { ServiceRequest } from './dataStore';
 import { addApartmentMaintenanceRecord } from './apartmentStore';
-import { 
-  TicketCategoryType, 
-  TicketHandlerRole, 
-  classifyTicket, 
-  findInquiryAnswer 
+import {
+  TicketCategoryType,
+  TicketHandlerRole,
+  classifyTicket,
+  findInquiryAnswer
 } from './ticketClassification';
-import { skylineDb } from './db';
 import { ServiceTicketRecord, TechnicianRecord } from './db/schema';
+
+const ticketsCache: ServiceTicketRecord[] = [];
+const techniciansCache: TechnicianRecord[] = [];
 
 export type { TicketCategoryType, TicketHandlerRole };
 
@@ -35,7 +37,7 @@ export interface ExtendedServiceRequest extends Omit<ServiceRequest, 'after_imag
   sla_minutes_left?: number;
   before_image?: string;
   ai_category?: 'Điện' | 'Nước' | 'Vệ sinh' | 'An ninh' | 'Khác' | string;
-  
+
   ticket_type?: TicketCategoryType;
   ticket_type_label?: string;
   handled_by?: TicketHandlerRole;
@@ -187,8 +189,8 @@ export function extendedServiceRequestToRecord(req: ExtendedServiceRequest): Ser
   };
 }
 
-export const DEFAULT_TECHNICIANS: TechnicianProfile[] = skylineDb.technicians.find().map(technicianRecordToProfile);
-export const INITIAL_TICKETS: ExtendedServiceRequest[] = skylineDb.tickets.find().map(serviceTicketRecordToRequest);
+export const DEFAULT_TECHNICIANS: TechnicianProfile[] = [];
+export const INITIAL_TICKETS: ExtendedServiceRequest[] = [];
 
 function notifyTicketsUpdated() {
   if (typeof window !== 'undefined') {
@@ -196,39 +198,34 @@ function notifyTicketsUpdated() {
   }
 }
 
-// -----------------------------------------------------------------------------
-// GET / SAVE TECHNICIANS - FROM SKYLINE DATABASE
-// -----------------------------------------------------------------------------
 export function getTechnicians(): TechnicianProfile[] {
-  return skylineDb.technicians.find().map(technicianRecordToProfile);
+  return techniciansCache.map(technicianRecordToProfile);
 }
 
 export function saveTechnicians(techs: TechnicianProfile[]): void {
   techs.forEach(t => {
-    skylineDb.technicians.update(t.id, {
-      name: t.name,
-      phone: t.phone,
-      email: t.email,
-      specialty: t.specialty,
-      base_salary: t.baseSalary,
-      pay_per_ticket: t.payPerTicket,
-      bonus_per_fivestar: t.bonusPerFiveStar,
-      status: t.status,
-    });
+    const existing = techniciansCache.find(item => item.id === t.id);
+    if (existing) {
+      existing.name = t.name;
+      existing.phone = t.phone;
+      existing.email = t.email;
+      existing.specialty = t.specialty;
+      existing.base_salary = t.baseSalary;
+      existing.pay_per_ticket = t.payPerTicket;
+      existing.bonus_per_fivestar = t.bonusPerFiveStar;
+      existing.status = t.status;
+    }
   });
   notifyTicketsUpdated();
 }
 
 export function getTechnicianById(id: string): TechnicianProfile | undefined {
-  const rec = skylineDb.technicians.findById(id);
+  const rec = techniciansCache.find(item => item.id === id);
   return rec ? technicianRecordToProfile(rec) : undefined;
 }
 
-// -----------------------------------------------------------------------------
-// GET / SAVE TICKETS - FROM SKYLINE DATABASE
-// -----------------------------------------------------------------------------
 export function getTickets(aptCode?: string, phone?: string): ExtendedServiceRequest[] {
-  const allTickets = skylineDb.tickets.find().map(serviceTicketRecordToRequest);
+  const allTickets = ticketsCache.map(serviceTicketRecordToRequest);
 
   if (aptCode || phone) {
     const cleanCode = aptCode ? aptCode.trim().toUpperCase() : '';
@@ -244,18 +241,18 @@ export function getTickets(aptCode?: string, phone?: string): ExtendedServiceReq
 }
 
 export function getTicketById(id: string): ExtendedServiceRequest | undefined {
-  const rec = skylineDb.tickets.findById(id);
+  const rec = ticketsCache.find(item => item.id === id);
   return rec ? serviceTicketRecordToRequest(rec) : undefined;
 }
 
 export function saveTickets(tickets: ExtendedServiceRequest[]): void {
   tickets.forEach(t => {
-    const existing = skylineDb.tickets.findById(t.id);
+    const idx = ticketsCache.findIndex(item => item.id === t.id);
     const record = extendedServiceRequestToRecord(t);
-    if (existing) {
-      skylineDb.tickets.update(existing.id, record);
+    if (idx >= 0) {
+      ticketsCache[idx] = record;
     } else {
-      skylineDb.tickets.insert(record);
+      ticketsCache.push(record);
     }
   });
   notifyTicketsUpdated();
@@ -375,119 +372,96 @@ export function createTicket(payload: {
   };
 
   const rec = extendedServiceRequestToRecord(newTicket);
-  skylineDb.tickets.insert(rec);
+  ticketsCache.unshift(rec);
   notifyTicketsUpdated();
   return newTicket;
 }
 
-/**
- * Phản hồi chính thức của BQL
- */
 export function adminRespondToTicket(
   ticketId: string,
   replyText: string,
   adminName: string = 'Ban Quản Lý Chung Cư',
   engineername?: string
 ): ExtendedServiceRequest | null {
-  const existing = skylineDb.tickets.findById(ticketId);
+  const existing = ticketsCache.find(item => item.id === ticketId);
   if (!existing) return null;
 
-  const patch: Partial<ServiceTicketRecord> = {
-    admin_reply: replyText.trim(),
-    admin_replied_at: new Date().toISOString(),
-    admin_replied_by: adminName,
-    status: 'Resolved',
-    updated_at: new Date().toISOString()
-  };
+  existing.admin_reply = replyText.trim();
+  existing.admin_replied_at = new Date().toISOString();
+  existing.admin_replied_by = adminName;
+  existing.status = 'Resolved';
+  existing.updated_at = new Date().toISOString();
   if (engineername) {
-    patch.assigned_technician_name = engineername.trim();
+    existing.assigned_technician_name = engineername.trim();
   }
 
-  const updatedRec = skylineDb.tickets.update(existing.id, patch);
   notifyTicketsUpdated();
-  return updatedRec ? serviceTicketRecordToRequest(updatedRec) : null;
+  return serviceTicketRecordToRequest(existing);
 }
 
-/**
- * AI trả lời tự động câu hỏi
- */
 export function aiAnswerTicket(
   ticketId: string,
   customAnswer?: string
 ): ExtendedServiceRequest | null {
-  const existing = skylineDb.tickets.findById(ticketId);
+  const existing = ticketsCache.find(item => item.id === ticketId);
   if (!existing) return null;
 
   const answer = customAnswer || findInquiryAnswer(existing.content);
-  const updatedRec = skylineDb.tickets.update(existing.id, {
-    handled_by: 'AI',
-    ai_reply: answer,
-    ai_replied_at: new Date().toISOString(),
-    status: 'Resolved',
-    updated_at: new Date().toISOString()
-  });
+  existing.handled_by = 'AI';
+  existing.ai_reply = answer;
+  existing.ai_replied_at = new Date().toISOString();
+  existing.status = 'Resolved';
+  existing.updated_at = new Date().toISOString();
 
   notifyTicketsUpdated();
-  return updatedRec ? serviceTicketRecordToRequest(updatedRec) : null;
+  return serviceTicketRecordToRequest(existing);
 }
 
-/**
- * Phân công Kỹ thuật viên
- */
 export function assignTechnicianToTicket(
-  ticketId: string, 
+  ticketId: string,
   technicianId: string,
   scheduledTime?: string
 ): ExtendedServiceRequest | null {
-  const existing = skylineDb.tickets.findById(ticketId);
+  const existing = ticketsCache.find(item => item.id === ticketId);
   const tech = getTechnicianById(technicianId);
   if (!existing || !tech) return null;
 
-  const updatedRec = skylineDb.tickets.update(existing.id, {
-    status: 'In_Progress',
-    assigned_technician_id: tech.id,
-    assigned_technician_name: tech.name,
-    assigned_technician_phone: tech.phone,
-    scheduled_time: scheduledTime || 'Có mặt trong vòng 30 phút',
-    updated_at: new Date().toISOString()
-  });
+  existing.status = 'In_Progress';
+  existing.assigned_technician_id = tech.id;
+  existing.assigned_technician_name = tech.name;
+  existing.assigned_technician_phone = tech.phone;
+  existing.scheduled_time = scheduledTime || 'Có mặt trong vòng 30 phút';
+  existing.updated_at = new Date().toISOString();
 
-  // Đổi trạng thái KTV thành BUSY
-  skylineDb.technicians.update(tech.id, { status: 'BUSY' });
+  const techRec = techniciansCache.find(item => item.id === tech.id);
+  if (techRec) techRec.status = 'BUSY';
   notifyTicketsUpdated();
-  return updatedRec ? serviceTicketRecordToRequest(updatedRec) : null;
+  return serviceTicketRecordToRequest(existing);
 }
 
-/**
- * Nghiệm thu và đóng phiếu
- */
 export function resolveTicket(
   ticketId: string,
   afterImage: string,
   resolutionNotes?: string,
-  aiVerification?: ExtendedServiceRequest['ai_verification']
+  _aiVerification?: ExtendedServiceRequest['ai_verification']
 ): ExtendedServiceRequest | null {
-  const existing = skylineDb.tickets.findById(ticketId);
+  const existing = ticketsCache.find(item => item.id === ticketId);
   if (!existing) return null;
 
   const assignedTechId = existing.assigned_technician_id;
+  existing.status = 'Resolved';
+  existing.after_image = afterImage;
+  existing.resolved_at = new Date().toISOString();
+  existing.updated_at = new Date().toISOString();
 
-  const updatedRec = skylineDb.tickets.update(existing.id, {
-    status: 'Resolved',
-    after_image: afterImage,
-    resolved_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  });
-
-  // Chuyển KTV về AVAILABLE nếu không còn phiếu nào đang làm
   if (assignedTechId) {
-    const busyRemaining = skylineDb.tickets.findOne(t => t.assigned_technician_id === assignedTechId && t.status === 'In_Progress' && t.id !== existing.id);
+    const busyRemaining = ticketsCache.find(t => t.assigned_technician_id === assignedTechId && t.status === 'In_Progress' && t.id !== existing.id);
     if (!busyRemaining) {
-      skylineDb.technicians.update(assignedTechId, { status: 'AVAILABLE' });
+      const techRec = techniciansCache.find(item => item.id === assignedTechId);
+      if (techRec) techRec.status = 'AVAILABLE';
     }
   }
 
-  // Ghi nhận vào lý lịch bảo trì căn hộ
   if (existing.apartment_code) {
     try {
       addApartmentMaintenanceRecord(existing.apartment_code, {
@@ -505,27 +479,22 @@ export function resolveTicket(
   }
 
   notifyTicketsUpdated();
-  return updatedRec ? serviceTicketRecordToRequest(updatedRec) : null;
+  return serviceTicketRecordToRequest(existing);
 }
 
-/**
- * Từ chối nghiệm thu
- */
 export function rejectTicketResolution(
   ticketId: string,
-  reason: string
+  _reason: string
 ): ExtendedServiceRequest | null {
-  const existing = skylineDb.tickets.findById(ticketId);
+  const existing = ticketsCache.find(item => item.id === ticketId);
   if (!existing) return null;
 
-  const updatedRec = skylineDb.tickets.update(existing.id, {
-    status: 'In_Progress',
-    after_image: undefined,
-    updated_at: new Date().toISOString()
-  });
+  existing.status = 'In_Progress';
+  existing.after_image = undefined;
+  existing.updated_at = new Date().toISOString();
 
   notifyTicketsUpdated();
-  return updatedRec ? serviceTicketRecordToRequest(updatedRec) : null;
+  return serviceTicketRecordToRequest(existing);
 }
 
 /**
@@ -555,46 +524,36 @@ export async function updateTicketApiAsync(payload: {
   }
 
   const idStr = String(payload.id);
-  const existing = skylineDb.tickets.findById(idStr);
+  const existing = ticketsCache.find(item => item.id === idStr);
   if (!existing) return false;
 
-  const patch: Partial<ServiceTicketRecord> = {};
   if (payload.reply) {
-    patch.admin_reply = payload.reply.trim();
-    patch.admin_replied_at = new Date().toISOString();
-    patch.status = 'Resolved';
+    existing.admin_reply = payload.reply.trim();
+    existing.admin_replied_at = new Date().toISOString();
   }
   if (payload.engineername) {
-    patch.assigned_technician_name = payload.engineername.trim();
-    if (existing.status === 'Open') patch.status = 'In_Progress';
+    existing.assigned_technician_name = payload.engineername.trim();
   }
-  patch.updated_at = new Date().toISOString();
-
-  skylineDb.tickets.update(existing.id, patch);
+  existing.updated_at = new Date().toISOString();
   notifyTicketsUpdated();
   return true;
 }
 
-/**
- * Cư Dân chấm điểm 5 sao & phản hồi
- */
 export function rateTicket(
   ticketId: string,
   rating: number,
   feedback?: string
 ): ExtendedServiceRequest | null {
-  const existing = skylineDb.tickets.findById(ticketId);
+  const existing = ticketsCache.find(item => item.id === ticketId);
   if (!existing) return null;
 
-  const updatedRec = skylineDb.tickets.update(existing.id, {
-    rating: Math.max(1, Math.min(5, Math.round(rating))),
-    resident_feedback: feedback?.trim() || 'Cư dân hài lòng với dịch vụ.',
-    rated_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  });
+  existing.rating = Math.max(1, Math.min(5, Math.round(rating)));
+  existing.resident_feedback = feedback?.trim() || 'Cư dân hài lòng với dịch vụ.';
+  existing.rated_at = new Date().toISOString();
+  existing.updated_at = new Date().toISOString();
 
   notifyTicketsUpdated();
-  return updatedRec ? serviceTicketRecordToRequest(updatedRec) : null;
+  return serviceTicketRecordToRequest(existing);
 }
 
 /**
@@ -618,15 +577,15 @@ export async function deleteTicketAsync(ticketId: string | number): Promise<bool
 
 export function deleteTicket(ticketId: string | number): void {
   const idStr = String(ticketId);
-  const existing = skylineDb.tickets.findById(idStr);
-  if (existing) {
-    skylineDb.tickets.delete(existing.id);
+  const idx = ticketsCache.findIndex(item => item.id === idStr);
+  if (idx >= 0) {
+    ticketsCache.splice(idx, 1);
     notifyTicketsUpdated();
   }
 }
 
 /**
- * Bảng lương KTV tính từ các ca sửa thực tế trong skylineDb
+ * Bảng lương KTV tính từ các ca sửa thực tế
  */
 export function getTechnicianPayroll(): TechnicianPayrollSummary[] {
   const techs = getTechnicians();
@@ -639,11 +598,11 @@ export function getTechnicianPayroll(): TechnicianPayrollSummary[] {
 
     const completedCount = techResolvedTickets.length;
     const fiveStarCount = techResolvedTickets.filter(t => t.rating === 5).length;
-    
+
     const ratedTickets = techResolvedTickets.filter(t => typeof t.rating === 'number' && t.rating > 0);
     const sumRating = ratedTickets.reduce((acc, t) => acc + (t.rating || 0), 0);
-    const averageRating = ratedTickets.length > 0 
-      ? Number((sumRating / ratedTickets.length).toFixed(1)) 
+    const averageRating = ratedTickets.length > 0
+      ? Number((sumRating / ratedTickets.length).toFixed(1))
       : (completedCount > 0 ? 5.0 : 0);
 
     const ticketBonusTotal = completedCount * tech.payPerTicket;

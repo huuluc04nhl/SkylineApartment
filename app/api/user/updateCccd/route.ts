@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/server/auth';
-import { updateUserStore } from '@/lib/userStore';
+import { updateUserProfileDb } from '@/lib/server/userDb';
 
 function normalizeDate(d?: string): string {
   if (!d) return '';
@@ -38,12 +38,10 @@ export async function POST(req: Request) {
     const resolvedName = (fullName || fullname || '').toUpperCase().trim();
     const cleanDob = normalizeDate(dob);
 
-    const targetUserId = session.profile.id;
-
-    const updates: any = {
-      id_number: cleanNumber || '067204000961',
-      id_card_no: cleanNumber || '067204000961',
-      id_date: cleanDate || '2022-08-15',
+    const updates: Record<string, any> = {
+      id_number: cleanNumber || undefined,
+      id_card_no: cleanNumber || undefined,
+      id_date: cleanDate || undefined,
       id_place: cleanPlace,
       cccd_front_url: front || undefined,
       cccd_back_url: back || undefined,
@@ -57,7 +55,10 @@ export async function POST(req: Request) {
     if (gender !== undefined) updates.gender = Number(gender) === 0 ? 0 : 1;
     if (pob) updates.pob = pob.trim();
 
-    const updated = updateUserStore(targetUserId, updates);
+    const updated = await updateUserProfileDb(session.authUserId, updates);
+    if (!updated) {
+      return NextResponse.json({ success: false, message: 'Không tìm thấy hồ sơ người dùng.' }, { status: 404 });
+    }
 
     return NextResponse.json({
       success: true,

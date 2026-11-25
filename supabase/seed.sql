@@ -92,28 +92,28 @@ INSERT INTO apartments (
 ('apt-20b01', '20B01', 880, 'BS-07', 20, 'SOUTH', '3PN', '3 Phòng Ngủ - 3WC', 115.8, 108.2, 3, 3, 'Nam', 'Bắc', 7.20, 7200000000, 'OCCUPIED', NULL, '2026-02-10', 'BBBG-SKYLINE-20B01-20260210', 'Căn hộ 3PN rộng rãi diện tích thông thủy 108.2 m2 dành cho gia đình đa thế hệ.')
 ON CONFLICT (id) DO NOTHING;
 
--- 5. USERS (Nhân sự BQL/KTV/Lễ tân để apartment_code = NULL theo chuẩn FK)
-INSERT INTO users (id, username, role, full_name, phone, email, password_hash, id_card_no, id_date, id_place, dob, pob, gender, apartment_code, relationship, license_plate)
+-- 5. USERS (Nhân sự BQL/KTV/Lễ tân để apartment_code = NULL theo chuẩn FK; mật khẩu chỉ nằm trong Supabase Auth)
+INSERT INTO users (id, username, role, full_name, phone, email, id_card_no, id_date, id_place, dob, pob, gender, apartment_code, relationship, license_plate)
 VALUES 
-('user-manager-1', 'admin@skyline.vn', 'ADMIN', 'VinHomes Manager', '0901888999', 'admin@skyline.vn', 'admin123', '079204000888', '2021-05-10', 'Cục Cảnh sát QLHC về TTXH', '1988-04-12', 'TP. Hồ Chí Minh', 1, NULL, 'Staff', NULL),
-('user-tech-1', '0901888998', 'TECHNICIAN', 'Trần Đình Trọng', '0901888998', 'manager02@skyline.vn', '12345678', '079201009999', '2020-05-18', 'Cục Cảnh sát QLHC về TTXH', '1990-09-12', 'Đà Nẵng', 1, NULL, 'Staff', NULL),
-('user-tech-2', '0909888777', 'TECHNICIAN', 'Lê Quốc Tuấn', '0909888777', 'tech.skyline@gmail.com', '12345678', '079201009988', '2020-03-20', 'Cục Cảnh sát QLHC về TTXH', '1992-07-25', 'Hà Nội', 1, NULL, 'Staff', NULL),
-('user-tech-3', '0908777666', 'TECHNICIAN', 'Nguyễn Huy Hoàng', '0908777666', 'hoang.vesinh@skyline.vn', '12345678', '079201007766', '2021-04-15', 'Cục Cảnh sát QLHC về TTXH', '1993-06-18', 'Bình Định', 1, NULL, 'Staff', NULL),
-('user-reception-1', '0901234567', 'RECEPTIONIST', 'Hoàng Thảo My', '0901234567', 'reception.skyline@gmail.com', '12345678', '079302008877', '2022-11-10', 'Cục Cảnh sát QLHC về TTXH', '1998-09-18', 'Đà Nẵng', 0, NULL, 'Staff', NULL),
-('user-reception-2', '0901234568', 'RECEPTIONIST', 'Nguyễn Mai Anh', '0901234568', 'reception.tropical@gmail.com', '12345678', '079302008878', '2023-01-15', 'Cục Cảnh sát QLHC về TTXH', '1999-04-20', 'TP. Hồ Chí Minh', 0, NULL, 'Staff', NULL),
-('user-owner-1', '0364967082', 'OWNER', 'Trần Hữu Lực', '0364967082', 'huuluc04@gmail.com', '12345678', '067204000961', '2022-08-15', 'Cục Cảnh sát QLHC về TTXH', '2004-08-18', 'Triệu Trạch, Triệu Phong, Quảng Trị', 1, 'CH-06', 'Owner', '51K-889.99'),
-('user-tenant-1', '0917795211', 'TENANT', 'Nguyễn Hữu Nhựt', '0917795211', 'nguyenhuunhut1309@gmail.com', '12345678', '079198005678', '2022-09-02', 'Cục Cảnh sát QLHC về TTXH', '2004-09-02', 'TP. Hồ Chí Minh', 1, 'CH-06', 'Family', '59P1-886.79'),
-('user-member-1', '0325524482', 'OWNER', 'Nguyễn Văn Cường', '0325524482', 'vanncuong1614@gmail.com', '12345678', '074204001708', '2022-11-20', 'Cục Cảnh sát QLHC về TTXH', '2004-01-16', 'Tỉnh Thanh Hóa', 1, 'BS08-CH08', 'Owner', NULL),
-('user-member-2', '0977758215', 'OWNER', 'Lê Đức Hải', '0977758215', 'lehai17082004@gmail.com', '12345678', '070204001704', '2023-04-12', 'Cục Cảnh sát QLHC về TTXH', '2004-08-17', 'Xuân Thọ, Triệu Sơn, Thanh Hóa', 1, 'BS09-CH12', 'Owner', NULL),
-('user-member-3', '0909262626', 'OWNER', 'Vũ Cát Thịnh', '0909262626', '26vucatthinh@gmail.com', '12345678', '079201002626', '2023-06-18', 'Cục Cảnh sát QLHC về TTXH', '2001-05-26', 'TP. Hồ Chí Minh', 1, 'BS10-CH02', 'Owner', NULL),
-('user-mai', '0364967081', 'OWNER', 'Nguyễn Thị Mai', '0364967081', 'mainguyen@gmail.com', '12345678', '079198002341', '2021-06-10', 'Cục Cảnh sát QLHC về TTXH', '1992-05-12', 'Hải Phòng', 0, 'CH-01', 'Owner', '59F2-688.88'),
-('user-nam', '0364967080', 'OWNER', 'Lê Hoàng Nam', '0364967080', 'namle@gmail.com', '12345678', '001090004521', '2020-08-15', 'Cục Cảnh sát QLHC về TTXH', '1988-11-25', 'Hà Nội', 1, 'BS08-CH04', 'Owner', '30H-992.34'),
-('user-tuan', '0364967084', 'OWNER', 'Phạm Minh Tuấn', '0364967084', 'tuanpham@gmail.com', '12345678', '079085001234', '2020-03-12', 'Cục Cảnh sát QLHC về TTXH', '1985-03-08', 'TP. Hồ Chí Minh', 1, 'BS09-CH05', 'Owner', '51G-771.88'),
-('user-dung', '0364967085', 'OWNER', 'Hoàng Anh Dũng', '0364967085', 'dunghoang@gmail.com', '12345678', '079093005678', '2022-01-20', 'Cục Cảnh sát QLHC về TTXH', '1995-09-15', 'Đà Nẵng', 1, 'BS10-CH09', 'Owner', '59P1-889.12'),
-('user-ha', '0364967086', 'OWNER', 'Đỗ Thu Hà', '0364967086', 'hadothu@gmail.com', '12345678', '031191007890', '2021-09-18', 'Cục Cảnh sát QLHC về TTXH', '1991-04-20', 'Hải Dương', 0, 'BS08-CH07', 'Owner', '51H-665.23'),
-('user-huy', '0364967087', 'OWNER', 'Vũ Quang Huy', '0364967087', 'huyvu@gmail.com', '12345678', '036089003412', '2020-10-05', 'Cục Cảnh sát QLHC về TTXH', '1990-10-10', 'Nam Định', 1, 'BS09-CH10', 'Owner', '29A-888.66'),
-('user-linh', '0364967088', 'OWNER', 'Đặng Phương Linh', '0364967088', 'linhdang@gmail.com', '12345678', '079196008912', '2022-12-10', 'Cục Cảnh sát QLHC về TTXH', '1996-08-22', 'TP. Hồ Chí Minh', 0, 'BS10-CH11', 'Owner', '51A-981.45'),
-('user-thanh', '0364967083', 'OWNER', 'Bùi Văn Thành', '0364967083', 'thanhbui@gmail.com', '12345678', '038090001122', '2020-02-18', 'Cục Cảnh sát QLHC về TTXH', '1983-07-05', 'Thanh Hóa', 1, 'CH-03', 'Owner', NULL)
+('user-manager-1', 'admin@skyline.vn', 'ADMIN', 'VinHomes Manager', '0901888999', 'admin@skyline.vn', '079204000888', '2021-05-10', 'Cục Cảnh sát QLHC về TTXH', '1988-04-12', 'TP. Hồ Chí Minh', 1, NULL, 'Staff', NULL),
+('user-tech-1', '0901888998', 'TECHNICIAN', 'Trần Đình Trọng', '0901888998', 'manager02@skyline.vn', '079201009999', '2020-05-18', 'Cục Cảnh sát QLHC về TTXH', '1990-09-12', 'Đà Nẵng', 1, NULL, 'Staff', NULL),
+('user-tech-2', '0909888777', 'TECHNICIAN', 'Lê Quốc Tuấn', '0909888777', 'tech.skyline@gmail.com', '079201009988', '2020-03-20', 'Cục Cảnh sát QLHC về TTXH', '1992-07-25', 'Hà Nội', 1, NULL, 'Staff', NULL),
+('user-tech-3', '0908777666', 'TECHNICIAN', 'Nguyễn Huy Hoàng', '0908777666', 'hoang.vesinh@skyline.vn', '079201007766', '2021-04-15', 'Cục Cảnh sát QLHC về TTXH', '1993-06-18', 'Bình Định', 1, NULL, 'Staff', NULL),
+('user-reception-1', '0901234567', 'RECEPTIONIST', 'Hoàng Thảo My', '0901234567', 'reception.skyline@gmail.com', '079302008877', '2022-11-10', 'Cục Cảnh sát QLHC về TTXH', '1998-09-18', 'Đà Nẵng', 0, NULL, 'Staff', NULL),
+('user-reception-2', '0901234568', 'RECEPTIONIST', 'Nguyễn Mai Anh', '0901234568', 'reception.tropical@gmail.com', '079302008878', '2023-01-15', 'Cục Cảnh sát QLHC về TTXH', '1999-04-20', 'TP. Hồ Chí Minh', 0, NULL, 'Staff', NULL),
+('user-owner-1', '0364967082', 'OWNER', 'Trần Hữu Lực', '0364967082', 'huuluc04@gmail.com', '067204000961', '2022-08-15', 'Cục Cảnh sát QLHC về TTXH', '2004-08-18', 'Triệu Trạch, Triệu Phong, Quảng Trị', 1, 'CH-06', 'Owner', '51K-889.99'),
+('user-tenant-1', '0917795211', 'TENANT', 'Nguyễn Hữu Nhựt', '0917795211', 'nguyenhuunhut1309@gmail.com', '079198005678', '2022-09-02', 'Cục Cảnh sát QLHC về TTXH', '2004-09-02', 'TP. Hồ Chí Minh', 1, 'CH-06', 'Family', '59P1-886.79'),
+('user-member-1', '0325524482', 'OWNER', 'Nguyễn Văn Cường', '0325524482', 'vanncuong1614@gmail.com', '074204001708', '2022-11-20', 'Cục Cảnh sát QLHC về TTXH', '2004-01-16', 'Tỉnh Thanh Hóa', 1, 'BS08-CH08', 'Owner', NULL),
+('user-member-2', '0977758215', 'OWNER', 'Lê Đức Hải', '0977758215', 'lehai17082004@gmail.com', '070204001704', '2023-04-12', 'Cục Cảnh sát QLHC về TTXH', '2004-08-17', 'Xuân Thọ, Triệu Sơn, Thanh Hóa', 1, 'BS09-CH12', 'Owner', NULL),
+('user-member-3', '0909262626', 'OWNER', 'Vũ Cát Thịnh', '0909262626', '26vucatthinh@gmail.com', '079201002626', '2023-06-18', 'Cục Cảnh sát QLHC về TTXH', '2001-05-26', 'TP. Hồ Chí Minh', 1, 'BS10-CH02', 'Owner', NULL),
+('user-mai', '0364967081', 'OWNER', 'Nguyễn Thị Mai', '0364967081', 'mainguyen@gmail.com', '079198002341', '2021-06-10', 'Cục Cảnh sát QLHC về TTXH', '1992-05-12', 'Hải Phòng', 0, 'CH-01', 'Owner', '59F2-688.88'),
+('user-nam', '0364967080', 'OWNER', 'Lê Hoàng Nam', '0364967080', 'namle@gmail.com', '001090004521', '2020-08-15', 'Cục Cảnh sát QLHC về TTXH', '1988-11-25', 'Hà Nội', 1, 'BS08-CH04', 'Owner', '30H-992.34'),
+('user-tuan', '0364967084', 'OWNER', 'Phạm Minh Tuấn', '0364967084', 'tuanpham@gmail.com', '079085001234', '2020-03-12', 'Cục Cảnh sát QLHC về TTXH', '1985-03-08', 'TP. Hồ Chí Minh', 1, 'BS09-CH05', 'Owner', '51G-771.88'),
+('user-dung', '0364967085', 'OWNER', 'Hoàng Anh Dũng', '0364967085', 'dunghoang@gmail.com', '079093005678', '2022-01-20', 'Cục Cảnh sát QLHC về TTXH', '1995-09-15', 'Đà Nẵng', 1, 'BS10-CH09', 'Owner', '59P1-889.12'),
+('user-ha', '0364967086', 'OWNER', 'Đỗ Thu Hà', '0364967086', 'hadothu@gmail.com', '031191007890', '2021-09-18', 'Cục Cảnh sát QLHC về TTXH', '1991-04-20', 'Hải Dương', 0, 'BS08-CH07', 'Owner', '51H-665.23'),
+('user-huy', '0364967087', 'OWNER', 'Vũ Quang Huy', '0364967087', 'huyvu@gmail.com', '036089003412', '2020-10-05', 'Cục Cảnh sát QLHC về TTXH', '1990-10-10', 'Nam Định', 1, 'BS09-CH10', 'Owner', '29A-888.66'),
+('user-linh', '0364967088', 'OWNER', 'Đặng Phương Linh', '0364967088', 'linhdang@gmail.com', '079196008912', '2022-12-10', 'Cục Cảnh sát QLHC về TTXH', '1996-08-22', 'TP. Hồ Chí Minh', 0, 'BS10-CH11', 'Owner', '51A-981.45'),
+('user-thanh', '0364967083', 'OWNER', 'Bùi Văn Thành', '0364967083', 'thanhbui@gmail.com', '038090001122', '2020-02-18', 'Cục Cảnh sát QLHC về TTXH', '1983-07-05', 'Thanh Hóa', 1, 'CH-03', 'Owner', NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- Cập nhật owner_id cho các căn hộ đã có chủ sở hữu

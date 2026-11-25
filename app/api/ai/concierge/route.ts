@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth/guard';
+import { checkRateLimit } from '@/lib/server/rateLimit';
 import { askGeminiConcierge, generateSmartProjectFallback, extractAiSuggestions, extractAiAction, ConciergeContext } from '@/lib/geminiClient';
-import { getUserStore, getApartmentMembers } from '@/lib/userStore';
+import { findUserByIdentifierDb, listApartmentMembersDb } from '@/lib/server/userDb';
 import { getBills } from '@/lib/billingStore';
 import { listTicketsDb } from '@/lib/server/ticketDb';
 import { getAllVisitorPasses } from '@/lib/visitorStore';
@@ -17,18 +19,22 @@ export async function POST(req: NextRequest) {
   };
 
   try {
+    const guard = await requireAuth();
+    if (!guard.ok) return guard.response;
+
+    const allowed = await checkRateLimit(`ai:${guard.session.authUserId}`, 20, 60);
+    if (!allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Bạn gửi quá nhiều yêu cầu AI. Vui lòng thử lại sau 1 phút.' },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
-    const { 
-      message, 
-      history, 
-      aptCode, 
-      userName, 
-      userRole, 
+    const {
+      message,
+      history,
       bookings,
-      phone,
-      email,
-      idCard,
-      licensePlate,
       visitors,
       tickets,
       bills,
@@ -45,26 +51,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const targetApt = (aptCode || '').trim();
-    const residentPhone = phone || '';
-    const dynamicUser = targetApt ? getUserStore(targetApt) : undefined;
+    const sessionUser = guard.session.profile;
+    const targetApt = (guard.session.apartment_code || '').trim();
+    const residentPhone = sessionUser.phone || '';
+    const dynamicUser = targetApt ? await findUserByIdentifierDb(targetApt) : undefined;
 
     // Dynamic resolution of actual project data if not supplied by client
     const actualBookings = Array.isArray(bookings) ? bookings : getFacilityBookings(targetApt);
     const actualTickets = Array.isArray(tickets) && tickets.length > 0 ? tickets : await listTicketsDb(targetApt, residentPhone);
 
     const actualVisitors = Array.isArray(visitors) ? visitors : getAllVisitorPasses();
-    const actualBills = Array.isArray(bills) && bills.length > 0 ? bills : getBills(targetApt, userName || 'Trần Hữu Lực');
-    const actualMembers = Array.isArray(members) ? members : getApartmentMembers(targetApt);
+    const actualBills = Array.isArray(bills) && bills.length > 0 ? bills : getBills(targetApt, sessionUser.fullname || sessionUser.full_name || '');
+    const actualMembers = Array.isArray(members)
+      ? members
+      : targetApt
+        ? await listApartmentMembersDb(targetApt)
+        : [];
 
     const context: ConciergeContext = {
       aptCode: targetApt,
-      userName: userName || dynamicUser?.fullname || dynamicUser?.full_name || 'Trần Hữu Lực',
-      userRole: userRole || dynamicUser?.role || 'OWNER',
-      phone: phone || dynamicUser?.phone || '',
-      email: email || dynamicUser?.email || 'huuluc04nhl@gmail.com',
-      idCard: idCard || dynamicUser?.id_number || dynamicUser?.id_card_no || '083204008123',
-      licensePlate: licensePlate || dynamicUser?.license_plate || '51K-889.99',
+      userName: sessionUser.fullname || sessionUser.full_name || dynamicUser?.fullname || dynamicUser?.full_name || 'Cư dân Skyline',
+      userRole: guard.session.role,
+      phone: residentPhone || dynamicUser?.phone || '',
+      email: guard.session.email || sessionUser.email || dynamicUser?.email || '',
+      idCard: dynamicUser?.id_number || dynamicUser?.id_card_no || '',
+      licensePlate: dynamicUser?.license_plate || '',
       bookings: actualBookings,
       tickets: actualTickets,
       visitors: actualVisitors,

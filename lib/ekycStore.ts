@@ -1,12 +1,13 @@
 /**
  * e-KYC Resident Identity Verification & FaceID Access Store
- * Client/Server e-KYC Store backed by skylineDb and /api/ekyc.
+ * Client e-KYC Store backed by /api/ekyc & Supabase Postgres.
  * Zero LocalStorage. Zero External Mock APIs.
  */
 
 import { updateApartmentMember } from './userStore';
-import { skylineDb } from './db';
 import { EkycSubmissionRecord } from './db/schema';
+
+const ekycCache: EkycSubmissionRecord[] = [];
 
 export type EkycStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'VERIFIED' | 'PENDING_OWNER';
 
@@ -71,15 +72,15 @@ export function submissionRecordToRequest(rec: EkycSubmissionRecord): EkycReques
   };
 }
 
-export const INITIAL_EKYC_REQUESTS: EkycRequest[] = skylineDb.ekycSubmissions.find().map(submissionRecordToRequest);
+export const INITIAL_EKYC_REQUESTS: EkycRequest[] = [];
 
 export function getEkycRequests(): EkycRequest[] {
-  return skylineDb.ekycSubmissions.find().map(submissionRecordToRequest);
+  return ekycCache.map(submissionRecordToRequest);
 }
 
 export function saveEkycRequests(requests: EkycRequest[]): void {
   requests.forEach(r => {
-    const existing = skylineDb.ekycSubmissions.findById(r.id);
+    const idx = ekycCache.findIndex(item => item.id === r.id);
     const rec: EkycSubmissionRecord = {
       id: r.id,
       userId: r.userId,
@@ -106,10 +107,10 @@ export function saveEkycRequests(requests: EkycRequest[]): void {
       isSimulation: r.isSimulation,
       algorithm: r.algorithm
     };
-    if (existing) {
-      skylineDb.ekycSubmissions.update(r.id, rec);
+    if (idx >= 0) {
+      ekycCache[idx] = rec;
     } else {
-      skylineDb.ekycSubmissions.insert(rec);
+      ekycCache.push(rec);
     }
   });
 
@@ -124,9 +125,9 @@ export function saveEkycRequests(requests: EkycRequest[]): void {
 export function getEkycForUser(userIdentifier: string): EkycRequest | undefined {
   const requests = getEkycRequests();
   const clean = (userIdentifier || '').toLowerCase().trim();
-  return requests.find(r => 
-    r.userId.toLowerCase() === clean || 
-    r.phone.toLowerCase() === clean || 
+  return requests.find(r =>
+    r.userId.toLowerCase() === clean ||
+    r.phone.toLowerCase() === clean ||
     (r.email && r.email.toLowerCase() === clean) ||
     r.idCardNo === clean
   );
@@ -137,18 +138,16 @@ export function getEkycForUser(userIdentifier: string): EkycRequest | undefined 
  */
 export function updateEkycCardImages(userIdentifier: string, front: string, back: string): void {
   const clean = (userIdentifier || '').toLowerCase().trim();
-  const existing = skylineDb.ekycSubmissions.findOne(r => 
-    r.userId.toLowerCase() === clean || 
-    r.phone.toLowerCase() === clean || 
+  const existing = ekycCache.find(r =>
+    r.userId.toLowerCase() === clean ||
+    r.phone.toLowerCase() === clean ||
     (r.email && r.email.toLowerCase() === clean) ||
     r.idCardNo === clean
   );
 
   if (existing) {
-    const patch: Partial<EkycSubmissionRecord> = {};
-    if (front) patch.idCardFrontUrl = front;
-    if (back) patch.idCardBackUrl = back;
-    skylineDb.ekycSubmissions.update(existing.id, patch);
+    if (front) existing.idCardFrontUrl = front;
+    if (back) existing.idCardBackUrl = back;
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('skyline_ekyc_updated'));
@@ -185,14 +184,15 @@ export function submitEkycRequest(data: {
   isSimulation?: boolean;
   algorithm?: string;
 }): EkycRequest {
-  const existing = skylineDb.ekycSubmissions.findOne(r => 
+  const existingIdx = ekycCache.findIndex(r =>
     Boolean(
-      r.userId === data.userId || 
-      r.phone === data.phone || 
+      r.userId === data.userId ||
+      r.phone === data.phone ||
       (data.email && r.email === data.email) ||
       (data.idCardNo && r.idCardNo === data.idCardNo)
     )
   );
+  const existing = existingIdx >= 0 ? ekycCache[existingIdx] : undefined;
 
   const now = new Date();
   const submittedAt = `${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${now.toLocaleDateString('vi-VN')}`;
@@ -202,7 +202,7 @@ export function submitEkycRequest(data: {
     userId: data.userId,
     fullName: data.fullName,
     roleLabel: data.roleLabel || 'Cư Dân Căn Hộ',
-    apartmentCode: data.apartmentCode || 'CH-06',
+    apartmentCode: data.apartmentCode || '',
     phone: data.phone,
     email: data.email,
     idCardNo: data.idCardNo,
@@ -221,10 +221,10 @@ export function submitEkycRequest(data: {
     algorithm: data.algorithm,
   };
 
-  if (existing) {
-    skylineDb.ekycSubmissions.update(existing.id, rec);
+  if (existingIdx >= 0) {
+    ekycCache[existingIdx] = rec;
   } else {
-    skylineDb.ekycSubmissions.insert(rec);
+    ekycCache.push(rec);
   }
 
   if (typeof window !== 'undefined') {
@@ -238,18 +238,17 @@ export function submitEkycRequest(data: {
  * BQL duyệt hồ sơ e-KYC
  */
 export function approveEkycRequest(id: string, approverName: string = 'VinHomes Manager'): EkycRequest | null {
-  const existing = skylineDb.ekycSubmissions.findById(id);
+  const existing = ekycCache.find(r => r.id === id);
   if (!existing) return null;
 
   const now = new Date();
   const reviewedAt = `${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${now.toLocaleDateString('vi-VN')}`;
 
-  const updatedRec = skylineDb.ekycSubmissions.update(id, {
-    status: 'APPROVED',
-    reviewedAt,
-    reviewedBy: approverName,
-    rejectionReason: undefined
-  });
+  existing.status = 'APPROVED';
+  existing.reviewedAt = reviewedAt;
+  existing.reviewedBy = approverName;
+  existing.rejectionReason = undefined;
+  const updatedRec = existing;
 
   if (existing.apartmentCode) {
     try {
@@ -281,18 +280,17 @@ export function approveEkycRequest(id: string, approverName: string = 'VinHomes 
  * BQL từ chối hồ sơ e-KYC
  */
 export function rejectEkycRequest(id: string, reason: string, approverName: string = 'VinHomes Manager'): EkycRequest | null {
-  const existing = skylineDb.ekycSubmissions.findById(id);
+  const existing = ekycCache.find(r => r.id === id);
   if (!existing) return null;
 
   const now = new Date();
   const reviewedAt = `${now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${now.toLocaleDateString('vi-VN')}`;
 
-  const updatedRec = skylineDb.ekycSubmissions.update(id, {
-    status: 'REJECTED',
-    reviewedAt,
-    reviewedBy: approverName,
-    rejectionReason: reason || 'Ảnh chụp CCCD hoặc khuôn mặt không đạt tiêu chuẩn độ nét.'
-  });
+  existing.status = 'REJECTED';
+  existing.reviewedAt = reviewedAt;
+  existing.reviewedBy = approverName;
+  existing.rejectionReason = reason || 'Ảnh chụp CCCD hoặc khuôn mặt không đạt tiêu chuẩn độ nét.';
+  const updatedRec = existing;
 
   if (existing.apartmentCode) {
     try {
@@ -321,12 +319,11 @@ export function rejectEkycRequest(id: string, reason: string, approverName: stri
  */
 export function confirmEkycByOwner(userId: string): EkycRequest | null {
   const clean = userId.toLowerCase().trim();
-  const existing = skylineDb.ekycSubmissions.findOne(r => r.userId.toLowerCase() === clean || r.phone.toLowerCase() === clean);
+  const existing = ekycCache.find(r => r.userId.toLowerCase() === clean || r.phone.toLowerCase() === clean);
   if (!existing) return null;
 
-  const updatedRec = skylineDb.ekycSubmissions.update(existing.id, {
-    status: 'PENDING'
-  });
+  existing.status = 'PENDING';
+  const updatedRec = existing;
 
   if (existing.apartmentCode) {
     try {

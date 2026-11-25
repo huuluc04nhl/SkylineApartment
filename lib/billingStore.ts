@@ -1,6 +1,6 @@
 /**
  * Skyline Smart Residence - Centralized Billing & Payment Store
- * Client/Server Store backed by skylineDb and /api/billing.
+ * Client Store backed by /api/billing & Supabase Postgres.
  * Zero LocalStorage. Zero External Mock APIs.
  * 
  * - Quản trị dữ liệu hóa đơn sinh hoạt 2 chiều thực tế giữa Ban Quản Lý và Cư Dân
@@ -9,8 +9,9 @@
  */
 
 import { Bill, BillDetail } from './dataStore';
-import { skylineDb } from './db';
 import { BillRecord } from './db/schema';
+
+const billsCache: BillRecord[] = [];
 
 export interface ExtendedBill extends Bill {
   payment_method?: 'VNPAY' | 'MOMO' | 'VIETQR' | 'BANK_TRANSFER';
@@ -51,10 +52,10 @@ export function calculateBillFundAllocation(bill: ExtendedBill | Bill): BillFund
     const type = d.service_type;
     const name = d.service_name || (
       type === 'Electricity' ? 'Tiền Điện Sinh Hoạt' :
-      type === 'Water' ? 'Tiền Nước Sinh Hoạt' :
-      type === 'Management_Fee' ? 'Phí Quản Lý Vận Hành' :
-      type === 'Parking' ? 'Phí Gửi Xe Căn Hộ' :
-      type === 'Internet' ? 'Cáp Quang Internet VNPT' : 'Dịch Vụ Tiện Ích'
+        type === 'Water' ? 'Tiền Nước Sinh Hoạt' :
+          type === 'Management_Fee' ? 'Phí Quản Lý Vận Hành' :
+            type === 'Parking' ? 'Phí Gửi Xe Căn Hộ' :
+              type === 'Internet' ? 'Cáp Quang Internet VNPT' : 'Dịch Vụ Tiện Ích'
     );
 
     if (type === 'Electricity' || type === 'Water') {
@@ -170,7 +171,7 @@ export function billRecordToExtendedBill(rec: BillRecord): ExtendedBill {
   };
 }
 
-export const INITIAL_BILLS: ExtendedBill[] = skylineDb.bills.find().map(billRecordToExtendedBill);
+export const INITIAL_BILLS: ExtendedBill[] = [];
 
 function notifyBillingUpdated() {
   if (typeof window !== 'undefined') {
@@ -178,11 +179,8 @@ function notifyBillingUpdated() {
   }
 }
 
-/**
- * Lấy danh sách hóa đơn từ skylineDb
- */
 export function getBills(aptCode?: string, overrideOwnerName?: string): ExtendedBill[] {
-  let records = skylineDb.bills.find();
+  let records = billsCache;
 
   if (aptCode) {
     const cleanApt = aptCode.trim().toUpperCase();
@@ -202,16 +200,13 @@ export function getBills(aptCode?: string, overrideOwnerName?: string): Extended
 }
 
 export function getBillById(id: string): ExtendedBill | undefined {
-  const rec = skylineDb.bills.findById(id);
+  const rec = billsCache.find(b => b.id === id);
   return rec ? billRecordToExtendedBill(rec) : undefined;
 }
 
-/**
- * Lưu danh sách hóa đơn vào skylineDb
- */
 export function saveBills(bills: ExtendedBill[]): void {
   bills.forEach(b => {
-    const existing = skylineDb.bills.findById(b.id);
+    const existingIdx = billsCache.findIndex(item => item.id === b.id);
     const rec: BillRecord = {
       id: b.id,
       apartment_code: b.apt_code,
@@ -240,85 +235,66 @@ export function saveBills(bills: ExtendedBill[]): void {
       }))
     };
 
-    if (existing) {
-      skylineDb.bills.update(b.id, rec);
+    if (existingIdx >= 0) {
+      billsCache[existingIdx] = rec;
     } else {
-      skylineDb.bills.insert(rec);
+      billsCache.push(rec);
     }
   });
   notifyBillingUpdated();
 }
 
-/**
- * Cư Dân thực hiện thanh toán trực tuyến (VNPAY / MOMO / VIETQR)
- */
 export function payBill(
-  billId: string, 
+  billId: string,
   method: 'VNPAY' | 'MOMO' | 'VIETQR' = 'VNPAY',
   transactionRef?: string,
-  bankCode?: string
+  _bankCode?: string
 ): ExtendedBill | null {
-  const existing = skylineDb.bills.findById(billId);
+  const existing = billsCache.find(b => b.id === billId);
   if (!existing) return null;
 
-  const transId = transactionRef || (method === 'VNPAY' 
-    ? `VNP${Date.now().toString().slice(-8)}` 
+  const transId = transactionRef || (method === 'VNPAY'
+    ? `VNP${Date.now().toString().slice(-8)}`
     : `MM${Date.now().toString().slice(-8)}`);
 
-  const updatedRec = skylineDb.bills.update(billId, {
-    status: 'Paid',
-    payment_method: method,
-    transaction_ref: transId,
-    paid_at: new Date().toISOString(),
-  });
+  existing.status = 'Paid';
+  existing.payment_method = method;
+  existing.transaction_ref = transId;
+  existing.paid_at = new Date().toISOString();
 
   notifyBillingUpdated();
-  return updatedRec ? billRecordToExtendedBill(updatedRec) : null;
+  return billRecordToExtendedBill(existing);
 }
 
-/**
- * Ban Quản Lý duyệt gạch nợ sau khi kế toán kiểm tra tài khoản
- */
-export function confirmPaidByAdmin(billId: string, notes?: string): ExtendedBill | null {
-  const existing = skylineDb.bills.findById(billId);
+export function confirmPaidByAdmin(billId: string, _notes?: string): ExtendedBill | null {
+  const existing = billsCache.find(b => b.id === billId);
   if (!existing) return null;
 
-  const transRef = `BQL-REC-${Date.now().toString().slice(-6)}`;
-  const updatedRec = skylineDb.bills.update(billId, {
-    status: 'Paid',
-    payment_method: 'BANK_TRANSFER',
-    transaction_ref: transRef,
-    paid_at: new Date().toISOString()
-  });
+  existing.status = 'Paid';
+  existing.payment_method = 'BANK_TRANSFER';
+  existing.transaction_ref = `BQL-REC-${Date.now().toString().slice(-6)}`;
+  existing.paid_at = new Date().toISOString();
 
   notifyBillingUpdated();
-  return updatedRec ? billRecordToExtendedBill(updatedRec) : null;
+  return billRecordToExtendedBill(existing);
 }
 
-/**
- * Ban Quản Lý phát hành hóa đơn đồng loạt kỳ mới
- */
 export function publishAllBills(): void {
-  const drafts = skylineDb.bills.find(b => b.status === 'Draft');
-  drafts.forEach(d => {
-    skylineDb.bills.update(d.id, { status: 'Unpaid' });
+  billsCache.forEach(d => {
+    if (d.status === 'Draft') d.status = 'Unpaid';
   });
   notifyBillingUpdated();
 }
 
-/**
- * Thêm một mục chi phí dịch vụ phát sinh vào hóa đơn chưa thanh toán của căn hộ
- */
 export function addServiceChargeToBill(
   aptCode: string,
   serviceDetail: Omit<BillDetail, 'id' | 'bill_id'>
 ): ExtendedBill | null {
   const cleanApt = aptCode.trim().toUpperCase();
 
-  // Tìm hóa đơn chưa thanh toán (Unpaid) của căn hộ, nếu không có thì lấy hóa đơn gần nhất
-  let targetRec = skylineDb.bills.findOne(b => b.apartment_code.trim().toUpperCase() === cleanApt && b.status === 'Unpaid');
+  let targetRec = billsCache.find(b => b.apartment_code.trim().toUpperCase() === cleanApt && b.status === 'Unpaid');
   if (!targetRec) {
-    targetRec = skylineDb.bills.findOne(b => b.apartment_code.trim().toUpperCase() === cleanApt);
+    targetRec = billsCache.find(b => b.apartment_code.trim().toUpperCase() === cleanApt);
   }
   if (!targetRec) return null;
 
@@ -339,15 +315,13 @@ export function addServiceChargeToBill(
   const updatedDetails = [...(targetRec.details || []), newDetail];
   const newTotal = updatedDetails.reduce((sum, d) => sum + (d.total_line_amount || 0), 0);
 
-  const updatedRec = skylineDb.bills.update(targetRec.id, {
-    total_amount: newTotal,
-    details: updatedDetails,
-    payment_qr_url: generateVietQrUrl({
-      amount: newTotal,
-      transferNote: `SKYLINE ${cleanApt} ${targetRec.billing_month.replace(/\s+/g, '')}`,
-    }),
+  targetRec.total_amount = newTotal;
+  targetRec.details = updatedDetails;
+  targetRec.payment_qr_url = generateVietQrUrl({
+    amount: newTotal,
+    transferNote: `SKYLINE ${cleanApt} ${targetRec.billing_month.replace(/\s+/g, '')}`,
   });
 
   notifyBillingUpdated();
-  return updatedRec ? billRecordToExtendedBill(updatedRec) : null;
+  return billRecordToExtendedBill(targetRec);
 }

@@ -12,8 +12,10 @@
  * - Cleaned: No AI voice synthesis, no elevator destination locking.
  */
 
-import { skylineDb } from './db';
 import { VisitorPassRecord, VisitorGateLogRecord } from './db/schema';
+
+const visitorPassesCache: VisitorPassRecord[] = [];
+const gateLogsCache: VisitorGateLogRecord[] = [];
 
 export type PassEntryType = 'SINGLE' | 'MULTI';
 export type VisitorPassStatus = 'ACTIVE' | 'CHECKED_IN' | 'COMPLETED' | 'EXPIRED';
@@ -219,7 +221,7 @@ const DUMMY_PASS_IDS = new Set(['SKY-PASS-9102', 'SKY-PASS-8754', 'SKY-PASS-7312
 
 export function getPassRegistry(): Map<string, GeneratedVisitorPass> {
   const map = new Map<string, GeneratedVisitorPass>();
-  const records = skylineDb.visitorPasses.find();
+  const records = visitorPassesCache;
   records.forEach((r) => {
     const pass: GeneratedVisitorPass = {
       id: r.id,
@@ -273,11 +275,11 @@ export function savePassToRegistry(pass: GeneratedVisitorPass) {
     checked_out_at: pass.checkedOutAt,
     created_at: pass.createdAt,
   };
-  const existing = skylineDb.visitorPasses.findById(pass.id);
-  if (existing) {
-    skylineDb.visitorPasses.update(pass.id, rec);
+  const existingIdx = visitorPassesCache.findIndex(p => p.id === pass.id);
+  if (existingIdx >= 0) {
+    visitorPassesCache[existingIdx] = rec;
   } else {
-    skylineDb.visitorPasses.insert(rec);
+    visitorPassesCache.push(rec);
   }
 }
 
@@ -295,11 +297,16 @@ export function getAllVisitorPasses(): GeneratedVisitorPass[] {
 }
 
 export function deleteVisitorPass(passId: string): boolean {
-  return skylineDb.visitorPasses.delete(passId);
+  const idx = visitorPassesCache.findIndex(p => p.id === passId);
+  if (idx >= 0) {
+    visitorPassesCache.splice(idx, 1);
+    return true;
+  }
+  return false;
 }
 
 export function getGateAuditLogs(): GateAuditLog[] {
-  return skylineDb.visitorGateLogs.find().map(r => ({
+  return gateLogsCache.map(r => ({
     id: r.id,
     passId: r.pass_id,
     timestamp: r.created_at || r.timestamp || new Date().toISOString(),
@@ -317,10 +324,8 @@ export function getGateAuditLogs(): GateAuditLog[] {
 
 // Hàm dọn dẹp toàn bộ dữ liệu khách thăm
 export function clearAllVisitorData(): void {
-  const allPasses = skylineDb.visitorPasses.find();
-  allPasses.forEach(p => skylineDb.visitorPasses.delete(p.id));
-  const allLogs = skylineDb.visitorGateLogs.find();
-  allLogs.forEach(l => skylineDb.visitorGateLogs.delete(l.id));
+  visitorPassesCache.length = 0;
+  gateLogsCache.length = 0;
 }
 
 export function addGateAuditLog(log: Omit<GateAuditLog, 'id'>): GateAuditLog {
@@ -338,7 +343,7 @@ export function addGateAuditLog(log: Omit<GateAuditLog, 'id'>): GateAuditLog {
     note: log.note || log.notes || '',
     created_at: log.timestamp || new Date().toISOString(),
   };
-  skylineDb.visitorGateLogs.insert(rec);
+  gateLogsCache.push(rec);
   return {
     id: newId,
     ...log

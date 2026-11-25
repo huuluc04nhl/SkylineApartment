@@ -1,11 +1,13 @@
 // ============================================================================
 // SERVER-SIDE USER STORE (Multi-User, Role-Isolated Storage)
-// User & Apartment Member Store backed by skylineDb and Supabase profiles.
+// User & Apartment Member Store backed by Supabase profiles & apartment_members.
 // Zero LocalStorage. Zero External Mock APIs.
 // ============================================================================
 import { updateDemoUser, addOrUpdateDemoUser } from '@/lib/dataStore';
-import { skylineDb } from '@/lib/db';
 import { UserRecord, ApartmentMemberRecord } from '@/lib/db/schema';
+
+const usersCache: UserRecord[] = [];
+const membersCache: ApartmentMemberRecord[] = [];
 
 export interface StoredUser {
   id: string;
@@ -93,11 +95,11 @@ export function userRecordToStoredUser(u: UserRecord): StoredUser {
     id_date: u.id_date || '2022-08-15',
     id_place: u.id_place || 'Cục Cảnh sát QLHC về TTXH',
     province: 'TP. Hồ Chí Minh',
-    intro: u.role === 'ADMIN' 
-      ? 'Ban Quản Lý Tòa Nhà Skyline' 
-      : u.role === 'OWNER' 
-      ? 'Chủ Hộ Căn Hộ' 
-      : u.relationship || 'Cư Dân',
+    intro: u.role === 'ADMIN'
+      ? 'Ban Quản Lý Tòa Nhà Skyline'
+      : u.role === 'OWNER'
+        ? 'Chủ Hộ Căn Hộ'
+        : u.relationship || 'Cư Dân',
     license_plate: u.license_plate || '',
     avatar_url: u.avatar_url,
     role: u.role,
@@ -135,7 +137,7 @@ export function apartmentMemberRecordToMember(m: ApartmentMemberRecord): Apartme
   };
 }
 
-export const DEFAULT_CH06_MEMBERS: ApartmentMember[] = skylineDb.apartmentMembers.find(m => m.apartment_code === 'CH-06').map(apartmentMemberRecordToMember);
+// Removed hardcoded DEFAULT_CH06_MEMBERS fallback; apartments must be resolved explicitly.
 
 /**
  * Tìm kiếm chính xác người dùng từ database (Trả về null nếu không tìm thấy)
@@ -145,45 +147,15 @@ export function findUserStore(identifier?: string): StoredUser | null {
   const clean = identifier.trim();
   const norm = clean.toLowerCase();
 
-  // 1. Khớp chính xác ID
-  let match = skylineDb.users.findById(clean);
-  if (match) return userRecordToStoredUser(match);
-
-  // 2. Khớp username, phone, email hoặc cccd
-  match = skylineDb.users.findOne(u => 
-    Boolean(
-      u.id.toLowerCase() === norm ||
-      u.username.toLowerCase() === norm ||
-      (u.phone && u.phone.trim() === clean) ||
-      (u.email && u.email.toLowerCase() === norm) ||
-      (u.id_card_no && u.id_card_no.trim() === clean)
-    )
+  const match = usersCache.find(u =>
+    u.id.toLowerCase() === norm ||
+    u.username.toLowerCase() === norm ||
+    (u.phone && u.phone.trim() === clean) ||
+    (u.email && u.email.toLowerCase() === norm) ||
+    (u.id_card_no && u.id_card_no.trim() === clean) ||
+    u.role === clean
   );
-  if (match) return userRecordToStoredUser(match);
-
-  // 3. Khớp role đặc biệt
-  if (clean === 'ADMIN') {
-    match = skylineDb.users.findOne(u => u.role === 'ADMIN');
-    if (match) return userRecordToStoredUser(match);
-  }
-  if (clean === 'TECHNICIAN') {
-    match = skylineDb.users.findOne(u => u.role === 'TECHNICIAN');
-    if (match) return userRecordToStoredUser(match);
-  }
-  if (clean === 'RECEPTIONIST') {
-    match = skylineDb.users.findOne(u => u.role === 'RECEPTIONIST');
-    if (match) return userRecordToStoredUser(match);
-  }
-  if (clean === 'TENANT') {
-    match = skylineDb.users.findOne(u => u.role === 'TENANT');
-    if (match) return userRecordToStoredUser(match);
-  }
-  if (clean === 'OWNER') {
-    match = skylineDb.users.findOne(u => u.role === 'OWNER');
-    if (match) return userRecordToStoredUser(match);
-  }
-
-  return null;
+  return match ? userRecordToStoredUser(match) : null;
 }
 
 /**
@@ -192,8 +164,8 @@ export function findUserStore(identifier?: string): StoredUser | null {
  */
 export function getUserStore(identifier?: string): StoredUser {
   if (!identifier) {
-    const defaultOwner = skylineDb.users.findById('user-owner-1') || skylineDb.users.findOne(u => u.role === 'OWNER')!;
-    return userRecordToStoredUser(defaultOwner);
+    const defaultOwner = usersCache.find(u => u.id === 'user-owner-1') || usersCache.find(u => u.role === 'OWNER');
+    return defaultOwner ? userRecordToStoredUser(defaultOwner) : (null as any);
   }
 
   const found = findUserStore(identifier);
@@ -203,7 +175,7 @@ export function getUserStore(identifier?: string): StoredUser {
 }
 
 /**
- * Cập nhật thông tin người dùng vào skylineDb
+ * Cập nhật thông tin người dùng vào client cache
  */
 export function updateUserStore(identifier: string, updates: Partial<StoredUser>): StoredUser {
   const current = findUserStore(identifier) || getUserStore();
@@ -219,7 +191,11 @@ export function updateUserStore(identifier: string, updates: Partial<StoredUser>
   if (updates.pob) patch.pob = updates.pob;
   if (updates.password) patch.password_hash = updates.password;
 
-  const updatedRec = skylineDb.users.update(current.id, patch);
+  const idx = current ? usersCache.findIndex(u => u.id === current.id) : -1;
+  if (idx >= 0) {
+    usersCache[idx] = { ...usersCache[idx], ...patch };
+  }
+  const updatedRec = idx >= 0 ? usersCache[idx] : undefined;
 
   // Sync sang DEMO_USERS
   updateDemoUser(current.id, {
@@ -263,7 +239,7 @@ export function registerNewOwnerUser(data: {
   avatarUrl?: string;
 }): StoredUser {
   const userId = `user-owner-${data.apartmentCode.toLowerCase()}`;
-  const existing = skylineDb.users.findById(userId);
+  const existingIdx = usersCache.findIndex(u => u.id === userId);
 
   const rec: UserRecord = {
     id: userId,
@@ -285,10 +261,10 @@ export function registerNewOwnerUser(data: {
     emergency_phone: data.phone.trim()
   };
 
-  if (existing) {
-    skylineDb.users.update(userId, rec);
+  if (existingIdx >= 0) {
+    usersCache[existingIdx] = rec;
   } else {
-    skylineDb.users.insert(rec);
+    usersCache.push(rec);
   }
 
   addOrUpdateDemoUser({
@@ -315,21 +291,24 @@ export function registerNewOwnerUser(data: {
 }
 
 // ----------------------------------------------------------------------------
-// APARTMENT MEMBERS (NGƯỜI NHÀ / CƯ DÂN CĂN HỘ) - FROM skylineDb
+// APARTMENT MEMBERS (NGƯỜI NHÀ / CƯ DÂN CĂN HỘ)
 // ----------------------------------------------------------------------------
 
 export function getApartmentMembers(aptCode: string, _blockCode?: string): ApartmentMember[] {
-  const cleanCode = (aptCode || 'CH-06').toUpperCase().trim();
-  const records = skylineDb.apartmentMembers.find(m => m.apartment_code.toUpperCase() === cleanCode);
-  return records.map(apartmentMemberRecordToMember);
+  const cleanCode = (aptCode || '').toUpperCase().trim();
+  if (!cleanCode) return [];
+  return membersCache
+    .filter(m => m.apartment_code.toUpperCase() === cleanCode)
+    .map(apartmentMemberRecordToMember);
 }
 
-export function clearApartmentMembers(aptCode: string = 'CH-06', blockCode?: string): void {
+export function clearApartmentMembers(aptCode: string = '', blockCode?: string): void {
   const cleanCode = aptCode.toUpperCase().trim();
-  const members = skylineDb.apartmentMembers.find(m => m.apartment_code.toUpperCase() === cleanCode);
-  members.forEach(m => {
-    skylineDb.apartmentMembers.delete(m.id);
-  });
+  for (let i = membersCache.length - 1; i >= 0; i--) {
+    if (!cleanCode || membersCache[i].apartment_code.toUpperCase() === cleanCode) {
+      membersCache.splice(i, 1);
+    }
+  }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('skyline_family_updated', { detail: { aptCode: cleanCode, blockCode, members: [] } }));
     window.dispatchEvent(new CustomEvent('skyline_apartments_updated', { detail: { aptCode: cleanCode, blockCode } }));
@@ -337,17 +316,21 @@ export function clearApartmentMembers(aptCode: string = 'CH-06', blockCode?: str
 }
 
 export function saveApartmentMembersToStorage(aptCode: string, members: ApartmentMember[], blockCode?: string): void {
-  const cleanCode = aptCode.toUpperCase().trim();
-  // Clear old
+  const cleanCode = (aptCode || '').toUpperCase().trim();
+  if (!cleanCode) {
+    throw new Error('Mã căn hộ không được để trống.');
+  }
   clearApartmentMembers(cleanCode, blockCode);
-  // Re-insert
   members.forEach(m => {
     addApartmentMember(cleanCode, m, blockCode);
   });
 }
 
 export function addApartmentMember(aptCode: string, member: ApartmentMember, blockCode?: string): ApartmentMember[] {
-  const cleanCode = aptCode.toUpperCase().trim();
+  const cleanCode = (aptCode || '').toUpperCase().trim();
+  if (!cleanCode) {
+    throw new Error('Mã căn hộ không được để trống.');
+  }
   const rec: ApartmentMemberRecord = {
     id: member.id || `mem-${Date.now()}`,
     apartment_code: cleanCode,
@@ -370,11 +353,11 @@ export function addApartmentMember(aptCode: string, member: ApartmentMember, blo
     created_at: member.addedDate || new Date().toISOString()
   };
 
-  const existing = skylineDb.apartmentMembers.findById(rec.id);
-  if (existing) {
-    skylineDb.apartmentMembers.update(rec.id, rec);
+  const existingIdx = membersCache.findIndex(m => m.id === rec.id);
+  if (existingIdx >= 0) {
+    membersCache[existingIdx] = rec;
   } else {
-    skylineDb.apartmentMembers.insert(rec);
+    membersCache.push(rec);
   }
 
   if (typeof window !== 'undefined') {
@@ -387,23 +370,20 @@ export function addApartmentMember(aptCode: string, member: ApartmentMember, blo
 
 export function updateApartmentMember(aptCode: string, memberId: string, updates: Partial<ApartmentMember>, blockCode?: string): ApartmentMember[] {
   const cleanCode = aptCode.toUpperCase().trim();
-  const existing = skylineDb.apartmentMembers.findOne(m => 
-    (m.apartment_code.toUpperCase() === cleanCode) && 
+  const existing = membersCache.find(m =>
+    (m.apartment_code.toUpperCase() === cleanCode) &&
     (m.id === memberId || m.phone === memberId || m.id_card === memberId)
   );
 
   if (existing) {
-    const patch: Partial<ApartmentMemberRecord> = {};
-    if (updates.fullName) patch.full_name = updates.fullName;
-    if (updates.phone) patch.phone = updates.phone;
-    if (updates.email) patch.email = updates.email;
-    if (updates.idCard) patch.id_card = updates.idCard;
-    if (updates.relationship) patch.relationship = updates.relationship;
-    if (updates.faceStatus) patch.face_status = updates.faceStatus;
-    if (updates.avatarUrl) patch.avatar_url = updates.avatarUrl;
-    if (updates.licensePlate) patch.license_plate = updates.licensePlate;
-
-    skylineDb.apartmentMembers.update(existing.id, patch);
+    if (updates.fullName) existing.full_name = updates.fullName;
+    if (updates.phone) existing.phone = updates.phone;
+    if (updates.email) existing.email = updates.email;
+    if (updates.idCard) existing.id_card = updates.idCard;
+    if (updates.relationship) existing.relationship = updates.relationship;
+    if (updates.faceStatus) existing.face_status = updates.faceStatus;
+    if (updates.avatarUrl) existing.avatar_url = updates.avatarUrl;
+    if (updates.licensePlate) existing.license_plate = updates.licensePlate;
   }
 
   if (typeof window !== 'undefined') {
@@ -416,13 +396,13 @@ export function updateApartmentMember(aptCode: string, memberId: string, updates
 
 export function removeApartmentMember(aptCode: string, memberId: string, blockCode?: string): ApartmentMember[] {
   const cleanCode = aptCode.toUpperCase().trim();
-  const existing = skylineDb.apartmentMembers.findOne(m => 
-    (m.apartment_code.toUpperCase() === cleanCode) && 
+  const idx = membersCache.findIndex(m =>
+    (m.apartment_code.toUpperCase() === cleanCode) &&
     (m.id === memberId || m.phone === memberId)
   );
 
-  if (existing) {
-    skylineDb.apartmentMembers.delete(existing.id);
+  if (idx >= 0) {
+    membersCache.splice(idx, 1);
   }
 
   if (typeof window !== 'undefined') {

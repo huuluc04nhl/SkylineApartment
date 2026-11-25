@@ -58,15 +58,19 @@ npm run build        # Build production
 
 ## 3. Tài khoản demo (Local / Seed)
 
-Các hồ sơ mẫu trong `supabase/seed.sql` / `public.profiles` (cần tồn tại user tương ứng trong Supabase Auth với mật khẩu bạn thiết lập khi tạo user):
+Các hồ sơ mẫu trong `supabase/seed.sql` / `public.profiles` được đồng bộ lên Supabase Auth bằng lệnh:
+```bash
+npx tsx scripts/migrate-auth-users.ts
+```
+> **Mật khẩu:** Mật khẩu không lưu plaintext trong repo; mật khẩu do script migrate sinh ngẫu nhiên và in ra console khi chạy lần đầu.
 
-| Vai trò | Email | SĐT (có thể dùng thay Email) | Mật khẩu (Local/Dev) | Căn hộ |
-| :--- | :--- | :--- | :--- | :--- |
-| `ADMIN` | `admin@skyline.vn` | `0901888999` | `admin123` | — |
-| `TECHNICIAN` | `tech.skyline@gmail.com` | `0909888777` | `12345678` | — |
-| `OWNER` | `huuluc04@gmail.com` | `0364967082` | `12345678` | `CH-06` |
-| `TENANT` | `nguyenhuunhut1309@gmail.com` | `0917795211` | `12345678` | `CH-06` |
-| `RECEPTIONIST` | `reception.skyline@gmail.com` | `0901234567` | `12345678` | — |
+| Vai trò | Email | SĐT (có thể dùng thay Email) | Căn hộ |
+| :--- | :--- | :--- | :--- |
+| `ADMIN` | `admin@skyline.vn` | `0901888999` | — |
+| `TECHNICIAN` | `tech.skyline@gmail.com` | `0909888777` | — |
+| `OWNER` | `huuluc04@gmail.com` | `0364967082` | `CH-06` |
+| `TENANT` | `nguyenhuunhut1309@gmail.com` | `0917795211` | `CH-06` |
+| `RECEPTIONIST` | `reception.skyline@gmail.com` | `0901234567` | — |
 
 ---
 
@@ -74,5 +78,5 @@ Các hồ sơ mẫu trong `supabase/seed.sql` / `public.profiles` (cần tồn t
 
 - **FaceID chưa có liveness detection thực sự:** Hiện tại đăng ký/đăng nhập FaceID mới kiểm tra kích thước ảnh, 4 góc ảnh và độ tương đồng vector (cosine similarity), chưa có kiểm tra chuyển động/nháy mắt/anti-spoofing 3D chuyên sâu.
 - **SMS OTP:** Đăng nhập OTP qua SĐT trên production phụ thuộc vào việc cấu hình SMS Provider trong Supabase Auth; ở môi trường không cấu hình SMS provider, tính năng gửi OTP thật sẽ trả lỗi từ Supabase.
-- **Một số module UI vẫn dùng dữ liệu phụ in-memory (`skylineDb`):** Một phần dữ liệu phụ trợ (ví dụ thiết bị IoT demo, cộng đồng, bãi xe) chưa đồng bộ hoàn toàn qua Postgres API riêng và được gom sau cờ `NEXT_PUBLIC_DEMO_MODE`.
+- **Một số màn hình UI phụ trợ dùng cache client tạm thời:** Các module nghiệp vụ chính (`profiles`/`users`, `apartments`, `apartment_members`, `ekyc_submissions`, `face_enrollments`, `visitor_passes`, `bills`, `service_tickets`, `facility_bookings`, `resident_service_bookings`, `smart_*`) đã lưu trữ trực tiếp trên Supabase Postgres; một số màn hình phụ (cộng đồng/bình chọn, thiết bị tòa nhà demo) hiện dùng cache client hoặc chờ nạp từ API tương ứng.
 - **OCR đồng hồ điện/nước:** Cần `GEMINI_API_KEY` hợp lệ ở server; khi API lỗi hoặc thiếu key, hệ thống trả `503` yêu cầu nhập chỉ số thủ công thay vì tự sinh số giả.

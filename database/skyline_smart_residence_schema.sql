@@ -1,8 +1,0 @@
--- ============================================================================
--- DEPRECATED POINTER — SINGLE SOURCE OF TRUTH MOVED TO `supabase/migrations/`
--- ============================================================================
--- Schema chính thức của SKYLINE Smart Residence đã được chuyển sang:
---   * supabase/migrations/20261125000000_init.sql
---   * supabase/migrations/20261125010000_add_ticket_events.sql
--- Không chỉnh sửa trực tiếp tại thư mục database/ để tránh trùng nguồn sự thật.
--- ============================================================================

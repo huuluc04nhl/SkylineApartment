@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/lib/server/auth';
-import { updateUserStore } from '@/lib/userStore';
+import { updateUserProfileDb } from '@/lib/server/userDb';
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { avatar } = body;
 
-    const updated = updateUserStore(session.profile.id, {
+    const updated = await updateUserProfileDb(session.authUserId, {
       avatar_url: avatar
     });
 
