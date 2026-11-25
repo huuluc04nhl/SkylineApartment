@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { updateUserStore, extractUserIdFromToken } from '@/lib/userStore';
+import { getAuthenticatedUser } from '@/lib/server/auth';
+import { updateUserStore } from '@/lib/userStore';
 
 export async function POST(req: Request) {
   try {
+    const session = await getAuthenticatedUser();
+    if (!session) {
+      return NextResponse.json({ success: false, message: 'Chưa đăng nhập' }, { status: 401 });
+    }
     const body = await req.json();
-    const { avatar, access_token } = body;
+    const { avatar } = body;
 
-    const cookieStore = cookies();
-    const token = access_token || cookieStore.get('skyline_token')?.value || '';
-
-    const userIdentifier = extractUserIdFromToken(token) || body.username || body.phone || 'user-owner-1';
-    const updated = updateUserStore(userIdentifier, {
+    const updated = updateUserStore(session.profile.id, {
       avatar_url: avatar
     });
 

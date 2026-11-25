@@ -1,28 +1,15 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { z } from 'zod';
-import { extractUserIdFromToken, findUserStore } from '@/lib/userStore';
+import { getAuthenticatedUser } from '@/lib/server/auth';
 import { skylineDb } from '@/lib/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function authenticateAdmin(req: Request) {
-  const cookieStore = cookies();
-  let token = cookieStore.get('skyline_token')?.value;
-
-  if (!token) {
-    const authHeader = req.headers.get('authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
-    }
-  }
-
-  if (!token) return null;
-  const userId = extractUserIdFromToken(token) || token;
-  const user = findUserStore(userId);
-  if (!user || user.role !== 'ADMIN') return null;
-  return user;
+async function authenticateAdmin() {
+  const session = await getAuthenticatedUser();
+  if (!session || session.role !== 'ADMIN') return null;
+  return session.profile;
 }
 
 const QuerySchema = z.object({
@@ -116,7 +103,7 @@ function maskName(name: string): string {
 
 export async function POST(req: Request) {
   try {
-    const admin = authenticateAdmin(req);
+    const admin = await authenticateAdmin();
     if (!admin) {
       return NextResponse.json(
         { success: false, message: 'Quyền truy cập bị từ chối. Tính năng chỉ dành riêng cho Ban Quản Lý (Admin).' },

@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
-import { findUserStore, verifyUserPassword } from '@/lib/userStore';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { findUserStore } from '@/lib/userStore';
+
+const INVALID_CREDENTIALS_MESSAGE = 'Thông tin đăng nhập không chính xác.';
 
 function formatToDateInput(d?: string): string {
   if (!d) return '';
@@ -7,19 +11,39 @@ function formatToDateInput(d?: string): string {
   const parts = cleanD.split(/[\/\-\.]/);
   if (parts.length === 3) {
     if (parts[2].length === 4) {
-      const day = parts[0].padStart(2, '0');
-      const month = parts[1].padStart(2, '0');
-      const year = parts[2];
-      return `${year}-${month}-${day}`;
+      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
     }
     if (parts[0].length === 4) {
-      const year = parts[0];
-      const month = parts[1].padStart(2, '0');
-      const day = parts[2].padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
     }
   }
   return d;
+}
+
+async function resolveEmailForLogin(identifier: string): Promise<string | null> {
+  if (identifier.includes('@')) {
+    return identifier.toLowerCase();
+  }
+
+  // Đăng nhập bằng SĐT: tra email tương ứng ở server (service role), không lộ tồn tại tài khoản
+  const cleanPhone = identifier.replace(/[\s.-]/g, '');
+  const { data: profileMatch } = await supabaseAdmin
+    .from('profiles')
+    .select('email')
+    .eq('phone', cleanPhone)
+    .maybeSingle();
+
+  if (profileMatch?.email) {
+    return profileMatch.email.toLowerCase();
+  }
+
+  const { data: userMatch } = await supabaseAdmin
+    .from('users')
+    .select('email')
+    .eq('phone', cleanPhone)
+    .maybeSingle();
+
+  return userMatch?.email ? userMatch.email.toLowerCase() : null;
 }
 
 export async function POST(req: Request) {
@@ -41,75 +65,85 @@ export async function POST(req: Request) {
       );
     }
 
-    const u = username.trim();
-    const user = findUserStore(u);
-
-    if (!user || !user.id) {
+    const identifier = username.trim();
+    const email = await resolveEmailForLogin(identifier);
+    if (!email) {
       return NextResponse.json(
-        { success: false, message: 'Tài khoản không tồn tại trên hệ thống Skyline Smart Residence.' },
+        { success: false, message: INVALID_CREDENTIALS_MESSAGE },
         { status: 401 }
       );
     }
 
-    // Xác thực mật khẩu nội bộ trực tiếp
-    const isPasswordValid = verifyUserPassword(u, password);
-    if (!isPasswordValid) {
+    const supabase = createSupabaseServerClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error || !data.user) {
       return NextResponse.json(
-        { success: false, message: 'Mật khẩu đăng nhập không chính xác. Vui lòng kiểm tra lại.' },
+        { success: false, message: INVALID_CREDENTIALS_MESSAGE },
         { status: 401 }
       );
     }
 
-    // Tạo token phiên làm việc nội bộ
-    const accessToken = `skyline_session_${user.id}_${Date.now()}`;
+    const { data: profileRow, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      return NextResponse.json(
+        { success: false, message: 'Không thể tải hồ sơ người dùng.' },
+        { status: 500 }
+      );
+    }
+
+    const legacyUser =
+      (profileRow?.legacy_user_id && findUserStore(profileRow.legacy_user_id)) ||
+      findUserStore(email) ||
+      undefined;
+
+    const role = (profileRow?.role || legacyUser?.role || 'TENANT') as string;
+    const apartmentCode = profileRow?.apartment_code ?? legacyUser?.apartment_code ?? null;
 
     const formattedUser = {
-      id: user.id,
-      username: user.username || u,
-      firstname: user.firstname || '',
-      lastname: user.lastname || '',
-      fullname: user.fullname || user.full_name || 'Cư Dân SKYLINE',
-      full_name: user.fullname || user.full_name || 'Cư Dân SKYLINE',
-      email: user.email || u,
-      phone: user.phone || '',
-      role: user.role,
-      apartment_code: user.apartment_code || (user.role === 'ADMIN' ? 'BQL_OFFICE' : user.role === 'TECHNICIAN' ? 'TECH_ROOM' : 'CH-06'),
-      relationship: user.relationship || (user.role === 'ADMIN' || user.role === 'TECHNICIAN' ? 'Staff' : user.role === 'OWNER' ? 'Owner' : 'Family'),
-      avatar_url: user.avatar_url,
-      avatar: user.avatar_url,
-      id_number: user.id_number || user.id_card_no || '',
-      id_card_no: user.id_card_no || user.id_number || '',
-      id_card_number: user.id_card_no || user.id_number || '',
-      id_date: formatToDateInput(user.id_date || ''),
-      id_place: user.id_place || '',
-      province: user.province || 'Thành phố Hồ Chí Minh',
-      gender: user.gender ?? 1,
-      dob: formatToDateInput(user.dob || ''),
-      pob: user.pob || '',
-      intro: user.intro || '',
-      license_plate: user.license_plate || '',
+      id: legacyUser?.id || data.user.id,
+      username: legacyUser?.username || email,
+      firstname: legacyUser?.firstname || '',
+      lastname: legacyUser?.lastname || '',
+      fullname: profileRow?.full_name || legacyUser?.fullname || legacyUser?.full_name || 'Cư Dân SKYLINE',
+      full_name: profileRow?.full_name || legacyUser?.full_name || legacyUser?.fullname || 'Cư Dân SKYLINE',
+      email: data.user.email || email,
+      phone: profileRow?.phone || legacyUser?.phone || '',
+      role,
+      apartment_code: apartmentCode,
+      relationship: profileRow?.relationship || legacyUser?.relationship || 'Tenant',
+      avatar_url: profileRow?.avatar_url || legacyUser?.avatar_url,
+      avatar: profileRow?.avatar_url || legacyUser?.avatar_url,
+      id_number: legacyUser?.id_number || legacyUser?.id_card_no || '',
+      id_card_no: legacyUser?.id_card_no || legacyUser?.id_number || '',
+      id_card_number: legacyUser?.id_card_no || legacyUser?.id_number || '',
+      id_date: formatToDateInput(legacyUser?.id_date || ''),
+      id_place: legacyUser?.id_place || '',
+      province: legacyUser?.province || 'Thành phố Hồ Chí Minh',
+      gender: legacyUser?.gender ?? 1,
+      dob: formatToDateInput(legacyUser?.dob || ''),
+      pob: legacyUser?.pob || '',
+      intro: legacyUser?.intro || '',
+      license_plate: legacyUser?.license_plate || '',
     };
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       message: 'Đăng nhập thành công',
-      access_token: accessToken,
       user: formattedUser,
     });
-
-    response.cookies.set('skyline_token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7,
-    });
-
-    return response;
   } catch (error: any) {
     console.error('Login route error:', error?.message || error);
     return NextResponse.json(
-      { success: false, message: 'Lỗi máy chủ xử lý đăng nhập: ' + (error?.message || '') },
+      { success: false, message: 'Lỗi máy chủ xử lý đăng nhập.' },
       { status: 500 }
     );
   }

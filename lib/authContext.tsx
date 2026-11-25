@@ -68,19 +68,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Map quick role to standard Skyline account if role string is provided
       let usernameToSubmit = roleOrUsername;
-      let pwdToSubmit = password;
+      const pwdToSubmit = password;
       if (roleOrUsername === 'ADMIN') {
         usernameToSubmit = 'admin@skyline.vn';
-        if (!pwdToSubmit) pwdToSubmit = 'admin123';
       } else if (roleOrUsername === 'TECHNICIAN') {
         usernameToSubmit = '0901888998';
-        if (!pwdToSubmit) pwdToSubmit = '12345678';
       } else if (roleOrUsername === 'OWNER') {
         usernameToSubmit = 'huuluc04@gmail.com';
-        if (!pwdToSubmit) pwdToSubmit = '12345678';
       } else if (roleOrUsername === 'TENANT') {
         usernameToSubmit = 'nguyenhuunhut1309@gmail.com';
-        if (!pwdToSubmit) pwdToSubmit = '12345678';
       }
 
       const res = await skylineLogin(usernameToSubmit, pwdToSubmit, isOtpAuth);

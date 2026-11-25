@@ -37,5 +37,6 @@ next-env.d.ts
 # temp IDE
 .skyline_tickets.json
 scratch/
+supabase/.temp/
 
 *.traineddata

@@ -103,7 +103,7 @@ export function userRecordToStoredUser(u: UserRecord): StoredUser {
     role: u.role,
     relationship: u.relationship,
     apartment_code: u.apartment_code || '',
-    password: u.password_hash || (u.role === 'ADMIN' ? 'admin123' : '12345678'),
+    password: u.password_hash || '',
   };
 }
 
@@ -238,80 +238,7 @@ export function updateUserStore(identifier: string, updates: Partial<StoredUser>
 }
 
 /**
- * Giải mã lấy User ID từ access_token
- */
-export function extractUserIdFromToken(token?: string | null): string | undefined {
-  if (!token) return undefined;
-  const clean = token.replace(/^Bearer\s+/i, '').trim();
-
-  // 1. Session chuẩn: skyline_session_<userId>_<timestamp>
-  if (clean.startsWith('skyline_session_')) {
-    const raw = clean.slice('skyline_session_'.length);
-    const lastUnderscore = raw.lastIndexOf('_');
-    if (lastUnderscore > 0) {
-      const extractedId = raw.substring(0, lastUnderscore);
-      if (findUserStore(extractedId)) return extractedId;
-    }
-    if (findUserStore(raw)) return raw;
-  }
-
-  // 2. Session FaceID: SKYLINE_FACEID_SESSION_<userId>_<role>_<timestamp>
-  if (clean.startsWith('SKYLINE_FACEID_SESSION_')) {
-    const raw = clean.slice('SKYLINE_FACEID_SESSION_'.length);
-    const parts = raw.split('_');
-    if (parts.length >= 3) {
-      const extractedId = parts.slice(0, -2).join('_');
-      if (findUserStore(extractedId)) return extractedId;
-    }
-    if (parts[0] && findUserStore(parts[0])) return parts[0];
-  }
-
-  // 3. JWT token
-  try {
-    const payloadPart = clean.split('.')[1];
-    if (payloadPart) {
-      const decoded = JSON.parse(Buffer.from(payloadPart, 'base64').toString('utf-8'));
-      const idCandidate = decoded.id || decoded.userId || decoded.sub || decoded.username;
-      if (idCandidate && findUserStore(idCandidate)) return idCandidate;
-    }
-  } catch (e) {
-    // Ignore
-  }
-
-  // 4. Nếu truyền trực tiếp User ID / Username hợp lệ
-  if (clean.length > 0 && clean.length < 50 && !clean.includes(' ')) {
-    if (findUserStore(clean)) return clean;
-  }
-
-  return undefined;
-}
-
-/**
- * Lấy mật khẩu của tài khoản
- */
-export function getUserPassword(identifier: string): string {
-  const user = findUserStore(identifier);
-  if (user && user.password) {
-    return user.password;
-  }
-  return user?.role === 'ADMIN' ? 'admin123' : '12345678';
-}
-
-/**
- * Xác thực mật khẩu
- */
-export function verifyUserPassword(identifier: string, passwordAttempt: string): boolean {
-  if (!passwordAttempt || typeof passwordAttempt !== 'string') return false;
-  const cleanAttempt = passwordAttempt.trim();
-  const user = findUserStore(identifier);
-  if (!user) return false;
-
-  const storedPass = user.password || (user.role === 'ADMIN' ? 'admin123' : '12345678');
-  return cleanAttempt === storedPass;
-}
-
-/**
- * Đổi mật khẩu
+ * Đổi mật khẩu (chỉ cập nhật trạng thái đồng bộ nếu cần; xác thực chính thực hiện qua Supabase Auth)
  */
 export function updateUserPassword(identifier: string, newPassword: string): boolean {
   if (!newPassword || newPassword.trim().length < 6) return false;
@@ -345,7 +272,7 @@ export function registerNewOwnerUser(data: {
     full_name: data.name.trim(),
     phone: data.phone.trim(),
     email: data.email.trim() || `${data.phone.trim()}@skyline.residence.vn`,
-    password_hash: '12345678',
+    password_hash: '',
     id_card_no: data.cccd.trim(),
     id_date: '2023-01-01',
     id_place: 'Cục Cảnh sát QLHC về TTXH',
@@ -381,7 +308,7 @@ export function registerNewOwnerUser(data: {
     relationship: 'Owner',
     dob: rec.dob || undefined,
     pob: rec.pob || undefined,
-    password: '12345678',
+    password: '',
   });
 
   return userRecordToStoredUser(rec);

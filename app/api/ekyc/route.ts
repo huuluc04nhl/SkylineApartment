@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth/guard';
 import { 
   getEkycRequests, 
   getEkycForUser, 
@@ -13,11 +14,22 @@ import { validateCccdCard, verifyFaceWithCccd } from '@/lib/ekycValidator';
 
 /**
  * GET /api/ekyc
- * Returns e-KYC requests for BQL or specific user
+ * Returns e-KYC requests for BQL or own user
  */
 export async function GET(req: Request) {
+  const guard = await requireAuth(['ADMIN', 'OWNER', 'TENANT']);
+  if (!guard.ok) return guard.response;
+
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get('userId');
+
+  if (guard.session.role !== 'ADMIN') {
+    const ownEkyc = getEkycForUser(guard.session.profile.id);
+    return NextResponse.json({
+      success: true,
+      ekyc: ownEkyc || null,
+    });
+  }
 
   if (userId) {
     const userEkyc = getEkycForUser(userId);
@@ -42,6 +54,17 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { action } = body;
+
+    if (action === 'APPROVE' || action === 'REJECT') {
+      const adminGuard = await requireAuth(['ADMIN']);
+      if (!adminGuard.ok) return adminGuard.response;
+    } else if (action === 'CONFIRM_BY_OWNER') {
+      const ownerGuard = await requireAuth(['ADMIN', 'OWNER']);
+      if (!ownerGuard.ok) return ownerGuard.response;
+    } else {
+      const userGuard = await requireAuth(['ADMIN', 'OWNER', 'TENANT']);
+      if (!userGuard.ok) return userGuard.response;
+    }
 
     // 1. Resident Submits e-KYC
     if (action === 'SUBMIT') {

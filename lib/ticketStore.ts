@@ -262,12 +262,21 @@ export function saveTickets(tickets: ExtendedServiceRequest[]): void {
 }
 
 export async function syncTicketsWithServer(aptCode?: string, phone?: string): Promise<ExtendedServiceRequest[]> {
+  if (typeof window === 'undefined') return getTickets(aptCode, phone);
+  const params = new URLSearchParams();
+  if (aptCode) params.set('aptCode', aptCode);
+  if (phone) params.set('phone', phone);
+  const res = await fetch(`/api/tickets${params.toString() ? `?${params.toString()}` : ''}`);
+  if (!res.ok) {
+    throw new Error(`Không thể tải danh sách phiếu từ server (${res.status})`);
+  }
+  const data = await res.json();
   notifyTicketsUpdated();
-  return getTickets(aptCode, phone);
+  return Array.isArray(data?.tickets) ? data.tickets : [];
 }
 
 /**
- * Tạo phiếu mới
+ * Tạo phiếu mới qua API Supabase
  */
 export async function createTicketAsync(payload: {
   apartment_id?: string;
@@ -280,7 +289,25 @@ export async function createTicketAsync(payload: {
   ai_category?: 'Điện' | 'Nước' | 'Vệ sinh' | 'An ninh' | 'Khác' | string;
   before_image?: string;
 }): Promise<ExtendedServiceRequest> {
-  return createTicket(payload);
+  if (typeof window === 'undefined') return createTicket(payload);
+  const res = await fetch('/api/tickets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      apt_code: payload.apt_code,
+      resident_name: payload.resident_name,
+      resident_phone: payload.resident_phone,
+      content: payload.content,
+      service: payload.ai_category,
+      before_image: payload.before_image,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data?.success || !data?.ticket) {
+    throw new Error(data?.message || `Lỗi tạo phiếu (${res.status})`);
+  }
+  notifyTicketsUpdated();
+  return data.ticket;
 }
 
 export function createTicket(payload: {
@@ -509,6 +536,25 @@ export async function updateTicketApiAsync(payload: {
   reply?: string;
   engineername?: string;
 }): Promise<boolean> {
+  if (typeof window !== 'undefined') {
+    const res = await fetch('/api/tickets', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: String(payload.id),
+        admin_reply: payload.reply?.trim(),
+        assigned_technician: payload.engineername?.trim(),
+        status: payload.reply ? 'Resolved' : undefined,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data?.success) {
+      throw new Error(data?.message || `Lỗi cập nhật phiếu (${res.status})`);
+    }
+    notifyTicketsUpdated();
+    return true;
+  }
+
   const idStr = String(payload.id);
   const existing = skylineDb.tickets.findById(idStr);
   if (!existing) return false;
@@ -556,6 +602,17 @@ export function rateTicket(
  * Xóa phiếu
  */
 export async function deleteTicketAsync(ticketId: string | number): Promise<boolean> {
+  if (typeof window !== 'undefined') {
+    const res = await fetch(`/api/tickets?id=${encodeURIComponent(String(ticketId))}`, {
+      method: 'DELETE',
+    });
+    const data = await res.json();
+    if (!res.ok || !data?.success) {
+      throw new Error(data?.message || `Lỗi xóa phiếu (${res.status})`);
+    }
+    notifyTicketsUpdated();
+    return true;
+  }
   deleteTicket(ticketId);
   return true;
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { updateUserStore, extractUserIdFromToken } from '@/lib/userStore';
+import { getAuthenticatedUser } from '@/lib/server/auth';
+import { updateUserStore } from '@/lib/userStore';
 
 function formatToDateInput(d?: string): string {
   if (!d) return '';
@@ -25,6 +25,10 @@ function formatToDateInput(d?: string): string {
 
 export async function POST(req: Request) {
   try {
+    const session = await getAuthenticatedUser();
+    if (!session) {
+      return NextResponse.json({ success: false, message: 'Chưa đăng nhập' }, { status: 401 });
+    }
     const body = await req.json();
     const { 
       firstname, 
@@ -42,11 +46,7 @@ export async function POST(req: Request) {
       id_place, 
       province, 
       license_plate,
-      access_token 
     } = body;
-
-    const cookieStore = cookies();
-    const token = access_token || cookieStore.get('skyline_token')?.value || '';
 
     let computedLastname = lastname || '';
     let computedFirstname = firstname || '';
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     }
 
     const resolvedFullname = fullname || `${computedLastname} ${computedFirstname}`.trim();
-    const extractedId = extractUserIdFromToken(token);
+    const extractedId = session.profile.id;
     const userIdentifier = extractedId || body.username || email || phone || 'user-owner-1';
 
     const updatedUser = updateUserStore(userIdentifier, {

@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
-import { registerNewOwnerUser, getUserStore } from '@/lib/userStore';
+import { requireAuth } from '@/lib/auth/guard';
+import { registerNewOwnerUser } from '@/lib/userStore';
 import { assignApartmentResident, ApartmentHandoverProtocol, ApartmentResidentOwner } from '@/lib/apartmentStore';
 
 /**
  * POST /api/user/handover
- * API Cấp tài khoản Cư Dân & Bàn Giao Căn Hộ Chính Thức (BQL Handover Provisioning)
+ * API Cấp tài khoản Cư Dân & Bàn Giao Căn Hộ Chính Thức (Chỉ ADMIN)
  */
 export async function POST(req: Request) {
   try {
+    const guard = await requireAuth(['ADMIN']);
+    if (!guard.ok) return guard.response;
+
     const body = await req.json();
     const { 
       apartmentCode, 

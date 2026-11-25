@@ -1,31 +1,15 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { extractUserIdFromToken, findUserStore } from '@/lib/userStore';
+import { getAuthenticatedUser } from '@/lib/server/auth';
 import { skylineDb } from '@/lib/db';
 import { GEMINI_API_KEY } from '@/lib/geminiClient';
 import { InvoiceExplanationSchema } from '@/lib/billingAiService';
 
 export const runtime = 'nodejs';
 
-function authenticateRequest(req: Request) {
-  const cookieStore = cookies();
-  let token = cookieStore.get('skyline_token')?.value;
-
-  if (!token) {
-    const authHeader = req.headers.get('authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
-    }
-  }
-
-  if (!token) return null;
-  const userId = extractUserIdFromToken(token) || token;
-  return findUserStore(userId);
-}
-
 export async function POST(req: Request) {
   try {
-    const user = authenticateRequest(req);
+    const session = await getAuthenticatedUser();
+    const user = session ? session.profile : null;
     if (!user) {
       return NextResponse.json(
         { success: false, message: 'Chưa đăng nhập hoặc phiên làm việc đã hết hạn.' },

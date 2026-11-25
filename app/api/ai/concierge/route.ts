@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { askGeminiConcierge, generateSmartProjectFallback, extractAiSuggestions, extractAiAction, ConciergeContext } from '@/lib/geminiClient';
 import { getUserStore, getApartmentMembers } from '@/lib/userStore';
 import { getBills } from '@/lib/billingStore';
-import { getTickets } from '@/lib/ticketStore';
+import { listTicketsDb } from '@/lib/server/ticketDb';
 import { getAllVisitorPasses } from '@/lib/visitorStore';
 import { getFacilityBookings } from '@/lib/facilityStore';
 
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
     // Dynamic resolution of actual project data if not supplied by client
     const actualBookings = Array.isArray(bookings) ? bookings : getFacilityBookings(targetApt);
-    const actualTickets = Array.isArray(tickets) && tickets.length > 0 ? tickets : getTickets(targetApt, residentPhone);
+    const actualTickets = Array.isArray(tickets) && tickets.length > 0 ? tickets : await listTicketsDb(targetApt, residentPhone);
 
     const actualVisitors = Array.isArray(visitors) ? visitors : getAllVisitorPasses();
     const actualBills = Array.isArray(bills) && bills.length > 0 ? bills : getBills(targetApt, userName || 'Trần Hữu Lực');

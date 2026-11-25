@@ -1,50 +1,52 @@
 import { NextResponse } from 'next/server';
-import { getUserStore, StoredUser } from '@/lib/userStore';
-import { identifyFaceAmongEnrolled } from '@/lib/biometricFaceEngine';
-import { getAllEnrolledFaceProfiles, saveEnrolledFaceProfile } from '@/lib/faceEnrollStore';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { identifyFaceAmongEnrolled, EnrolledFaceProfile } from '@/lib/biometricFaceEngine';
+import { findUserStore } from '@/lib/userStore';
 
-function formatToDateInput(d?: string): string {
-  if (!d) return '';
-  const cleanD = d.replace(/[^\d\/\-\.]/g, '');
-  const parts = cleanD.split(/[\/\-\.]/);
-  if (parts.length === 3) {
-    if (parts[2].length === 4) {
-      const day = parts[0].padStart(2, '0');
-      const month = parts[1].padStart(2, '0');
-      const year = parts[2];
-      return `${year}-${month}-${day}`;
-    }
-    if (parts[0].length === 4) {
-      const year = parts[0];
-      const month = parts[1].padStart(2, '0');
-      const day = parts[2].padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-  }
-  return d;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_ATTEMPTS = 5;
+const ipAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function getClientIp(req: Request): string {
+  const forwarded = req.headers.get('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.headers.get('x-real-ip') || 'unknown';
 }
 
-/**
- * Trích xuất kích thước và định dạng ảnh từ Buffer
- */
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = ipAttempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    ipAttempts.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX_ATTEMPTS) {
+    return false;
+  }
+  entry.count += 1;
+  return true;
+}
+
+function logFailedAttempt(ip: string, reason: string, extra?: Record<string, unknown>) {
+  console.warn('[FACE_LOGIN_FAILED]', {
+    ip,
+    reason,
+    timestamp: new Date().toISOString(),
+    ...extra,
+  });
+}
+
 function parseImageDimensions(buf: Buffer): { width: number; height: number; type: string } | null {
   if (buf.length < 16) return null;
   if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
-    return {
-      width: buf.readUInt32BE(16),
-      height: buf.readUInt32BE(20),
-      type: 'png'
-    };
+    return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20), type: 'png' };
   }
   if (buf[0] === 0xff && buf[1] === 0xd8) {
     let i = 2;
     while (i < buf.length - 10) {
       if (buf[i] === 0xff && (buf[i + 1] === 0xc0 || buf[i + 1] === 0xc2)) {
-        return {
-          height: buf.readUInt16BE(i + 5),
-          width: buf.readUInt16BE(i + 7),
-          type: 'jpeg'
-        };
+        return { height: buf.readUInt16BE(i + 5), width: buf.readUInt16BE(i + 7), type: 'jpeg' };
       }
       i++;
     }
@@ -58,44 +60,47 @@ function parseImageDimensions(buf: Buffer): { width: number; height: number; typ
 
 /**
  * POST /api/user/face-login
- * API chuẩn xác thực sinh trắc học FaceID 1:N
+ * Xác thực sinh trắc học 1:N chỉ từ bảng face_enrollments (status = APPROVED)
+ * và cấp phiên Supabase Auth thật bằng Admin generateLink + verifyOtp.
  */
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+
+  if (!checkRateLimit(ip)) {
+    logFailedAttempt(ip, 'RATE_LIMIT_EXCEEDED');
+    return NextResponse.json(
+      { success: false, message: 'Quá nhiều lần thử đăng nhập FaceID. Vui lòng thử lại sau 1 phút.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
     const { faceImage, faceVector, isCameraCapture } = body;
 
-    // 1. Kiểm tra ảnh đầu vào hoặc vector đặc trưng
     if ((!faceImage || typeof faceImage !== 'string' || faceImage.trim() === '') && !Array.isArray(faceVector)) {
+      logFailedAttempt(ip, 'MISSING_FACE_INPUT');
       return NextResponse.json(
-        { success: false, message: 'Vui lòng cung cấp hình ảnh khuôn mặt.' },
+        { success: false, message: 'Vui lòng cung cấp hình ảnh khuôn mặt hoặc vector đặc trưng.' },
         { status: 400 }
       );
     }
 
-    let imageBuffer: Buffer | null = null;
     if (faceImage && typeof faceImage === 'string') {
       const base64Data = faceImage.startsWith('data:image/')
         ? faceImage.replace(/^data:image\/\w+;base64,/, '')
         : faceImage.trim();
-      try {
-        imageBuffer = Buffer.from(base64Data, 'base64');
-      } catch {
-        imageBuffer = null;
-      }
-    }
-
-    // 2. Kiểm tra chất lượng và độ rõ nét
-    if (imageBuffer) {
+      const imageBuffer = Buffer.from(base64Data, 'base64');
       if (imageBuffer.length < 2500) {
+        logFailedAttempt(ip, 'IMAGE_TOO_SMALL');
         return NextResponse.json(
           { success: false, message: 'Ảnh khuôn mặt quá mờ hoặc dung lượng quá nhỏ.' },
           { status: 400 }
         );
       }
-
       const dimensions = parseImageDimensions(imageBuffer);
       if (dimensions && (dimensions.width < 100 || dimensions.height < 100)) {
+        logFailedAttempt(ip, 'IMAGE_LOW_RESOLUTION');
         return NextResponse.json(
           { success: false, message: 'Độ phân giải ảnh quá thấp (yêu cầu tối thiểu 150x150px).' },
           { status: 400 }
@@ -103,205 +108,149 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. Cơ sở dữ liệu FaceID ĐÃ ĐĂNG KÝ MẪU CHÍNH THỨC (Chỉ lấy hồ sơ có vector 128-D thật)
-    const serverProfiles = getAllEnrolledFaceProfiles();
-    const enrolledProfiles = serverProfiles.filter(p =>
-      p && Array.isArray(p.descriptor) && p.descriptor.length === 128 && p.descriptor.some(v => v !== 0)
-    );
+    // 1. Chỉ lấy hồ sơ từ bảng face_enrollments có status = APPROVED (bỏ qua hoàn toàn body.clientProfiles)
+    const { data: rows, error: fetchError } = await supabaseAdmin
+      .from('face_enrollments')
+      .select('*')
+      .eq('status', 'APPROVED');
 
-    // Đồng bộ hồ sơ 4 mẫu quét từ client (nếu có và phải có vector thật)
-    if (Array.isArray(body.clientProfiles)) {
-      body.clientProfiles.forEach((cp: any) => {
-        if (cp && cp.userId && Array.isArray(cp.descriptor) && cp.descriptor.length === 128 && cp.descriptor.some((v: number) => v !== 0)) {
-          if (!cp.apartmentCode) {
-            cp.apartmentCode = 'CH-06';
-          }
-          if (!enrolledProfiles.some(p => p.userId === cp.userId)) {
-            enrolledProfiles.push(cp);
-            try {
-              saveEnrolledFaceProfile(cp);
-            } catch (e) {
-              console.warn('Sync client profile error:', e);
-            }
-          }
-        }
-      });
+    if (fetchError) {
+      throw new Error(`Lỗi truy vấn face_enrollments: ${fetchError.message}`);
     }
 
-    // Đảm bảo hồ sơ có apartmentCode hợp lệ
-    enrolledProfiles.forEach(p => {
-      if (p && !p.apartmentCode) {
-        p.apartmentCode = 'CH-06';
-      }
-    });
+    const enrolledProfiles: EnrolledFaceProfile[] = (rows || [])
+      .filter((r) => Array.isArray(r.descriptor) && (r.descriptor as number[]).length === 128 && (r.descriptor as number[]).some((v) => v !== 0))
+      .map((r) => ({
+        userId: r.user_id,
+        fullName: r.full_name,
+        apartmentCode: r.apartment_code || '',
+        phone: r.phone || '',
+        email: r.email || '',
+        avatarUrl: r.avatar_url || '',
+        samples: (r.samples as unknown as EnrolledFaceProfile['samples']) || { front: '', left: '', right: '', smile: '' },
+        descriptor: r.descriptor as number[],
+        descriptorsByAngle: (r.metadata as any)?.descriptorsByAngle,
+        enrolledAt: r.enrolled_at || new Date().toISOString(),
+        status: r.status as EnrolledFaceProfile['status'],
+        faceScore: r.face_score ?? 0,
+      }));
 
     if (enrolledProfiles.length === 0) {
+      logFailedAttempt(ip, 'NO_APPROVED_PROFILES');
       return NextResponse.json(
         {
           success: false,
           matchScore: 0,
-          message: 'Chưa có hồ sơ sinh trắc học FaceID thực tế nào được kích hoạt trên hệ thống. Vui lòng đăng nhập bằng tài khoản và mật khẩu, sau đó hoàn tất quét 4 góc mặt tại mục Hồ Sơ Cá Nhân.',
+          message: 'Chưa có hồ sơ FaceID nào được phê duyệt trên hệ thống.',
         },
         { status: 401 }
       );
     }
 
-    // 4. Nhận diện sinh trắc học 1:N đối soát với vector pixel chuẩn hóa
-    const liveInput = (Array.isArray(faceVector) && faceVector.length === 128)
-      ? faceVector
-      : faceImage;
-
+    // 2. Đối soát sinh trắc học 1:N ở server
+    const liveInput = Array.isArray(faceVector) && faceVector.length === 128 ? faceVector : faceImage;
     const threshold = isCameraCapture ? 68.0 : 72.0;
     const matchResult = identifyFaceAmongEnrolled(liveInput, enrolledProfiles, threshold);
 
-    if (matchResult.profile && !matchResult.profile.apartmentCode) {
-      matchResult.profile.apartmentCode = 'CH-06';
-    }
-
-    // 5. Nếu không khớp bất kỳ khuôn mặt nào trong 4 mẫu
     if (!matchResult.matched || !matchResult.profile) {
+      logFailedAttempt(ip, 'FACE_MISMATCH', { matchScore: matchResult.score });
       return NextResponse.json(
         {
           success: false,
           matchScore: matchResult.score,
           bestAngle: matchResult.bestAngle,
           sampleScores: matchResult.sampleScores,
-          message: matchResult.message || 'Khuôn mặt chưa được đăng ký FaceID trên hệ thống hoặc độ tương đồng không đạt chuẩn an toàn.',
+          message: matchResult.message || 'Khuôn mặt chưa khớp với hồ sơ đã duyệt hoặc độ tương đồng không đạt chuẩn.',
         },
         { status: 401 }
       );
     }
 
-    // 5.1 Kiểm tra phê duyệt
-    if (matchResult.profile.status === 'PENDING_OWNER') {
+    // 3. Tra cứu user thật trong public.profiles (không tạo user ảo, không suy luận role từ userId)
+    const matchedRow = (rows || []).find((r) => r.user_id === matchResult.profile!.userId);
+    let profileQuery = supabaseAdmin.from('profiles').select('*');
+    if (matchedRow?.auth_user_id) {
+      profileQuery = profileQuery.eq('id', matchedRow.auth_user_id);
+    } else if (matchResult.profile.email) {
+      profileQuery = profileQuery.eq('email', matchResult.profile.email.toLowerCase());
+    } else if (matchResult.profile.phone) {
+      profileQuery = profileQuery.eq('phone', matchResult.profile.phone);
+    } else {
+      profileQuery = profileQuery.eq('legacy_user_id', matchResult.profile.userId);
+    }
+
+    const { data: profileRow, error: profileError } = await profileQuery.maybeSingle();
+    if (profileError) {
+      throw new Error(`Lỗi truy vấn profiles: ${profileError.message}`);
+    }
+
+    if (!profileRow || !profileRow.email) {
+      logFailedAttempt(ip, 'PROFILE_NOT_FOUND', { matchedUserId: matchResult.profile.userId });
       return NextResponse.json(
-        {
-          success: false,
-          matchScore: matchResult.score,
-          bestAngle: matchResult.bestAngle,
-          sampleScores: matchResult.sampleScores,
-          message: `Hồ sơ 4 mẫu FaceID của cư dân ${matchResult.profile.fullName} (Căn ${matchResult.profile.apartmentCode}) đang chờ Chủ Hộ xác nhận trước khi gửi Ban Quản Lý phê duyệt. Vui lòng nhắc Chủ Hộ vào mục Quản lý người thân để xác nhận hoặc đăng nhập bằng Email / Mật khẩu.`,
-        },
-        { status: 403 }
+        { success: false, message: 'Tài khoản liên kết hồ sơ FaceID không tồn tại hoặc chưa kích hoạt Supabase Auth.' },
+        { status: 401 }
       );
     }
 
-    if (matchResult.profile.status === 'PENDING') {
+    // 4. Cấp phiên Supabase thật qua Admin generateLink(magiclink) + verifyOtp
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: profileRow.email,
+    });
+
+    if (linkError || !linkData?.properties?.hashed_token) {
+      logFailedAttempt(ip, 'GENERATE_LINK_FAILED', { email: profileRow.email, error: linkError?.message });
       return NextResponse.json(
-        {
-          success: false,
-          matchScore: matchResult.score,
-          bestAngle: matchResult.bestAngle,
-          sampleScores: matchResult.sampleScores,
-          message: `Hồ sơ 4 mẫu FaceID của cư dân ${matchResult.profile.fullName} (Căn ${matchResult.profile.apartmentCode}) đang chờ Ban Quản Lý phê duyệt. Vui lòng liên hệ BQL hoặc đăng nhập bằng Email / Mật khẩu.`,
-        },
-        { status: 403 }
+        { success: false, message: 'Không thể khởi tạo phiên xác thực Supabase.' },
+        { status: 401 }
       );
     }
 
-    if (matchResult.profile.status === 'REVOKED') {
+    const supabase = createSupabaseServerClient();
+    const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+      token_hash: linkData.properties.hashed_token,
+      type: 'magiclink',
+    });
+
+    if (verifyError || !verifyData.user) {
+      logFailedAttempt(ip, 'VERIFY_OTP_FAILED', { email: profileRow.email, error: verifyError?.message });
       return NextResponse.json(
-        {
-          success: false,
-          matchScore: matchResult.score,
-          message: `Quyền truy cập FaceID của cư dân ${matchResult.profile.fullName} đã bị thu hồi. Vui lòng liên hệ VinHomes Manager để kích hoạt lại.`,
-        },
-        { status: 403 }
+        { success: false, message: 'Không thể cấp phiên đăng nhập Supabase.' },
+        { status: 401 }
       );
     }
 
-    const matchedUserId = matchResult.profile.userId;
-    const matchScore = matchResult.score;
-
-    // 6. XÁC ĐỊNH DANH TÍNH CƯ DÂN ĐÃ KHỚP KHUÔN MẶT ĐÃ ĐƯỢC PHÊ DUYỆT
-    let matchedUserRecord = getUserStore(matchedUserId);
-    if (!matchedUserRecord && matchResult.profile.phone) {
-      matchedUserRecord = getUserStore(matchResult.profile.phone);
-    }
-    if (!matchedUserRecord && matchResult.profile.email) {
-      matchedUserRecord = getUserStore(matchResult.profile.email);
-    }
-
-    // Nếu người dùng không nằm trong bộ nhớ tạm, khởi tạo từ hồ sơ FaceID chính thức
-    if (!matchedUserRecord) {
-      const p = matchResult.profile;
-      matchedUserRecord = {
-        id: p.userId,
-        username: p.email || p.phone || p.userId,
-        fullname: p.fullName,
-        full_name: p.fullName,
-        email: p.email || '',
-        phone: p.phone || '',
-        role: (p.userId.includes('manager01') || p.email?.includes('admin'))
-          ? 'ADMIN'
-          : p.userId.includes('manager02')
-            ? 'TECHNICIAN'
-            : 'OWNER',
-        apartment_code: p.apartmentCode || 'CH-06',
-        avatar_url: p.avatarUrl || '',
-      };
-    }
-
-    // 7. CẤP PHIÊN ĐĂNG NHẬP SINH TRẮC HỌC CHÍNH THỨC (BIOMETRIC SESSION TOKEN)
-    const token = (matchedUserRecord as any).access_token || `SKYLINE_FACEID_SESSION_${matchedUserRecord.id}_${matchedUserRecord.role || 'RESIDENT'}_${Date.now()}`;
-
-    let resolvedApt = matchedUserRecord.apartment_code || matchResult.profile?.apartmentCode || 'CH-06';
-    if (matchedUserRecord.role === 'ADMIN') {
-      resolvedApt = 'BQL_OFFICE';
-    } else if (matchedUserRecord.role === 'TECHNICIAN') {
-      resolvedApt = 'TECH_ROOM';
-    }
+    const legacyUser =
+      (profileRow.legacy_user_id && findUserStore(profileRow.legacy_user_id)) ||
+      findUserStore(profileRow.email) ||
+      undefined;
 
     const formattedUser = {
-      id: String(matchedUserRecord.id),
-      username: matchedUserRecord.username || matchedUserRecord.email || matchedUserRecord.phone || '',
-      firstname: matchedUserRecord.firstname || matchedUserRecord.fullname?.split(' ').slice(-1)[0] || '',
-      lastname: matchedUserRecord.lastname || matchedUserRecord.fullname?.split(' ').slice(0, -1).join(' ') || '',
-      fullname: matchedUserRecord.fullname || matchResult.profile.fullName,
-      full_name: matchedUserRecord.fullname || matchResult.profile.fullName,
-      email: matchedUserRecord.email || matchResult.profile.email || '',
-      phone: matchedUserRecord.phone || matchResult.profile.phone || '',
-      role: matchedUserRecord.role || 'OWNER',
-      relationship: (matchedUserRecord.role === 'ADMIN' || matchedUserRecord.role === 'TECHNICIAN')
-        ? 'Staff'
-        : (matchedUserRecord.role === 'OWNER' ? 'Owner' : 'Family'),
-      apartment_code: resolvedApt,
-      avatar_url: matchedUserRecord.avatar_url || matchResult.profile.avatarUrl || '',
-      avatar: matchedUserRecord.avatar_url || matchResult.profile.avatarUrl || '',
-      id_number: matchedUserRecord.id_card_no || '',
-      id_card_no: matchedUserRecord.id_card_no || '',
-      dob: formatToDateInput(matchedUserRecord.dob),
-      pob: matchedUserRecord.pob || '',
+      id: legacyUser?.id || profileRow.id,
+      username: legacyUser?.username || profileRow.email,
+      firstname: legacyUser?.firstname || profileRow.full_name.split(' ').slice(-1)[0] || '',
+      lastname: legacyUser?.lastname || profileRow.full_name.split(' ').slice(0, -1).join(' ') || '',
+      fullname: profileRow.full_name,
+      full_name: profileRow.full_name,
+      email: profileRow.email,
+      phone: profileRow.phone || '',
+      role: profileRow.role,
+      relationship: profileRow.relationship || 'Tenant',
+      apartment_code: profileRow.apartment_code || '',
+      avatar_url: profileRow.avatar_url || matchResult.profile.avatarUrl || '',
+      avatar: profileRow.avatar_url || matchResult.profile.avatarUrl || '',
     };
 
-    const res = NextResponse.json({
+    return NextResponse.json({
       success: true,
-      message: `Xác thực FaceID thành công: ${formattedUser.fullname} (${formattedUser.apartment_code}) - Mẫu khớp: ${matchResult.bestAngle || 'Chính diện'}`,
-      matchScore: matchScore || 0,
+      message: `Xác thực FaceID thành công: ${formattedUser.fullname}`,
+      matchScore: matchResult.score || 0,
       bestAngle: matchResult.bestAngle || 'Chính diện',
       sampleScores: matchResult.sampleScores,
-      access_token: token,
       user: formattedUser,
     });
-
-    res.cookies.set('skyline_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30, // 30 ngày
-    });
-
-    res.cookies.set('skyline_user_role', formattedUser.role, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 30,
-    });
-
-    return res;
   } catch (error: any) {
+    logFailedAttempt(ip, 'INTERNAL_ERROR', { error: error?.message });
     console.error('FaceID login error:', error);
     return NextResponse.json(
       { success: false, message: 'Lỗi máy chủ xác thực khuôn mặt.' },

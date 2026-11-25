@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { getAuthenticatedUser } from '@/lib/server/auth';
 import { 
   getApartmentMembers, 
   addApartmentMember, 
@@ -7,7 +7,6 @@ import {
   removeApartmentMember, 
   clearApartmentMembers,
   ApartmentMember,
-  extractUserIdFromToken,
   getUserStore,
   updateUserStore
 } from '@/lib/userStore';
@@ -54,10 +53,11 @@ function isEligibleFamilyAccount(u: any, hostUser?: any): boolean {
  */
 export async function GET(req: Request) {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get('skyline_token')?.value || '';
-    const userId = extractUserIdFromToken(token);
-    const localUser = userId ? getUserStore(userId) : getUserStore('user-owner-1');
+    const session = await getAuthenticatedUser();
+    if (!session) {
+      return NextResponse.json({ success: false, message: 'Chưa đăng nhập' }, { status: 401 });
+    }
+    const localUser = session.profile;
     const url = new URL(req.url);
     const paramApt = url.searchParams.get('apartment') || url.searchParams.get('aptCode');
     const rawApt = paramApt || localUser?.apartment_code || 'CH-06';
@@ -210,10 +210,11 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get('skyline_token')?.value || '';
-    const userId = extractUserIdFromToken(token);
-    const currentUser = userId ? getUserStore(userId) : getUserStore('user-owner-1');
+    const session = await getAuthenticatedUser();
+    if (!session) {
+      return NextResponse.json({ success: false, message: 'Chưa đăng nhập' }, { status: 401 });
+    }
+    const currentUser = session.profile;
     const rawApt = currentUser?.apartment_code || 'CH-06';
     const aptCode = rawApt;
     const ownerName = currentUser?.fullname || currentUser?.full_name || 'Chủ Hộ';
@@ -369,10 +370,11 @@ export async function POST(req: Request) {
  */
 export async function DELETE(req: Request) {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get('skyline_token')?.value || '';
-    const userId = extractUserIdFromToken(token);
-    const currentUser = userId ? getUserStore(userId) : getUserStore('user-owner-1');
+    const session = await getAuthenticatedUser();
+    if (!session) {
+      return NextResponse.json({ success: false, message: 'Chưa đăng nhập' }, { status: 401 });
+    }
+    const currentUser = session.profile;
     const rawApt = currentUser?.apartment_code || 'CH-06';
     const aptCode = rawApt;
 
@@ -407,10 +409,11 @@ export async function DELETE(req: Request) {
  */
 export async function PUT(req: Request) {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get('skyline_token')?.value || '';
-    const userId = extractUserIdFromToken(token);
-    const currentUser = userId ? getUserStore(userId) : getUserStore('user-owner-1');
+    const session = await getAuthenticatedUser();
+    if (!session) {
+      return NextResponse.json({ success: false, message: 'Chưa đăng nhập' }, { status: 401 });
+    }
+    const currentUser = session.profile;
     const rawApt = currentUser?.apartment_code || 'CH-06';
     const aptCode = rawApt;
 

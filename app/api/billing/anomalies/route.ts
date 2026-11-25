@@ -1,38 +1,14 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { extractUserIdFromToken, findUserStore } from '@/lib/userStore';
+import { requireAuth } from '@/lib/auth/guard';
 import { skylineDb } from '@/lib/db';
 import { detectBillingAnomalies } from '@/lib/billingAnomalyEngine';
 
 export const runtime = 'nodejs';
 
-function authenticateAdmin(req: Request) {
-  const cookieStore = cookies();
-  let token = cookieStore.get('skyline_token')?.value;
-
-  if (!token) {
-    const authHeader = req.headers.get('authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
-    }
-  }
-
-  if (!token) return null;
-  const userId = extractUserIdFromToken(token) || token;
-  const user = findUserStore(userId);
-  if (!user || user.role !== 'ADMIN') return null;
-  return user;
-}
-
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const admin = authenticateAdmin(req);
-    if (!admin) {
-      return NextResponse.json(
-        { success: false, message: 'Quyền truy cập bị từ chối. Tính năng chỉ dành riêng cho Ban Quản Lý (Admin).' },
-        { status: 403 }
-      );
-    }
+    const guard = await requireAuth(['ADMIN']);
+    if (!guard.ok) return guard.response;
 
     const bills = skylineDb.bills.find();
     const anomalies = detectBillingAnomalies(bills, bills);

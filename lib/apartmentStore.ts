@@ -5,7 +5,7 @@
  */
 
 import { skylineDb } from './db';
-import { ApartmentRecord } from './db/schema';
+import { ApartmentRecord, TowerId } from './db/schema';
 import { 
   ApartmentMember, 
   registerNewOwnerUser,
@@ -22,7 +22,7 @@ import {
 } from './ekycStore';
 import { updateEnrolledFaceStatus } from './faceEnrollStore';
 
-export type TowerId = 'A' | 'B';
+export type { TowerId };
 export type ApartmentType = 'STUDIO' | '1PN' | '2PN' | '3PN' | 'DUPLEX_PENTHOUSE';
 export type ApartmentStatus = 'OCCUPIED' | 'VACANT' | 'MAINTENANCE' | 'HANDOVER_PENDING';
 

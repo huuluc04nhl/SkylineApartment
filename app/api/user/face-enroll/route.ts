@@ -1,31 +1,44 @@
 import { NextResponse } from 'next/server';
-import { extractFaceDescriptorFromBase64, analyzeBiometric4Samples, EnrolledFaceProfile } from '@/lib/biometricFaceEngine';
-import { saveEnrolledFaceProfile, getEnrolledFaceProfile, getAllEnrolledFaceProfiles } from '@/lib/faceEnrollStore';
-import { updateUserStore, getUserStore, updateApartmentMember } from '@/lib/userStore';
+import { analyzeBiometric4Samples, EnrolledFaceProfile } from '@/lib/biometricFaceEngine';
+import { getAuthenticatedUser } from '@/lib/server/auth';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { updateUserStore, updateApartmentMember } from '@/lib/userStore';
 import { submitEkycRequest } from '@/lib/ekycStore';
 
 /**
  * GET /api/user/face-enroll?userId=...
- * Đồng bộ hồ sơ 4 mẫu FaceID giữa Mobile, Desktop và Ban Quản Lý
+ * Chỉ cho phép khi đã đăng nhập; trả hồ sơ từ bảng face_enrollments
  */
 export async function GET(req: Request) {
   try {
+    const session = await getAuthenticatedUser();
+    if (!session) {
+      return NextResponse.json({ success: false, message: 'Chưa đăng nhập' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
 
     if (userId) {
-      const profile = getEnrolledFaceProfile(userId);
-      return NextResponse.json({
-        success: true,
-        profile: profile || null,
-      });
+      if (session.role !== 'ADMIN' && userId !== session.profile.id && userId !== session.authUserId) {
+        return NextResponse.json({ success: false, message: 'Không có quyền xem hồ sơ này' }, { status: 403 });
+      }
+      const { data, error } = await supabaseAdmin
+        .from('face_enrollments')
+        .select('*')
+        .or(`user_id.eq.${userId},auth_user_id.eq.${userId}`)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return NextResponse.json({ success: true, profile: data || null });
     }
 
-    const profiles = getAllEnrolledFaceProfiles();
-    return NextResponse.json({
-      success: true,
-      profiles,
-    });
+    let query = supabaseAdmin.from('face_enrollments').select('*');
+    if (session.role !== 'ADMIN') {
+      query = query.eq('auth_user_id', session.authUserId);
+    }
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return NextResponse.json({ success: true, profiles: data || [] });
   } catch (error: any) {
     console.error('Lỗi GET face-enroll:', error);
     return NextResponse.json(
@@ -37,43 +50,34 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const session = await getAuthenticatedUser();
+    if (!session) {
+      return NextResponse.json({ success: false, message: 'Vui lòng đăng nhập trước khi đăng ký FaceID.' }, { status: 401 });
+    }
+
     const body = await req.json().catch(() => ({}));
-    const { 
+    const {
       action,
-      userId, 
-      fullName, 
-      apartmentCode, 
-      phone, 
+      userId: requestedUserId,
+      fullName,
+      apartmentCode,
+      phone,
       email,
       samples,
       isFamilyMemberSelfEnroll,
-      submittedByRole
+      submittedByRole,
     } = body;
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, message: 'Thiếu thông tin định danh người dùng (userId).' },
-        { status: 400 }
-      );
-    }
+    const userId = requestedUserId || session.profile.id;
 
-    // =========================================================================
-    // CASE 1: CHỦ HỘ XÁC NHẬN HỒ SƠ FACEID CỦA NGƯỜI NHÀ ĐỂ GỬI BQL
-    // =========================================================================
     if (action === 'CONFIRM_BY_OWNER') {
-      let existingProfile = getEnrolledFaceProfile(userId);
-      if (!existingProfile && phone) {
-        existingProfile = getEnrolledFaceProfile(phone);
-      }
-      if (!existingProfile) {
-        const all = getAllEnrolledFaceProfiles();
-        existingProfile = all.find(p => 
-          (p.userId && p.userId.toLowerCase().trim() === userId.toLowerCase().trim()) ||
-          (p.phone && phone && p.phone.trim() === phone.trim()) ||
-          (p.phone && p.phone.trim() === userId.trim())
-        ) || null;
-      }
+      const { data: existingProfile, error: findErr } = await supabaseAdmin
+        .from('face_enrollments')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
 
+      if (findErr) throw new Error(findErr.message);
       if (!existingProfile) {
         return NextResponse.json(
           { success: false, message: 'Không tìm thấy hồ sơ mẫu FaceID cần xác nhận.' },
@@ -81,51 +85,24 @@ export async function POST(req: Request) {
         );
       }
 
-      existingProfile.status = 'PENDING';
-      existingProfile.confirmedByOwner = true;
-      existingProfile.confirmedByOwnerAt = new Date().toISOString();
-      saveEnrolledFaceProfile(existingProfile);
+      const { data: updatedProfile, error: updateErr } = await supabaseAdmin
+        .from('face_enrollments')
+        .update({ status: 'PENDING' })
+        .eq('user_id', existingProfile.user_id)
+        .select('*')
+        .single();
 
-      const targetApt = apartmentCode || existingProfile.apartmentCode || 'CH-06';
+      if (updateErr) throw new Error(updateErr.message);
+
+      const targetApt = apartmentCode || existingProfile.apartment_code || session.apartment_code || 'CH-06';
       updateApartmentMember(targetApt, userId, {
         faceStatus: 'Đang Chờ BQL Phê Duyệt',
       });
-      if (existingProfile.phone && existingProfile.phone !== userId) {
-        updateApartmentMember(targetApt, existingProfile.phone, {
-          faceStatus: 'Đang Chờ BQL Phê Duyệt',
-        });
-      }
-
-      const existingUser = getUserStore(userId);
-      try {
-        submitEkycRequest({
-          userId,
-          fullName: existingProfile.fullName,
-          roleLabel: 'Người Nhà (Đã Chủ Hộ Xác Nhận)',
-          apartmentCode: targetApt,
-          phone: existingProfile.phone || existingUser?.phone || '',
-          idCardNo: existingUser?.id_card_no || '079198005678',
-          idDate: existingUser?.id_date || '10/01/2023',
-          idPlace: existingUser?.id_place || 'Cục Cảnh sát QLHC về TTXH',
-          avatarUrl: existingUser?.avatar_url || existingProfile.avatarUrl || '',
-          idCardFrontUrl: existingUser?.cccd_front_url || '',
-          idCardBackUrl: existingUser?.cccd_back_url || '',
-          faceSamples: {
-            front: existingProfile.samples.front,
-            left: existingProfile.samples.left,
-            right: existingProfile.samples.right,
-            smile: existingProfile.samples.smile,
-          },
-          faceScore: existingProfile.faceScore || 0,
-        });
-      } catch (e) {
-        console.warn('Submit e-KYC request to BQL error:', e);
-      }
 
       return NextResponse.json({
         success: true,
-        message: `Chủ hộ đã xác nhận hồ sơ FaceID cho thành viên "${existingProfile.fullName}" và gửi Ban Quản Lý phê duyệt thành công!`,
-        profile: existingProfile,
+        message: `Chủ hộ đã xác nhận hồ sơ FaceID cho thành viên "${existingProfile.full_name}" và gửi Ban Quản Lý phê duyệt thành công!`,
+        profile: updatedProfile,
       });
     }
 
@@ -169,36 +146,61 @@ export async function POST(req: Request) {
       );
     }
 
-    // Lấy thông tin user hiện tại (giữ nguyên avatar_url, không ghi đè)
-    const existingUser = getUserStore(userId);
-    const targetApt = apartmentCode || existingUser?.apartment_code || 'CH-06';
+    const existingUser = session.profile;
+    const targetApt = apartmentCode || existingUser.apartment_code || 'CH-06';
 
     // Xác định luồng: Nếu là Người nhà tự quét (TENANT) -> status = 'PENDING_OWNER' (chờ chủ hộ duyệt)
     // Nếu do Chủ hộ đích thân quét hoặc Chủ hộ tự làm -> status = 'PENDING' (gửi thẳng BQL)
-    const isPendingOwner = isFamilyMemberSelfEnroll || (submittedByRole === 'TENANT' && existingUser?.role !== 'OWNER');
+    const isPendingOwner = isFamilyMemberSelfEnroll || (submittedByRole === 'TENANT' && session.role !== 'OWNER');
+    const finalStatus = isPendingOwner ? 'PENDING_OWNER' : 'PENDING';
+    const finalDescriptor = (Array.isArray(body.descriptor) && body.descriptor.length === 128)
+      ? body.descriptor
+      : analysis.compositeDescriptor;
+    const finalEmail = (email || session.email || '').toLowerCase();
+    const finalFullName = fullName || existingUser.fullname || 'Cư Dân Skyline';
+    const finalPhone = phone || existingUser.phone || '';
+    const finalFaceScore = typeof body.faceScore === 'number' ? body.faceScore : analysis.faceScore;
 
     const faceProfile: EnrolledFaceProfile = {
       userId,
-      fullName: fullName || existingUser?.fullname || 'Cư Dân Skyline',
+      fullName: finalFullName,
       apartmentCode: targetApt,
-      phone: phone || existingUser?.phone || '',
-      email: email || existingUser?.email || (userId.includes('@') ? userId : ''),
-      avatarUrl: existingUser?.avatar_url || '',
+      phone: finalPhone,
+      email: finalEmail,
+      avatarUrl: existingUser.avatar_url || '',
       samples: normalizedSamples,
-      descriptor: (Array.isArray(body.descriptor) && body.descriptor.length === 128)
-        ? body.descriptor
-        : analysis.compositeDescriptor,
+      descriptor: finalDescriptor,
       descriptorsByAngle: body.descriptorsByAngle || analysis.descriptorsByAngle,
       enrolledAt: new Date().toISOString(),
-      status: isPendingOwner ? 'PENDING_OWNER' : 'PENDING',
+      status: finalStatus,
       confirmedByOwner: !isPendingOwner,
       confirmedByOwnerAt: !isPendingOwner ? new Date().toISOString() : undefined,
-      faceScore: typeof body.faceScore === 'number' ? body.faceScore : analysis.faceScore,
+      faceScore: finalFaceScore,
       livenessVerified: true,
     };
 
-    // 2. Lưu vào FaceEnrollStore (Bộ nhớ + File .skyline_faces.json trên server)
-    saveEnrolledFaceProfile(faceProfile);
+    // 2. Lưu trực tiếp vào bảng face_enrollments trên Supabase
+    const { error: upsertErr } = await supabaseAdmin.from('face_enrollments').upsert({
+      user_id: userId,
+      auth_user_id: session.authUserId,
+      phone: finalPhone,
+      email: finalEmail,
+      full_name: finalFullName,
+      apartment_code: targetApt,
+      avatar_url: existingUser.avatar_url || null,
+      descriptor: finalDescriptor,
+      face_score: finalFaceScore,
+      status: finalStatus,
+      enrolled_at: faceProfile.enrolledAt,
+      samples: normalizedSamples as any,
+      metadata: {
+        descriptorsByAngle: faceProfile.descriptorsByAngle || null,
+        confirmedByOwner: !isPendingOwner,
+      } as any,
+    });
+    if (upsertErr) {
+      throw new Error(`Không thể lưu hồ sơ FaceID vào Supabase: ${upsertErr.message}`);
+    }
 
     // 3. Cập nhật trạng thái FaceID trong ApartmentMember
     updateApartmentMember(targetApt, userId, {

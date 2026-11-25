@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const queryParams: Record<string, string> = {};
-    
+
     url.searchParams.forEach((value, key) => {
       queryParams[key] = value;
     });

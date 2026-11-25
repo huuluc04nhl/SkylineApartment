@@ -1,29 +1,16 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { z } from 'zod';
-import { extractUserIdFromToken, findUserStore } from '@/lib/userStore';
+import { getAuthenticatedUser } from '@/lib/server/auth';
 import { skylineDb } from '@/lib/db';
 import { MeterReadingRecord } from '@/lib/db/schema';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function authenticateStaff(req: Request) {
-  const cookieStore = cookies();
-  let token = cookieStore.get('skyline_token')?.value;
-
-  if (!token) {
-    const authHeader = req.headers.get('authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
-    }
-  }
-
-  if (!token) return null;
-  const userId = extractUserIdFromToken(token) || token;
-  const user = findUserStore(userId);
-  if (!user || (user.role !== 'ADMIN' && user.role !== 'TECHNICIAN')) return null;
-  return user;
+async function authenticateStaff() {
+  const session = await getAuthenticatedUser();
+  if (!session || (session.role !== 'ADMIN' && session.role !== 'TECHNICIAN')) return null;
+  return session.profile;
 }
 
 const AnalyzeInputSchema = z.object({
@@ -147,7 +134,7 @@ function getFallbackReading(aptCode: string, meterType: 'ELECTRIC' | 'WATER', pe
 
 export async function POST(req: Request) {
   try {
-    const staff = authenticateStaff(req);
+    const staff = await authenticateStaff();
     if (!staff) {
       return NextResponse.json(
         { success: false, message: 'Quyền truy cập bị từ chối. Chỉ dành riêng cho Ban Quản Lý và Kỹ Thuật Viên.' },

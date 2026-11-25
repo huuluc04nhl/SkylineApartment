@@ -4,7 +4,7 @@
 // Pure Database Architecture - Zero LocalStorage - Zero External Mock APIs
 // ============================================================================
 
-export type TowerId = 'A' | 'B';
+export type TowerId = 'BS-07' | 'BS-08' | 'BS-09' | 'BS-10' | 'A' | 'B';
 export type ApartmentType = 'STUDIO' | '1PN' | '2PN' | '3PN' | 'DUPLEX_PENTHOUSE';
 export type ApartmentStatus = 'OCCUPIED' | 'VACANT' | 'MAINTENANCE' | 'HANDOVER_PENDING';
 export type UserRole = 'ADMIN' | 'OWNER' | 'TENANT' | 'TECHNICIAN' | 'RECEPTIONIST';
@@ -236,7 +236,7 @@ export interface SmartDeviceRecord {
   apartment_code: string;
   name: string;
   device_type: 'door' | 'light' | 'ac' | 'curtain' | 'sensor';
-  status: 'on' | 'off' | 'locked' | 'unlocked' | 'active' | number;
+  status: 'on' | 'off' | 'locked' | 'unlocked' | 'active' | 'open' | 'closed' | number;
   set_value: number;
   location_x: number;
   location_y: number;
@@ -273,7 +273,7 @@ export interface SmartDoorAccessLogRecord {
   apartment_code: string;
   user_name: string;
   role: string;
-  method: 'FACE_ID' | 'NFC_CARD' | 'PIN_OTP';
+  method: 'FACE_ID' | 'NFC_CARD' | 'PIN_OTP' | 'REMOTE_APP' | 'PHYSICAL_KEY' | 'AUTO_LOCK';
   status: 'SUCCESS' | 'DENIED';
   detail: string;
   timestamp: string;

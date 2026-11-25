@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { extractUserIdFromToken, findUserStore, type StoredUser } from '@/lib/userStore';
+import { getAuthenticatedUser } from '@/lib/server/auth';
+import { type StoredUser } from '@/lib/userStore';
 import { 
   checkBillingAiRateLimit, 
   BILLING_TOOLS, 
@@ -11,26 +11,10 @@ import { GEMINI_API_KEY } from '@/lib/geminiClient';
 
 export const runtime = 'nodejs';
 
-// Helper to authenticate request
-function authenticateRequest(req: Request) {
-  const cookieStore = cookies();
-  let token = cookieStore.get('skyline_token')?.value;
-
-  if (!token) {
-    const authHeader = req.headers.get('authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
-    }
-  }
-
-  if (!token) return null;
-  const userId = extractUserIdFromToken(token) || token;
-  return findUserStore(userId);
-}
-
 export async function POST(req: Request) {
   try {
-    const user = authenticateRequest(req);
+    const session = await getAuthenticatedUser();
+    const user: StoredUser | null = session ? session.profile : null;
     if (!user) {
       return NextResponse.json(
         { success: false, message: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.' },

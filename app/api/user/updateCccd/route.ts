@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { updateUserStore, extractUserIdFromToken } from '@/lib/userStore';
+import { getAuthenticatedUser } from '@/lib/server/auth';
+import { updateUserStore } from '@/lib/userStore';
 
 function normalizeDate(d?: string): string {
   if (!d) return '';
@@ -25,11 +25,12 @@ function normalizeDate(d?: string): string {
 
 export async function POST(req: Request) {
   try {
+    const session = await getAuthenticatedUser();
+    if (!session) {
+      return NextResponse.json({ success: false, message: 'Chưa đăng nhập' }, { status: 401 });
+    }
     const body = await req.json();
-    const { front, back, number, date, place, fullName, fullname, dob, gender, pob, access_token } = body;
-
-    const cookieStore = cookies();
-    const token = access_token || cookieStore.get('skyline_token')?.value || '';
+    const { front, back, number, date, place, fullName, fullname, dob, gender, pob } = body;
 
     const cleanNumber = (number || '').replace(/\D/g, '').slice(0, 12);
     const cleanDate = normalizeDate(date);
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
     const resolvedName = (fullName || fullname || '').toUpperCase().trim();
     const cleanDob = normalizeDate(dob);
 
-    const targetUserId = extractUserIdFromToken(token) || body.username || body.phone || 'user-owner-1';
+    const targetUserId = session.profile.id;
 
     const updates: any = {
       id_number: cleanNumber || '067204000961',
