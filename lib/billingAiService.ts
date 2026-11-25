@@ -8,7 +8,7 @@
  * - Anti-Prompt Injection: User messages treated as data, not instructions.
  */
 
-import { skylineDb } from './db';
+import { listBillsWithDetailsDb, getBillWithDetailsByIdDb, listMeterReadingsDb } from './server/billingDb';
 import { BillRecord, MeterReadingRecord } from './db/schema';
 import { StoredUser, findUserStore } from './userStore';
 import { GEMINI_API_KEY } from './geminiClient';
@@ -76,7 +76,7 @@ export const BILLING_TOOLS = {
    */
   getInvoices: async (args: { aptCode?: string }, ctx: BillingToolContext) => {
     const targetApt = ctx.isAdmin && args.aptCode ? args.aptCode.trim().toUpperCase() : ctx.user.apartment_code || 'CH-06';
-    const bills = skylineDb.bills.find(b => b.apartment_code.toUpperCase() === targetApt);
+    const bills = await listBillsWithDetailsDb(targetApt);
 
     return {
       apartment_code: targetApt,
@@ -98,7 +98,7 @@ export const BILLING_TOOLS = {
    */
   getInvoiceDetail: async (args: { billId: string; aptCode?: string }, ctx: BillingToolContext) => {
     const targetApt = ctx.isAdmin && args.aptCode ? args.aptCode.trim().toUpperCase() : ctx.user.apartment_code || 'CH-06';
-    const bill = skylineDb.bills.findById(args.billId);
+    const bill = await getBillWithDetailsByIdDb(args.billId);
 
     if (!bill) {
       return { error: 'Không tìm thấy hóa đơn mã ' + args.billId };
@@ -135,10 +135,15 @@ export const BILLING_TOOLS = {
    */
   getMeterHistory: async (args: { meterType?: 'ELECTRIC' | 'WATER'; aptCode?: string }, ctx: BillingToolContext) => {
     const targetApt = ctx.isAdmin && args.aptCode ? args.aptCode.trim().toUpperCase() : ctx.user.apartment_code || 'CH-06';
-    let readings = skylineDb.meterReadings.find(m => m.apartment_code.toUpperCase() === targetApt);
-
+    let readings: MeterReadingRecord[] = [];
     if (args.meterType) {
-      readings = readings.filter(m => m.meter_type === args.meterType);
+      readings = await listMeterReadingsDb(targetApt, args.meterType);
+    } else {
+      const [elec, water] = await Promise.all([
+        listMeterReadingsDb(targetApt, 'ELECTRIC'),
+        listMeterReadingsDb(targetApt, 'WATER'),
+      ]);
+      readings = [...elec, ...water];
     }
 
     return {
@@ -162,7 +167,8 @@ export const BILLING_TOOLS = {
    */
   getDebtSummary: async (args: { aptCode?: string }, ctx: BillingToolContext) => {
     const targetApt = ctx.isAdmin && args.aptCode ? args.aptCode.trim().toUpperCase() : ctx.user.apartment_code || 'CH-06';
-    const unpaidBills = skylineDb.bills.find(b => b.apartment_code.toUpperCase() === targetApt && (b.status === 'Unpaid' || b.status === 'Overdue'));
+    const allBills = await listBillsWithDetailsDb(targetApt);
+    const unpaidBills = allBills.filter(b => b.status === 'Unpaid' || b.status === 'Overdue');
 
     const totalDebt = unpaidBills.reduce((sum, b) => sum + b.total_amount, 0);
 

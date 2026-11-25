@@ -7,6 +7,7 @@ import {
   createFacilityBooking, 
   getFacilityMonthlyQuota, 
   getFacilityBookings,
+  syncFacilityBookingsFromDb,
   FacilityBooking 
 } from '@/lib/facilityStore';
 import { useLanguage } from '@/lib/languageContext';
@@ -29,6 +30,9 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
 
   useEffect(() => {
     setQuota(getFacilityMonthlyQuota(aptCode));
+    syncFacilityBookingsFromDb(aptCode)
+      .then(() => setQuota(getFacilityMonthlyQuota(aptCode)))
+      .catch((err) => console.error('Lỗi đồng bộ tiện ích:', err));
   }, [aptCode]);
 
   const handleBooking = (e: React.FormEvent) => {

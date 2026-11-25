@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/guard';
-import { 
-  getEkycRequests, 
-  getEkycForUser, 
-  submitEkycRequest, 
-  approveEkycRequest, 
+import {
+  getEkycRequests,
+  getEkycForUser,
+  submitEkycRequest,
+  approveEkycRequest,
   rejectEkycRequest,
   confirmEkycByOwner,
 } from '@/lib/ekycStore';
@@ -55,39 +55,66 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { action } = body;
 
+    let sessionRole: string | undefined;
+    let sessionApt: string | null = null;
+
     if (action === 'APPROVE' || action === 'REJECT') {
       const adminGuard = await requireAuth(['ADMIN']);
       if (!adminGuard.ok) return adminGuard.response;
+      sessionRole = adminGuard.session.role;
+      sessionApt = adminGuard.session.apartment_code;
     } else if (action === 'CONFIRM_BY_OWNER') {
       const ownerGuard = await requireAuth(['ADMIN', 'OWNER']);
       if (!ownerGuard.ok) return ownerGuard.response;
+      sessionRole = ownerGuard.session.role;
+      sessionApt = ownerGuard.session.apartment_code;
     } else {
       const userGuard = await requireAuth(['ADMIN', 'OWNER', 'TENANT']);
       if (!userGuard.ok) return userGuard.response;
+      sessionRole = userGuard.session.role;
+      sessionApt = userGuard.session.apartment_code;
     }
 
     // 1. Resident Submits e-KYC
     if (action === 'SUBMIT') {
-      const { 
-        userId, 
-        fullName, 
-        roleLabel, 
-        apartmentCode, 
-        phone, 
-        email, 
-        idCardNo, 
-        idDate, 
-        idPlace, 
-        dob, 
-        pob, 
-        avatarUrl, 
-        idCardFrontUrl, 
+      const {
+        userId,
+        fullName,
+        roleLabel,
+        apartmentCode,
+        phone,
+        email,
+        idCardNo,
+        idDate,
+        idPlace,
+        dob,
+        pob,
+        avatarUrl,
+        idCardFrontUrl,
         idCardBackUrl,
         faceSamples,
-        faceScore,
         isFamilyMemberSelfEnroll,
         submittedByRole
       } = body;
+
+      const resolvedApt = (
+        sessionRole === 'ADMIN'
+          ? apartmentCode
+          : sessionApt || apartmentCode
+      )?.trim();
+
+      if (!resolvedApt) {
+        return NextResponse.json(
+          { success: false, message: 'Vui lòng cung cấp mã căn hộ hợp lệ khi gửi hồ sơ e-KYC.' },
+          { status: 400 }
+        );
+      }
+
+      // Không dùng isSimulation và faceScore do client gửi: tự tính điểm phía server,
+      // nếu không xác minh tự động được thì ghi 0 (chưa xác minh) để BQL duyệt thủ công.
+      const faceSource = faceSamples?.front || avatarUrl || '';
+      const serverBio = verifyFaceWithCccd(faceSource, idCardFrontUrl || '');
+      const verifiedServerScore = !serverBio.isSimulation ? serverBio.similarity : 0;
 
       const isPendingOwner = isFamilyMemberSelfEnroll || (submittedByRole === 'TENANT');
       const targetStatus = isPendingOwner ? 'PENDING_OWNER' : 'PENDING';
@@ -96,7 +123,7 @@ export async function POST(req: Request) {
         userId: userId || phone,
         fullName,
         roleLabel,
-        apartmentCode: apartmentCode || 'CH-06',
+        apartmentCode: resolvedApt,
         phone,
         email,
         idCardNo,
@@ -108,16 +135,15 @@ export async function POST(req: Request) {
         idCardFrontUrl: idCardFrontUrl || '',
         idCardBackUrl: idCardBackUrl || '',
         faceSamples,
-        faceScore: typeof faceScore === 'number' ? faceScore : 0,
+        faceScore: verifiedServerScore,
         status: targetStatus,
-        isSimulation: !!body.isSimulation,
-        algorithm: body.algorithm || 'PERCEPTUAL_COSINE_SIMILARITY',
+        isSimulation: false,
+        algorithm: serverBio.isSimulation ? 'MANUAL_BQL_VERIFICATION' : 'PERCEPTUAL_COSINE_SIMILARITY',
       });
 
       // Synchronize apartment member face status
       try {
-        const targetApt = apartmentCode || 'CH-06';
-        updateApartmentMember(targetApt, userId || phone, {
+        updateApartmentMember(resolvedApt, userId || phone, {
           faceStatus: isPendingOwner ? 'Chờ Chủ Hộ Xác Nhận' : 'Đang Chờ BQL Phê Duyệt',
           avatarUrl: avatarUrl,
           idCard: idCardNo,
@@ -129,7 +155,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        message: isPendingOwner 
+        message: isPendingOwner
           ? 'Hồ sơ định danh e-KYC đã được gửi tới Chủ Hộ để xác nhận trước khi chuyển Ban Quản Lý.'
           : 'Hồ sơ định danh e-KYC đã được gửi đến Ban Quản Lý thẩm duyệt thành công.',
         ekyc: newRequest,
@@ -182,12 +208,13 @@ export async function POST(req: Request) {
           pob: approved.pob,
           avatar_url: approved.avatarUrl,
         });
-        const approvedApt = approved.apartmentCode || 'CH-06';
-        updateApartmentMember(approvedApt, approved.userId, {
-          faceStatus: 'Đã Kích Hoạt FaceID',
-          avatarUrl: approved.avatarUrl,
-          idCard: approved.idCardNo,
-        });
+        if (approved.apartmentCode) {
+          updateApartmentMember(approved.apartmentCode, approved.userId, {
+            faceStatus: 'Đã Kích Hoạt FaceID',
+            avatarUrl: approved.avatarUrl,
+            idCard: approved.idCardNo,
+          });
+        }
       } catch (err) {
         console.warn('Sync userStore on ekyc approve error:', err);
       }
@@ -218,10 +245,11 @@ export async function POST(req: Request) {
       }
 
       try {
-        const rejectedApt = rejected.apartmentCode || 'CH-06';
-        updateApartmentMember(rejectedApt, rejected.userId, {
-          faceStatus: 'BQL Yêu Cầu Chụp Lại',
-        });
+        if (rejected.apartmentCode) {
+          updateApartmentMember(rejected.apartmentCode, rejected.userId, {
+            faceStatus: 'BQL Yêu Cầu Chụp Lại',
+          });
+        }
         updateEnrolledFaceStatus(rejected.userId, 'REVOKED');
         if (rejected.phone) {
           updateEnrolledFaceStatus(rejected.phone, 'REVOKED');
@@ -241,8 +269,8 @@ export async function POST(req: Request) {
     if (action === 'REVOKE') {
       const { id, reason, approverName } = body;
       const revoked = rejectEkycRequest(
-        id, 
-        reason || 'Ban Quản Lý đã tạm khóa / thu hồi quyền ra vào FaceID theo quy định vận hành.', 
+        id,
+        reason || 'Ban Quản Lý đã tạm khóa / thu hồi quyền ra vào FaceID theo quy định vận hành.',
         approverName || 'VinHomes Manager'
       );
       if (!revoked) {
@@ -250,10 +278,11 @@ export async function POST(req: Request) {
       }
 
       try {
-        const revokedApt = revoked.apartmentCode || 'CH-06';
-        updateApartmentMember(revokedApt, revoked.userId, {
-          faceStatus: 'BQL Tạm Khóa / Thu Hồi Quyền',
-        });
+        if (revoked.apartmentCode) {
+          updateApartmentMember(revoked.apartmentCode, revoked.userId, {
+            faceStatus: 'BQL Tạm Khóa / Thu Hồi Quyền',
+          });
+        }
         updateEnrolledFaceStatus(revoked.userId, 'REVOKED');
         if (revoked.phone) {
           updateEnrolledFaceStatus(revoked.phone, 'REVOKED');

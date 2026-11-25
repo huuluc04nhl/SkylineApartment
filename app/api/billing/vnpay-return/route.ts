@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { verifyVnpayChecksum } from '@/lib/vnpay';
-import { payBill } from '@/lib/billingStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,11 +33,7 @@ export async function GET(req: Request) {
     }
 
     if (vnp_ResponseCode === '00') {
-      // Thanh toán thành công, thực hiện gạch nợ tự động trên server
-      if (billId) {
-        payBill(billId, 'VNPAY', vnp_TransactionNo, vnp_BankCode);
-      }
-
+      // Việc gạch nợ chính thức được thực hiện qua Server-to-Server IPN (/api/billing/vnpay-ipn)
       return NextResponse.redirect(
         `${baseUrl}/portal?tab=resident-finance&vnp_status=success&billId=${encodeURIComponent(billId)}&transId=${encodeURIComponent(vnp_TransactionNo)}&amount=${vnp_Amount}&bank=${encodeURIComponent(vnp_BankCode)}`
       );

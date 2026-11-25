@@ -330,15 +330,21 @@ export default function AiHubCenter() {
                 </div>
               </div>
 
-              {/* Action Button: Run Simulation */}
-              <button
-                onClick={() => handleRunSimulation(item.name, item.simResult)}
-                disabled={isRunning}
-                className="w-full py-2 bg-[#161B22] hover:bg-[#C5A880] text-gray-300 hover:text-[#0D1117] border border-gray-700 hover:border-[#C5A880] text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
-              >
-                {isRunning ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-[#C5A880] group-hover:text-[#0D1117]" />}
-                {isRunning ? t('Đang Chạy Mô Hình AI...', 'Running AI Model...') : item.action}
-              </button>
+              {/* Action Button: Run Simulation (chỉ bật khi NEXT_PUBLIC_DEMO_MODE=true) */}
+              {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ? (
+                <button
+                  onClick={() => handleRunSimulation(item.name, item.simResult)}
+                  disabled={isRunning}
+                  className="w-full py-2 bg-[#161B22] hover:bg-[#C5A880] text-gray-300 hover:text-[#0D1117] border border-gray-700 hover:border-[#C5A880] text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                >
+                  {isRunning ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-[#C5A880] group-hover:text-[#0D1117]" />}
+                  {isRunning ? t('Đang Chạy Mô Hình AI...', 'Running AI Model...') : `[DEMO] ${item.action}`}
+                </button>
+              ) : (
+                <div className="w-full py-2 bg-[#161B22]/60 text-gray-500 border border-[#222B35] text-[11px] font-mono text-center">
+                  {t('Mô phỏng đã tắt (NEXT_PUBLIC_DEMO_MODE=false)', 'Simulation disabled (NEXT_PUBLIC_DEMO_MODE=false)')}
+                </div>
+              )}
             </div>
           );
         })}

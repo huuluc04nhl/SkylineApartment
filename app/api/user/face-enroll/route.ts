@@ -94,7 +94,10 @@ export async function POST(req: Request) {
 
       if (updateErr) throw new Error(updateErr.message);
 
-      const targetApt = apartmentCode || existingProfile.apartment_code || session.apartment_code || 'CH-06';
+      const targetApt = (apartmentCode || existingProfile.apartment_code || session.apartment_code || '').trim();
+      if (!targetApt) {
+        return NextResponse.json({ success: false, message: 'Thiếu mã căn hộ hợp lệ.' }, { status: 400 });
+      }
       updateApartmentMember(targetApt, userId, {
         faceStatus: 'Đang Chờ BQL Phê Duyệt',
       });
@@ -147,7 +150,10 @@ export async function POST(req: Request) {
     }
 
     const existingUser = session.profile;
-    const targetApt = apartmentCode || existingUser.apartment_code || 'CH-06';
+    const targetApt = (apartmentCode || existingUser.apartment_code || '').trim();
+    if (!targetApt) {
+      return NextResponse.json({ success: false, message: 'Thiếu mã căn hộ hợp lệ.' }, { status: 400 });
+    }
 
     // Xác định luồng: Nếu là Người nhà tự quét (TENANT) -> status = 'PENDING_OWNER' (chờ chủ hộ duyệt)
     // Nếu do Chủ hộ đích thân quét hoặc Chủ hộ tự làm -> status = 'PENDING' (gửi thẳng BQL)

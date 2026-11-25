@@ -117,7 +117,7 @@ export async function POST(req: Request) {
         idCard: provisionedUser.id_number || provisionedUser.id_card_no,
         apartmentCode: provisionedUser.apartment_code,
         role: 'OWNER',
-        initialPassword: '•••••••• (12345678)',
+        initialPassword: '•••••••• (Được cấp qua email/đặt lại mật khẩu)',
         provisionedAt: new Date().toISOString()
       },
       protocol: finalProtocol

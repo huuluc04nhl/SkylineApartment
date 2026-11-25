@@ -113,6 +113,7 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
           meter_type: ocrResult.confidence < 0.85 ? meterType : ocrResult.confidence > 0 ? meterType : 'ELECTRIC',
           reading: Number(editReading),
           confidence: ocrResult.confidence,
+          source: Number(editReading) === ocrResult.reading ? 'ocr' : 'manual',
           period: '2026-09',
           is_confirmed: isHumanConfirmed,
           image_url: imagePreview?.slice(0, 50) + '...'

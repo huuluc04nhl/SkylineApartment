@@ -178,6 +178,30 @@ export function getAllFacilityBookings(): FacilityBooking[] {
 }
 
 /**
+ * Đồng bộ danh sách đặt chỗ tiện ích từ Supabase DB về client
+ */
+export async function syncFacilityBookingsFromDb(aptCode?: string): Promise<FacilityBooking[]> {
+  if (typeof window === 'undefined') return [];
+  const params = new URLSearchParams();
+  if (aptCode) params.set('aptCode', aptCode);
+  const res = await fetch(`/api/facilities/bookings${params.toString() ? `?${params.toString()}` : ''}`);
+  if (!res.ok) {
+    throw new Error(`Không thể tải lịch sử đặt tiện ích (${res.status})`);
+  }
+  const data = await res.json();
+  const dbBookings: FacilityBooking[] = Array.isArray(data?.bookings) ? data.bookings : [];
+  if (!aptCode) {
+    saveAllFacilityBookings(dbBookings);
+  } else {
+    const existing = getAllFacilityBookings().filter(
+      (b) => (b.aptCode || '').trim().toUpperCase() !== aptCode.trim().toUpperCase()
+    );
+    saveAllFacilityBookings([...dbBookings, ...existing]);
+  }
+  return dbBookings;
+}
+
+/**
  * Lưu toàn bộ danh sách đặt chỗ của tòa nhà
  */
 export function saveAllFacilityBookings(all: FacilityBooking[]): void {
@@ -618,6 +642,11 @@ export function createFacilityBooking(
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('skyline_facility_booked', { detail: newBooking }));
+    fetch('/api/facilities/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newBooking),
+    }).catch((err) => console.error('Lỗi lưu đặt tiện ích lên Supabase:', err));
   }
 
   return { success: true, bookings: aptList, newBooking };

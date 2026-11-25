@@ -1,5 +1,5 @@
 // ============================================================================
-// DATA STORE & TYPE DEFINITIONS - SKYLINE SMART RESIDENCE (PURE IN-DATABASE)
+// DATA STORE & TYPE DEFINITIONS - SKYLINE SMART RESIDENCE
 // Single Source of Truth from skylineDb. Zero LocalStorage. Zero Fake Mocks.
 // ============================================================================
 
@@ -595,7 +595,7 @@ export function addOrUpdateDemoUser(user: User): User {
       full_name: user.full_name,
       phone: user.phone || user.username,
       email: user.email || `${user.username}@skyline.vn`,
-      password_hash: user.password || '12345678',
+      password_hash: user.password || '',
       id_card_no: user.id_card_no || user.id_card_number || '',
       avatar_url: user.avatar_url,
       relationship: user.relationship,

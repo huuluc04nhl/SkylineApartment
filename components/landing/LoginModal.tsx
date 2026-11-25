@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  X, 
-  Lock, 
+import {
+  X,
+  Lock,
   Mail,
-  Smartphone, 
-  ScanFace, 
-  Sparkles, 
-  RefreshCw, 
-  CheckCircle2, 
+  Smartphone,
+  ScanFace,
+  Sparkles,
+  RefreshCw,
+  CheckCircle2,
   AlertCircle,
   Eye,
   EyeOff,
@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import SkylineLogo from '@/components/shared/SkylineLogo';
 import { useAuth } from '@/lib/authContext';
+import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { useLanguage } from '@/lib/languageContext';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { analyzeVideoLighting, LightingAnalysisResult, extractDescriptorFromPixels } from '@/lib/biometricFaceEngine';
@@ -53,7 +54,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
   const { t, language, isEn } = useLanguage();
 
   const [authMethod, setAuthMethod] = useState<AuthMethod>('CREDENTIALS');
-  
+
   // 1. Unified Credentials state (Email / Username / Password)
   const [account, setAccount] = useState(defaultAccount);
   const [password, setPassword] = useState('');
@@ -176,7 +177,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
   };
 
   // 2. Handle Send Phone OTP
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
     const cleanPhone = cleanPhoneNumber(phone);
     const phoneErr = getPhoneValidationError(cleanPhone);
     if (phoneErr) {
@@ -184,7 +185,25 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
       return;
     }
     setErrorMessage(null);
-    const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    if (process.env.NEXT_PUBLIC_DEMO_MODE !== 'true') {
+      const e164 = cleanPhone.startsWith('+') ? cleanPhone : `+84${cleanPhone.replace(/^0/, '')}`;
+      const { error } = await createSupabaseBrowserClient().auth.signInWithOtp({ phone: e164 });
+      if (error) {
+        setErrorMessage(`Không thể gửi OTP qua Supabase Auth: ${error.message}`);
+        return;
+      }
+      setGeneratedOtp('');
+      setIsOtpSent(true);
+      setCountdown(60);
+      setIsCounting(true);
+      setOtpCode('');
+      return;
+    }
+
+    const buf = new Uint32Array(1);
+    window.crypto.getRandomValues(buf);
+    const randomCode = String(100000 + (buf[0] % 900000));
     setGeneratedOtp(randomCode);
     setIsOtpSent(true);
     setCountdown(60);
@@ -205,7 +224,18 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
       return;
     }
 
-    if (otpCode.trim() !== generatedOtp && otpCode.trim() !== '886699') {
+    if (process.env.NEXT_PUBLIC_DEMO_MODE !== 'true') {
+      const e164 = cleanPhone.startsWith('+') ? cleanPhone : `+84${cleanPhone.replace(/^0/, '')}`;
+      const { error } = await createSupabaseBrowserClient().auth.verifyOtp({
+        phone: e164,
+        token: otpCode.trim(),
+        type: 'sms',
+      });
+      if (error) {
+        setErrorMessage(`Xác thực OTP thất bại: ${error.message}`);
+        return;
+      }
+    } else if (!generatedOtp || otpCode.trim() !== generatedOtp) {
       setErrorMessage('Mã OTP không chính xác. Vui lòng kiểm tra lại!');
       return;
     }
@@ -241,7 +271,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
       }
       element.play().then(() => {
         setIsCameraActive(true);
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, []);
 
@@ -266,10 +296,10 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { 
+          video: {
             facingMode: 'user',
-            width: { ideal: 1280 }, 
-            height: { ideal: 720 }, 
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
           },
           audio: false,
         });
@@ -371,7 +401,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
       if (document.visibilityState === 'visible' && authMethod === 'FACE_ID' && isOpen && faceInputMode === 'CAMERA') {
         if (videoRef.current && streamRef.current) {
           if (videoRef.current.paused) {
-            videoRef.current.play().catch(() => {});
+            videoRef.current.play().catch(() => { });
           }
         } else {
           startCamera();
@@ -531,7 +561,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
       if (result.success && result.user) {
         setFaceScanStatus('SUCCESS');
         setScanStepText('Nhận diện khuôn mặt thành công!');
-        const cleanApt = result.user.apartment_code || 'CH-06';
+        const cleanApt = result.user.apartment_code || '';
         setMatchedFaceResult({
           name: result.user.full_name || (result.user as any).fullname || (result.user as any).name || '',
           apt: cleanApt,
@@ -560,7 +590,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
       <div key={language} className="relative w-full max-w-md bg-[#0D1117] border border-[#C5A880]/80 p-5 sm:p-7 shadow-2xl text-white space-y-4 select-none rounded-none max-h-[92vh] overflow-y-auto">
-        
+
         {/* Language Switcher */}
         <div className="absolute top-4 left-4 z-10">
           <LanguageSwitcher variant="inline" />
@@ -593,17 +623,16 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
         <div className="grid grid-cols-3 gap-1 bg-[#121820] p-1 border border-[#222B35] rounded-none text-xs">
           <button
             type="button"
-            onClick={() => { 
-              setAuthMethod('CREDENTIALS'); 
-              setErrorMessage(null); 
-              setSuccessMessage(null); 
+            onClick={() => {
+              setAuthMethod('CREDENTIALS');
+              setErrorMessage(null);
+              setSuccessMessage(null);
               stopCamera();
             }}
-            className={`py-2 px-1 text-center font-medium transition-all rounded-none flex flex-col items-center justify-center gap-1 min-w-0 ${
-              authMethod === 'CREDENTIALS'
-                ? 'bg-[#C5A880] text-[#0D1117] font-bold shadow'
-                : 'text-gray-400 hover:text-white hover:bg-[#1A2330]'
-            }`}
+            className={`py-2 px-1 text-center font-medium transition-all rounded-none flex flex-col items-center justify-center gap-1 min-w-0 ${authMethod === 'CREDENTIALS'
+              ? 'bg-[#C5A880] text-[#0D1117] font-bold shadow'
+              : 'text-gray-400 hover:text-white hover:bg-[#1A2330]'
+              }`}
           >
             <Mail className="w-3.5 h-3.5 shrink-0" />
             <span className="text-[10px] sm:text-[11px] leading-tight text-center break-words min-w-0">{t('Email / Mật Khẩu')}</span>
@@ -611,17 +640,16 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
 
           <button
             type="button"
-            onClick={() => { 
-              setAuthMethod('PHONE_OTP'); 
-              setErrorMessage(null); 
-              setSuccessMessage(null); 
+            onClick={() => {
+              setAuthMethod('PHONE_OTP');
+              setErrorMessage(null);
+              setSuccessMessage(null);
               stopCamera();
             }}
-            className={`py-2 px-1 text-center font-medium transition-all rounded-none flex flex-col items-center justify-center gap-1 min-w-0 ${
-              authMethod === 'PHONE_OTP'
-                ? 'bg-[#C5A880] text-[#0D1117] font-bold shadow'
-                : 'text-gray-400 hover:text-white hover:bg-[#1A2330]'
-            }`}
+            className={`py-2 px-1 text-center font-medium transition-all rounded-none flex flex-col items-center justify-center gap-1 min-w-0 ${authMethod === 'PHONE_OTP'
+              ? 'bg-[#C5A880] text-[#0D1117] font-bold shadow'
+              : 'text-gray-400 hover:text-white hover:bg-[#1A2330]'
+              }`}
           >
             <Smartphone className="w-3.5 h-3.5 shrink-0" />
             <span className="text-[10px] sm:text-[11px] leading-tight text-center break-words min-w-0">{t('SĐT & Mã OTP')}</span>
@@ -629,18 +657,17 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
 
           <button
             type="button"
-            onClick={() => { 
-              setAuthMethod('FACE_ID'); 
-              setErrorMessage(null); 
-              setSuccessMessage(null); 
+            onClick={() => {
+              setAuthMethod('FACE_ID');
+              setErrorMessage(null);
+              setSuccessMessage(null);
               setFaceScanStatus('IDLE');
               setFaceInputMode('CAMERA');
             }}
-            className={`py-2 px-1 text-center font-medium transition-all rounded-none flex flex-col items-center justify-center gap-1 relative min-w-0 ${
-              authMethod === 'FACE_ID'
-                ? 'bg-[#C5A880] text-[#0D1117] font-bold shadow'
-                : 'text-gray-400 hover:text-white hover:bg-[#1A2330]'
-            }`}
+            className={`py-2 px-1 text-center font-medium transition-all rounded-none flex flex-col items-center justify-center gap-1 relative min-w-0 ${authMethod === 'FACE_ID'
+              ? 'bg-[#C5A880] text-[#0D1117] font-bold shadow'
+              : 'text-gray-400 hover:text-white hover:bg-[#1A2330]'
+              }`}
           >
             <ScanFace className="w-3.5 h-3.5 shrink-0" />
             <span className="text-[10px] sm:text-[11px] leading-tight text-center break-words min-w-0">{t('FaceID AI')}</span>
@@ -732,11 +759,10 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
             <button
               type="submit"
               disabled={isSubmitting || !account.trim() || !password}
-              className={`w-full py-2.5 text-xs uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 rounded-none shadow-lg ${
-                account.trim() && password && !isSubmitting
-                  ? 'bg-[#C5A880] hover:bg-white text-[#0D1117]'
-                  : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
-              }`}
+              className={`w-full py-2.5 text-xs uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 rounded-none shadow-lg ${account.trim() && password && !isSubmitting
+                ? 'bg-[#C5A880] hover:bg-white text-[#0D1117]'
+                : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+                }`}
             >
               {isSubmitting ? (
                 <>
@@ -777,11 +803,10 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                   type="button"
                   onClick={handleSendOtp}
                   disabled={isCounting}
-                  className={`px-3 py-2 text-xs font-semibold uppercase tracking-wider rounded-none transition-all flex items-center gap-1.5 whitespace-nowrap ${
-                    isCounting
-                      ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
-                      : 'bg-[#C5A880] text-[#0D1117] hover:bg-white font-bold shadow'
-                  }`}
+                  className={`px-3 py-2 text-xs font-semibold uppercase tracking-wider rounded-none transition-all flex items-center gap-1.5 whitespace-nowrap ${isCounting
+                    ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+                    : 'bg-[#C5A880] text-[#0D1117] hover:bg-white font-bold shadow'
+                    }`}
                 >
                   {isCounting ? (
                     <>
@@ -795,8 +820,8 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
               </div>
             </div>
 
-            {/* OTP Message Simulation */}
-            {isOtpSent && (
+            {/* OTP Message Simulation (chỉ bật khi NEXT_PUBLIC_DEMO_MODE=true) */}
+            {isOtpSent && process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && generatedOtp && (
               <div className="p-3 bg-[#121E2A] border border-[#C5A880]/70 rounded-none text-xs space-y-1.5 animate-fadeIn">
                 <div className="flex items-center justify-between text-[#C5A880] font-bold">
                   <span className="flex items-center gap-1.5">
@@ -839,11 +864,10 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
               <button
                 type="submit"
                 disabled={isSubmitting || !isOtpSent || otpCode.length < 6}
-                className={`w-full py-2.5 text-xs uppercase tracking-widest font-bold rounded-none transition-all flex items-center justify-center gap-2 ${
-                  isOtpSent && otpCode.length === 6
-                    ? 'bg-[#C5A880] hover:bg-white text-[#0D1117] shadow-lg'
-                    : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
-                }`}
+                className={`w-full py-2.5 text-xs uppercase tracking-widest font-bold rounded-none transition-all flex items-center justify-center gap-2 ${isOtpSent && otpCode.length === 6
+                  ? 'bg-[#C5A880] hover:bg-white text-[#0D1117] shadow-lg'
+                  : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
+                  }`}
               >
                 {isSubmitting ? (
                   <>
@@ -889,13 +913,12 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
             </div>
 
             {/* Central Biometric Viewport - Always Keeps Video Mounted to Avoid Black Screen */}
-            <div className={`relative w-full h-64 sm:h-72 bg-[#06090E] border rounded-none overflow-hidden transition-all duration-300 flex items-center justify-center ${
-              faceScanStatus === 'SUCCESS'
-                ? 'border-emerald-500/80 shadow-[0_0_25px_rgba(16,185,129,0.35)]'
-                : faceScanStatus === 'FAILED'
+            <div className={`relative w-full h-64 sm:h-72 bg-[#06090E] border rounded-none overflow-hidden transition-all duration-300 flex items-center justify-center ${faceScanStatus === 'SUCCESS'
+              ? 'border-emerald-500/80 shadow-[0_0_25px_rgba(16,185,129,0.35)]'
+              : faceScanStatus === 'FAILED'
                 ? 'border-rose-500/80 shadow-[0_0_20px_rgba(244,63,94,0.3)]'
                 : 'border-[#C5A880]/40 shadow-[0_0_20px_rgba(197,168,128,0.1)]'
-            }`}>
+              }`}>
 
               {/* Shutter Flash Animation when capturing */}
               {isShutterFlash && (
@@ -912,11 +935,10 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                     muted
                     onLoadedMetadata={() => {
                       setIsCameraActive(true);
-                      videoRef.current?.play().catch(() => {});
+                      videoRef.current?.play().catch(() => { });
                     }}
-                    className={`w-full h-full object-cover transform scale-x-[-1] transition-opacity duration-300 ${
-                      isCameraActive && !cameraError ? 'opacity-100' : 'opacity-0'
-                    }`}
+                    className={`w-full h-full object-cover transform scale-x-[-1] transition-opacity duration-300 ${isCameraActive && !cameraError ? 'opacity-100' : 'opacity-0'
+                      }`}
                   />
 
                   {/* Connecting / Loading Overlay */}
@@ -983,7 +1005,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                 </div>
               ) : (
                 /* Upload Dropzone Placeholder */
-                <div 
+                <div
                   onClick={() => fileUploadInputRef.current?.click()}
                   className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3 cursor-pointer hover:bg-[#0E1520] transition-colors"
                 >
@@ -1011,8 +1033,8 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                   )}
                   <span className={
                     lighting.status === 'TOO_DARK' ? 'text-rose-400 font-semibold' :
-                    lighting.status === 'TOO_BRIGHT' ? 'text-amber-400 font-semibold' :
-                    'text-emerald-400 font-semibold'
+                      lighting.status === 'TOO_BRIGHT' ? 'text-amber-400 font-semibold' :
+                        'text-emerald-400 font-semibold'
                   }>
                     {lighting.label} ({lighting.scorePercent}%)
                   </span>
@@ -1021,19 +1043,18 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
 
               {/* Clean Biometric Face Guide Oval (Không rườm rà đường kẻ) */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                <div className={`w-36 h-48 sm:w-40 sm:h-52 border rounded-[50%] transition-all duration-300 ${
-                  faceScanStatus === 'SUCCESS'
-                    ? 'border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.5)]'
-                    : faceScanStatus === 'FAILED'
+                <div className={`w-36 h-48 sm:w-40 sm:h-52 border rounded-[50%] transition-all duration-300 ${faceScanStatus === 'SUCCESS'
+                  ? 'border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.5)]'
+                  : faceScanStatus === 'FAILED'
                     ? 'border-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.3)]'
                     : (faceScanStatus === 'SCANNING' || faceScanStatus === 'LIVENESS' || faceScanStatus === 'MATCHING')
-                    ? 'border-[#C5A880] shadow-[0_0_15px_rgba(197,168,128,0.35)] animate-pulse'
-                    : lighting?.status === 'TOO_DARK'
-                    ? 'border-rose-500/60'
-                    : lighting?.status === 'TOO_BRIGHT'
-                    ? 'border-amber-500/60'
-                    : 'border-[#C5A880]/35'
-                }`} />
+                      ? 'border-[#C5A880] shadow-[0_0_15px_rgba(197,168,128,0.35)] animate-pulse'
+                      : lighting?.status === 'TOO_DARK'
+                        ? 'border-rose-500/60'
+                        : lighting?.status === 'TOO_BRIGHT'
+                          ? 'border-amber-500/60'
+                          : 'border-[#C5A880]/35'
+                  }`} />
               </div>
 
               {/* Minimalist Floating Status - Chỉ hiển thị khi IDLE hoặc khi có kết quả SUCCESS/FAILED, không hiển thị chồng lúc đang quét */}
@@ -1043,8 +1064,8 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                     {faceScanStatus === 'IDLE' && (
                       <span className={
                         lighting?.status === 'TOO_DARK' ? 'text-rose-300 flex items-center gap-1.5' :
-                        lighting?.status === 'TOO_BRIGHT' ? 'text-amber-300 flex items-center gap-1.5' :
-                        'text-gray-300'
+                          lighting?.status === 'TOO_BRIGHT' ? 'text-amber-300 flex items-center gap-1.5' :
+                            'text-gray-300'
                       }>
                         {faceInputMode === 'CAMERA' ? (
                           lighting?.status === 'TOO_DARK' ? (
@@ -1122,11 +1143,10 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                 }
               }}
               disabled={faceScanStatus === 'SCANNING' || faceScanStatus === 'LIVENESS' || faceScanStatus === 'MATCHING'}
-              className={`w-full py-3 text-xs uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 rounded-none shadow-lg ${
-                faceScanStatus === 'IDLE' || faceScanStatus === 'FAILED'
-                  ? 'bg-[#C5A880] hover:bg-white text-[#0D1117] active:scale-[0.99]'
-                  : 'bg-[#C5A880] text-[#0D1117] opacity-90 cursor-wait'
-              }`}
+              className={`w-full py-3 text-xs uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 rounded-none shadow-lg ${faceScanStatus === 'IDLE' || faceScanStatus === 'FAILED'
+                ? 'bg-[#C5A880] hover:bg-white text-[#0D1117] active:scale-[0.99]'
+                : 'bg-[#C5A880] text-[#0D1117] opacity-90 cursor-wait'
+                }`}
             >
               {faceScanStatus === 'SCANNING' || faceScanStatus === 'LIVENESS' || faceScanStatus === 'MATCHING' ? (
                 <>
@@ -1140,8 +1160,8 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                     {faceInputMode === 'UPLOAD' && !uploadedFaceImage
                       ? t('Chọn Ảnh Để Nhận Diện')
                       : faceScanStatus === 'FAILED'
-                      ? t('Quét Lại Khuôn Mặt')
-                      : t('Bắt Đầu Nhận Diện Khuôn Mặt')}
+                        ? t('Quét Lại Khuôn Mặt')
+                        : t('Bắt Đầu Nhận Diện Khuôn Mặt')}
                   </span>
                 </>
               )}

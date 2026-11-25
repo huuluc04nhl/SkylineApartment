@@ -860,7 +860,10 @@ export default function EkycApproval() {
               const displayScore = inspectingRequest.faceScore || bio.similarity;
               const isEligible = displayScore >= 85.0 && card.isValid;
               const isSimulated = !!(inspectingRequest as any).isSimulation || !!bio.isSimulation;
-              const algorithmTag = isSimulated ? 'MÔ PHỎNG (Demo Preset)' : 'THUẬT TOÁN THẬT (Cosine Sim)';
+              const isDemo = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+              const algorithmTag = isSimulated
+                ? (isDemo ? 'MÔ PHỎNG (Demo Preset)' : 'CHƯA XÁC MINH TỰ ĐỘNG (Duyệt thủ công)')
+                : 'THUẬT TOÁN THẬT (Cosine Sim)';
 
               return (
                 <div className={`p-4 rounded-none border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-md ${

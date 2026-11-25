@@ -184,24 +184,28 @@ export default function DeviceHealth() {
   const handleScanAll = () => {
     setIsScanning(true);
     setTimeout(() => {
-      const updated = devices.map(d => {
-        const delta = (Math.random() * 2 - 1) * 0.5;
-        const newScore = Math.min(100, Math.max(50, +(d.health_score + delta).toFixed(1)));
-        const newStatus: Device['status'] = newScore >= 80 ? 'Hoạt động tốt' : newScore >= 60 ? 'Cần kiểm tra' : 'Cảnh báo hỏng';
-        return {
-          ...d,
-          health_score: newScore,
-          status: newStatus
-        };
-      });
-      setDevices(updated);
-      saveStoredDevices(updated);
+      if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+        const updated = devices.map((d, idx) => {
+          const delta = idx % 2 === 0 ? 0.2 : -0.2;
+          const newScore = Math.min(100, Math.max(50, +(d.health_score + delta).toFixed(1)));
+          const newStatus: Device['status'] = newScore >= 80 ? 'Hoạt động tốt' : newScore >= 60 ? 'Cần kiểm tra' : 'Cảnh báo hỏng';
+          return {
+            ...d,
+            health_score: newScore,
+            status: newStatus
+          };
+        });
+        setDevices(updated);
+        saveStoredDevices(updated);
+      }
       setIsScanning(false);
       showToast(
-        t('Hoàn Tất Quét Chẩn Đoán BMS IoT', 'IoT BMS Diagnostic Completed'),
-        t(`Đã đồng bộ dữ liệu telemetrics thời gian thực cho ${devices.length} trạm thiết bị. Hệ thống vận hành ổn định.`, `Synchronized real-time telemetrics for ${devices.length} equipment stations. All systems normal.`)
+        t('Hoàn Tất Kiểm Tra Trạng Thái Thiết Bị', 'Device Status Check Completed'),
+        process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+          ? t(`[DEMO] Đã chạy mô phỏng cập nhật cho ${devices.length} trạm thiết bị.`, `[DEMO] Simulated refresh for ${devices.length} equipment stations.`)
+          : t(`Đã kiểm tra danh sách ${devices.length} thiết bị hiện có trong hệ thống.`, `Checked ${devices.length} existing equipment stations in the system.`)
       );
-    }, 1200);
+    }, 600);
   };
 
   // Mở modal Thêm Thiết Bị

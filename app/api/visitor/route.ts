@@ -36,8 +36,8 @@ export async function GET(request: Request) {
         pass.apartmentCode !== guard.session.apartment_code
       ) {
         return NextResponse.json(
-          { success: false, message: 'Không có quyền xem thẻ khách của căn hộ khác.' },
-          { status: 403 }
+          { success: false, message: 'Không tìm thấy thông tin thẻ khách thăm hợp lệ.' },
+          { status: 404 }
         );
       }
       return NextResponse.json({
@@ -73,10 +73,14 @@ export async function POST(request: Request) {
       if (!guard.ok) return guard.response;
 
       const { apartmentCode, visitorName, phoneNumber, licensePlate, entryType, validHours, note } = body;
-      const effectiveApt =
+      const effectiveApt = (
         guard.session.role === 'ADMIN'
-          ? apartmentCode || 'CH-06'
-          : guard.session.apartment_code || 'CH-06';
+          ? apartmentCode
+          : guard.session.apartment_code
+      )?.trim();
+      if (!effectiveApt) {
+        return NextResponse.json({ success: false, message: 'Thiếu mã căn hộ hợp lệ.' }, { status: 400 });
+      }
 
       const pass = generateVisitorPassToken({
         apartmentCode: effectiveApt,

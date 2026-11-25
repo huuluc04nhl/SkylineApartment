@@ -275,3 +275,124 @@ export async function deleteTicketDb(id: string): Promise<void> {
   const { error } = await supabaseAdmin.from('service_tickets').delete().eq('id', id);
   if (error) throw new Error(`Supabase service_tickets delete error: ${error.message}`);
 }
+
+export class TicketRpcError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+function throwMappedRpcError(error: { message: string }): never {
+  const msg = error.message || 'Database RPC error';
+  if (msg.includes('TICKET_NOT_FOUND:') || msg.includes('TECH_NOT_FOUND:')) {
+    throw new TicketRpcError(404, msg.replace(/^(TICKET_NOT_FOUND|TECH_NOT_FOUND):\s*/, ''));
+  }
+  if (msg.includes('INVALID_TRANSITION:') || msg.includes('TECH_NOT_AVAILABLE:')) {
+    throw new TicketRpcError(409, msg.replace(/^(INVALID_TRANSITION|TECH_NOT_AVAILABLE):\s*/, ''));
+  }
+  throw new Error(`Supabase ticket RPC error: ${msg}`);
+}
+
+export async function insertTicketEventDb(params: {
+  ticketId: string;
+  eventType: Database['public']['Tables']['ticket_events']['Insert']['event_type'];
+  oldStatus?: string | null;
+  newStatus?: string | null;
+  actorId?: string | null;
+  actorName?: string | null;
+  actorRole?: string | null;
+  note?: string | null;
+}): Promise<void> {
+  const { error } = await supabaseAdmin.from('ticket_events').insert({
+    id: `EVT-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    ticket_id: params.ticketId,
+    event_type: params.eventType,
+    old_status: params.oldStatus ?? null,
+    new_status: params.newStatus ?? null,
+    actor_id: params.actorId ?? null,
+    actor_name: params.actorName ?? null,
+    actor_role: params.actorRole ?? null,
+    note: params.note ?? null,
+  });
+  if (error) throw new Error(`Supabase ticket_events insert error: ${error.message}`);
+}
+
+export async function assignTicketRpcDb(params: {
+  ticketId: string;
+  technicianId: string;
+  scheduledTime?: string;
+  actorId: string;
+  actorName: string;
+  actorRole: string;
+  autoDispatched?: boolean;
+  aiDispatchReason?: string;
+}): Promise<ExtendedServiceRequest | null> {
+  const { error } = await supabaseAdmin.rpc('assign_ticket_tx', {
+    p_ticket_id: params.ticketId,
+    p_technician_id: params.technicianId,
+    p_scheduled_time: params.scheduledTime || new Date().toISOString(),
+    p_actor_id: params.actorId,
+    p_actor_name: params.actorName,
+    p_actor_role: params.actorRole,
+    p_auto_dispatched: Boolean(params.autoDispatched),
+    p_ai_dispatch_reason: params.aiDispatchReason ?? undefined,
+  });
+  if (error) throwMappedRpcError(error);
+  return getTicketByIdDb(params.ticketId);
+}
+
+export async function startTicketWorkRpcDb(params: {
+  ticketId: string;
+  actorId: string;
+  actorName: string;
+  actorRole: string;
+}): Promise<ExtendedServiceRequest | null> {
+  const { error } = await supabaseAdmin.rpc('start_ticket_work_tx', {
+    p_ticket_id: params.ticketId,
+    p_actor_id: params.actorId,
+    p_actor_name: params.actorName,
+    p_actor_role: params.actorRole,
+  });
+  if (error) throwMappedRpcError(error);
+  return getTicketByIdDb(params.ticketId);
+}
+
+export async function resolveTicketRpcDb(params: {
+  ticketId: string;
+  afterImage?: string | null;
+  actorId: string;
+  actorName: string;
+  actorRole: string;
+  note?: string;
+}): Promise<ExtendedServiceRequest | null> {
+  const { error } = await supabaseAdmin.rpc('resolve_ticket_tx', {
+    p_ticket_id: params.ticketId,
+    p_after_image: params.afterImage ?? '',
+    p_actor_id: params.actorId,
+    p_actor_name: params.actorName,
+    p_actor_role: params.actorRole,
+    p_note: params.note ?? undefined,
+  });
+  if (error) throwMappedRpcError(error);
+  return getTicketByIdDb(params.ticketId);
+}
+
+export async function rejectTicketResolutionRpcDb(params: {
+  ticketId: string;
+  actorId: string;
+  actorName: string;
+  actorRole: string;
+  note?: string;
+}): Promise<ExtendedServiceRequest | null> {
+  const { error } = await supabaseAdmin.rpc('reject_ticket_resolution_tx', {
+    p_ticket_id: params.ticketId,
+    p_actor_id: params.actorId,
+    p_actor_name: params.actorName,
+    p_actor_role: params.actorRole,
+    p_note: params.note ?? undefined,
+  });
+  if (error) throwMappedRpcError(error);
+  return getTicketByIdDb(params.ticketId);
+}

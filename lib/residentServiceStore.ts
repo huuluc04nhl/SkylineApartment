@@ -534,6 +534,14 @@ export function createResidentBooking(params: {
   const nextList = [newBooking, ...currentList];
   saveResidentBookings(nextList);
 
+  if (typeof window !== 'undefined') {
+    fetch('/api/resident-services', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newBooking),
+    }).catch((err) => console.error('Lỗi lưu đặt dịch vụ lên Supabase:', err));
+  }
+
   // Nếu chọn "Gộp vào hóa đơn", tự động chèn vào hóa đơn chưa thanh toán của căn hộ
   if (params.paymentChoice === 'ADD_TO_BILL') {
     const serviceType = service.category === 'LAUNDRY' ? 'Laundry' :
@@ -574,6 +582,27 @@ export function cancelResidentBooking(bookingId: string): boolean {
 
   if (found) {
     saveResidentBookings(nextList);
+    if (typeof window !== 'undefined') {
+      fetch('/api/resident-services', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: bookingId, status: 'CANCELLED' }),
+      }).catch((err) => console.error('Lỗi hủy dịch vụ trên Supabase:', err));
+    }
   }
   return found;
+}
+
+export async function syncResidentBookingsFromDb(aptCode?: string): Promise<ServiceBooking[]> {
+  if (typeof window === 'undefined') return [];
+  const params = new URLSearchParams();
+  if (aptCode) params.set('aptCode', aptCode);
+  const res = await fetch(`/api/resident-services${params.toString() ? `?${params.toString()}` : ''}`);
+  if (!res.ok) {
+    throw new Error(`Không thể tải lịch sử đặt dịch vụ (${res.status})`);
+  }
+  const data = await res.json();
+  const list: ServiceBooking[] = Array.isArray(data?.bookings) ? data.bookings : [];
+  saveResidentBookings(list);
+  return list;
 }

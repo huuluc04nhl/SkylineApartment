@@ -195,17 +195,6 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
           if (billIdParam) {
             payBill(billIdParam, 'VNPAY', transId, bankCode);
             setSelectedBillId(billIdParam);
-            // Đồng bộ trạng thái gạch nợ lên Server Route
-            fetch('/api/billing', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'PAY',
-                billId: billIdParam,
-                method: 'VNPAY',
-                transactionCode: transId,
-              }),
-            }).catch(() => {});
           }
           refreshBills();
           const paidAmount = amountStr ? parseFloat(amountStr) : 0;

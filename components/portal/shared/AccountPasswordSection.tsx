@@ -80,24 +80,30 @@ export default function AccountPasswordSection({
     const nums = '23456789';
     const syms = '!@#$%^&*()-_=+[]{}|;:,.<>?';
 
+    const secureRandInt = (max: number) => {
+      const buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      return buf[0] % max;
+    };
+
     let pool = '';
     const guaranteed: string[] = [];
 
     if (options.uppercase) {
       pool += upper;
-      guaranteed.push(upper[Math.floor(Math.random() * upper.length)]);
+      guaranteed.push(upper[secureRandInt(upper.length)]);
     }
     if (options.lowercase) {
       pool += lower;
-      guaranteed.push(lower[Math.floor(Math.random() * lower.length)]);
+      guaranteed.push(lower[secureRandInt(lower.length)]);
     }
     if (options.numbers) {
       pool += nums;
-      guaranteed.push(nums[Math.floor(Math.random() * nums.length)]);
+      guaranteed.push(nums[secureRandInt(nums.length)]);
     }
     if (options.symbols) {
       pool += syms;
-      guaranteed.push(syms[Math.floor(Math.random() * syms.length)]);
+      guaranteed.push(syms[secureRandInt(syms.length)]);
     }
 
     if (!pool) {
@@ -108,12 +114,12 @@ export default function AccountPasswordSection({
     const remaining = Math.max(0, length - guaranteed.length);
     const chars = [...guaranteed];
     for (let i = 0; i < remaining; i++) {
-      chars.push(pool[Math.floor(Math.random() * pool.length)]);
+      chars.push(pool[secureRandInt(pool.length)]);
     }
 
     // Shuffle using Fisher-Yates
     for (let i = chars.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = secureRandInt(i + 1);
       [chars[i], chars[j]] = [chars[j], chars[i]];
     }
 

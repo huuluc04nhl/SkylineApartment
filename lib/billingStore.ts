@@ -1,6 +1,6 @@
 /**
  * Skyline Smart Residence - Centralized Billing & Payment Store
- * Pure In-Database Architecture. Single Source of Truth from skylineDb.
+ * Client/Server Store backed by skylineDb and /api/billing.
  * Zero LocalStorage. Zero External Mock APIs.
  * 
  * - Quản trị dữ liệu hóa đơn sinh hoạt 2 chiều thực tế giữa Ban Quản Lý và Cư Dân

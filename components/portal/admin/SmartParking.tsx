@@ -442,7 +442,7 @@ export default function SmartParking() {
 
     // Direct issue slot with AI allocated code
     const slotCode = regCustomSlot.trim() || (regType === 'CAR' ? 'B2-A06' : 'B1-M08');
-    const generatedCardNo = `RFID-${regAptCode}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const generatedCardNo = `RFID-${regAptCode}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
 
     const newVehicle: ApartmentVehicle = {
       id: `veh-${Date.now()}`,
@@ -481,7 +481,7 @@ export default function SmartParking() {
       type: entry.vehicleType,
       plate: entry.plate,
       brand: entry.brand,
-      cardNo: `RFID-${entry.aptCode}-${Math.floor(1000 + Math.random() * 9000)}`,
+      cardNo: `RFID-${entry.aptCode}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`,
       slot: targetSlotCode,
     };
 

@@ -1,31 +1,27 @@
+import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAuthenticatedUser } from '@/lib/server/auth';
-import { skylineDb } from '@/lib/db';
+import { requireAuth } from '@/lib/auth/guard';
+import { listMeterReadingsDb, insertMeterReadingDb } from '@/lib/server/billingDb';
 import { MeterReadingRecord } from '@/lib/db/schema';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-async function authenticateStaff() {
-  const session = await getAuthenticatedUser();
-  if (!session || (session.role !== 'ADMIN' && session.role !== 'TECHNICIAN')) return null;
-  return session.profile;
-}
-
 const AnalyzeInputSchema = z.object({
   image: z.string().min(10, 'Ảnh không hợp lệ'),
-  apt_code: z.string().default('CH-06'),
+  apt_code: z.string().trim().min(1, 'Vui lòng cung cấp mã căn hộ'),
   meter_type_hint: z.enum(['ELECTRIC', 'WATER']).optional(),
   period: z.string().default('2026-09'),
 });
 
 const SaveInputSchema = z.object({
   action: z.literal('save'),
-  apartment_code: z.string(),
+  apartment_code: z.string().trim().min(1, 'Vui lòng cung cấp mã căn hộ'),
   meter_type: z.enum(['ELECTRIC', 'WATER']),
   reading: z.number().positive(),
   confidence: z.number().min(0).max(1),
+  source: z.enum(['manual', 'ocr']).default('manual'),
   period: z.string().default('2026-09'),
   image_url: z.string().optional(),
   is_confirmed: z.boolean(),
@@ -42,7 +38,7 @@ const OcrResultSchema = z.object({
  * Call Gemini Vision to extract meter reading from image
  */
 async function callGeminiVision(base64Data: string, mimeType: string, meterHint?: string) {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
@@ -103,44 +99,11 @@ Return ONLY a valid JSON object matching this schema without markdown codeblocks
   return null;
 }
 
-/**
- * Intelligent fallback simulator based on previous reading history
- */
-function getFallbackReading(aptCode: string, meterType: 'ELECTRIC' | 'WATER', period: string) {
-  const history = skylineDb.meterReadings.find(
-    r => r.apartment_code === aptCode && r.meter_type === meterType
-  );
-  const prevReading = history.length > 0 
-    ? Math.max(...history.map(h => h.reading)) 
-    : (meterType === 'ELECTRIC' ? 1200 : 45);
-
-  const delta = meterType === 'ELECTRIC' 
-    ? Math.floor(Math.random() * 80) + 120 
-    : Math.floor(Math.random() * 6) + 12;
-
-  const simulatedReading = prevReading + delta;
-  // Intentionally set to 0.82 or 0.92 depending on random to allow demonstration of confidence < 0.85
-  const confidence = Math.random() > 0.4 ? 0.94 : 0.78;
-
-  return {
-    meter_type: meterType,
-    reading: simulatedReading,
-    confidence: confidence,
-    notes: confidence < 0.85 
-      ? 'Chỉ số hơi mờ do góc chụp có ánh sáng chói. Vui lòng đối chiếu kỹ lại số hiển thị trên mặt kính.'
-      : 'Đã nhận dạng sắc nét dãy số công tơ điện tử trên mặt đồng hồ.'
-  };
-}
-
 export async function POST(req: Request) {
   try {
-    const staff = await authenticateStaff();
-    if (!staff) {
-      return NextResponse.json(
-        { success: false, message: 'Quyền truy cập bị từ chối. Chỉ dành riêng cho Ban Quản Lý và Kỹ Thuật Viên.' },
-        { status: 403 }
-      );
-    }
+    const guard = await requireAuth(['ADMIN', 'TECHNICIAN']);
+    if (!guard.ok) return guard.response;
+    const staff = guard.session.profile;
 
     const json = await req.json();
 
@@ -154,7 +117,7 @@ export async function POST(req: Request) {
         );
       }
 
-      const { apartment_code, meter_type, reading, confidence, period, is_confirmed } = parsedSave.data;
+      const { apartment_code, meter_type, reading, confidence, source, period, is_confirmed } = parsedSave.data;
 
       // Enforcement: if confidence < 0.85, is_confirmed MUST be true
       if (confidence < 0.85 && !is_confirmed) {
@@ -168,15 +131,13 @@ export async function POST(req: Request) {
       }
 
       // Find previous reading for consumption calculation
-      const history = skylineDb.meterReadings.find(
-        r => r.apartment_code === apartment_code && r.meter_type === meter_type
-      );
+      const history = await listMeterReadingsDb(apartment_code, meter_type);
       const prev = history.length > 0 ? history[history.length - 1] : undefined;
-      const prevVal = prev ? prev.reading : (reading > 100 ? reading - 150 : Math.max(0, reading - 15));
-      const consumption = Math.max(0, reading - prevVal);
+      const prevVal = prev ? prev.reading : undefined;
+      const consumption = prevVal !== undefined ? Math.max(0, reading - prevVal) : undefined;
 
       const newRecord: MeterReadingRecord = {
-        id: `MTR-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id: `MTR-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
         apartment_code,
         meter_type,
         reading,
@@ -184,12 +145,13 @@ export async function POST(req: Request) {
         consumption,
         period,
         confidence,
+        source,
         verified_by: `${staff.full_name} (${staff.role})`,
         recorded_at: new Date().toISOString(),
         status: 'CONFIRMED'
       };
 
-      skylineDb.meterReadings.insert(newRecord);
+      await insertMeterReadingDb(newRecord);
 
       return NextResponse.json({
         success: true,
@@ -218,19 +180,25 @@ export async function POST(req: Request) {
     }
 
     // Try Gemini Vision
-    let result = await callGeminiVision(base64Clean, mimeType, meter_type_hint);
+    const result = await callGeminiVision(base64Clean, mimeType, meter_type_hint);
 
-    // Fallback if needed
+    // Không bịa chỉ số giả khi Gemini/OCR lỗi: yêu cầu nhập tay
     if (!result) {
-      result = getFallbackReading(apt_code, meter_type_hint || 'ELECTRIC', period);
+      return NextResponse.json(
+        {
+          success: false,
+          requires_manual_entry: true,
+          message:
+            'Không thể nhận dạng tự động chỉ số từ ảnh (Gemini OCR lỗi hoặc chưa cấu hình). Vui lòng nhập chỉ số thủ công.',
+        },
+        { status: 503 }
+      );
     }
 
     const needsConfirmation = result.confidence < 0.85;
 
     // Get previous reading from DB
-    const history = skylineDb.meterReadings.find(
-      r => r.apartment_code === apt_code && r.meter_type === result!.meter_type
-    );
+    const history = await listMeterReadingsDb(apt_code, result!.meter_type);
     const lastReading = history.length > 0 ? history[history.length - 1].reading : undefined;
 
     return NextResponse.json({

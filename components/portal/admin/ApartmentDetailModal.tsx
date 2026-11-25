@@ -192,7 +192,7 @@ export default function ApartmentDetailModal({
       role: 'Family',
       relationship: newMemRel,
       phone: newMemPhone.trim(),
-      idCard: newMemCccd.trim() || '079' + Math.floor(100000000 + Math.random() * 900000000),
+      idCard: newMemCccd.trim(),
       licensePlate: newMemPlate.trim(),
       avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(newMemName.trim())}&background=1C2533&color=C5A880`,
       faceStatus: newMemAutoApprove ? 'Đã Kích Hoạt FaceID' : 'Đang Chờ BQL Phê Duyệt',

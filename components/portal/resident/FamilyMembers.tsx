@@ -799,7 +799,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
       const res = await skylineAddFamilyMember({
         fullName: directFullName.trim(),
         phone: directPhone.trim(),
-        idCard: directIdCard.trim() || '079' + Math.floor(100000000 + Math.random() * 900000000),
+        idCard: directIdCard.trim(),
         relationship: directRelationship,
         licensePlate: directLicensePlate.trim(),
         avatarUrl: 'https://ui-avatars.com/api/?name=User&background=1C2533&color=C5A880&bold=true',

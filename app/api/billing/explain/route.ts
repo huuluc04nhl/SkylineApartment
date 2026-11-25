@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/lib/server/auth';
-import { skylineDb } from '@/lib/db';
+import { requireAuth } from '@/lib/auth/guard';
+import { getBillWithDetailsByIdDb, listBillsWithDetailsDb } from '@/lib/server/billingDb';
 import { GEMINI_API_KEY } from '@/lib/geminiClient';
 import { InvoiceExplanationSchema } from '@/lib/billingAiService';
 
@@ -8,14 +8,9 @@ export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
   try {
-    const session = await getAuthenticatedUser();
-    const user = session ? session.profile : null;
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'Chưa đăng nhập hoặc phiên làm việc đã hết hạn.' },
-        { status: 401 }
-      );
-    }
+    const guard = await requireAuth(['ADMIN', 'OWNER', 'TENANT']);
+    if (!guard.ok) return guard.response;
+    const user = guard.session.profile;
 
     const body = await req.json().catch(() => ({}));
     const billId = body.billId;
@@ -27,7 +22,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const currentBill = skylineDb.bills.findById(billId);
+    const currentBill = await getBillWithDetailsByIdDb(billId);
     if (!currentBill) {
       return NextResponse.json(
         { success: false, message: 'Không tìm thấy hóa đơn.' },
@@ -35,17 +30,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // Security: Check apartment ownership
-    if (user.role !== 'ADMIN' && currentBill.apartment_code.toUpperCase() !== (user.apartment_code || 'CH-06').toUpperCase()) {
+    // Security: Check apartment ownership -> 404 khi tài nguyên không thuộc về họ
+    if (user.role !== 'ADMIN' && currentBill.apartment_code.toUpperCase() !== (user.apartment_code || '__NONE__').toUpperCase()) {
       return NextResponse.json(
-        { success: false, message: 'Quyền truy cập bị từ chối: Không thể xem hóa đơn căn hộ khác.' },
-        { status: 403 }
+        { success: false, message: 'Không tìm thấy hóa đơn.' },
+        { status: 404 }
       );
     }
 
     // Lấy 3 kỳ hóa đơn gần nhất của căn hộ này
-    const aptBills = skylineDb.bills
-      .find(b => b.apartment_code.toUpperCase() === currentBill.apartment_code.toUpperCase())
+    const aptBills = (await listBillsWithDetailsDb(currentBill.apartment_code))
       .sort((a, b) => b.billing_month.localeCompare(a.billing_month))
       .slice(0, 3);
 

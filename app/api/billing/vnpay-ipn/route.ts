@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { verifyVnpayChecksum } from '@/lib/vnpay';
-import { getBills, payBill } from '@/lib/billingStore';
+import {
+  getBillWithDetailsByIdDb,
+  markBillPaidByIpnDb,
+  recordFailedBillIpnDb,
+} from '@/lib/server/billingDb';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,23 +21,25 @@ async function handleIpn(queryParams: Record<string, string>) {
     }
 
     const vnp_TxnRef = queryParams['vnp_TxnRef'] || '';
-    const vnp_Amount = queryParams['vnp_Amount'] ? (parseInt(queryParams['vnp_Amount'], 10) / 100) : 0;
+    const vnp_Amount = queryParams['vnp_Amount'] ? parseInt(queryParams['vnp_Amount'], 10) / 100 : 0;
     const vnp_ResponseCode = queryParams['vnp_ResponseCode'];
     const vnp_TransactionStatus = queryParams['vnp_TransactionStatus'];
     const vnp_TransactionNo = queryParams['vnp_TransactionNo'] || `VNP${Date.now().toString().slice(-8)}`;
     const vnp_BankCode = queryParams['vnp_BankCode'] || 'VNPAY';
 
     const billId = vnp_TxnRef.includes('_') ? vnp_TxnRef.split('_')[0] : vnp_TxnRef;
+    if (!billId) {
+      return NextResponse.json({ RspCode: '01', Message: 'Order not found' }, { status: 200 });
+    }
 
-    const bills = getBills();
-    const bill = bills.find(b => b.id === billId);
+    const bill = await getBillWithDetailsByIdDb(billId);
 
     // 2. Kiểm tra đơn hàng có tồn tại không
     if (!bill) {
       return NextResponse.json({ RspCode: '01', Message: 'Order not found' }, { status: 200 });
     }
 
-    // 3. Kiểm tra số tiền có khớp không
+    // 3. Kiểm tra số tiền có khớp với hóa đơn trong DB không
     if (Math.round(bill.total_amount) !== Math.round(vnp_Amount)) {
       return NextResponse.json({ RspCode: '04', Message: 'Invalid amount' }, { status: 200 });
     }
@@ -43,17 +49,22 @@ async function handleIpn(queryParams: Record<string, string>) {
       return NextResponse.json({ RspCode: '02', Message: 'Order already confirmed' }, { status: 200 });
     }
 
-    // 5. Cập nhật gạch nợ thành công
+    // 5. Cập nhật gạch nợ nguyên tử (atomic conditional update: status <> 'Paid' + UNIQUE transaction_ref)
     if (vnp_ResponseCode === '00' && (vnp_TransactionStatus === undefined || vnp_TransactionStatus === '00')) {
-      payBill(billId, 'VNPAY', vnp_TransactionNo, vnp_BankCode);
+      const { updated } = await markBillPaidByIpnDb(billId, vnp_TransactionNo, vnp_BankCode);
+      if (!updated) {
+        return NextResponse.json({ RspCode: '02', Message: 'Order already confirmed' }, { status: 200 });
+      }
       return NextResponse.json({ RspCode: '00', Message: 'Confirm Success' }, { status: 200 });
     }
 
-    // Trường hợp giao dịch thất bại từ phía cổng
-    return NextResponse.json({ RspCode: '00', Message: 'Confirm Success' }, { status: 200 });
+    // 6. Giao dịch thất bại từ phía cổng thanh toán: ghi nhận trạng thái lỗi và trả mã lỗi VNPay
+    const failCode = vnp_ResponseCode || vnp_TransactionStatus || '99';
+    await recordFailedBillIpnDb(billId, failCode, vnp_TransactionNo);
+    return NextResponse.json({ RspCode: failCode, Message: 'Payment failed' }, { status: 200 });
   } catch (error: any) {
     console.error('Lỗi IPN VNPAY:', error);
-    return NextResponse.json({ RspCode: '99', Message: 'Unknow error' }, { status: 200 });
+    return NextResponse.json({ RspCode: '99', Message: 'Unknown error' }, { status: 200 });
   }
 }
 

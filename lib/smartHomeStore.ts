@@ -167,6 +167,28 @@ export function getSmartHomeState(aptCode: string = 'CH-06'): SmartHomeState {
   return inMemorySmartHomeMap.get(aptCode)!;
 }
 
+export async function syncSmartHomeFromDb(aptCode: string = 'CH-06'): Promise<SmartHomeState> {
+  if (typeof window === 'undefined') return getSmartHomeState(aptCode);
+  const res = await fetch(`/api/smarthome?aptCode=${encodeURIComponent(aptCode)}`);
+  if (!res.ok) {
+    throw new Error(`Không thể tải trạng thái SmartHome (${res.status})`);
+  }
+  const data = await res.json();
+  const devices: any[] = Array.isArray(data?.devices) ? data.devices : [];
+  const current = getSmartHomeState(aptCode);
+  const next: SmartHomeState = { ...current };
+  for (const d of devices) {
+    if (d.device_type === 'door') next.doorLocked = d.status === 'locked';
+    if (d.device_type === 'ac') {
+      next.acPower = d.status === 'on';
+      if (typeof d.set_value === 'number' && d.set_value > 0) next.acTemp = d.set_value;
+    }
+    if (d.device_type === 'curtain') next.curtainsOpen = d.status === 'open';
+  }
+  inMemorySmartHomeMap.set(aptCode, next);
+  return next;
+}
+
 export function saveSmartHomeState(aptCode: string, patch: Partial<SmartHomeState>): SmartHomeState {
   const current = getSmartHomeState(aptCode);
   const updated: SmartHomeState = {
@@ -179,6 +201,18 @@ export function saveSmartHomeState(aptCode: string, patch: Partial<SmartHomeStat
   inMemorySmartHomeMap.set(aptCode, updated);
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('skyline_smarthome_update', { detail: updated }));
+    fetch('/api/smarthome', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        apartmentCode: aptCode,
+        devices: [
+          { id: `dev-lock-${aptCode.toLowerCase()}`, name: 'Khóa Thông Minh FaceID', device_type: 'door', status: updated.doorLocked ? 'locked' : 'unlocked', set_value: 0 },
+          { id: `dev-ac-${aptCode.toLowerCase()}`, name: 'Điều Hòa Daikin Inverter', device_type: 'ac', status: updated.acPower ? 'on' : 'off', set_value: updated.acTemp },
+          { id: `dev-curtain-${aptCode.toLowerCase()}`, name: 'Rèm Cửa Tự Động', device_type: 'curtain', status: updated.curtainsOpen ? 'open' : 'closed', set_value: updated.curtainsOpen ? 100 : 0 },
+        ],
+      }),
+    }).catch((err) => console.error('Lỗi lưu SmartHome lên Supabase:', err));
   }
 
   return updated;

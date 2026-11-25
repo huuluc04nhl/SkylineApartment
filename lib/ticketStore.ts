@@ -1,7 +1,7 @@
 /**
  * Skyline Smart Residence - Centralized Maintenance Ticket & Technician Payroll Store
- * Pure In-Database Architecture. Powered by skylineDb.
- * Zero LocalStorage. Zero External Mock APIs. Zero Dummy Tickets (No Sunny/Sunn fake tickets).
+ * Client/Server Ticket Store powered by skylineDb and /api/tickets.
+ * Syncs with Supabase Postgres via /api/tickets.
  */
 
 import { ServiceRequest } from './dataStore';
@@ -544,7 +544,6 @@ export async function updateTicketApiAsync(payload: {
         id: String(payload.id),
         admin_reply: payload.reply?.trim(),
         assigned_technician: payload.engineername?.trim(),
-        status: payload.reply ? 'Resolved' : undefined,
       }),
     });
     const data = await res.json();

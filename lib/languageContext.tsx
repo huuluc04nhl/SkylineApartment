@@ -1,7 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useMemo, useRef } from 'react';
-import { TRANSLATIONS_DATA } from './translationsData';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 
 export type Language = 'vi' | 'en';
 
@@ -1232,30 +1231,50 @@ export const KEY_DICTIONARY: Record<string, Record<Language, string>> = {
 };
 
 // =============================================================================
-// FAST LOOKUP MAPS (O(1))
+// FAST LOOKUP MAPS (O(1)) — LOADED ON DEMAND FROM JSON LOCALES
 // =============================================================================
 const VI_TO_EN_MAP = new Map<string, string>();
 const EN_TO_VI_MAP = new Map<string, string>();
+const loadedLocales = new Set<Language>();
+const loadingLocales = new Map<Language, Promise<void>>();
 
-for (const [vi, en] of TRANSLATIONS_DATA) {
-  const cleanVi = vi.trim();
-  const cleanEn = en.trim();
-  if (cleanVi && cleanEn) {
-    VI_TO_EN_MAP.set(cleanVi.toLowerCase(), cleanEn);
-    EN_TO_VI_MAP.set(cleanEn.toLowerCase(), cleanVi);
-    if (cleanVi.includes('&amp;')) {
-      const uVi = cleanVi.replace(/&amp;/g, '&');
-      const uEn = cleanEn.replace(/&amp;/g, '&');
-      VI_TO_EN_MAP.set(uVi.toLowerCase(), uEn);
-      EN_TO_VI_MAP.set(uEn.toLowerCase(), uVi);
+function indexLocaleMap(dict: Record<string, string>, targetMap: Map<string, string>) {
+  for (const [k, v] of Object.entries(dict)) {
+    const cleanK = k.trim();
+    const cleanV = v.trim();
+    if (!cleanK || !cleanV) continue;
+    targetMap.set(cleanK.toLowerCase(), cleanV);
+    if (cleanK.includes('&amp;')) {
+      targetMap.set(cleanK.replace(/&amp;/g, '&').toLowerCase(), cleanV.replace(/&amp;/g, '&'));
     }
-    if (cleanVi.includes('&') && !cleanVi.includes('&amp;')) {
-      const aVi = cleanVi.replace(/&/g, '&amp;');
-      const aEn = cleanEn.replace(/&/g, '&amp;');
-      VI_TO_EN_MAP.set(aVi.toLowerCase(), aEn);
-      EN_TO_VI_MAP.set(aEn.toLowerCase(), aVi);
+    if (cleanK.includes('&') && !cleanK.includes('&amp;')) {
+      targetMap.set(cleanK.replace(/&/g, '&amp;').toLowerCase(), cleanV.replace(/&/g, '&amp;'));
     }
   }
+}
+
+export async function loadLocaleDictionary(lang: Language): Promise<void> {
+  if (loadedLocales.has(lang)) return;
+  const inflight = loadingLocales.get(lang);
+  if (inflight) return inflight;
+
+  const task = (async () => {
+    try {
+      if (lang === 'en') {
+        const mod = await import('./locales/en.json');
+        indexLocaleMap((mod.default || mod) as Record<string, string>, VI_TO_EN_MAP);
+      } else {
+        const mod = await import('./locales/vi.json');
+        indexLocaleMap((mod.default || mod) as Record<string, string>, EN_TO_VI_MAP);
+      }
+      loadedLocales.add(lang);
+    } finally {
+      loadingLocales.delete(lang);
+    }
+  })();
+
+  loadingLocales.set(lang, task);
+  return task;
 }
 
 // Index KEY_DICTIONARY into lookup maps with highest priority
@@ -1848,6 +1867,7 @@ export function LanguageProvider({
   // SSR HTML matches client initial hydration identically, eliminating React hydration errors.
   const [language, setLanguageState] = useState<Language>(initialLanguage);
   const [isMounted, setIsMounted] = useState(false);
+  const [localeVersion, setLocaleVersion] = useState(0);
 
   useEffect(() => {
     setIsMounted(true);
@@ -1857,6 +1877,16 @@ export function LanguageProvider({
     }
     applyDocumentLang(saved);
   }, [initialLanguage]);
+
+  useEffect(() => {
+    let active = true;
+    loadLocaleDictionary(language).then(() => {
+      if (active) setLocaleVersion((v) => v + 1);
+    });
+    return () => {
+      active = false;
+    };
+  }, [language]);
 
   const applyDocumentLang = (lang: Language) => {
     if (typeof document !== 'undefined') {
@@ -1944,7 +1974,7 @@ export function LanguageProvider({
       isEn: language === 'en',
       isVi: language === 'vi'
     }),
-    [language, isMounted]
+    [language, isMounted, localeVersion]
   );
 
   return (

@@ -18,4 +18,7 @@
 - **Sign-in / Token refresh rate limit:** Bật giới hạn số lần thử sai (mặc định Supabase Auth giới hạn theo IP; kiểm tra `Rate Limits` trong *Authentication -> Rate Limits*).
 - **Email / OTP rate limit:** Giới hạn số email gửi/giờ để chống spam.
 - **CAPTCHA (Attack Protection):** Bật hCaptcha hoặc Cloudflare Turnstile cho đăng nhập/đăng ký khi triển khai production.
-- **Disable Sign-ups (nếu chỉ BQL cấp tài khoản):** Xem xét tắt *Allow new users to sign up* nếu cư dân chỉ được tạo tài khoản từ BQL.
+## 4. Authentication -> URL Configuration & Email/Phone Confirmation
+- **Site URL:** Đặt đúng domain ứng dụng (ví dụ `http://localhost:3000` khi dev, hoặc domain production khi deploy).
+- **Redirect URLs:** Thêm `http://localhost:3000/**` và `https://<your-domain>/**` cho luồng reset password / magic link.
+- **Email / Phone Confirmation:** Bật *Confirm email* (và *Confirm phone* nếu dùng OTP SMS) trong *Authentication -> Providers -> Email/Phone*.

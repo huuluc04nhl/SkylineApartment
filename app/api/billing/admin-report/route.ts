@@ -1,24 +1,18 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAuthenticatedUser } from '@/lib/server/auth';
-import { skylineDb } from '@/lib/db';
+import { requireAuth } from '@/lib/auth/guard';
+import { listBillsWithDetailsDb } from '@/lib/server/billingDb';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-async function authenticateAdmin() {
-  const session = await getAuthenticatedUser();
-  if (!session || session.role !== 'ADMIN') return null;
-  return session.profile;
-}
 
 const QuerySchema = z.object({
   query: z.string().min(2, 'Câu hỏi quá ngắn')
 });
 
 // Tool implementations (Deterministic, pure code calculations)
-function queryTowerDebtSummary(towerCode?: string) {
-  const allBills = skylineDb.bills.find();
+async function queryTowerDebtSummary(towerCode?: string) {
+  const allBills = await listBillsWithDetailsDb();
   const targetTower = towerCode ? towerCode.toUpperCase().trim() : null;
 
   const towers = ['BS-07', 'BS-08', 'BS-09', 'BS-10'];
@@ -53,8 +47,8 @@ function queryTowerDebtSummary(towerCode?: string) {
   };
 }
 
-function queryTopDebtors(limit: number = 5) {
-  const allBills = skylineDb.bills.find();
+async function queryTopDebtors(limit: number = 5) {
+  const allBills = await listBillsWithDetailsDb();
   const unpaid = allBills.filter(b => b.status === 'Unpaid');
 
   // Aggregate by apartment
@@ -103,13 +97,8 @@ function maskName(name: string): string {
 
 export async function POST(req: Request) {
   try {
-    const admin = await authenticateAdmin();
-    if (!admin) {
-      return NextResponse.json(
-        { success: false, message: 'Quyền truy cập bị từ chối. Tính năng chỉ dành riêng cho Ban Quản Lý (Admin).' },
-        { status: 403 }
-      );
-    }
+    const guard = await requireAuth(['ADMIN']);
+    if (!guard.ok) return guard.response;
 
     const json = await req.json();
     const parsed = QuerySchema.safeParse(json);
@@ -124,7 +113,7 @@ export async function POST(req: Request) {
     if (lowerQuery.includes('top') || lowerQuery.includes('nợ lâu') || lowerQuery.includes('nợ nhiều') || lowerQuery.includes('con nợ') || lowerQuery.includes('chưa nộp')) {
       const matchNum = lowerQuery.match(/\b([1-9]|10)\b/);
       const limit = matchNum ? parseInt(matchNum[1], 10) : 5;
-      const debtors = queryTopDebtors(limit);
+      const debtors = await queryTopDebtors(limit);
 
       const headers = ['Hạng', 'Căn Hộ', 'Chủ Hộ', 'Tổng Nợ (VNĐ)', 'Số Kỳ', 'Quá Hạn (Ngày)', 'Mức Độ'];
       const rows = debtors.map(d => [
@@ -160,7 +149,7 @@ export async function POST(req: Request) {
     else if (lowerQuery.includes('bs-09') || lowerQuery.includes('bs09')) towerHint = 'BS-09';
     else if (lowerQuery.includes('bs-10') || lowerQuery.includes('bs10')) towerHint = 'BS-10';
 
-    const debtData = queryTowerDebtSummary(towerHint);
+    const debtData = await queryTowerDebtSummary(towerHint);
 
     const headers = ['Tòa Tháp', 'Số Căn', 'Tổng Phải Thu', 'Đã Thu Được', 'Còn Nợ', 'Tỷ Lệ Thu Hồi', 'Số Căn Chưa Nộp'];
     const rows = debtData.towers.map(t => [

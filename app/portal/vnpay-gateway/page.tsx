@@ -36,6 +36,31 @@ function VnpayGatewayInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  if (process.env.NODE_ENV === 'production') {
+    return (
+      <div className="min-h-screen bg-[#0A0E14] text-gray-200 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-[#0E131B] border border-[#C5A880]/30 p-6 rounded-none space-y-4 text-center">
+          <AlertCircle className="w-8 h-8 text-[#F59E0B] mx-auto" />
+          <h1 className="text-lg font-semibold text-white">
+            {t('Cổng mô phỏng đã tắt trên Production', 'Simulated Gateway Disabled in Production')}
+          </h1>
+          <p className="text-sm text-gray-400">
+            {t(
+              'Trang cổng thanh toán mô phỏng chỉ hoạt động ở môi trường phát triển (non-production).',
+              'This simulated payment gateway is only available in non-production environments.'
+            )}
+          </p>
+          <button
+            onClick={() => router.push('/portal?tab=resident-finance')}
+            className="px-4 py-2 bg-[#C5A880] text-[#0A0E14] font-semibold text-sm rounded-none hover:bg-[#E2C9A5]"
+          >
+            {t('Quay lại cổng cư dân', 'Back to Resident Portal')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const billId = searchParams.get('billId') || 'BILL-CH06-2026-08';
   const amountStr = searchParams.get('amount') || '2450000';
   const amount = parseFloat(amountStr) || 2450000;
@@ -114,8 +139,8 @@ function VnpayGatewayInner() {
             <div className="flex items-center gap-1.5 font-black text-xl tracking-tighter">
               <span className="text-[#005BAA]">VN</span>
               <span className="text-[#ED1C24]">PAY</span>
-              <span className="text-[10px] text-gray-400 font-mono font-normal ml-1.5 px-1.5 py-0.5 bg-[#161B22] border border-[#2D3748]">
-                GATEWAY
+              <span className="text-[10px] text-[#F59E0B] font-mono font-semibold ml-1.5 px-1.5 py-0.5 bg-[#161B22] border border-[#F59E0B]/40 rounded-none">
+                SIMULATED SANDBOX GATEWAY
               </span>
             </div>
             <div className="hidden sm:block h-4 w-[1px] bg-gray-700" />

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/guard';
-import { skylineDb } from '@/lib/db';
+import { listBillsWithDetailsDb } from '@/lib/server/billingDb';
 import { detectBillingAnomalies } from '@/lib/billingAnomalyEngine';
 
 export const runtime = 'nodejs';
@@ -10,7 +10,7 @@ export async function GET() {
     const guard = await requireAuth(['ADMIN']);
     if (!guard.ok) return guard.response;
 
-    const bills = skylineDb.bills.find();
+    const bills = await listBillsWithDetailsDb();
     const anomalies = detectBillingAnomalies(bills, bills);
 
     return NextResponse.json({

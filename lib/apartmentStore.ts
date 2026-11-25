@@ -1,6 +1,6 @@
 /**
  * Skyline Smart Residence & The Tropical - Apartment Management Store
- * Pure In-Database Architecture. Single Source of Truth from skylineDb.
+ * Client/Server Store backed by skylineDb and API routes.
  * Zero LocalStorage. Zero External Mock APIs. Zero Dummy Generator Loops.
  */
 
@@ -374,7 +374,7 @@ export function getApartmentStorageKey(blockCode: string = 'BS-07'): string {
 }
 
 /**
- * Lấy danh sách căn hộ theo Block từ skylineDb (Pure In-Database)
+ * Lấy danh sách căn hộ theo Block từ skylineDb
  */
 export function getApartmentUnits(blockCode: string = 'BS-07'): ApartmentUnit[] {
   const bId = blockIdFromCode(blockCode);

@@ -40,10 +40,12 @@ import { User } from '@/lib/dataStore';
 import SkylineLogo from '@/components/shared/SkylineLogo';
 import ResidentSmartCard from './ResidentSmartCard';
 import { useLanguage } from '@/lib/languageContext';
+import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
 import { 
   getFacilityCheckinLogs, 
   addFacilityCheckinLog, 
   getFacilityBookings, 
+  syncFacilityBookingsFromDb,
   createFacilityBooking, 
   cancelFacilityBooking,
   cancelFacilityBookingWithRefund,
@@ -376,6 +378,13 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
   const [refundResultAlert, setRefundResultAlert] = useState<{ type: 'success' | 'warning' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
+    syncFacilityBookingsFromDb(aptCode)
+      .then((list) => {
+        setBookings(list);
+        setQuota(getFacilityMonthlyQuota(aptCode));
+      })
+      .catch((err) => console.error('Lỗi đồng bộ lịch sử đặt tiện ích:', err));
+
     const handleLogAdded = () => setAccessLogs(getFacilityCheckinLogs(aptCode));
     const handleBooked = () => {
       setBookings(getFacilityBookings(aptCode));
@@ -385,9 +394,27 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     window.addEventListener('skyline_facility_log_added', handleLogAdded);
     window.addEventListener('skyline_facility_booked', handleBooked);
 
+    const supabase = createSupabaseBrowserClient();
+    const channel = supabase
+      .channel(`facility_bookings_${aptCode}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'facility_bookings', filter: `apartment_code=eq.${aptCode}` },
+        () => {
+          syncFacilityBookingsFromDb(aptCode)
+            .then((list) => {
+              setBookings(list);
+              setQuota(getFacilityMonthlyQuota(aptCode));
+            })
+            .catch(() => {});
+        }
+      )
+      .subscribe();
+
     return () => {
       window.removeEventListener('skyline_facility_log_added', handleLogAdded);
       window.removeEventListener('skyline_facility_booked', handleBooked);
+      supabase.removeChannel(channel);
     };
   }, [aptCode]);
 

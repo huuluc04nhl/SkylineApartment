@@ -13,10 +13,7 @@ import { getBills, SKYLINE_BANK_INFO } from './billingStore';
 import { getTickets } from './ticketStore';
 import { getApartmentByCode } from './apartmentStore';
 
-export const GEMINI_API_KEY =
-  process.env.GEMINI_API_KEY ||
-  process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
-  '';
+export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 const GEMINI_PRIMARY_MODEL = 'gemini-flash-lite-latest';
 const GEMINI_FALLBACK_MODEL = 'gemini-2.5-flash-lite';

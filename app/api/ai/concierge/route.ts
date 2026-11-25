@@ -11,8 +11,8 @@ export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   let userMessage = '';
   let fallbackContext: ConciergeContext = {
-    aptCode: 'CH-06',
-    userName: 'Trần Hữu Lực',
+    aptCode: '',
+    userName: 'Cư dân Skyline',
     userRole: 'OWNER',
   };
 
@@ -45,9 +45,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const targetApt = aptCode || 'CH-06';
+    const targetApt = (aptCode || '').trim();
     const residentPhone = phone || '';
-    const dynamicUser = getUserStore(targetApt);
+    const dynamicUser = targetApt ? getUserStore(targetApt) : undefined;
 
     // Dynamic resolution of actual project data if not supplied by client
     const actualBookings = Array.isArray(bookings) ? bookings : getFacilityBookings(targetApt);

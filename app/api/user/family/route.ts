@@ -10,7 +10,7 @@ import {
   getUserStore,
   updateUserStore
 } from '@/lib/userStore';
-import { skylineDb } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { submitEkycRequest } from '@/lib/ekycStore';
 
 /**
@@ -60,7 +60,10 @@ export async function GET(req: Request) {
     const localUser = session.profile;
     const url = new URL(req.url);
     const paramApt = url.searchParams.get('apartment') || url.searchParams.get('aptCode');
-    const rawApt = paramApt || localUser?.apartment_code || 'CH-06';
+    const rawApt = (paramApt || localUser?.apartment_code || '').trim();
+    if (!rawApt) {
+      return NextResponse.json({ success: false, message: 'Thiếu mã căn hộ hợp lệ.' }, { status: 400 });
+    }
     const aptCode = rawApt;
     const ownerName = localUser?.fullname || localUser?.full_name || 'Chủ Hộ';
     const searchQuery = url.searchParams.get('search')?.trim().toLowerCase();
@@ -89,7 +92,9 @@ export async function GET(req: Request) {
       const qNorm = normalize(searchQuery);
       const qDigits = searchQuery.replace(/\D/g, '');
 
-      const dbUsers = skylineDb.users.find();
+      const { data: dbUsersData, error: usersErr } = await supabaseAdmin.from('users').select('*');
+      if (usersErr) throw new Error(`Supabase users select error: ${usersErr.message}`);
+      const dbUsers = dbUsersData || [];
       const currentMembers = getApartmentMembers(aptCode);
 
       const matchedList = dbUsers.filter((u) => {
@@ -150,7 +155,9 @@ export async function GET(req: Request) {
     const members = getApartmentMembers(aptCode);
 
     // 3. Eligible resident accounts registered in database
-    const dbUsers = skylineDb.users.find();
+    const { data: dbUsersData, error: usersErr } = await supabaseAdmin.from('users').select('*');
+    if (usersErr) throw new Error(`Supabase users select error: ${usersErr.message}`);
+    const dbUsers = dbUsersData || [];
     const bqlAccounts = dbUsers
       .filter((u) => isEligibleFamilyAccount(u, localUser))
       .map((u) => {
@@ -215,7 +222,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: 'Chưa đăng nhập' }, { status: 401 });
     }
     const currentUser = session.profile;
-    const rawApt = currentUser?.apartment_code || 'CH-06';
+    const rawApt = (currentUser?.apartment_code || '').trim();
+    if (!rawApt) {
+      return NextResponse.json({ success: false, message: 'Tài khoản chưa được gán căn hộ hợp lệ.' }, { status: 400 });
+    }
     const aptCode = rawApt;
     const ownerName = currentUser?.fullname || currentUser?.full_name || 'Chủ Hộ';
     const ownerPhone = currentUser?.phone || '';
@@ -253,11 +263,14 @@ export async function POST(req: Request) {
     }
 
     // 1. Resolve user from Database
-    let resolvedUser = identifier ? skylineDb.users.findById(identifier) : undefined;
-    if (!resolvedUser && identifier) {
-      resolvedUser = skylineDb.users.findOne(
-        (u) => (u.id === identifier || u.username === identifier || u.phone === identifier) && isEligibleFamilyAccount(u, currentUser)
-      );
+    let resolvedUser: any = undefined;
+    if (identifier) {
+      const { data: candidates, error: candErr } = await supabaseAdmin
+        .from('users')
+        .select('*')
+        .or(`id.eq.${identifier},username.eq.${identifier},phone.eq.${identifier}`);
+      if (candErr) throw new Error(`Supabase user lookup error: ${candErr.message}`);
+      resolvedUser = (candidates || []).find((u) => isEligibleFamilyAccount(u, currentUser)) || candidates?.[0];
     }
 
     // Kiểm tra tính hợp lệ: Không cho phép thêm tài khoản admin/kỹ thuật hoặc chính chủ hộ
@@ -375,7 +388,10 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ success: false, message: 'Chưa đăng nhập' }, { status: 401 });
     }
     const currentUser = session.profile;
-    const rawApt = currentUser?.apartment_code || 'CH-06';
+    const rawApt = (currentUser?.apartment_code || '').trim();
+    if (!rawApt) {
+      return NextResponse.json({ success: false, message: 'Tài khoản chưa được gán căn hộ hợp lệ.' }, { status: 400 });
+    }
     const aptCode = rawApt;
 
     const body = await req.json();
@@ -414,7 +430,10 @@ export async function PUT(req: Request) {
       return NextResponse.json({ success: false, message: 'Chưa đăng nhập' }, { status: 401 });
     }
     const currentUser = session.profile;
-    const rawApt = currentUser?.apartment_code || 'CH-06';
+    const rawApt = (currentUser?.apartment_code || '').trim();
+    if (!rawApt) {
+      return NextResponse.json({ success: false, message: 'Tài khoản chưa được gán căn hộ hợp lệ.' }, { status: 400 });
+    }
     const aptCode = rawApt;
 
     const body = await req.json();

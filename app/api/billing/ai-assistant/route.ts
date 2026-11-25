@@ -185,7 +185,7 @@ export async function POST(req: Request) {
  */
 async function generateSmartBillingResponse(query: string, ctx: { user: StoredUser; isAdmin: boolean }): Promise<string> {
   const norm = query.toLowerCase();
-  const aptCode = ctx.user.apartment_code || 'CH-06';
+  const aptCode = ctx.user.apartment_code || '';
 
   // 1. Câu hỏi về nợ / khoản chưa thanh toán
   if (norm.includes('nợ') || norm.includes('chưa trả') || norm.includes('chưa thanh toán') || norm.includes('phải nộp')) {

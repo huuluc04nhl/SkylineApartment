@@ -1037,13 +1037,15 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleSimulateTapCard(card)}
-                          className="h-7 px-2.5 bg-[#161D26] hover:bg-[#C5A880] hover:text-[#0D1117] border border-[#2D3A4B] text-[#C5A880] font-mono text-[11px] font-semibold transition-all flex items-center justify-center active:scale-95"
-                        >
-                          Quẹt Thử
-                        </button>
+                        {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
+                          <button
+                            type="button"
+                            onClick={() => handleSimulateTapCard(card)}
+                            className="h-7 px-2.5 bg-[#161D26] hover:bg-[#C5A880] hover:text-[#0D1117] border border-[#2D3A4B] text-[#C5A880] font-mono text-[11px] font-semibold transition-all flex items-center justify-center active:scale-95"
+                          >
+                            [DEMO] Quẹt Thử
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleToggleCardLock(card.cardUid, card.holderName)}

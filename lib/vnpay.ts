@@ -1,13 +1,16 @@
 import crypto from 'crypto';
+import { getServerEnv } from '@/lib/env';
 
-export const VNPAY_CONFIG = {
-  tmnCode: process.env.VNP_TMN_CODE || '04BTMRVW',
-  hashSecret: process.env.VNP_HASH_SECRET || 'GPVG20ZSC8A2CCOHIQ4S99GTJ92AS34S',
-  vnpUrl: process.env.VNP_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
-  returnUrl: process.env.NEXT_PUBLIC_BASE_URL 
-    ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/vnpay-return`
-    : 'https://skyline-smart-residence.vercel.app/api/billing/vnpay-return',
-};
+export function getVnpayConfig() {
+  const env = getServerEnv();
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  return {
+    tmnCode: env.VNP_TMN_CODE,
+    hashSecret: env.VNP_HASH_SECRET,
+    vnpUrl: env.VNP_URL,
+    returnUrl: baseUrl ? `${baseUrl}/api/billing/vnpay-return` : '',
+  };
+}
 
 // Thông tin thẻ test NCB chính thức được VNPAY cấp trong Sandbox
 export const VNPAY_NCB_TEST_CARD = {
@@ -67,10 +70,14 @@ export interface CreatePaymentUrlParams {
 export function buildVnpayPaymentUrl(params: CreatePaymentUrlParams): string {
   const dateStr = getVnpayDate();
   const createDate = dateStr;
-  const tmnCode = VNPAY_CONFIG.tmnCode;
-  const secretKey = VNPAY_CONFIG.hashSecret;
-  const vnpUrl = VNPAY_CONFIG.vnpUrl;
-  const returnUrl = params.returnUrl || VNPAY_CONFIG.returnUrl;
+  const cfg = getVnpayConfig();
+  const tmnCode = cfg.tmnCode;
+  const secretKey = cfg.hashSecret;
+  const vnpUrl = cfg.vnpUrl;
+  const returnUrl = params.returnUrl || cfg.returnUrl;
+  if (!returnUrl) {
+    throw new Error('Thiếu NEXT_PUBLIC_BASE_URL hoặc returnUrl cho VNPay.');
+  }
   
   // vnp_TxnRef duy nhất cho mỗi lượt thanh toán
   const txnRef = `${params.billId}_${Date.now()}`;
@@ -118,7 +125,7 @@ export function verifyVnpayChecksum(queryParams: Record<string, string>): {
   calculatedHash: string;
   params: Record<string, string>;
 } {
-  const secretKey = VNPAY_CONFIG.hashSecret;
+  const secretKey = getVnpayConfig().hashSecret;
   const secureHash = queryParams['vnp_SecureHash'] || '';
 
   const cleanParams: Record<string, string> = {};

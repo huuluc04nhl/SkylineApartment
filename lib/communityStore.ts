@@ -1,7 +1,7 @@
 /**
  * SKYLINE SMART RESIDENCE — COMMUNITY FORUM & POLLING STORE
  * Architecture: Ponytail Minimalist + Graphify Data Store
- * 100% DỮ LIỆU THỰC TẾ — KHÔNG DỮ LIỆU ẢO / KHÔNG BÀI VIẾT MOCK
+ * DỮ LIỆU CỘNG ĐỒNG & BÌNH CHỌN — ĐỒNG BỘ TỪ STORE/DATABASE
  * Tích hợp lõi AI: Google Gemini Auto-Moderation, Sentiment Scoring,
  * Hotspot Detection & AI Concierge Community Quick Reply.
  */

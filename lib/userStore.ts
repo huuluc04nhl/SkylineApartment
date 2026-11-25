@@ -1,6 +1,6 @@
 // ============================================================================
 // SERVER-SIDE USER STORE (Multi-User, Role-Isolated Storage)
-// Pure In-Database Architecture. Single Source of Truth from skylineDb.
+// User & Apartment Member Store backed by skylineDb and Supabase profiles.
 // Zero LocalStorage. Zero External Mock APIs.
 // ============================================================================
 import { updateDemoUser, addOrUpdateDemoUser } from '@/lib/dataStore';

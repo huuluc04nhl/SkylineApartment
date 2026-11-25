@@ -205,16 +205,18 @@ export default function ResidentSmartCard({
             {t('Lật Thẻ')}
           </button>
 
-          {/* Button 2: Quẹt Thẻ NFC */}
-          <button
-            type="button"
-            onClick={handleSimulateTap}
-            disabled={isTapping}
-            className="flex-1 h-10 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-lg rounded-none"
-          >
-            <Wifi className="w-3.5 h-3.5 rotate-90" />
-            {isTapping ? t('Đang Quẹt...') : t('Quẹt Thẻ NFC')}
-          </button>
+          {/* Button 2: Quẹt Thẻ NFC (chỉ bật khi NEXT_PUBLIC_DEMO_MODE=true) */}
+          {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
+            <button
+              type="button"
+              onClick={handleSimulateTap}
+              disabled={isTapping}
+              className="flex-1 h-10 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-lg rounded-none"
+            >
+              <Wifi className="w-3.5 h-3.5 rotate-90" />
+              {isTapping ? t('Đang Quẹt...') : t('[DEMO] Quẹt Thẻ NFC')}
+            </button>
+          )}
         </div>
 
         {/* Tap Feedback Notification */}

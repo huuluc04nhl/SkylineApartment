@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAuthenticatedUser } from '@/lib/server/auth';
-import { skylineDb } from '@/lib/db';
+import { requireAuth } from '@/lib/auth/guard';
+import { getBillWithDetailsByIdDb } from '@/lib/server/billingDb';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-async function authenticateAdmin() {
-  const session = await getAuthenticatedUser();
-  if (!session || session.role !== 'ADMIN') return null;
-  return session.profile;
-}
 
 const DraftReminderSchema = z.object({
   bill_id: z.string(),
@@ -26,13 +20,9 @@ const SendReminderSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const admin = await authenticateAdmin();
-    if (!admin) {
-      return NextResponse.json(
-        { success: false, message: 'Quyền truy cập bị từ chối. Chỉ dành riêng cho Ban Quản Lý (Admin).' },
-        { status: 403 }
-      );
-    }
+    const guard = await requireAuth(['ADMIN']);
+    if (!guard.ok) return guard.response;
+    const admin = guard.session.profile;
 
     const json = await req.json();
 
@@ -44,7 +34,7 @@ export async function POST(req: Request) {
       }
 
       const { bill_id, final_content, tone_level } = parsedSend.data;
-      const bill = skylineDb.bills.findById(bill_id);
+      const bill = await getBillWithDetailsByIdDb(bill_id);
       if (!bill) {
         return NextResponse.json({ success: false, message: 'Không tìm thấy hóa đơn' }, { status: 404 });
       }
@@ -77,7 +67,7 @@ export async function POST(req: Request) {
     }
 
     const { bill_id, tone_override } = parsedDraft.data;
-    const bill = skylineDb.bills.findById(bill_id);
+    const bill = await getBillWithDetailsByIdDb(bill_id);
     if (!bill) {
       return NextResponse.json({ success: false, message: 'Không tìm thấy hóa đơn' }, { status: 404 });
     }

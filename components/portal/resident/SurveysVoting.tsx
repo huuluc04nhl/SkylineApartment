@@ -388,7 +388,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
     try {
       await createCommunityPostWithAi({
         category: createCategory,
-        code: createCategory === 'VOTING' ? `BQ-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}` : undefined,
+        code: createCategory === 'VOTING' ? `BQ-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}` : undefined,
         authorName: userName,
         authorRole: currentUser?.role || 'OWNER',
         aptCode,

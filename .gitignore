@@ -40,3 +40,4 @@ scratch/
 supabase/.temp/
 
 *.traineddata
+.agents/skills/

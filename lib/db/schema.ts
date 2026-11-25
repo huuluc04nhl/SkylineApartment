@@ -226,6 +226,7 @@ export interface MeterReadingRecord {
   period: string;
   image_url?: string;
   confidence: number;
+  source?: 'manual' | 'ocr';
   verified_by?: string;
   recorded_at: string;
   status: 'PENDING' | 'CONFIRMED' | 'REJECTED';

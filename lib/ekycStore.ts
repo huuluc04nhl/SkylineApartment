@@ -1,6 +1,6 @@
 /**
  * e-KYC Resident Identity Verification & FaceID Access Store
- * Pure In-Database Architecture. Single Source of Truth from skylineDb.
+ * Client/Server e-KYC Store backed by skylineDb and /api/ekyc.
  * Zero LocalStorage. Zero External Mock APIs.
  */
 
