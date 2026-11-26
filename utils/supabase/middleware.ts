@@ -13,7 +13,12 @@ export async function createClient(request: NextRequest) {
     },
   });
 
+  const isPortalRoute = request.nextUrl.pathname.startsWith("/portal");
+
   if (!supabaseUrl || !supabaseKey) {
+    if (isPortalRoute) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
     return supabaseResponse;
   }
 
@@ -36,8 +41,14 @@ export async function createClient(request: NextRequest) {
     },
   });
 
-  // Làm mới token phiên Supabase Auth qua @supabase/ssr
-  await supabase.auth.getUser();
+  // Làm mới token phiên Supabase Auth qua @supabase/ssr và chặn truy cập /portal khi chưa đăng nhập
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (isPortalRoute && !user) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 
   return supabaseResponse;
 }

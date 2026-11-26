@@ -34,6 +34,11 @@ vi.mock('@/lib/supabase/admin', () => ({
           eq: () => ({
             maybeSingle: async () => ({ data: null, error: null }),
           }),
+          ilike: () => ({
+            order: () => ({
+              limit: async () => ({ data: [], error: null }),
+            }),
+          }),
         }),
       };
     }),
@@ -54,6 +59,14 @@ vi.mock('@/lib/server/userDb', () => ({
 
 vi.mock('@/lib/server/ticketDb', () => ({
   listTicketsDb: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('@/lib/server/billingDb', () => ({
+  listBillsWithDetailsDb: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock('@/lib/server/visitorDb', () => ({
+  listVisitorPassesDb: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('@/lib/geminiClient', () => ({

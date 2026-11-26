@@ -33,6 +33,11 @@
 | 23 | `VotingTopicRecord` | `voting_topics` | Khớp 100% | CHECK `legal_type`, `status` |
 | 24 | `VotingRecordItem` | `voting_records` | Khớp 100% | Bổ sung `user_id`, UNIQUE `(topic_id, apartment_code)` |
 | 25 | *(DB-only audit log)* | `ticket_events` | Migration mới (`20261125010000`) | Lưu lịch sử chuyển trạng thái `service_tickets` |
+| 26 | *(Auth profile mapping)* | `profiles` | Migration (`20261125020000`) | Ánh xạ `auth.users(id)` -> `role`, `apartment_code`, `user_id` |
+| 27 | *(Rate limit store)* | `rate_limits` | Migration (`20261125090000`) | Chống brute-force đăng nhập / FaceID |
+| 28 | `ParkingSlotRecord` (`lib/server/parkingDb.ts`) | `parking_slots` | Khớp 100% | Dùng trực tiếp qua `/api/parking` |
+| 29 | *(Device telemetry)* | `building_devices` | Migration (`20261125110000`) | Dùng trực tiếp qua `/api/devices` |
+| 30 | *(Security alert feed)* | `security_alerts` | Migration (`20261125110000`) | Dùng trực tiếp qua `/api/security-alerts` |
 
 > **Nguồn sự thật SQL:** Đã hợp nhất về `supabase/migrations/` và `supabase/seed.sql`. Thư mục `database/*.sql` chỉ còn ghi chú trỏ về `supabase/migrations/`.
 
@@ -44,7 +49,6 @@
 |---|---|
 | `bill_details` | chưa dùng trực tiếp như `DatabaseTable` riêng (đang nhúng trong `BillRecord.details` ở `lib/db/schema.ts`) |
 | `voting_options` | chưa dùng trực tiếp như `DatabaseTable` riêng (đang nhúng trong `VotingTopicRecord.options` ở `lib/db/schema.ts`) |
-| `parking_slots` | chưa dùng trong code TypeScript |
 | `facility_access_logs` | chưa dùng trong code TypeScript |
 | `ai_chat_conversations` | chưa dùng trong code TypeScript |
 | `ai_chat_messages` | chưa dùng trong code TypeScript |

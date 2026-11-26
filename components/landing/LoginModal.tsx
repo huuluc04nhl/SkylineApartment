@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -49,6 +50,7 @@ interface LoginModalProps {
 type AuthMethod = 'CREDENTIALS' | 'PHONE_OTP' | 'FACE_ID';
 
 export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: LoginModalProps) {
+  useEscapeKey(isOpen, onClose);
   const router = useRouter();
   const { login, faceLogin } = useAuth();
   const { t, language, isEn } = useLanguage();
@@ -120,21 +122,21 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
     const name = loggedUser.full_name || loggedUser.fullname || loggedUser.name || '';
     const rawApt = loggedUser.apartment_code || '';
     const cleanApt = rawApt;
-    const apt = cleanApt ? `${t('Căn')} ${cleanApt}` : '';
-    let roleNotice = t('Đăng nhập thành công!');
+    const apt = cleanApt ? `${t('CÄƒn')} ${cleanApt}` : '';
+    let roleNotice = t('ÄÄƒng nháº­p thÃ nh cÃ´ng!');
     let redirectTab = 'resident-home';
 
     if (role === 'ADMIN') {
-      roleNotice = `${t('Chào mừng Quản trị viên')}: VinHomes Manager`;
+      roleNotice = `${t('ChÃ o má»«ng Quáº£n trá»‹ viÃªn')}: VinHomes Manager`;
       redirectTab = 'admin-dashboard';
     } else if (role === 'TECHNICIAN') {
-      roleNotice = `${t('Chào mừng Kỹ thuật viên')}: ${name}`;
+      roleNotice = `${t('ChÃ o má»«ng Ká»¹ thuáº­t viÃªn')}: ${name}`;
       redirectTab = 'admin-kanban';
     } else if (role === 'OWNER') {
-      roleNotice = `${t('Chào mừng Chủ hộ')} ${apt ? `${apt}: ` : ''}${name}`;
+      roleNotice = `${t('ChÃ o má»«ng Chá»§ há»™')} ${apt ? `${apt}: ` : ''}${name}`;
       redirectTab = 'resident-home';
     } else {
-      roleNotice = `${t('Chào mừng Cư dân')} ${apt ? `${apt}: ` : ''}${name}`;
+      roleNotice = `${t('ChÃ o má»«ng CÆ° dÃ¢n')} ${apt ? `${apt}: ` : ''}${name}`;
       redirectTab = 'resident-home';
     }
 
@@ -150,11 +152,11 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
   const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!account.trim()) {
-      setErrorMessage('Vui lòng nhập Email hoặc Tên tài khoản.');
+      setErrorMessage('Vui lÃ²ng nháº­p Email hoáº·c TÃªn tÃ i khoáº£n.');
       return;
     }
     if (!password) {
-      setErrorMessage('Vui lòng nhập mật khẩu tài khoản.');
+      setErrorMessage('Vui lÃ²ng nháº­p máº­t kháº©u tÃ i khoáº£n.');
       return;
     }
 
@@ -167,10 +169,10 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
       if (loggedUser) {
         handleRoleRedirect(loggedUser);
       } else {
-        setErrorMessage('Tài khoản hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.');
+        setErrorMessage('TÃ i khoáº£n hoáº·c máº­t kháº©u khÃ´ng chÃ­nh xÃ¡c. Vui lÃ²ng kiá»ƒm tra láº¡i.');
       }
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Lỗi kết nối máy chủ xác thực.');
+      setErrorMessage(err?.message || 'Lá»—i káº¿t ná»‘i mÃ¡y chá»§ xÃ¡c thá»±c.');
     } finally {
       setIsSubmitting(false);
     }
@@ -190,7 +192,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
       const e164 = cleanPhone.startsWith('+') ? cleanPhone : `+84${cleanPhone.replace(/^0/, '')}`;
       const { error } = await createSupabaseBrowserClient().auth.signInWithOtp({ phone: e164 });
       if (error) {
-        setErrorMessage(`Không thể gửi OTP qua Supabase Auth: ${error.message}`);
+        setErrorMessage(`KhÃ´ng thá»ƒ gá»­i OTP qua Supabase Auth: ${error.message}`);
         return;
       }
       setGeneratedOtp('');
@@ -216,11 +218,11 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
     e.preventDefault();
     const cleanPhone = phone.trim().replace(/\s+/g, '');
     if (!cleanPhone) {
-      setErrorMessage('Vui lòng nhập số điện thoại.');
+      setErrorMessage('Vui lÃ²ng nháº­p sá»‘ Ä‘iá»‡n thoáº¡i.');
       return;
     }
     if (!otpCode || otpCode.trim().length !== 6) {
-      setErrorMessage('Vui lòng nhập đủ 6 chữ số mã OTP.');
+      setErrorMessage('Vui lÃ²ng nháº­p Ä‘á»§ 6 chá»¯ sá»‘ mÃ£ OTP.');
       return;
     }
 
@@ -232,11 +234,11 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
         type: 'sms',
       });
       if (error) {
-        setErrorMessage(`Xác thực OTP thất bại: ${error.message}`);
+        setErrorMessage(`XÃ¡c thá»±c OTP tháº¥t báº¡i: ${error.message}`);
         return;
       }
     } else if (!generatedOtp || otpCode.trim() !== generatedOtp) {
-      setErrorMessage('Mã OTP không chính xác. Vui lòng kiểm tra lại!');
+      setErrorMessage('MÃ£ OTP khÃ´ng chÃ­nh xÃ¡c. Vui lÃ²ng kiá»ƒm tra láº¡i!');
       return;
     }
 
@@ -249,10 +251,10 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
       if (loggedUser) {
         handleRoleRedirect(loggedUser);
       } else {
-        setErrorMessage('Số điện thoại chưa tồn tại trong cơ sở dữ liệu cư dân tòa nhà.');
+        setErrorMessage('Sá»‘ Ä‘iá»‡n thoáº¡i chÆ°a tá»“n táº¡i trong cÆ¡ sá»Ÿ dá»¯ liá»‡u cÆ° dÃ¢n tÃ²a nhÃ .');
       }
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Lỗi xác thực OTP từ máy chủ.');
+      setErrorMessage(err?.message || 'Lá»—i xÃ¡c thá»±c OTP tá»« mÃ¡y chá»§.');
     } finally {
       setIsSubmitting(false);
     }
@@ -281,7 +283,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
     setIsConnectingCamera(true);
 
     if (typeof window === 'undefined' || !navigator?.mediaDevices?.getUserMedia) {
-      setCameraError('Trình duyệt không hỗ trợ truy cập Camera trực tiếp.');
+      setCameraError('TrÃ¬nh duyá»‡t khÃ´ng há»— trá»£ truy cáº­p Camera trá»±c tiáº¿p.');
       setIsConnectingCamera(false);
       return;
     }
@@ -339,13 +341,13 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
       setIsCameraActive(false);
       setCameraStream(null);
       if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
-        setCameraError('Quyền truy cập Camera bị từ chối trên trình duyệt. Bạn có thể bấm vào ổ khóa cạnh URL để Cấp quyền Camera (Allow) và bấm "Thử Lại Camera".');
+        setCameraError('Quyá»n truy cáº­p Camera bá»‹ tá»« chá»‘i trÃªn trÃ¬nh duyá»‡t. Báº¡n cÃ³ thá»ƒ báº¥m vÃ o á»• khÃ³a cáº¡nh URL Ä‘á»ƒ Cáº¥p quyá»n Camera (Allow) vÃ  báº¥m "Thá»­ Láº¡i Camera".');
       } else if (err?.name === 'NotFoundError' || err?.name === 'DevicesNotFoundError') {
-        setCameraError('Không tìm thấy thiết bị webcam trên máy tính của bạn.');
+        setCameraError('KhÃ´ng tÃ¬m tháº¥y thiáº¿t bá»‹ webcam trÃªn mÃ¡y tÃ­nh cá»§a báº¡n.');
       } else if (err?.name === 'NotReadableError' || err?.name === 'TrackStartError') {
-        setCameraError('Camera đang bị ứng dụng khác (Zoom, Teams, Meet...) chiếm dụng. Vui lòng tắt các ứng dụng đó rồi bấm "Thử Lại Camera".');
+        setCameraError('Camera Ä‘ang bá»‹ á»©ng dá»¥ng khÃ¡c (Zoom, Teams, Meet...) chiáº¿m dá»¥ng. Vui lÃ²ng táº¯t cÃ¡c á»©ng dá»¥ng Ä‘Ã³ rá»“i báº¥m "Thá»­ Láº¡i Camera".');
       } else {
-        setCameraError('Không thể kết nối Camera phần cứng trên thiết bị. Bạn có thể chuyển sang "Tải Ảnh Chân Dung" để xác thực.');
+        setCameraError('KhÃ´ng thá»ƒ káº¿t ná»‘i Camera pháº§n cá»©ng trÃªn thiáº¿t bá»‹. Báº¡n cÃ³ thá»ƒ chuyá»ƒn sang "Táº£i áº¢nh ChÃ¢n Dung" Ä‘á»ƒ xÃ¡c thá»±c.');
       }
     } finally {
       setIsConnectingCamera(false);
@@ -439,7 +441,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setErrorMessage('Vui lòng chọn tệp hình ảnh hợp lệ (JPG, PNG, WebP).');
+      setErrorMessage('Vui lÃ²ng chá»n tá»‡p hÃ¬nh áº£nh há»£p lá»‡ (JPG, PNG, WebP).');
       return;
     }
 
@@ -466,12 +468,12 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
     if (isUsingCamera && isCameraActive && lighting) {
       if (lighting.status === 'TOO_DARK' && lighting.luminance < 35) {
         setFaceScanStatus('FAILED');
-        setErrorMessage('Môi trường đang quá tối để nhận diện. Vui lòng bật đèn hoặc di chuyển đến nơi có ánh sáng tốt hơn.');
+        setErrorMessage('MÃ´i trÆ°á»ng Ä‘ang quÃ¡ tá»‘i Ä‘á»ƒ nháº­n diá»‡n. Vui lÃ²ng báº­t Ä‘Ã¨n hoáº·c di chuyá»ƒn Ä‘áº¿n nÆ¡i cÃ³ Ã¡nh sÃ¡ng tá»‘t hÆ¡n.');
         return;
       }
       if (lighting.status === 'TOO_BRIGHT' && lighting.luminance > 235) {
         setFaceScanStatus('FAILED');
-        setErrorMessage('Camera đang bị chói sáng hoặc ngược sáng mạnh. Vui lòng tránh nguồn sáng rọi thẳng vào ống kính.');
+        setErrorMessage('Camera Ä‘ang bá»‹ chÃ³i sÃ¡ng hoáº·c ngÆ°á»£c sÃ¡ng máº¡nh. Vui lÃ²ng trÃ¡nh nguá»“n sÃ¡ng rá»i tháº³ng vÃ o á»‘ng kÃ­nh.');
         return;
       }
     }
@@ -482,7 +484,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
     if (isUsingCamera) {
       if (!isCameraActive || !videoRef.current || videoRef.current.readyState < 2) {
         setFaceScanStatus('FAILED');
-        setErrorMessage('Camera đang chuẩn bị khung hình. Vui lòng đợi trong giây lát hoặc bấm "Bật lại Camera".');
+        setErrorMessage('Camera Ä‘ang chuáº©n bá»‹ khung hÃ¬nh. Vui lÃ²ng Ä‘á»£i trong giÃ¢y lÃ¡t hoáº·c báº¥m "Báº­t láº¡i Camera".');
         return;
       }
 
@@ -532,23 +534,23 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
       setFaceScanStatus('FAILED');
       setErrorMessage(
         faceInputMode === 'CAMERA'
-          ? 'Không thể ghi nhận hình ảnh từ Camera. Vui lòng thử lại hoặc chọn "Tải Ảnh".'
-          : 'Vui lòng chọn ảnh chân dung để quét.'
+          ? 'KhÃ´ng thá»ƒ ghi nháº­n hÃ¬nh áº£nh tá»« Camera. Vui lÃ²ng thá»­ láº¡i hoáº·c chá»n "Táº£i áº¢nh".'
+          : 'Vui lÃ²ng chá»n áº£nh chÃ¢n dung Ä‘á»ƒ quÃ©t.'
       );
       return;
     }
 
     setFaceScanStatus('SCANNING');
-    setScanStepText('Đang kiểm tra nhận diện khuôn mặt...');
+    setScanStepText('Äang kiá»ƒm tra nháº­n diá»‡n khuÃ´n máº·t...');
 
-    // Ưu tiên trích xuất vector đặc trưng ResNet 128-D thực tế
+    // Æ¯u tiÃªn trÃ­ch xuáº¥t vector Ä‘áº·c trÆ°ng ResNet 128-D thá»±c táº¿
     try {
       const neuralDesc = await extractNeuralDescriptorFromBase64(capturedImage);
       if (neuralDesc && neuralDesc.length === 128) {
         extractedFaceVector = Array.from(neuralDesc);
       }
     } catch (e) {
-      // Fallback sang vector pixel đã trích xuất
+      // Fallback sang vector pixel Ä‘Ã£ trÃ­ch xuáº¥t
     }
 
     try {
@@ -560,7 +562,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
 
       if (result.success && result.user) {
         setFaceScanStatus('SUCCESS');
-        setScanStepText('Nhận diện khuôn mặt thành công!');
+        setScanStepText('Nháº­n diá»‡n khuÃ´n máº·t thÃ nh cÃ´ng!');
         const cleanApt = result.user.apartment_code || '';
         setMatchedFaceResult({
           name: result.user.full_name || (result.user as any).fullname || (result.user as any).name || '',
@@ -576,12 +578,12 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
       } else {
         setFaceScanStatus('FAILED');
         setScanStepText('');
-        setErrorMessage(result.message || 'Không nhận diện được khuôn mặt.');
+        setErrorMessage(result.message || 'KhÃ´ng nháº­n diá»‡n Ä‘Æ°á»£c khuÃ´n máº·t.');
       }
     } catch (err: any) {
       setFaceScanStatus('FAILED');
       setScanStepText('');
-      setErrorMessage(err?.message || 'Lỗi xác thực khuôn mặt.');
+      setErrorMessage(err?.message || 'Lá»—i xÃ¡c thá»±c khuÃ´n máº·t.');
     }
   };
 
@@ -603,7 +605,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
             onClose();
           }}
           className="absolute top-4 right-4 text-gray-400 hover:text-white p-1 rounded-none hover:bg-[#161B22] transition-colors"
-          title={isEn ? 'Close window' : 'Đóng cửa sổ'}
+          title={isEn ? 'Close window' : 'ÄÃ³ng cá»­a sá»•'}
         >
           <X className="w-5 h-5" />
         </button>
@@ -612,14 +614,14 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
         <div className="text-center space-y-1 border-b border-[#222B35] pb-3">
           <SkylineLogo variant="stacked" size="md" theme="dark" className="mx-auto" />
           <h3 className="font-serif text-lg text-white font-bold tracking-wide">
-            {t('Cổng SKYLINE Smart Residence')}
+            {t('Cá»•ng SKYLINE Smart Residence')}
           </h3>
           <p className="text-[11px] text-gray-400 font-light">
-            {t('Cổng đăng nhập hệ thống dành cho Cư Dân & VinHomes Manager')}
+            {t('Cá»•ng Ä‘Äƒng nháº­p há»‡ thá»‘ng dÃ nh cho CÆ° DÃ¢n & VinHomes Manager')}
           </p>
         </div>
 
-        {/* 3-Tab Selector: Email / Password | SĐT OTP | FaceID AI */}
+        {/* 3-Tab Selector: Email / Password | SÄT OTP | FaceID AI */}
         <div className="grid grid-cols-3 gap-1 bg-[#121820] p-1 border border-[#222B35] rounded-none text-xs">
           <button
             type="button"
@@ -635,7 +637,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
               }`}
           >
             <Mail className="w-3.5 h-3.5 shrink-0" />
-            <span className="text-[10px] sm:text-[11px] leading-tight text-center break-words min-w-0">{t('Email / Mật Khẩu')}</span>
+            <span className="text-[10px] sm:text-[11px] leading-tight text-center break-words min-w-0">{t('Email / Máº­t Kháº©u')}</span>
           </button>
 
           <button
@@ -652,7 +654,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
               }`}
           >
             <Smartphone className="w-3.5 h-3.5 shrink-0" />
-            <span className="text-[10px] sm:text-[11px] leading-tight text-center break-words min-w-0">{t('SĐT & Mã OTP')}</span>
+            <span className="text-[10px] sm:text-[11px] leading-tight text-center break-words min-w-0">{t('SÄT & MÃ£ OTP')}</span>
           </button>
 
           <button
@@ -694,7 +696,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                 }}
                 className="px-2 py-0.5 bg-rose-500/30 hover:bg-rose-500/50 text-rose-200 text-[10px] uppercase font-bold border border-rose-400/40 rounded-none whitespace-nowrap"
               >
-                Thử lại
+                Thá»­ láº¡i
               </button>
             )}
           </div>
@@ -709,22 +711,22 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
         )}
 
         {/* ------------------------------------------------------------- */}
-        {/* TAB 1: EMAIL / TÀI KHOẢN & MẬT KHẨU                           */}
+        {/* TAB 1: EMAIL / TÃ€I KHOáº¢N & Máº¬T KHáº¨U                           */}
         {/* ------------------------------------------------------------- */}
         {authMethod === 'CREDENTIALS' && (
           <form onSubmit={handleCredentialsLogin} className="space-y-3.5">
             <div className="space-y-1">
               <label className="text-gray-300 text-[11px] flex items-center justify-between font-medium">
                 <span className="flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Email / Tài Khoản:')}
+                  <Mail className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Email / TÃ i Khoáº£n:')}
                 </span>
-                <span className="text-[10px] text-gray-400 font-mono">{t('Cư dân & Quản lý')}</span>
+                <span className="text-[10px] text-gray-400 font-mono">{t('CÆ° dÃ¢n & Quáº£n lÃ½')}</span>
               </label>
               <input
                 type="text"
                 value={account}
                 onChange={(e) => setAccount(e.target.value)}
-                placeholder={t('Nhập email tài khoản (VD: huuluc04@gmail.com)...')}
+                placeholder={t('Nháº­p email tÃ i khoáº£n (VD: huuluc04@gmail.com)...')}
                 className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white text-xs font-mono rounded-none focus:outline-none focus:border-[#C5A880] transition-colors"
                 required
               />
@@ -733,16 +735,16 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
             <div className="space-y-1">
               <label className="text-gray-300 text-[11px] flex items-center justify-between font-medium">
                 <span className="flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Mật Khẩu:')}
+                  <Lock className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Máº­t Kháº©u:')}
                 </span>
-                <span className="text-[10px] text-gray-400 font-mono">{t('Bảo mật hệ thống')}</span>
+                <span className="text-[10px] text-gray-400 font-mono">{t('Báº£o máº­t há»‡ thá»‘ng')}</span>
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t('Nhập mật khẩu...')}
+                  placeholder={t('Nháº­p máº­t kháº©u...')}
                   className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 pr-10 text-white text-xs rounded-none focus:outline-none focus:border-[#C5A880] transition-colors"
                   required
                 />
@@ -766,11 +768,11 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
             >
               {isSubmitting ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" /> {t('Đang Xác Thực Tài Khoản...')}
+                  <RefreshCw className="w-4 h-4 animate-spin" /> {t('Äang XÃ¡c Thá»±c TÃ i Khoáº£n...')}
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="w-4 h-4" /> {t('Đăng Nhập Hệ Thống')}
+                  <CheckCircle2 className="w-4 h-4" /> {t('ÄÄƒng Nháº­p Há»‡ Thá»‘ng')}
                 </>
               )}
             </button>
@@ -778,16 +780,16 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
         )}
 
         {/* ------------------------------------------------------------- */}
-        {/* TAB 2: SỐ ĐIỆN THOẠI & MÃ OTP                                 */}
+        {/* TAB 2: Sá» ÄIá»†N THOáº I & MÃƒ OTP                                 */}
         {/* ------------------------------------------------------------- */}
         {authMethod === 'PHONE_OTP' && (
           <div className="space-y-3.5">
             <div className="space-y-1">
               <label className="text-gray-300 flex items-center justify-between text-[11px] font-medium">
                 <span className="flex items-center gap-1.5">
-                  <Smartphone className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Số Điện Thoại Cư Dân:')}
+                  <Smartphone className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Sá»‘ Äiá»‡n Thoáº¡i CÆ° DÃ¢n:')}
                 </span>
-                <span className="text-[10px] text-gray-400 font-mono">{t('Đã đăng ký')}</span>
+                <span className="text-[10px] text-gray-400 font-mono">{t('ÄÃ£ Ä‘Äƒng kÃ½')}</span>
               </label>
               <div className="flex gap-2">
                 <input
@@ -795,7 +797,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                   maxLength={10}
                   value={phone}
                   onChange={(e) => setPhone(cleanPhoneNumber(e.target.value))}
-                  placeholder={t('Nhập số điện thoại 10 số (VD: 0901234567)')}
+                  placeholder={t('Nháº­p sá»‘ Ä‘iá»‡n thoáº¡i 10 sá»‘ (VD: 0901234567)')}
                   className="flex-1 bg-[#161B22] border border-[#2D3748] p-2.5 text-white text-xs font-mono rounded-none focus:outline-none focus:border-[#C5A880]"
                   required
                 />
@@ -814,32 +816,32 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                       {countdown}s
                     </>
                   ) : (
-                    t('Gửi Mã OTP')
+                    t('Gá»­i MÃ£ OTP')
                   )}
                 </button>
               </div>
             </div>
 
-            {/* OTP Message Simulation (chỉ bật khi NEXT_PUBLIC_DEMO_MODE=true) */}
+            {/* OTP Message Simulation (chá»‰ báº­t khi NEXT_PUBLIC_DEMO_MODE=true) */}
             {isOtpSent && process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && generatedOtp && (
               <div className="p-3 bg-[#121E2A] border border-[#C5A880]/70 rounded-none text-xs space-y-1.5 animate-fadeIn">
                 <div className="flex items-center justify-between text-[#C5A880] font-bold">
                   <span className="flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" /> {t('Mã OTP gửi tới')} {phone}:
+                    <Sparkles className="w-3.5 h-3.5" /> {t('MÃ£ OTP gá»­i tá»›i')} {phone}:
                   </span>
                   <span className="font-mono bg-[#C5A880] text-[#0D1117] px-2 py-0.5 text-xs font-bold rounded-none">
                     {generatedOtp}
                   </span>
                 </div>
                 <div className="text-[11px] text-gray-400">
-                  {t('Mã OTP có hiệu lực trong 60 giây.')}
+                  {t('MÃ£ OTP cÃ³ hiá»‡u lá»±c trong 60 giÃ¢y.')}
                 </div>
                 <button
                   type="button"
                   onClick={() => setOtpCode(generatedOtp)}
                   className="text-[10px] text-[#C5A880] underline hover:text-white font-semibold"
                 >
-                  {t('Bấm để tự động điền mã')}: {generatedOtp}
+                  {t('Báº¥m Ä‘á»ƒ tá»± Ä‘á»™ng Ä‘iá»n mÃ£')}: {generatedOtp}
                 </button>
               </div>
             )}
@@ -848,7 +850,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
             <form onSubmit={handleVerifyOtp} className="space-y-3">
               <div className="space-y-1">
                 <label className="text-gray-300 text-[11px] flex items-center gap-1.5 font-medium">
-                  <Lock className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Nhập mã OTP 6 chữ số:')}
+                  <Lock className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Nháº­p mÃ£ OTP 6 chá»¯ sá»‘:')}
                 </label>
                 <input
                   type="text"
@@ -871,11 +873,11 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
               >
                 {isSubmitting ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin" /> {t('Đang Xác Thực OTP...')}
+                    <RefreshCw className="w-4 h-4 animate-spin" /> {t('Äang XÃ¡c Thá»±c OTP...')}
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-4 h-4" /> {t('Xác Thực OTP & Đăng Nhập')}
+                    <CheckCircle2 className="w-4 h-4" /> {t('XÃ¡c Thá»±c OTP & ÄÄƒng Nháº­p')}
                   </>
                 )}
               </button>
@@ -904,11 +906,11 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
             <div className="p-2.5 bg-[#121820] border border-[#222B35] rounded-none text-xs flex items-center justify-between select-none">
               <div className="flex items-center gap-2 text-[#C5A880] font-semibold text-[11px]">
                 {deviceType === 'MOBILE' ? <Smartphone className="w-3.5 h-3.5 text-[#C5A880]" /> : <Camera className="w-3.5 h-3.5 text-[#C5A880]" />}
-                <span>{t('Nhận Diện Khuôn Mặt Trực Tiếp')}</span>
+                <span>{t('Nháº­n Diá»‡n KhuÃ´n Máº·t Trá»±c Tiáº¿p')}</span>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-mono text-emerald-400">
                 <span className={`w-2 h-2 rounded-none ${isCameraActive ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-                <span>{isCameraActive ? t('Camera Sẵn Sàng') : t('Đang Kết Nối')}</span>
+                <span>{isCameraActive ? t('Camera Sáºµn SÃ ng') : t('Äang Káº¿t Ná»‘i')}</span>
               </div>
             </div>
 
@@ -948,10 +950,10 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                         <Camera className="w-6 h-6 animate-pulse" />
                       </div>
                       <div className="text-xs text-gray-300 font-medium">
-                        {t('Đang kết nối Camera')} {deviceType === 'MOBILE' ? t('điện thoại') : t('laptop')}...
+                        {t('Äang káº¿t ná»‘i Camera')} {deviceType === 'MOBILE' ? t('Ä‘iá»‡n thoáº¡i') : t('laptop')}...
                       </div>
                       <div className="text-[11px] text-gray-500">
-                        {t('Vui lòng cho phép quyền Camera trên trình duyệt nếu có yêu cầu')}
+                        {t('Vui lÃ²ng cho phÃ©p quyá»n Camera trÃªn trÃ¬nh duyá»‡t náº¿u cÃ³ yÃªu cáº§u')}
                       </div>
                     </div>
                   )}
@@ -971,7 +973,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                           onClick={startCamera}
                           className="px-3 py-1.5 bg-[#C5A880] text-[#0D1117] text-xs font-bold rounded-none hover:bg-white transition-all flex items-center gap-1.5"
                         >
-                          <RefreshCw className="w-3.5 h-3.5" /> {t('Thử lại Camera')}
+                          <RefreshCw className="w-3.5 h-3.5" /> {t('Thá»­ láº¡i Camera')}
                         </button>
                         <button
                           type="button"
@@ -981,7 +983,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                           }}
                           className="px-3 py-1.5 bg-[#161B22] border border-[#2D3748] text-gray-300 text-xs font-medium rounded-none hover:text-white transition-all flex items-center gap-1.5"
                         >
-                          <Upload className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Tải Ảnh')}
+                          <Upload className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Táº£i áº¢nh')}
                         </button>
                       </div>
                     </div>
@@ -1000,7 +1002,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                     onClick={() => fileUploadInputRef.current?.click()}
                     className="absolute top-3 right-3 px-2.5 py-1 bg-black/75 hover:bg-black text-[11px] text-[#C5A880] rounded-none border border-white/20 backdrop-blur transition-all flex items-center gap-1.5"
                   >
-                    <RefreshCw className="w-3 h-3" /> {t('Đổi ảnh')}
+                    <RefreshCw className="w-3 h-3" /> {t('Äá»•i áº£nh')}
                   </button>
                 </div>
               ) : (
@@ -1013,10 +1015,10 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                     <Upload className="w-6 h-6" />
                   </div>
                   <div className="text-xs font-medium text-gray-300">
-                    {t('Bấm vào đây để chọn ảnh khuôn mặt')}
+                    {t('Báº¥m vÃ o Ä‘Ã¢y Ä‘á»ƒ chá»n áº£nh khuÃ´n máº·t')}
                   </div>
                   <div className="text-[11px] text-gray-500">
-                    {t('Hỗ trợ định dạng ảnh rõ nét (JPG, PNG, WebP)')}
+                    {t('Há»— trá»£ Ä‘á»‹nh dáº¡ng áº£nh rÃµ nÃ©t (JPG, PNG, WebP)')}
                   </div>
                 </div>
               )}
@@ -1041,7 +1043,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                 </div>
               )}
 
-              {/* Clean Biometric Face Guide Oval (Không rườm rà đường kẻ) */}
+              {/* Clean Biometric Face Guide Oval (KhÃ´ng rÆ°á»m rÃ  Ä‘Æ°á»ng káº») */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                 <div className={`w-36 h-48 sm:w-40 sm:h-52 border rounded-[50%] transition-all duration-300 ${faceScanStatus === 'SUCCESS'
                   ? 'border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.5)]'
@@ -1057,7 +1059,7 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                   }`} />
               </div>
 
-              {/* Minimalist Floating Status - Chỉ hiển thị khi IDLE hoặc khi có kết quả SUCCESS/FAILED, không hiển thị chồng lúc đang quét */}
+              {/* Minimalist Floating Status - Chá»‰ hiá»ƒn thá»‹ khi IDLE hoáº·c khi cÃ³ káº¿t quáº£ SUCCESS/FAILED, khÃ´ng hiá»ƒn thá»‹ chá»“ng lÃºc Ä‘ang quÃ©t */}
               {(faceScanStatus === 'IDLE' || faceScanStatus === 'SUCCESS' || faceScanStatus === 'FAILED') && (
                 <div className="absolute bottom-3 inset-x-4 flex justify-center pointer-events-none z-20">
                   <div className="px-3 py-1 bg-black/85 backdrop-blur border border-white/10 rounded-none text-xs font-medium flex items-center gap-1.5 shadow-lg">
@@ -1071,33 +1073,33 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                           lighting?.status === 'TOO_DARK' ? (
                             <>
                               <Moon className="w-3 h-3 text-rose-400" />
-                              <span>{t('Ánh sáng yếu')} ({lighting.scorePercent}%) - {t('Cần thêm ánh sáng')}</span>
+                              <span>{t('Ãnh sÃ¡ng yáº¿u')} ({lighting.scorePercent}%) - {t('Cáº§n thÃªm Ã¡nh sÃ¡ng')}</span>
                             </>
                           ) : lighting?.status === 'TOO_BRIGHT' ? (
                             <>
                               <Sun className="w-3 h-3 text-amber-400" />
-                              <span>{t('Ánh sáng chói - Tránh ngược sáng')}</span>
+                              <span>{t('Ãnh sÃ¡ng chÃ³i - TrÃ¡nh ngÆ°á»£c sÃ¡ng')}</span>
                             </>
                           ) : isCameraActive ? (
-                            t('Căn khuôn mặt vào khung elip')
+                            t('CÄƒn khuÃ´n máº·t vÃ o khung elip')
                           ) : (
-                            t('Đang kết nối camera...')
+                            t('Äang káº¿t ná»‘i camera...')
                           )
                         ) : (
-                          uploadedFaceImage ? t('Ảnh đã sẵn sàng quét FaceID') : t('Chọn ảnh chân dung để quét')
+                          uploadedFaceImage ? t('áº¢nh Ä‘Ã£ sáºµn sÃ ng quÃ©t FaceID') : t('Chá»n áº£nh chÃ¢n dung Ä‘á»ƒ quÃ©t')
                         )}
                       </span>
                     )}
                     {faceScanStatus === 'SUCCESS' && (
                       <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        {t('Xác thực thành công')}
+                        {t('XÃ¡c thá»±c thÃ nh cÃ´ng')}
                       </span>
                     )}
                     {faceScanStatus === 'FAILED' && (
                       <span className="text-rose-400 font-semibold flex items-center gap-1.5">
                         <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-                        {errorMessage ? t(errorMessage) : t('Không khớp dữ liệu')}
+                        {errorMessage ? t(errorMessage) : t('KhÃ´ng khá»›p dá»¯ liá»‡u')}
                       </span>
                     )}
                   </div>
@@ -1117,22 +1119,22 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
                       {matchedFaceResult.name}
                     </div>
                     <div className="text-[11px] text-gray-400 flex items-center gap-1.5 flex-wrap">
-                      <span>{t('Căn hộ')}: <span className="text-emerald-300 font-mono font-semibold">{matchedFaceResult.apt}</span></span>
+                      <span>{t('CÄƒn há»™')}: <span className="text-emerald-300 font-mono font-semibold">{matchedFaceResult.apt}</span></span>
                       {matchedFaceResult.bestAngle && (
                         <span className="text-[10px] px-1.5 py-0.5 bg-[#C5A880]/20 text-[#D8BC95] border border-[#C5A880]/30 font-medium">
-                          {t('Mẫu')}: {matchedFaceResult.bestAngle}
+                          {t('Máº«u')}: {matchedFaceResult.bestAngle}
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
                 <div className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-none text-[10px] font-mono font-bold">
-                  {matchedFaceResult.score}% {t('KHỚP')}
+                  {matchedFaceResult.score}% {t('KHá»šP')}
                 </div>
               </div>
             )}
 
-            {/* Primary Action Button - Duy nhất hiển thị vòng xoay loading tại đây */}
+            {/* Primary Action Button - Duy nháº¥t hiá»ƒn thá»‹ vÃ²ng xoay loading táº¡i Ä‘Ã¢y */}
             <button
               type="button"
               onClick={() => {
@@ -1151,17 +1153,17 @@ export default function LoginModal({ isOpen, onClose, defaultAccount = '' }: Log
               {faceScanStatus === 'SCANNING' || faceScanStatus === 'LIVENESS' || faceScanStatus === 'MATCHING' ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin text-[#0D1117]" />
-                  <span>{t('Đang Nhận Diện Khuôn Mặt...')}</span>
+                  <span>{t('Äang Nháº­n Diá»‡n KhuÃ´n Máº·t...')}</span>
                 </>
               ) : (
                 <>
                   <ScanFace className="w-4 h-4" />
                   <span>
                     {faceInputMode === 'UPLOAD' && !uploadedFaceImage
-                      ? t('Chọn Ảnh Để Nhận Diện')
+                      ? t('Chá»n áº¢nh Äá»ƒ Nháº­n Diá»‡n')
                       : faceScanStatus === 'FAILED'
-                        ? t('Quét Lại Khuôn Mặt')
-                        : t('Bắt Đầu Nhận Diện Khuôn Mặt')}
+                        ? t('QuÃ©t Láº¡i KhuÃ´n Máº·t')
+                        : t('Báº¯t Äáº§u Nháº­n Diá»‡n KhuÃ´n Máº·t')}
                   </span>
                 </>
               )}

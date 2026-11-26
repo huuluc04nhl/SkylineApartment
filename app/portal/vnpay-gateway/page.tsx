@@ -63,12 +63,34 @@ function VnpayGatewayInner() {
     );
   }
 
-  const billId = searchParams.get('billId') || 'BILL-CH06-2026-08';
-  const amountStr = searchParams.get('amount') || '2450000';
-  const amount = parseFloat(amountStr) || 2450000;
-  const aptCode = searchParams.get('apt') || 'CH-06';
-  const month = searchParams.get('month') || 'T08/2026';
+  const billId = searchParams.get('billId') || '';
+  const amountStr = searchParams.get('amount') || '0';
+  const amount = parseFloat(amountStr) || 0;
+  const aptCode = (searchParams.get('apt') || '').trim();
+  const month = searchParams.get('month') || '';
   const returnUrl = searchParams.get('returnUrl') || '';
+
+  if (!aptCode || !billId) {
+    return (
+      <div className="min-h-screen bg-[#0A0E14] text-white flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-[#0E131B] border border-rose-500/40 p-6 text-center space-y-4 rounded-none">
+          <h2 className="font-serif text-lg font-bold text-rose-400">
+            {t('Thiếu thông tin hóa đơn hoặc mã căn hộ', 'Missing Bill or Apartment Code')}
+          </h2>
+          <p className="text-xs text-gray-400">
+            {t('Vui lòng chọn hóa đơn từ Cổng Tài Chính Cư Dân để tiến hành thanh toán.', 'Please select a bill from the Resident Finance Portal to proceed.')}
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push('/portal?tab=resident-finance')}
+            className="px-4 py-2 bg-[#C5A880] text-[#0A0E14] font-semibold text-xs rounded-none hover:bg-[#E2C9A5]"
+          >
+            {t('Quay lại cổng cư dân', 'Back to Resident Portal')}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const [activeChannel, setActiveChannel] = useState<'ATM' | 'QR' | 'INTL'>('ATM');
   const [selectedBank, setSelectedBank] = useState<string>('NCB');

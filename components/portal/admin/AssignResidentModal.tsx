@@ -1,4 +1,5 @@
 ﻿'use client';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import { getInitialsAvatar } from '@/lib/avatarHelper';
 
 import React, { useState, useEffect } from 'react';
@@ -58,6 +59,7 @@ export default function AssignResidentModal({
   unit,
   onSuccess
 }: AssignResidentModalProps) {
+  useEscapeKey(isOpen, onClose);
   const { t, isEn } = useLanguage();
   const isOccupied = unit?.status === 'OCCUPIED';
 

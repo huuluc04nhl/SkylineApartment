@@ -1,4 +1,5 @@
 ﻿'use client';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
@@ -44,6 +45,7 @@ export default function AvatarEditorModal({
   currentAvatarUrl,
   onAvatarUpdated,
 }: AvatarEditorModalProps) {
+  useEscapeKey(isOpen, onClose);
   const { t, isEn } = useLanguage();
   // Source image
   const [sourceImage, setSourceImage] = useState<string | null>(null);

@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -57,6 +58,7 @@ export default function ResidentAllServicesModal({
   onOpenVisitorModal,
   onLogout
 }: ResidentAllServicesModalProps) {
+  useEscapeKey(isOpen, onClose);
   const { t, isEn } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -66,12 +68,12 @@ export default function ResidentAllServicesModal({
   const categories: ServiceCategory[] = useMemo(() => {
     return [
       {
-        title: t('Căn Hộ & Thiết Bị'),
+        title: t('CÄƒn Há»™ & Thiáº¿t Bá»‹'),
         items: [
           {
             id: 'resident-smarthome',
             label: t('Smart Home 3D'),
-            desc: t('Điều khiển đèn, rèm, camera & chuông hình'),
+            desc: t('Äiá»u khiá»ƒn Ä‘Ã¨n, rÃ¨m, camera & chuÃ´ng hÃ¬nh'),
             icon: Home,
             iconColor: 'text-cyan-400',
             action: () => {
@@ -81,8 +83,8 @@ export default function ResidentAllServicesModal({
           },
           {
             id: 'resident-smarthome-camera',
-            label: t('Camera Cửa Căn Hộ'),
-            desc: t('Xem trực tiếp chuông hình & mở khóa từ xa'),
+            label: t('Camera Cá»­a CÄƒn Há»™'),
+            desc: t('Xem trá»±c tiáº¿p chuÃ´ng hÃ¬nh & má»Ÿ khÃ³a tá»« xa'),
             icon: Camera,
             iconColor: 'text-blue-400',
             action: () => {
@@ -92,8 +94,8 @@ export default function ResidentAllServicesModal({
           },
           {
             id: 'resident-handbook',
-            label: t('Sổ Tay Cư Dân'),
-            desc: t('Nội quy tòa nhà, kỹ thuật & danh bạ khẩn cấp'),
+            label: t('Sá»• Tay CÆ° DÃ¢n'),
+            desc: t('Ná»™i quy tÃ²a nhÃ , ká»¹ thuáº­t & danh báº¡ kháº©n cáº¥p'),
             icon: BookOpen,
             iconColor: 'text-emerald-400',
             action: () => {
@@ -104,15 +106,15 @@ export default function ResidentAllServicesModal({
         ]
       },
       {
-        title: t('Tiện Ích & Đời Sống'),
+        title: t('Tiá»‡n Ãch & Äá»i Sá»‘ng'),
         items: [
           {
             id: 'resident-facilities',
-            label: t('Tiện Ích Nội Khu'),
-            desc: t('Đặt chỗ Sky Pool, BBQ Garden, Gym & Sauna VIP'),
+            label: t('Tiá»‡n Ãch Ná»™i Khu'),
+            desc: t('Äáº·t chá»— Sky Pool, BBQ Garden, Gym & Sauna VIP'),
             icon: CalendarCheck,
             iconColor: 'text-amber-400',
-            badge: t('Hạn mức BBQ'),
+            badge: t('Háº¡n má»©c BBQ'),
             action: () => {
               onNavigate('resident-facilities');
               onClose();
@@ -120,8 +122,8 @@ export default function ResidentAllServicesModal({
           },
           {
             id: 'resident-services',
-            label: t('Dịch Vụ Căn Hộ'),
-            desc: t('Dọn dẹp phòng, giặt ủi, rửa xe & spa tại gia'),
+            label: t('Dá»‹ch Vá»¥ CÄƒn Há»™'),
+            desc: t('Dá»n dáº¹p phÃ²ng, giáº·t á»§i, rá»­a xe & spa táº¡i gia'),
             icon: Sparkles,
             iconColor: 'text-rose-400',
             action: () => {
@@ -131,8 +133,8 @@ export default function ResidentAllServicesModal({
           },
           {
             id: 'resident-finance',
-            label: t('Hóa Đơn & Tài Chính'),
-            desc: isOwner ? t('Thanh toán phí dịch vụ, điện, nước qua VietQR') : t('Chỉ dành cho Chủ Hộ'),
+            label: t('HÃ³a ÄÆ¡n & TÃ i ChÃ­nh'),
+            desc: isOwner ? t('Thanh toÃ¡n phÃ­ dá»‹ch vá»¥, Ä‘iá»‡n, nÆ°á»›c qua VietQR') : t('Chá»‰ dÃ nh cho Chá»§ Há»™'),
             icon: CreditCard,
             iconColor: 'text-emerald-400',
             ownerOnly: true,
@@ -145,8 +147,8 @@ export default function ResidentAllServicesModal({
           },
           {
             id: 'resident-tickets',
-            label: t('Báo Hỏng Kỹ Thuật'),
-            desc: t('Gửi yêu cầu sửa chữa Skyline 24/7 trực tuyến'),
+            label: t('BÃ¡o Há»ng Ká»¹ Thuáº­t'),
+            desc: t('Gá»­i yÃªu cáº§u sá»­a chá»¯a Skyline 24/7 trá»±c tuyáº¿n'),
             icon: Wrench,
             iconColor: 'text-amber-500',
             action: () => {
@@ -157,15 +159,15 @@ export default function ResidentAllServicesModal({
         ]
       },
       {
-        title: t('An Ninh & Ra Vào'),
+        title: t('An Ninh & Ra VÃ o'),
         items: [
           {
             id: 'visitor-qr',
-            label: t('Mã QR Đón Khách'),
-            desc: t('Tạo mã QR hoặc mã PIN cho khách và shipper'),
+            label: t('MÃ£ QR ÄÃ³n KhÃ¡ch'),
+            desc: t('Táº¡o mÃ£ QR hoáº·c mÃ£ PIN cho khÃ¡ch vÃ  shipper'),
             icon: QrCode,
             iconColor: 'text-[#C5A880]',
-            badge: '1-Chạm',
+            badge: '1-Cháº¡m',
             action: () => {
               onClose();
               onOpenVisitorModal();
@@ -173,8 +175,8 @@ export default function ResidentAllServicesModal({
           },
           {
             id: 'resident-facilities-card',
-            label: t('Thẻ Cư Dân 3D'),
-            desc: t('Thẻ NFC mạ vàng mở cổng sảnh & thang máy'),
+            label: t('Tháº» CÆ° DÃ¢n 3D'),
+            desc: t('Tháº» NFC máº¡ vÃ ng má»Ÿ cá»•ng sáº£nh & thang mÃ¡y'),
             icon: ShieldCheck,
             iconColor: 'text-[#C5A880]',
             action: () => {
@@ -184,8 +186,8 @@ export default function ResidentAllServicesModal({
           },
           {
             id: 'resident-profile',
-            label: t('Hồ Sơ & FaceID e-KYC'),
-            desc: t('Quét CCCD chip & đăng ký FaceID ra vào'),
+            label: t('Há»“ SÆ¡ & FaceID e-KYC'),
+            desc: t('QuÃ©t CCCD chip & Ä‘Äƒng kÃ½ FaceID ra vÃ o'),
             icon: Camera,
             iconColor: 'text-cyan-400',
             action: () => {
@@ -196,12 +198,12 @@ export default function ResidentAllServicesModal({
         ]
       },
       {
-        title: t('Cộng Đồng & Hỗ Trợ'),
+        title: t('Cá»™ng Äá»“ng & Há»— Trá»£'),
         items: [
           {
             id: 'resident-family',
-            label: t('Thành Viên Gia Đình'),
-            desc: t('Quản lý người nhà, biển số xe & bảo lãnh FaceID'),
+            label: t('ThÃ nh ViÃªn Gia ÄÃ¬nh'),
+            desc: t('Quáº£n lÃ½ ngÆ°á»i nhÃ , biá»ƒn sá»‘ xe & báº£o lÃ£nh FaceID'),
             icon: Users,
             iconColor: 'text-purple-400',
             action: () => {
@@ -211,8 +213,8 @@ export default function ResidentAllServicesModal({
           },
           {
             id: 'resident-surveys',
-            label: t('Khảo Sát & Biểu Quyết'),
-            desc: isOwner ? t('Lấy ý kiến BQT, biểu quyết cư dân trực tuyến') : t('Chỉ dành cho Chủ Hộ'),
+            label: t('Kháº£o SÃ¡t & Biá»ƒu Quyáº¿t'),
+            desc: isOwner ? t('Láº¥y Ã½ kiáº¿n BQT, biá»ƒu quyáº¿t cÆ° dÃ¢n trá»±c tuyáº¿n') : t('Chá»‰ dÃ nh cho Chá»§ Há»™'),
             icon: Vote,
             iconColor: 'text-indigo-400',
             ownerOnly: true,
@@ -225,8 +227,8 @@ export default function ResidentAllServicesModal({
           },
           {
             id: 'resident-ai-assistant',
-            label: t('Trợ Lý AI Concierge'),
-            desc: t('Hỏi đáp quy chế tòa nhà, thủ tục & tư vấn 24/7'),
+            label: t('Trá»£ LÃ½ AI Concierge'),
+            desc: t('Há»i Ä‘Ã¡p quy cháº¿ tÃ²a nhÃ , thá»§ tá»¥c & tÆ° váº¥n 24/7'),
             icon: Headphones,
             iconColor: 'text-[#C5A880]',
             badge: 'AI',
@@ -283,10 +285,10 @@ export default function ResidentAllServicesModal({
             </div>
             <div>
               <h3 className="font-serif text-base sm:text-lg font-bold text-white tracking-wide">
-                {t('Tất Cả Dịch Vụ & Tiện Ích')}
+                {t('Táº¥t Cáº£ Dá»‹ch Vá»¥ & Tiá»‡n Ãch')}
               </h3>
               <p className="text-[11px] text-gray-400 font-mono">
-                {t('Căn')} <strong className="text-[#C5A880]">{aptCode}</strong> • {isOwner ? t('Chủ Hộ') : t('Thành Viên')}
+                {t('CÄƒn')} <strong className="text-[#C5A880]">{aptCode}</strong> â€¢ {isOwner ? t('Chá»§ Há»™') : t('ThÃ nh ViÃªn')}
               </p>
             </div>
           </div>
@@ -295,7 +297,7 @@ export default function ResidentAllServicesModal({
             type="button"
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1C2533] border border-[#2D3A4B] transition-colors active:scale-95"
-            aria-label={isEn ? 'Close' : 'Đóng'}
+            aria-label={isEn ? 'Close' : 'ÄÃ³ng'}
           >
             <X className="w-4 h-4" />
           </button>
@@ -309,7 +311,7 @@ export default function ResidentAllServicesModal({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={isEn ? 'Search amenities, services, repairs...' : 'Tìm kiếm tiện ích, dịch vụ, sửa chữa...'}
+              placeholder={isEn ? 'Search amenities, services, repairs...' : 'TÃ¬m kiáº¿m tiá»‡n Ã­ch, dá»‹ch vá»¥, sá»­a chá»¯a...'}
               className="w-full h-10 pl-9 pr-8 bg-[#121820] border border-[#2A374A] focus:border-[#C5A880] text-xs text-white placeholder-gray-500 focus:outline-none transition-colors rounded-none"
             />
             {searchQuery && (
@@ -329,7 +331,7 @@ export default function ResidentAllServicesModal({
           {filteredCategories.length === 0 ? (
             <div className="p-8 text-center text-gray-400 text-xs space-y-2">
               <Search className="w-8 h-8 text-gray-600 mx-auto" />
-              <p>{isEn ? 'No features found matching keyword' : 'Không tìm thấy tính năng phù hợp với từ khóa'} "{searchQuery}"</p>
+              <p>{isEn ? 'No features found matching keyword' : 'KhÃ´ng tÃ¬m tháº¥y tÃ­nh nÄƒng phÃ¹ há»£p vá»›i tá»« khÃ³a'} "{searchQuery}"</p>
             </div>
           ) : (
             filteredCategories.map((cat, catIdx) => (
@@ -372,7 +374,7 @@ export default function ResidentAllServicesModal({
                             )}
                             {isDisabled && (
                               <span className="text-[9px] font-mono text-amber-400 flex items-center gap-0.5 shrink-0">
-                                <ShieldAlert className="w-2.5 h-2.5" /> Chủ hộ
+                                <ShieldAlert className="w-2.5 h-2.5" /> Chá»§ há»™
                               </span>
                             )}
                           </div>
@@ -394,7 +396,7 @@ export default function ResidentAllServicesModal({
           <div className="pt-3 border-t border-[#222B35] space-y-2.5">
             <div className="flex items-center justify-between p-2.5 bg-[#121820] border border-[#222B35]">
               <span className="text-xs text-gray-300 font-medium">
-                {t('Ngôn ngữ hiển thị:')}
+                {t('NgÃ´n ngá»¯ hiá»ƒn thá»‹:')}
               </span>
               <LanguageSwitcher variant="inline" />
             </div>
@@ -408,7 +410,7 @@ export default function ResidentAllServicesModal({
               className="w-full h-10 px-4 bg-[#161D26] hover:bg-red-950/60 border border-red-500/30 hover:border-red-500 text-red-300 text-xs font-semibold transition-all flex items-center justify-center gap-2 active:scale-95"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>{t('Đăng Xuất Tài Khoản')}</span>
+              <span>{t('ÄÄƒng Xuáº¥t TÃ i Khoáº£n')}</span>
             </button>
           </div>
         </div>

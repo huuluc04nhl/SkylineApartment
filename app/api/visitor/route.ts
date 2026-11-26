@@ -6,6 +6,8 @@ import {
   verifyVisitorQrDb,
   checkInVisitorPassDb,
   checkOutVisitorPassDb,
+  listVisitorPassesDb,
+  listGateLogsDb,
 } from '@/lib/server/visitorDb';
 
 /**
@@ -45,9 +47,22 @@ export async function GET(request: Request) {
     }, { status: 404 });
   }
 
+  const isResident = guard.session.role === 'OWNER' || guard.session.role === 'TENANT';
+  const aptFilter = isResident
+    ? guard.session.apartment_code || '__NONE__'
+    : searchParams.get('apartment_code') || undefined;
+  const limit = Math.min(200, Math.max(1, Number(searchParams.get('limit') || 50)));
+  const offset = Math.max(0, Number(searchParams.get('offset') || 0));
+
+  const [passes, gateLogs] = await Promise.all([
+    listVisitorPassesDb({ apartmentCode: aptFilter, limit, offset }),
+    listGateLogsDb({ apartmentCode: aptFilter, limit, offset }),
+  ]);
+
   return NextResponse.json({
     success: true,
-    message: 'Skyline Secure Visitor Access Gateway (Zero-Dossier Privacy Enabled)',
+    passes,
+    gateLogs,
   });
 }
 

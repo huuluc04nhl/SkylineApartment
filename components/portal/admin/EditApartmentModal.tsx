@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/lib/languageContext';
@@ -32,14 +33,15 @@ export default function EditApartmentModal({
   unit,
   onSuccess
 }: EditApartmentModalProps) {
+  useEscapeKey(isOpen, onClose);
   const { t } = useLanguage();
   const [area, setArea] = useState<number>(78.5);
   const [wallArea, setWallArea] = useState<number>(83.2);
   const [type, setType] = useState<ApartmentType>('2PN');
   const [bedrooms, setBedrooms] = useState<number>(2);
   const [bathrooms, setBathrooms] = useState<number>(2);
-  const [direction, setDirection] = useState('Đông Nam');
-  const [mainDoorDirection, setMainDoorDirection] = useState('Tây Bắc');
+  const [direction, setDirection] = useState('ÄÃ´ng Nam');
+  const [mainDoorDirection, setMainDoorDirection] = useState('TÃ¢y Báº¯c');
   const [priceBillion, setPriceBillion] = useState<number>(4.85);
   const [status, setStatus] = useState<ApartmentStatus>('VACANT');
   const [description, setDescription] = useState('');
@@ -54,7 +56,7 @@ export default function EditApartmentModal({
       setBedrooms(unit.bedrooms || 2);
       setBathrooms(unit.bathrooms || 2);
       setDirection(unit.direction);
-      setMainDoorDirection(unit.mainDoorDirection || 'Tây Bắc');
+      setMainDoorDirection(unit.mainDoorDirection || 'TÃ¢y Báº¯c');
       setPriceBillion(unit.priceBillion);
       setStatus(unit.status);
       setDescription(unit.description || '');
@@ -69,9 +71,9 @@ export default function EditApartmentModal({
     e.preventDefault();
     setError(null);
 
-    let typeLabel = '2 Phòng Ngủ - 2WC';
-    if (type === '1PN') typeLabel = '1 Phòng Ngủ - 1WC';
-    if (type === '3PN') typeLabel = '3 Phòng Ngủ - 3WC';
+    let typeLabel = '2 PhÃ²ng Ngá»§ - 2WC';
+    if (type === '1PN') typeLabel = '1 PhÃ²ng Ngá»§ - 1WC';
+    if (type === '3PN') typeLabel = '3 PhÃ²ng Ngá»§ - 3WC';
     if (type === 'DUPLEX_PENTHOUSE') typeLabel = 'Duplex Penthouse 5 Sao';
 
     const patch: Partial<ApartmentUnit> = {
@@ -91,7 +93,7 @@ export default function EditApartmentModal({
     const blockCodeMatch = unit.towerName?.match(/BS-\d+/)?.[0] || 'BS-07';
     const ok = updateApartmentUnit(unit.code, patch, blockCodeMatch);
     if (!ok) {
-      setError('Không thể cập nhật thông tin căn hộ. Vui lòng thử lại.');
+      setError('KhÃ´ng thá»ƒ cáº­p nháº­t thÃ´ng tin cÄƒn há»™. Vui lÃ²ng thá»­ láº¡i.');
       return;
     }
 
@@ -101,14 +103,14 @@ export default function EditApartmentModal({
 
   const handleDelete = () => {
     if (unit.status === 'OCCUPIED') {
-      setError('Không thể xóa căn hộ đang có cư dân sinh sống. Vui lòng thu hồi căn hộ trước khi xóa.');
+      setError('KhÃ´ng thá»ƒ xÃ³a cÄƒn há»™ Ä‘ang cÃ³ cÆ° dÃ¢n sinh sá»‘ng. Vui lÃ²ng thu há»“i cÄƒn há»™ trÆ°á»›c khi xÃ³a.');
       return;
     }
 
     const blockCodeMatch = unit.towerName?.match(/BS-\d+/)?.[0] || 'BS-07';
     const ok = deleteApartmentUnit(unit.code, blockCodeMatch);
     if (!ok) {
-      setError('Không thể xóa căn hộ.');
+      setError('KhÃ´ng thá»ƒ xÃ³a cÄƒn há»™.');
       return;
     }
 
@@ -124,16 +126,16 @@ export default function EditApartmentModal({
         <div className="flex items-start justify-between border-b border-[#222B35] pb-3">
           <div>
             <div className="text-[10.5px] uppercase tracking-widest text-[#C5A880] font-mono font-semibold">
-              {t('Cập Nhật Thông Tin Không Gian', 'Update Space & Specifications')}
+              {t('Cáº­p Nháº­t ThÃ´ng Tin KhÃ´ng Gian', 'Update Space & Specifications')}
             </div>
             <h3 className="font-serif text-xl font-bold text-white mt-0.5 flex items-center gap-2">
-              <span>{t('Chỉnh Sửa Căn Hộ', 'Edit Apartment')} {unit.code}</span>
+              <span>{t('Chá»‰nh Sá»­a CÄƒn Há»™', 'Edit Apartment')} {unit.code}</span>
               <span className="text-xs px-2 py-0.5 bg-[#161B22] border border-[#2D3748] text-gray-300 font-sans">
                 {unit.towerName}
               </span>
             </h3>
           </div>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-white p-1" title={t('Đóng', 'Close')}>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-white p-1" title={t('ÄÃ³ng', 'Close')}>
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -146,40 +148,40 @@ export default function EditApartmentModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* Trạng thái căn hộ */}
+          {/* Tráº¡ng thÃ¡i cÄƒn há»™ */}
           <div>
-            <label className="block text-gray-300 font-semibold mb-1">{t('Trạng Thái Căn Hộ', 'Apartment Status')}</label>
+            <label className="block text-gray-300 font-semibold mb-1">{t('Tráº¡ng ThÃ¡i CÄƒn Há»™', 'Apartment Status')}</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as any)}
               className="w-full bg-[#161B22] border border-[#2D3748] px-3 py-2 text-white font-semibold rounded-none focus:outline-none focus:border-[#C5A880]"
             >
-              <option value="OCCUPIED">🟢 {t('Đã Có Người Ở (Đang sinh sống)', 'Occupied (Resident living)')}</option>
-              <option value="VACANT">🟡 {t('Nhà Trống (Sẵn sàng bàn giao)', 'Vacant (Ready for handover)')}</option>
-              <option value="MAINTENANCE">🔵 {t('Đang Sửa Chữa / Nghiệm Thu', 'Under Maintenance / Inspection')}</option>
-              <option value="HANDOVER_PENDING">🟣 {t('Chờ Bàn Giao', 'Pending Handover')}</option>
+              <option value="OCCUPIED">ðŸŸ¢ {t('ÄÃ£ CÃ³ NgÆ°á»i á»ž (Äang sinh sá»‘ng)', 'Occupied (Resident living)')}</option>
+              <option value="VACANT">ðŸŸ¡ {t('NhÃ  Trá»‘ng (Sáºµn sÃ ng bÃ n giao)', 'Vacant (Ready for handover)')}</option>
+              <option value="MAINTENANCE">ðŸ”µ {t('Äang Sá»­a Chá»¯a / Nghiá»‡m Thu', 'Under Maintenance / Inspection')}</option>
+              <option value="HANDOVER_PENDING">ðŸŸ£ {t('Chá» BÃ n Giao', 'Pending Handover')}</option>
             </select>
           </div>
 
-          {/* Phân loại căn hộ */}
+          {/* PhÃ¢n loáº¡i cÄƒn há»™ */}
           <div>
-            <label className="block text-gray-300 font-semibold mb-1">{t('Loại Căn Hộ', 'Apartment Type')}</label>
+            <label className="block text-gray-300 font-semibold mb-1">{t('Loáº¡i CÄƒn Há»™', 'Apartment Type')}</label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value as any)}
               className="w-full bg-[#161B22] border border-[#2D3748] px-3 py-2 text-white rounded-none focus:outline-none focus:border-[#C5A880]"
             >
-              <option value="1PN">1 {t('Phòng Ngủ - 1WC', 'Bedroom - 1 Bathroom')}</option>
-              <option value="2PN">2 {t('Phòng Ngủ - 2WC', 'Bedrooms - 2 Bathrooms')}</option>
-              <option value="3PN">3 {t('Phòng Ngủ - 3WC', 'Bedrooms - 3 Bathrooms')}</option>
-              <option value="DUPLEX_PENTHOUSE">{t('Căn Lớn Penthouse', '5-Star Duplex Penthouse')}</option>
+              <option value="1PN">1 {t('PhÃ²ng Ngá»§ - 1WC', 'Bedroom - 1 Bathroom')}</option>
+              <option value="2PN">2 {t('PhÃ²ng Ngá»§ - 2WC', 'Bedrooms - 2 Bathrooms')}</option>
+              <option value="3PN">3 {t('PhÃ²ng Ngá»§ - 3WC', 'Bedrooms - 3 Bathrooms')}</option>
+              <option value="DUPLEX_PENTHOUSE">{t('CÄƒn Lá»›n Penthouse', '5-Star Duplex Penthouse')}</option>
             </select>
           </div>
 
-          {/* Diện tích & Số phòng */}
+          {/* Diá»‡n tÃ­ch & Sá»‘ phÃ²ng */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="block text-gray-300 font-semibold mb-1">{t('Thông Thủy (m²)', 'Net Usable (m²)')}</label>
+              <label className="block text-gray-300 font-semibold mb-1">{t('ThÃ´ng Thá»§y (mÂ²)', 'Net Usable (mÂ²)')}</label>
               <input
                 type="number"
                 step="0.1"
@@ -191,7 +193,7 @@ export default function EditApartmentModal({
             </div>
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-1">{t('Tim Tường (m²)', 'Gross Area (m²)')}</label>
+              <label className="block text-gray-300 font-semibold mb-1">{t('Tim TÆ°á»ng (mÂ²)', 'Gross Area (mÂ²)')}</label>
               <input
                 type="number"
                 step="0.1"
@@ -202,7 +204,7 @@ export default function EditApartmentModal({
             </div>
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-1">{t('Phòng Ngủ', 'Bedrooms')}</label>
+              <label className="block text-gray-300 font-semibold mb-1">{t('PhÃ²ng Ngá»§', 'Bedrooms')}</label>
               <input
                 type="number"
                 min="1"
@@ -214,7 +216,7 @@ export default function EditApartmentModal({
             </div>
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-1">{t('Phòng Tắm', 'Bathrooms')}</label>
+              <label className="block text-gray-300 font-semibold mb-1">{t('PhÃ²ng Táº¯m', 'Bathrooms')}</label>
               <input
                 type="number"
                 min="1"
@@ -226,10 +228,10 @@ export default function EditApartmentModal({
             </div>
           </div>
 
-          {/* Hướng & Giá */}
+          {/* HÆ°á»›ng & GiÃ¡ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-gray-300 font-semibold mb-1">{t('Hướng Ban Công', 'Balcony Facing')}</label>
+              <label className="block text-gray-300 font-semibold mb-1">{t('HÆ°á»›ng Ban CÃ´ng', 'Balcony Facing')}</label>
               <input
                 type="text"
                 value={direction}
@@ -239,7 +241,7 @@ export default function EditApartmentModal({
             </div>
 
             <div>
-              <label className="block text-gray-300 font-semibold mb-1">{t('Định Giá Căn Hộ (Tỷ VNĐ)', 'Valuation (Billion VND)')}</label>
+              <label className="block text-gray-300 font-semibold mb-1">{t('Äá»‹nh GiÃ¡ CÄƒn Há»™ (Tá»· VNÄ)', 'Valuation (Billion VND)')}</label>
               <input
                 type="number"
                 step="0.05"
@@ -251,9 +253,9 @@ export default function EditApartmentModal({
             </div>
           </div>
 
-          {/* Mô tả */}
+          {/* MÃ´ táº£ */}
           <div>
-            <label className="block text-gray-300 font-semibold mb-1">{t('Ghi Chú Kỹ Thuật', 'Technical Notes & Description')}</label>
+            <label className="block text-gray-300 font-semibold mb-1">{t('Ghi ChÃº Ká»¹ Thuáº­t', 'Technical Notes & Description')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -262,24 +264,24 @@ export default function EditApartmentModal({
             />
           </div>
 
-          {/* Xóa căn hộ */}
+          {/* XÃ³a cÄƒn há»™ */}
           {isDeleting ? (
             <div className="p-3 bg-rose-950/90 border border-rose-600 text-rose-200 text-xs space-y-2">
-              <div>{t('Bạn có chắc chắn muốn xóa vĩnh viễn căn hộ', 'Are you sure you want to permanently delete unit')} <strong>{unit.code}</strong> {t('khỏi hệ thống?', 'from system?')}</div>
+              <div>{t('Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a vÄ©nh viá»…n cÄƒn há»™', 'Are you sure you want to permanently delete unit')} <strong>{unit.code}</strong> {t('khá»i há»‡ thá»‘ng?', 'from system?')}</div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleDelete}
                   className="px-3 py-1 bg-rose-600 text-white font-bold uppercase text-[11px]"
                 >
-                  {t('Xác Nhận Xóa', 'Confirm Delete')}
+                  {t('XÃ¡c Nháº­n XÃ³a', 'Confirm Delete')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsDeleting(false)}
                   className="px-2.5 py-1 bg-black/50 text-gray-300 border border-gray-600 text-[11px]"
                 >
-                  {t('Hủy', 'Cancel')}
+                  {t('Há»§y', 'Cancel')}
                 </button>
               </div>
             </div>
@@ -290,7 +292,7 @@ export default function EditApartmentModal({
                 onClick={() => setIsDeleting(true)}
                 className="text-rose-400 hover:text-rose-300 text-xs flex items-center gap-1 font-semibold"
               >
-                <Trash2 className="w-3.5 h-3.5" /> {t('Xóa Căn Hộ Này', 'Delete This Unit')}
+                <Trash2 className="w-3.5 h-3.5" /> {t('XÃ³a CÄƒn Há»™ NÃ y', 'Delete This Unit')}
               </button>
             </div>
           )}
@@ -302,13 +304,13 @@ export default function EditApartmentModal({
               onClick={onClose}
               className="w-full sm:w-auto px-4 py-2.5 bg-[#161B22] hover:bg-[#202936] text-gray-300 hover:text-white border border-[#2D3748] font-semibold transition-colors text-center"
             >
-              {t('Hủy', 'Cancel')}
+              {t('Há»§y', 'Cancel')}
             </button>
             <button
               type="submit"
               className="w-full sm:w-auto px-5 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] font-bold uppercase tracking-wider transition-colors shadow flex items-center justify-center gap-1.5"
             >
-              <Save className="w-4 h-4" /> {t('Lưu Thay Đổi', 'Save Changes')}
+              <Save className="w-4 h-4" /> {t('LÆ°u Thay Äá»•i', 'Save Changes')}
             </button>
           </div>
         </form>

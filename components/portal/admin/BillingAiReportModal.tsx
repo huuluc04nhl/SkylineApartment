@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState } from 'react';
 import { Sparkles, Send, X, Table, ShieldCheck, RefreshCw, HelpCircle, FileText } from 'lucide-react';
@@ -9,6 +10,7 @@ interface BillingAiReportModalProps {
 }
 
 export default function BillingAiReportModal({ isOpen, onClose }: BillingAiReportModalProps) {
+  useEscapeKey(isOpen, onClose);
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -42,22 +44,22 @@ export default function BillingAiReportModal({ isOpen, onClose }: BillingAiRepor
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Không thể tạo báo cáo cho câu hỏi này');
+        throw new Error(data.message || 'KhÃ´ng thá»ƒ táº¡o bÃ¡o cÃ¡o cho cÃ¢u há»i nÃ y');
       }
 
       setReportResult(data);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Lỗi kết nối máy chủ');
+      setErrorMsg(err.message || 'Lá»—i káº¿t ná»‘i mÃ¡y chá»§');
     } finally {
       setIsLoading(false);
     }
   };
 
   const sampleQuestions = [
-    'Công nợ BS-08 tháng này?',
-    'Top 5 căn nợ lâu nhất?',
-    'Tỷ lệ thu hồi toàn dự án BS-07 đến BS-10?',
-    'Công nợ tòa BS-07?',
+    'CÃ´ng ná»£ BS-08 thÃ¡ng nÃ y?',
+    'Top 5 cÄƒn ná»£ lÃ¢u nháº¥t?',
+    'Tá»· lá»‡ thu há»“i toÃ n dá»± Ã¡n BS-07 Ä‘áº¿n BS-10?',
+    'CÃ´ng ná»£ tÃ²a BS-07?',
   ];
 
   return (
@@ -72,10 +74,10 @@ export default function BillingAiReportModal({ isOpen, onClose }: BillingAiRepor
             </div>
             <div>
               <h2 className="text-base font-bold text-white font-serif uppercase tracking-wide">
-                Trợ Lý Báo Cáo Tài Chính BQL (AI SQL & Function Calling)
+                Trá»£ LÃ½ BÃ¡o CÃ¡o TÃ i ChÃ­nh BQL (AI SQL & Function Calling)
               </h2>
               <p className="text-xs text-gray-400">
-                Hỏi đáp tự nhiên về công nợ, doanh thu từng tòa BS-07...BS-10, căn nợ lâu nhất bằng tiếng Việt
+                Há»i Ä‘Ã¡p tá»± nhiÃªn vá» cÃ´ng ná»£, doanh thu tá»«ng tÃ²a BS-07...BS-10, cÄƒn ná»£ lÃ¢u nháº¥t báº±ng tiáº¿ng Viá»‡t
               </p>
             </div>
           </div>
@@ -91,7 +93,7 @@ export default function BillingAiReportModal({ isOpen, onClose }: BillingAiRepor
         <div className="space-y-1.5">
           <div className="text-[10px] uppercase font-mono tracking-wider text-gray-400 flex items-center gap-1">
             <HelpCircle className="w-3 h-3 text-[#C5A880]" />
-            <span>Gợi Ý Câu Hỏi Mẫu Cho Ban Quản Lý:</span>
+            <span>Gá»£i Ã CÃ¢u Há»i Máº«u Cho Ban Quáº£n LÃ½:</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {sampleQuestions.map((q, idx) => (
@@ -101,7 +103,7 @@ export default function BillingAiReportModal({ isOpen, onClose }: BillingAiRepor
                 onClick={() => handleRunQuery(q)}
                 className="px-2.5 py-1 text-xs bg-[#151D28] hover:bg-[#1E2938] border border-[#2D3A4D] hover:border-[#C5A880] text-gray-300 hover:text-[#C5A880] transition-all text-left"
               >
-                💡 {q}
+                ðŸ’¡ {q}
               </button>
             ))}
           </div>
@@ -114,7 +116,7 @@ export default function BillingAiReportModal({ isOpen, onClose }: BillingAiRepor
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleRunQuery()}
-            placeholder="Nhập câu hỏi, ví dụ: 'Công nợ BS-08 tháng này?' hoặc 'Top 10 căn nợ lâu nhất?'..."
+            placeholder="Nháº­p cÃ¢u há»i, vÃ­ dá»¥: 'CÃ´ng ná»£ BS-08 thÃ¡ng nÃ y?' hoáº·c 'Top 10 cÄƒn ná»£ lÃ¢u nháº¥t?'..."
             className="flex-1 bg-[#141B24] border border-[#2A3441] px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#C5A880]"
           />
           <button
@@ -124,7 +126,7 @@ export default function BillingAiReportModal({ isOpen, onClose }: BillingAiRepor
             className="px-5 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow"
           >
             {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            <span>Truy Vấn</span>
+            <span>Truy Váº¥n</span>
           </button>
         </div>
 
@@ -133,7 +135,7 @@ export default function BillingAiReportModal({ isOpen, onClose }: BillingAiRepor
           <div className="p-8 text-center bg-[#131922] border border-[#222B35] space-y-2">
             <RefreshCw className="w-6 h-6 animate-spin text-[#C5A880] mx-auto" />
             <p className="text-xs text-gray-300">
-              AI đang gọi hàm truy vấn cơ sở dữ liệu sổ cái và tính toán số liệu thống kê...
+              AI Ä‘ang gá»i hÃ m truy váº¥n cÆ¡ sá»Ÿ dá»¯ liá»‡u sá»• cÃ¡i vÃ  tÃ­nh toÃ¡n sá»‘ liá»‡u thá»‘ng kÃª...
             </p>
           </div>
         )}
@@ -150,10 +152,10 @@ export default function BillingAiReportModal({ isOpen, onClose }: BillingAiRepor
           <div className="p-4 bg-[#141B24] border border-[#253042] space-y-4 animate-fadeIn">
             <div className="flex items-center justify-between border-b border-[#222B35] pb-2 text-[10px] font-mono text-gray-400">
               <span className="flex items-center gap-1.5 text-[#C5A880] font-bold uppercase">
-                <FileText className="w-3.5 h-3.5" /> Báo Cáo Số Liệu Tự Động
+                <FileText className="w-3.5 h-3.5" /> BÃ¡o CÃ¡o Sá»‘ Liá»‡u Tá»± Äá»™ng
               </span>
               <span className="px-2 py-0.5 bg-[#1C2533] border border-[#2D3A4D] text-gray-300">
-                Hàm Gọi: {reportResult.tool_called}
+                HÃ m Gá»i: {reportResult.tool_called}
               </span>
             </div>
 
@@ -193,10 +195,10 @@ export default function BillingAiReportModal({ isOpen, onClose }: BillingAiRepor
             {/* Disclaimer */}
             <div className="pt-2 border-t border-[#222B35] flex items-center justify-between text-[10px] text-gray-400">
               <span className="italic">
-                {reportResult.ai_disclaimer || 'Nội dung do AI tạo, vui lòng đối chiếu hóa đơn gốc.'}
+                {reportResult.ai_disclaimer || 'Ná»™i dung do AI táº¡o, vui lÃ²ng Ä‘á»‘i chiáº¿u hÃ³a Ä‘Æ¡n gá»‘c.'}
               </span>
               <span className="font-semibold text-emerald-400">
-                ✓ Đã che CCCD/SĐT cư dân
+                âœ“ ÄÃ£ che CCCD/SÄT cÆ° dÃ¢n
               </span>
             </div>
           </div>
@@ -205,13 +207,13 @@ export default function BillingAiReportModal({ isOpen, onClose }: BillingAiRepor
         {/* Footer */}
         <div className="pt-3 border-t border-[#222B35] flex items-center justify-between text-[11px] text-gray-500">
           <span>
-            Bảo mật: Không đưa thông tin nhạy cảm vào prompt. Số tiền do code tính toán chính xác.
+            Báº£o máº­t: KhÃ´ng Ä‘Æ°a thÃ´ng tin nháº¡y cáº£m vÃ o prompt. Sá»‘ tiá»n do code tÃ­nh toÃ¡n chÃ­nh xÃ¡c.
           </span>
           <button
             onClick={onClose}
             className="px-4 py-1.5 border border-[#2D3A4D] hover:border-gray-500 text-gray-300 text-xs font-semibold"
           >
-            Đóng
+            ÄÃ³ng
           </button>
         </div>
       </div>

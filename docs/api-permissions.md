@@ -25,11 +25,27 @@
 | `POST /api/tickets` (`RESOLVE`, `REJECT_RESOLUTION`) | `401` | `403` | Chỉ phiếu được gán cho mình | `403` | **Cho phép** |
 | `DELETE /api/tickets` | `401` | `403` | `403` | `403` | **Cho phép** |
 | `GET /api/billing` | `401` | Chỉ hóa đơn căn hộ của mình | `403` | `403` | Toàn bộ |
-| `POST /api/billing` (`PAY`) | `401` | Chỉ thanh toán hóa đơn của mình | `403` | `403` | Cho phép |
+| `POST /api/billing/vnpay-create` | `401` | Chỉ thanh toán hóa đơn của mình | `403` | `403` | Cho phép |
 | `POST /api/billing` (`CONFIRM_PAID`, `PUBLISH_ALL`) | `401` | `403` | `403` | `403` | **Cho phép** |
-| `GET /api/billing/anomalies`, `POST /api/billing/debt-reminder`, `admin-report` | `401` | `403` | `403` | `403` | **Cho phép** |
+| `GET /api/billing/anomalies`, `POST /api/billing/debt-reminder`, `admin-report`, `ai-assistant` | `401` | `403` | `403` | `403` | **Cho phép** |
 | `POST /api/billing/meter-ocr` | `401` | `403` | **Cho phép** | `403` | **Cho phép** |
 | `POST /api/billing/explain` | `401` | Chỉ hóa đơn căn hộ của mình | `403` | `403` | Cho phép |
+| `GET /api/apartments` | `401` | Cho phép xem | Cho phép xem | Cho phép xem | Toàn bộ |
+| `POST/PATCH/DELETE /api/apartments` | `401` | `403` | `403` | `403` | **Cho phép** |
+| `GET/POST/PATCH /api/community` | `401` | Cho phép | Cho phép | Cho phép | Cho phép |
+| `DELETE /api/community` | `401` | `403` | `403` | `403` | **Cho phép** |
+| `GET /api/devices` | `401` | Cho phép xem | Cho phép xem | Cho phép xem | Cho phép xem |
+| `POST/PATCH/DELETE /api/devices` | `401` | `403` | **Cho phép** | `403` | **Cho phép** |
+| `GET /api/security-alerts` | `401` | `403` | **Cho phép** | **Cho phép** | **Cho phép** |
+| `POST /api/security-alerts` | `401` | `403` | **Cho phép** | `403` | **Cho phép** |
+| `GET /api/parking` | `401` | Cho phép xem | Cho phép xem | Cho phép xem | Cho phép xem |
+| `POST/PATCH /api/parking` | `401` | `403` | `403` | `403` | **Cho phép** |
+| `GET/POST/DELETE /api/facilities/bookings`, `/api/resident-services`, `GET/POST /api/smarthome` | `401` | Chỉ căn hộ của mình | `403` | `403` | Toàn bộ |
+| `GET /api/voting` | `401` | Cho phép xem | Cho phép xem | Cho phép xem | Toàn bộ |
+| `POST /api/voting` (bỏ phiếu) | `401` | **Chỉ `OWNER`** (`TENANT` bị `403`) | `403` | `403` | `403` |
+| `PATCH/DELETE /api/voting` | `401` | `403` | `403` | `403` | **Cho phép** |
+| `POST /api/ai/concierge`, `community-assistant`, `ticket-assistant` | `401` | Cho phép | Cho phép | Cho phép | Cho phép |
+| `POST /api/ai/ocr-cccd` | `401` | Cho phép | `403` | `403` | Cho phép |
 | `GET /api/visitor` | `401` | Chỉ thẻ của căn hộ mình | `403` | Cho phép | Toàn bộ |
 | `POST /api/visitor` (`GENERATE`/`CREATE`) | `401` | Chỉ tạo cho căn hộ của mình | `403` | `403` | Cho phép |
 | `POST /api/visitor` (`VERIFY`, `CHECK_IN`, `CHECK_OUT`) | `401` | `403` | `403` | **Cho phép** | **Cho phép** |

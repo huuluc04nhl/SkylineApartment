@@ -3,10 +3,10 @@ import { requireAuth } from '@/lib/auth/guard';
 import { checkRateLimit } from '@/lib/server/rateLimit';
 import { askGeminiConcierge, generateSmartProjectFallback, extractAiSuggestions, extractAiAction, ConciergeContext } from '@/lib/geminiClient';
 import { findUserByIdentifierDb, listApartmentMembersDb } from '@/lib/server/userDb';
-import { getBills } from '@/lib/billingStore';
+import { listBillsWithDetailsDb } from '@/lib/server/billingDb';
 import { listTicketsDb } from '@/lib/server/ticketDb';
-import { getAllVisitorPasses } from '@/lib/visitorStore';
-import { getFacilityBookings } from '@/lib/facilityStore';
+import { listVisitorPassesDb } from '@/lib/server/visitorDb';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export const maxDuration = 60;
 
@@ -56,17 +56,17 @@ export async function POST(req: NextRequest) {
     const residentPhone = sessionUser.phone || '';
     const dynamicUser = targetApt ? await findUserByIdentifierDb(targetApt) : undefined;
 
-    // Dynamic resolution of actual project data if not supplied by client
-    const actualBookings = Array.isArray(bookings) ? bookings : getFacilityBookings(targetApt);
-    const actualTickets = Array.isArray(tickets) && tickets.length > 0 ? tickets : await listTicketsDb(targetApt, residentPhone);
-
-    const actualVisitors = Array.isArray(visitors) ? visitors : getAllVisitorPasses();
-    const actualBills = Array.isArray(bills) && bills.length > 0 ? bills : getBills(targetApt, sessionUser.fullname || sessionUser.full_name || '');
-    const actualMembers = Array.isArray(members)
-      ? members
-      : targetApt
-        ? await listApartmentMembersDb(targetApt)
-        : [];
+    // Always resolve authoritative data from Supabase for the session's apartment
+    const [actualBills, actualTickets, actualVisitors, actualMembers, bookingsRes] = await Promise.all([
+      targetApt ? listBillsWithDetailsDb(targetApt) : Promise.resolve([]),
+      targetApt ? listTicketsDb(targetApt, residentPhone) : Promise.resolve([]),
+      targetApt ? listVisitorPassesDb({ apartmentCode: targetApt }) : Promise.resolve([]),
+      targetApt ? listApartmentMembersDb(targetApt) : Promise.resolve([]),
+      targetApt
+        ? supabaseAdmin.from('facility_bookings').select('*').ilike('apartment_code', targetApt).order('created_at', { ascending: false }).limit(10)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const actualBookings = bookingsRes?.data || [];
 
     const context: ConciergeContext = {
       aptCode: targetApt,

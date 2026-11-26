@@ -4,6 +4,7 @@ import type { Database } from '@/lib/supabase/database.types';
 import {
   type GeneratedVisitorPass,
   type VerificationScanResult,
+  type GateAuditLog,
   verifyVisitorQr as verifyQrHelper,
 } from '@/lib/visitorStore';
 
@@ -186,4 +187,65 @@ export async function checkOutVisitorPassDb(passId: string): Promise<GeneratedVi
   });
 
   return rowToVisitorPass(data);
+}
+
+
+export async function listVisitorPassesDb(filter?: {
+  apartmentCode?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<GeneratedVisitorPass[]> {
+  const limit = filter?.limit ?? 100;
+  const offset = filter?.offset ?? 0;
+  let query = supabaseAdmin
+    .from('visitor_passes')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (filter?.apartmentCode) {
+    query = query.ilike('apartment_code', filter.apartmentCode.trim());
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(`Supabase visitor_passes list error: ${error.message}`);
+  return (data ?? []).map(rowToVisitorPass);
+}
+
+export async function listGateLogsDb(filter?: {
+  apartmentCode?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<GateAuditLog[]> {
+  const limit = filter?.limit ?? 100;
+  const offset = filter?.offset ?? 0;
+  let query = supabaseAdmin
+    .from('visitor_gate_logs')
+    .select('*')
+    .order('scanned_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (filter?.apartmentCode) {
+    query = query.ilike('apartment_code', filter.apartmentCode.trim());
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(`Supabase visitor_gate_logs list error: ${error.message}`);
+  return (data ?? []).map((r) => {
+    const scannedAt = r.scanned_at ?? new Date().toISOString();
+    return {
+      id: r.id,
+      passId: r.pass_id || '',
+      apartmentCode: r.apartment_code,
+      hostName: r.host_name || '',
+      visitorName: r.visitor_name || '',
+      licensePlate: r.license_plate ?? undefined,
+      checkpoint: r.checkpoint || 'Sảnh Chính Lobby BS-07',
+      action: (r.action as GateAuditLog['action']) || 'CHECK_IN',
+      result: (r.result as GateAuditLog['result']) || 'VALID',
+      scannedAt,
+      timestamp: scannedAt,
+      note: '',
+    };
+  });
 }

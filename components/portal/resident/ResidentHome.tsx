@@ -80,7 +80,7 @@ export default function ResidentHome({ currentUser, onNavigate, onOpenVisitorMod
         ).length;
         setPendingConfirmCount(count);
       } catch (e) {
-        // ignore
+        console.warn('Lỗi tải số lượng yêu cầu e-KYC chờ duyệt:', e);
       }
     }
   };

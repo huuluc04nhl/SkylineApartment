@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React from 'react';
 import { X, KeyRound } from 'lucide-react';
@@ -17,6 +18,7 @@ export default function AccountPasswordModal({
   isOpen,
   onClose,
 }: AccountPasswordModalProps) {
+  useEscapeKey(isOpen, onClose);
   const { t } = useLanguage();
   if (!isOpen) return null;
 
@@ -34,10 +36,10 @@ export default function AccountPasswordModal({
             </div>
             <div>
               <h3 className="font-serif text-lg font-bold text-white tracking-wide">
-                {t('Đổi Mật Khẩu Tài Khoản Cá Nhân', 'Change Personal Account Password')}
+                {t('Äá»•i Máº­t Kháº©u TÃ i Khoáº£n CÃ¡ NhÃ¢n', 'Change Personal Account Password')}
               </h3>
               <p className="text-[11px] text-gray-400">
-                {t('Toàn quyền thay đổi mật khẩu và sử dụng trình tạo mật khẩu tự động an toàn', 'Manage your password and use the secure automated password generator')}
+                {t('ToÃ n quyá»n thay Ä‘á»•i máº­t kháº©u vÃ  sá»­ dá»¥ng trÃ¬nh táº¡o máº­t kháº©u tá»± Ä‘á»™ng an toÃ n', 'Manage your password and use the secure automated password generator')}
               </p>
             </div>
           </div>
@@ -45,7 +47,7 @@ export default function AccountPasswordModal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Đóng đổi mật khẩu"
+            aria-label="ÄÃ³ng Ä‘á»•i máº­t kháº©u"
             className="p-2 text-gray-400 hover:text-white hover:bg-[#1E2631] transition-colors rounded-none border border-transparent hover:border-[#2D3748]"
           >
             <X className="w-5 h-5" />

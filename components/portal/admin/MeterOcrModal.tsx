@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState, useRef } from 'react';
 import { Camera, Upload, CheckCircle2, AlertTriangle, ShieldCheck, X, RefreshCw, Zap, Droplets, Info } from 'lucide-react';
@@ -10,6 +11,7 @@ interface MeterOcrModalProps {
 }
 
 export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrModalProps) {
+  useEscapeKey(isOpen, onClose);
   const [aptCode, setAptCode] = useState('CH-06');
   const [meterType, setMeterType] = useState<'ELECTRIC' | 'WATER'>('ELECTRIC');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setErrorMsg('Vui lòng chọn tệp định dạng hình ảnh (JPG, PNG).');
+      setErrorMsg('Vui lÃ²ng chá»n tá»‡p Ä‘á»‹nh dáº¡ng hÃ¬nh áº£nh (JPG, PNG).');
       return;
     }
 
@@ -57,7 +59,7 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
 
   const handleRunOcr = async () => {
     if (!imagePreview) {
-      setErrorMsg('Vui lòng tải lên ảnh chụp mặt đồng hồ trước.');
+      setErrorMsg('Vui lÃ²ng táº£i lÃªn áº£nh chá»¥p máº·t Ä‘á»“ng há»“ trÆ°á»›c.');
       return;
     }
 
@@ -79,14 +81,14 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Không thể trích xuất chỉ số từ ảnh');
+        throw new Error(data.message || 'KhÃ´ng thá»ƒ trÃ­ch xuáº¥t chá»‰ sá»‘ tá»« áº£nh');
       }
 
       setOcrResult(data.data);
       setEditReading(data.data.reading);
       setIsHumanConfirmed(false);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Lỗi kết nối máy chủ');
+      setErrorMsg(err.message || 'Lá»—i káº¿t ná»‘i mÃ¡y chá»§');
     } finally {
       setIsAnalyzing(false);
     }
@@ -96,7 +98,7 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
     if (!ocrResult || editReading === '') return;
 
     if (ocrResult.confidence < 0.85 && !isHumanConfirmed) {
-      setErrorMsg('Độ tin cậy dưới 85%. Bắt buộc bạn phải tích vào ô xác nhận đã đối chiếu số trên ảnh trước khi lưu!');
+      setErrorMsg('Äá»™ tin cáº­y dÆ°á»›i 85%. Báº¯t buá»™c báº¡n pháº£i tÃ­ch vÃ o Ã´ xÃ¡c nháº­n Ä‘Ã£ Ä‘á»‘i chiáº¿u sá»‘ trÃªn áº£nh trÆ°á»›c khi lÆ°u!');
       return;
     }
 
@@ -122,16 +124,16 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Lỗi ghi nhận chỉ số vào cơ sở dữ liệu');
+        throw new Error(data.message || 'Lá»—i ghi nháº­n chá»‰ sá»‘ vÃ o cÆ¡ sá»Ÿ dá»¯ liá»‡u');
       }
 
-      setSuccessMsg(data.message || 'Đã lưu chỉ số thành công!');
+      setSuccessMsg(data.message || 'ÄÃ£ lÆ°u chá»‰ sá»‘ thÃ nh cÃ´ng!');
       setTimeout(() => {
         if (onSuccess) onSuccess();
         onClose();
       }, 1500);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Lỗi khi lưu dữ liệu');
+      setErrorMsg(err.message || 'Lá»—i khi lÆ°u dá»¯ liá»‡u');
     } finally {
       setIsSaving(false);
     }
@@ -149,10 +151,10 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
             </div>
             <div>
               <h2 className="text-base font-bold text-white font-serif uppercase tracking-wide">
-                Nhập Chỉ Số Đồng Hồ Bằng AI Vision
+                Nháº­p Chá»‰ Sá»‘ Äá»“ng Há»“ Báº±ng AI Vision
               </h2>
               <p className="text-xs text-gray-400">
-                Chụp hoặc upload ảnh đồng hồ điện/nước • AI OCR tự động trích xuất & kiểm định độ tin cậy
+                Chá»¥p hoáº·c upload áº£nh Ä‘á»“ng há»“ Ä‘iá»‡n/nÆ°á»›c â€¢ AI OCR tá»± Ä‘á»™ng trÃ­ch xuáº¥t & kiá»ƒm Ä‘á»‹nh Ä‘á»™ tin cáº­y
               </p>
             </div>
           </div>
@@ -166,28 +168,28 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
 
         {/* Content Body */}
         <div className="mt-5 space-y-5">
-          {/* Controls: Căn hộ & Loại đồng hồ */}
+          {/* Controls: CÄƒn há»™ & Loáº¡i Ä‘á»“ng há»“ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[11px] font-mono uppercase text-gray-400 mb-1">
-                Căn Hộ Ghi Nhận
+                CÄƒn Há»™ Ghi Nháº­n
               </label>
               <select
                 value={aptCode}
                 onChange={(e) => setAptCode(e.target.value)}
                 className="w-full bg-[#161D26] border border-[#2A3441] px-3 py-2 text-xs text-white focus:outline-none focus:border-[#C5A880]"
               >
-                <option value="CH-06">CH-06 (BS-08 Tầng 12)</option>
-                <option value="BS08-1204">BS08-1204 (Tòa BS-08)</option>
-                <option value="BS07-0801">BS07-0801 (Tòa BS-07)</option>
-                <option value="BS09-1502">BS09-1502 (Tòa BS-09)</option>
-                <option value="BS10-2101">BS10-2101 (Tòa BS-10)</option>
+                <option value="CH-06">CH-06 (BS-08 Táº§ng 12)</option>
+                <option value="BS08-1204">BS08-1204 (TÃ²a BS-08)</option>
+                <option value="BS07-0801">BS07-0801 (TÃ²a BS-07)</option>
+                <option value="BS09-1502">BS09-1502 (TÃ²a BS-09)</option>
+                <option value="BS10-2101">BS10-2101 (TÃ²a BS-10)</option>
               </select>
             </div>
 
             <div>
               <label className="block text-[11px] font-mono uppercase text-gray-400 mb-1">
-                Loại Chỉ Số Đồng Hồ
+                Loáº¡i Chá»‰ Sá»‘ Äá»“ng Há»“
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -200,7 +202,7 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
                   }`}
                 >
                   <Zap className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Điện (kWh)</span>
+                  <span>Äiá»‡n (kWh)</span>
                 </button>
                 <button
                   type="button"
@@ -212,7 +214,7 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
                   }`}
                 >
                   <Droplets className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Nước (m³)</span>
+                  <span>NÆ°á»›c (mÂ³)</span>
                 </button>
               </div>
             </div>
@@ -243,7 +245,7 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
                     onClick={() => fileInputRef.current?.click()}
                     className="px-3 py-1.5 bg-[#1C2533] hover:bg-[#253042] text-xs font-semibold text-gray-300 border border-[#2D3A4D]"
                   >
-                    Chọn Ảnh Khác
+                    Chá»n áº¢nh KhÃ¡c
                   </button>
                   <button
                     type="button"
@@ -254,12 +256,12 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
                     {isAnalyzing ? (
                       <>
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>AI Đang Phân Tích...</span>
+                        <span>AI Äang PhÃ¢n TÃ­ch...</span>
                       </>
                     ) : (
                       <>
                         <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>Quét Chỉ Số Bằng AI Vision</span>
+                        <span>QuÃ©t Chá»‰ Sá»‘ Báº±ng AI Vision</span>
                       </>
                     )}
                   </button>
@@ -272,10 +274,10 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
               >
                 <Upload className="w-10 h-10 text-gray-500 mx-auto mb-2" />
                 <p className="text-xs text-gray-300 font-semibold">
-                  Bấm để tải ảnh đồng hồ điện/nước từ thiết bị
+                  Báº¥m Ä‘á»ƒ táº£i áº£nh Ä‘á»“ng há»“ Ä‘iá»‡n/nÆ°á»›c tá»« thiáº¿t bá»‹
                 </p>
                 <p className="text-[10px] text-gray-500 mt-1">
-                  Hỗ trợ định dạng JPG, PNG, ảnh chụp thực địa từ camera điện thoại
+                  Há»— trá»£ Ä‘á»‹nh dáº¡ng JPG, PNG, áº£nh chá»¥p thá»±c Ä‘á»‹a tá»« camera Ä‘iá»‡n thoáº¡i
                 </p>
               </div>
             )}
@@ -287,19 +289,19 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
               <div className="flex items-center justify-between border-b border-[#222B35] pb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-mono font-bold uppercase text-[#C5A880]">
-                    Kết Quả Nhận Dạng AI
+                    Káº¿t Quáº£ Nháº­n Dáº¡ng AI
                   </span>
                   <span className={`px-2 py-0.5 text-[10px] font-mono font-bold ${
                     ocrResult.confidence >= 0.85
                       ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/50'
                       : 'bg-amber-950 text-amber-400 border border-amber-500/50'
                   }`}>
-                    Độ Tin Cậy: {(ocrResult.confidence * 100).toFixed(0)}%
-                    {ocrResult.confidence >= 0.85 ? ' (Tin Cậy Cao)' : ' (Cần Xác Nhận)'}
+                    Äá»™ Tin Cáº­y: {(ocrResult.confidence * 100).toFixed(0)}%
+                    {ocrResult.confidence >= 0.85 ? ' (Tin Cáº­y Cao)' : ' (Cáº§n XÃ¡c Nháº­n)'}
                   </span>
                 </div>
                 <div className="text-[11px] text-gray-400 font-mono">
-                  Kỳ trước: {ocrResult.previous_reading !== undefined ? `${ocrResult.previous_reading} ${meterType === 'ELECTRIC' ? 'kWh' : 'm³'}` : 'Chưa có'}
+                  Ká»³ trÆ°á»›c: {ocrResult.previous_reading !== undefined ? `${ocrResult.previous_reading} ${meterType === 'ELECTRIC' ? 'kWh' : 'mÂ³'}` : 'ChÆ°a cÃ³'}
                 </div>
               </div>
 
@@ -309,10 +311,10 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
                   <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <div className="space-y-1">
                     <div className="font-bold">
-                      Quy Tắc An Toàn: Độ tin cậy dưới 85% ({ (ocrResult.confidence * 100).toFixed(0) }%)
+                      Quy Táº¯c An ToÃ n: Äá»™ tin cáº­y dÆ°á»›i 85% ({ (ocrResult.confidence * 100).toFixed(0) }%)
                     </div>
                     <div className="text-[11px] text-amber-300/90 leading-relaxed">
-                      Ảnh chụp có thể bị chói sáng hoặc góc chụp nghiêng. Bắt buộc người quản trị phải kiểm tra lại số thực tế trên ảnh, chỉnh sửa nếu cần và tích vào ô xác nhận trước khi lưu vào hệ thống.
+                      áº¢nh chá»¥p cÃ³ thá»ƒ bá»‹ chÃ³i sÃ¡ng hoáº·c gÃ³c chá»¥p nghiÃªng. Báº¯t buá»™c ngÆ°á»i quáº£n trá»‹ pháº£i kiá»ƒm tra láº¡i sá»‘ thá»±c táº¿ trÃªn áº£nh, chá»‰nh sá»­a náº¿u cáº§n vÃ  tÃ­ch vÃ o Ã´ xÃ¡c nháº­n trÆ°á»›c khi lÆ°u vÃ o há»‡ thá»‘ng.
                     </div>
                   </div>
                 </div>
@@ -322,7 +324,7 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
                 <div>
                   <label className="block text-[11px] font-mono uppercase text-gray-400 mb-1">
-                    Chỉ Số Ghi Nhận ({meterType === 'ELECTRIC' ? 'kWh' : 'm³'}):
+                    Chá»‰ Sá»‘ Ghi Nháº­n ({meterType === 'ELECTRIC' ? 'kWh' : 'mÂ³'}):
                   </label>
                   <input
                     type="number"
@@ -335,15 +337,15 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
 
                 <div>
                   <div className="text-[11px] font-mono uppercase text-gray-400 mb-1">
-                    Ước Tính Sản Lượng Tiêu Thụ:
+                    Æ¯á»›c TÃ­nh Sáº£n LÆ°á»£ng TiÃªu Thá»¥:
                   </div>
                   <div className="p-2 bg-[#0D1117] border border-[#222B35] text-xs font-mono">
                     {ocrResult.previous_reading !== undefined && editReading !== '' ? (
                       <span className="font-bold text-emerald-400">
-                        +{Number((Number(editReading) - ocrResult.previous_reading).toFixed(1))} {meterType === 'ELECTRIC' ? 'kWh' : 'm³'}
+                        +{Number((Number(editReading) - ocrResult.previous_reading).toFixed(1))} {meterType === 'ELECTRIC' ? 'kWh' : 'mÂ³'}
                       </span>
                     ) : (
-                      <span className="text-gray-500">Kỳ khởi tạo đầu tiên</span>
+                      <span className="text-gray-500">Ká»³ khá»Ÿi táº¡o Ä‘áº§u tiÃªn</span>
                     )}
                   </div>
                 </div>
@@ -352,7 +354,7 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
               {ocrResult.notes && (
                 <div className="text-[11px] text-gray-400 italic flex items-center gap-1.5">
                   <Info className="w-3.5 h-3.5 text-[#C5A880] shrink-0" />
-                  <span>Diễn giải AI: {ocrResult.notes}</span>
+                  <span>Diá»…n giáº£i AI: {ocrResult.notes}</span>
                 </div>
               )}
 
@@ -367,7 +369,7 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
                       className="w-4 h-4 accent-[#C5A880] rounded-none cursor-pointer"
                     />
                     <span className="text-xs font-semibold text-white">
-                      Tôi đã đối chiếu số trên ảnh và xác nhận chỉ số này là chính xác
+                      TÃ´i Ä‘Ã£ Ä‘á»‘i chiáº¿u sá»‘ trÃªn áº£nh vÃ  xÃ¡c nháº­n chá»‰ sá»‘ nÃ y lÃ  chÃ­nh xÃ¡c
                     </span>
                   </label>
                 </div>
@@ -388,12 +390,12 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
                   {isSaving ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Đang Lưu...</span>
+                      <span>Äang LÆ°u...</span>
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Xác Nhận & Lưu Vào Hệ Thống</span>
+                      <span>XÃ¡c Nháº­n & LÆ°u VÃ o Há»‡ Thá»‘ng</span>
                     </>
                   )}
                 </button>
@@ -420,13 +422,13 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
         {/* Footer */}
         <div className="mt-6 pt-4 border-t border-[#222B35] flex items-center justify-between text-[11px] text-gray-500">
           <div>
-            Tuân thủ Tiêu chuẩn BQL: Confidence &lt; 0.85 bắt buộc duyệt thủ công
+            TuÃ¢n thá»§ TiÃªu chuáº©n BQL: Confidence &lt; 0.85 báº¯t buá»™c duyá»‡t thá»§ cÃ´ng
           </div>
           <button
             onClick={onClose}
             className="px-4 py-1.5 border border-[#2D3A4D] hover:border-gray-500 text-gray-300 text-xs font-semibold"
           >
-            Đóng
+            ÄÃ³ng
           </button>
         </div>
       </div>

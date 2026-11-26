@@ -51,6 +51,7 @@ npx supabase db push --remote
 npm run dev          # Chạy server phát triển tại http://localhost:3000
 npx tsc --noEmit     # Kiểm tra TypeScript
 npm test             # Chạy bộ test Vitest (unit + integration + RLS)
+npm run test:e2e     # Chạy Playwright E2E với Supabase local (cần Docker/Podman)
 npm run build        # Build production
 ```
 
@@ -78,5 +79,5 @@ npx tsx scripts/migrate-auth-users.ts
 
 - **FaceID chưa có liveness detection thực sự:** Hiện tại đăng ký/đăng nhập FaceID mới kiểm tra kích thước ảnh, 4 góc ảnh và độ tương đồng vector (cosine similarity), chưa có kiểm tra chuyển động/nháy mắt/anti-spoofing 3D chuyên sâu.
 - **SMS OTP:** Đăng nhập OTP qua SĐT trên production phụ thuộc vào việc cấu hình SMS Provider trong Supabase Auth; ở môi trường không cấu hình SMS provider, tính năng gửi OTP thật sẽ trả lỗi từ Supabase.
-- **Toàn bộ module nghiệp vụ & thiết bị tòa nhà đã kết nối Supabase Postgres:** `profiles`/`users`, `apartments`, `apartment_members`, `ekyc_submissions`, `face_enrollments`, `visitor_passes`, `bills`, `service_tickets`, `facility_bookings`, `resident_service_bookings`, `voting_topics`/`voting_records`, `community_posts`, `parking_slots`, `building_devices`, `security_alerts` và `smart_*` đều lưu trữ trên Supabase Postgres qua API Routes. Không còn dữ liệu `DEMO_*` viết cứng trong mã nguồn ứng dụng.
+- **Lưu trữ dữ liệu trên Supabase Postgres & cache hiển thị phía client:** Các module nghiệp vụ chính (`profiles`/`users`, `apartments`, `apartment_members`, `ekyc_submissions`, `face_enrollments`, `visitor_passes`, `visitor_gate_logs`, `bills`, `service_tickets`, `facility_bookings`, `resident_service_bookings`, `voting_topics`/`voting_records`, `community_posts`, `parking_slots`, `building_devices`, `security_alerts`, `smart_*`) đều đọc/ghi qua API Routes + Supabase Postgres (không dùng cache bộ nhớ làm nguồn dữ liệu ở server). Một số store phía client vẫn giữ bản sao tạm thời trong phiên để hỗ trợ render đồng bộ và làm mới từ API.
 - **OCR đồng hồ điện/nước:** Cần `GEMINI_API_KEY` hợp lệ ở server; khi API lỗi hoặc thiếu key, hệ thống trả `503` yêu cầu nhập chỉ số thủ công thay vì tự sinh số giả.

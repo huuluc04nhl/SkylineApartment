@@ -365,7 +365,10 @@ export function generateVisitorPassToken(params: {
   validHours?: number;
   note?: string;
 }): GeneratedVisitorPass {
-  const aptCode = params.apartmentCode || 'CH-06';
+  const aptCode = (params.apartmentCode || '').trim();
+  if (!aptCode) {
+    throw new Error('Thiếu mã căn hộ để tạo thẻ khách.');
+  }
   const hostName = params.hostName?.trim() || `Chủ hộ Căn ${aptCode}`;
   const hostPhone = params.hostPhone?.trim() || '';
   const towerName = params.towerName || 'Tropical BS-07';
@@ -605,7 +608,7 @@ export function verifyVisitorQr(qrInput: string, checkpoint: string = 'Sảnh L�
   // 2. If pass came from parsed JSON but was created on another client/session
   if (parsedFromJson && parsedFromJson.skyline_pass) {
     const isExpired = now > parsedFromJson.expiresAt;
-    const aptCode = parsedFromJson.aptCode || 'CH-06';
+    const aptCode = parsedFromJson.aptCode || '';
     const towerName = parsedFromJson.tower || 'Tropical BS-07';
 
     // Reconstruct pass and add to registry
@@ -641,7 +644,7 @@ export function verifyVisitorQr(qrInput: string, checkpoint: string = 'Sảnh L�
     const phoneMatch = raw.match(/Số điện thoại:\s*([0-9. -]+)/i) || raw.match(/SĐT khách:\s*([0-9. -]+)/i);
     const plateMatch = raw.match(/Biển số xe?:\s*([^\n\r]+)/i);
 
-    const aptCode = aptMatch ? aptMatch[1].trim() : 'CH-06';
+    const aptCode = aptMatch ? aptMatch[1].trim() : '';
     const extractedId = passIdMatch ? (passIdMatch[1] || passIdMatch[0]).toUpperCase() : `SKY-PASS-${Math.floor(1000 + Math.random() * 9000)}`;
     const extractedPin = pinMatch ? (pinMatch[1] || pinMatch[0]) : '849201';
 

@@ -155,7 +155,7 @@ export function serviceTicketRecordToRequest(rec: ServiceTicketRecord): Extended
 export function extendedServiceRequestToRecord(req: ExtendedServiceRequest): ServiceTicketRecord {
   return {
     id: req.id,
-    apartment_code: req.apt_code || req.apartment_id || 'CH-06',
+    apartment_code: req.apt_code || req.apartment_id || '',
     resident_name: req.resident_name || 'Cư Dân Skyline',
     resident_phone: req.resident_phone || '',
     content: req.content,

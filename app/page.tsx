@@ -18,7 +18,7 @@ export default function HomePage() {
   const [defaultAccount, setDefaultAccount] = useState('');
 
   const handleOpenLogin = (role?: UserRole | string) => {
-    if (role === 'OWNER' || role === 'CH-06') {
+    if (role === 'OWNER') {
       setDefaultAccount('huuluc04@gmail.com');
     } else if (role === 'ADMIN') {
       setDefaultAccount('admin@skyline.vn');

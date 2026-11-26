@@ -154,6 +154,15 @@ export async function createVotingTopicDb(params: {
   const topicId = params.id || `vote-${Date.now()}`;
   const topicCode = params.code || `BQ-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
 
+  let eligibleCount = params.totalEligibleApartments;
+  if (!eligibleCount || eligibleCount <= 0) {
+    const { count } = await supabaseAdmin
+      .from('apartments')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'OCCUPIED');
+    eligibleCount = count && count > 0 ? count : 1;
+  }
+
   const { data: topic, error: topicErr } = await supabaseAdmin
     .from('voting_topics')
     .insert({
@@ -166,7 +175,7 @@ export async function createVotingTopicDb(params: {
       deadline: params.deadline,
       status: 'OPEN',
       is_owner_only: params.isOwnerOnly,
-      total_eligible_apartments: params.totalEligibleApartments ?? 200,
+      total_eligible_apartments: eligibleCount,
       total_votes: 0,
       summary_report: params.summaryReport?.trim() || '',
     })

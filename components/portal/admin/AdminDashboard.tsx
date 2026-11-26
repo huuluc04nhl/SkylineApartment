@@ -1,6 +1,7 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import Image from 'next/image';
 import { 
   Activity, 
   Receipt, 
@@ -569,9 +570,11 @@ export default function AdminDashboard() {
 
             {/* Live Camera Frame */}
             <div className="relative border border-red-500/40 h-36 overflow-hidden shadow-lg bg-black">
-              <img
+              <Image
                 src={activeThreat.snapshot}
                 alt={activeThreat.title}
+                width={400}
+                height={240}
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-1.5 left-1.5 bg-black/80 px-1.5 py-0.5 text-[8.5px] font-mono text-red-400 border border-red-800">
