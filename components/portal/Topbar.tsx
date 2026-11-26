@@ -283,7 +283,7 @@ export default function Topbar({
                 {userName}
               </div>
               <div className="text-[9px] text-[#C5A880] font-mono uppercase font-bold tracking-wider">
-                {isAdmin ? 'VinHomes Manager' : `${t('Căn')} ${currentUser.apartment_code || 'CH-06'} (${t(currentUser.role)})`}
+                {isAdmin ? 'VinHomes Manager' : `${t('Căn')} ${currentUser.apartment_code || t('Chưa gán căn hộ', 'Unassigned')} (${t(currentUser.role)})`}
               </div>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-gray-400 ml-1" />
@@ -324,7 +324,7 @@ export default function Topbar({
               <div className="space-y-1.5 text-[11px] text-gray-300 bg-[#161D26] p-2.5 rounded-none border border-[#222B35]">
                 <div className="flex justify-between">
                   <span className="text-gray-400">{t('Vị trí:')}</span>
-                  <span className="font-mono font-bold text-white">{currentUser.apartment_code || (isAdmin ? 'BQL_OFFICE' : 'CH-06')}</span>
+                  <span className="font-mono font-bold text-white">{currentUser.apartment_code || (isAdmin ? 'BQL_OFFICE' : t('Chưa gán căn hộ', 'Unassigned'))}</span>
                 </div>
                 {currentUser.phone && (
                   <div className="flex justify-between">

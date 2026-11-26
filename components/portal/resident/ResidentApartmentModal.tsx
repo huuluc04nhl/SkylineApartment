@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState, useEffect } from 'react';
@@ -34,7 +34,7 @@ import { useLanguage } from '@/lib/languageContext';
 interface ResidentApartmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  apartmentCode?: string;
+  apartmentCode: string;
   onNavigateToSmartHome?: () => void;
 }
 
@@ -43,7 +43,7 @@ type TabType = '3D_VIEWER' | 'EQUIPMENTS' | 'HANDBOOK';
 export default function ResidentApartmentModal({
   isOpen,
   onClose,
-  apartmentCode = 'CH-06',
+  apartmentCode,
   onNavigateToSmartHome
 }: ResidentApartmentModalProps) {
   useEscapeKey(isOpen, onClose);

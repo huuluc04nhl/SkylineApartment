@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -628,7 +628,7 @@ export default function FaceEnrollModal({
       const fullProfile: EnrolledFaceProfile = {
         userId,
         fullName: fullName || 'CÆ° DÃ¢n Skyline',
-        apartmentCode: apartmentCode || 'CH-06',
+        apartmentCode,
         phone: phone || '',
         avatarUrl: '',
         samples: normalizedSamples,

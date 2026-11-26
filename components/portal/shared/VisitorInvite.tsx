@@ -6,10 +6,10 @@ import VisitorQrModal from '@/components/portal/resident/VisitorQrModal';
 interface VisitorInviteProps {
   isOpen: boolean;
   onClose: () => void;
-  aptCode?: string;
+  aptCode: string;
 }
 
-export default function VisitorInvite({ isOpen, onClose, aptCode = 'CH-06' }: VisitorInviteProps) {
+export default function VisitorInvite({ isOpen, onClose, aptCode }: VisitorInviteProps) {
   return (
     <VisitorQrModal
       isOpen={isOpen}

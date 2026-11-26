@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { Bill, BillDetail, User } from '@/lib/dataStore';
 import { 
   CreditCard, 
@@ -84,7 +86,7 @@ interface FinanceBillingProps {
 
 export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
   const { t, isEn, language } = useLanguage();
-  const aptCode = currentUser?.apartment_code || 'CH-06';
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const residentName = currentUser?.full_name || (currentUser as any)?.fullname || 'Cư Dân';
   const residentPhone = currentUser?.phone || '';
 
@@ -681,6 +683,7 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
   }, []);
 
   const financeCtx: any = { t, isEn, currentUser, aptCode, SKYLINE_BANK_INFO, generateVietQrUrl, bills, setBills, selectedBillId, setSelectedBillId, cycleMode, setCycleMode, selectedQuarterId, setSelectedQuarterId, showVietQrModal, setShowVietQrModal, showAiAssistant, setShowAiAssistant, showExplainModal, setShowExplainModal, explainData, setExplainData, isExplaining, setIsExplaining, isRedirectingVnpay, setIsRedirectingVnpay, copiedField, setCopiedField, redirectBanner, setRedirectBanner, paymentSuccessToast, setPaymentSuccessToast, isExportingInvoicePdf, setIsExportingInvoicePdf, activeTab, setActiveTab, analyticsCategory, setAnalyticsCategory, residentName, residentPhone, triggerPaymentSuccessToast, handleExportInvoicePdf, handleExplainBill, copyToClipboard, refreshBills, currentBill, billAmountFormatted, handleConfirmVietQrPaid, handleOpenVnpaySandbox, getItemIcon, getItemName, sortedBills, newestBillsFirst, quarters, currentQuarter, totalSpendAll, avgMonthlySpend, paidCount, onTimeRate, allDetails, electricityDetails, waterDetails, mgmtDetails, parkingDetails, internetDetails, serviceDetails, facilityDetails, sumCategory, totalElec, totalWater, totalMgmt, totalParking, totalInternet, totalLivingServices, totalFacility, totalKwh, totalM3, categoryStats, highestCategory, maxBillAmount, handleExportExpenseCsv, billingResource };
+  if (missingApartment) return <MissingApartmentNotice />;
   return (
     <div className="space-y-6 w-full animate-fadeIn relative">
       {billingResource.loading && <ResourceSkeleton label="Đang tải dữ liệu hóa đơn..." />}

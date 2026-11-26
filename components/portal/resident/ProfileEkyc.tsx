@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { useAsyncResource } from '@/lib/hooks/useAsyncResource';
 import { ResourceSkeleton, ResourceError, ResourceEmpty } from '@/components/ui/ResourceState';
 import { 
@@ -86,7 +88,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
   const { t, isEn } = useLanguage();
   const { updateUserInfo, refreshUser } = useAuth();
   const isOwner = currentUser.role === 'OWNER';
-  const aptCode = currentUser.apartment_code || 'CH-06';
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTabState] = useState<'INFO' | 'EKYC' | 'PASSWORD'>(() => {
@@ -597,6 +599,7 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
     return json?.user || null;
   }, []);
 
+  if (missingApartment) return <MissingApartmentNotice />;
   return (
     <div className="space-y-6 w-full animate-fadeIn select-none">
       {profileResource.loading && <ResourceSkeleton label="Đang tải hồ sơ cá nhân & e-KYC..." />}

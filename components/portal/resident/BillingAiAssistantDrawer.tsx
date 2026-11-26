@@ -27,7 +27,7 @@ interface Message {
 interface BillingAiAssistantDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  aptCode?: string;
+  aptCode: string;
   residentName?: string;
 }
 
@@ -41,7 +41,7 @@ const QUICK_PROMPTS = [
 export default function BillingAiAssistantDrawer({
   isOpen,
   onClose,
-  aptCode = 'CH-06',
+  aptCode,
   residentName = 'Cư Dân',
 }: BillingAiAssistantDrawerProps) {
   const { t, isEn } = useLanguage();

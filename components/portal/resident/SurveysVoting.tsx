@@ -99,7 +99,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
   const isAdmin = currentUser?.role === 'ADMIN';
   const isOwner = currentUser?.role === 'OWNER';
   const isTenant = currentUser?.role === 'TENANT';
-  const aptCode = currentUser?.apartment_code || (isAdmin ? 'BQL_OFFICE' : 'CH-06');
+  const aptCode = currentUser?.apartment_code || (isAdmin ? 'BQL_OFFICE' : '');
   const userName = currentUser?.full_name || (currentUser as any)?.fullname || 'Cư Dân SKYLINE';
   const userAvatar = currentUser?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=1C2533&color=C5A880`;
 
@@ -702,7 +702,7 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
                           </span>
                         ) : post.authorRole === 'OWNER' ? (
                           <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-semibold uppercase tracking-wider">
-                            {t('Chủ Hộ')} ({post.aptCode || 'CH-06'})
+                            {t('Chủ Hộ')} ({post.aptCode || '—'})
                           </span>
                         ) : (
                           <span className="px-2 py-0.5 bg-gray-700/40 text-gray-300 border border-gray-600 text-[9px] font-semibold uppercase tracking-wider">

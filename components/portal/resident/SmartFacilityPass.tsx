@@ -1,6 +1,8 @@
 ﻿'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { 
   CreditCard, 
   QrCode, 
@@ -66,7 +68,7 @@ interface SmartFacilityPassProps {
 
 export default function SmartFacilityPass({ currentUser, onNavigateModule }: SmartFacilityPassProps) {
   const { t, isEn } = useLanguage();
-  const aptCode = currentUser.apartment_code || 'CH-06';
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const isOwner = currentUser.role === 'OWNER';
   const userName = currentUser?.full_name || (currentUser as any)?.fullname || 'CÆ° DÃ¢n';
 
@@ -544,6 +546,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     return log.facilityId === logFilter;
   });
 
+  if (missingApartment) return <MissingApartmentNotice />;
   return (
     <div className="space-y-6 w-full animate-fadeIn">
       {/* ============================================================= */}

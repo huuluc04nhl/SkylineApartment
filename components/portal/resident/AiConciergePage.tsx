@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { 
   Bot, 
   Sparkles, 
@@ -28,7 +30,6 @@ import {
 import { User as UserType } from '@/lib/dataStore';
 import { getBills } from '@/lib/billingStore';
 import { getTickets } from '@/lib/ticketStore';
-import { getAllVisitorPasses } from '@/lib/visitorStore';
 import { getApartmentMembers } from '@/lib/userStore';
 import { getFacilityBookings, createFacilityBooking, cancelFacilityBookingWithRefund, FacilityBooking } from '@/lib/facilityStore';
 import AiMessageFormatter from '@/components/portal/shared/AiMessageFormatter';
@@ -423,7 +424,7 @@ const getInitialAiMessage = (isEn: boolean, name: string, code: string): AiMessa
 
 export default function AiConciergePage({ currentUser, onNavigateModule }: AiConciergePageProps) {
   const { t, isEn } = useLanguage();
-  const aptCode = currentUser.apartment_code || 'CH-06';
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const residentName = currentUser.full_name || (currentUser as any)?.fullname || 'Trần Hữu Lực';
 
   const [messages, setMessages] = useState<AiMessage[]>([
@@ -485,7 +486,9 @@ export default function AiConciergePage({ currentUser, onNavigateModule }: AiCon
       const bookings = typeof window !== 'undefined' ? getFacilityBookings(aptCode) : [];
       const bills = typeof window !== 'undefined' ? getBills(aptCode) : [];
       const tickets = typeof window !== 'undefined' ? getTickets(aptCode) : [];
-      const visitors = typeof window !== 'undefined' ? getAllVisitorPasses() : [];
+      const visitorRes = await fetch('/api/visitor', { credentials: 'include' }).catch(() => null);
+      const visitorJson = visitorRes && visitorRes.ok ? await visitorRes.json().catch(() => null) : null;
+      const visitors = Array.isArray(visitorJson?.passes) ? visitorJson.passes : [];
       const members = typeof window !== 'undefined' ? getApartmentMembers(aptCode) : [];
 
       const response = await fetch('/api/ai/concierge', {
@@ -623,6 +626,7 @@ export default function AiConciergePage({ currentUser, onNavigateModule }: AiCon
     }
   };
 
+  if (missingApartment) return <MissingApartmentNotice />;
   return (
     <div className="space-y-6 w-full animate-fadeIn select-none">
       {/* Header */}

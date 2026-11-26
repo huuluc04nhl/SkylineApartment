@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { 
   Bot, 
   Sparkles, 
@@ -28,7 +30,6 @@ import {
 import { User as UserType } from '@/lib/dataStore';
 import { getBills } from '@/lib/billingStore';
 import { getTickets } from '@/lib/ticketStore';
-import { getAllVisitorPasses } from '@/lib/visitorStore';
 import { getApartmentMembers } from '@/lib/userStore';
 import { getFacilityBookings, createFacilityBooking, cancelFacilityBookingWithRefund, FacilityBooking } from '@/lib/facilityStore';
 import { useLanguage } from '@/lib/languageContext';
@@ -335,7 +336,7 @@ export default function AiConciergeFloating({
   onNavigateModule,
 }: AiConciergeFloatingProps) {
   const { t, isEn, language } = useLanguage();
-  const aptCode = currentUser.apartment_code || 'CH-06';
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const residentName = currentUser.full_name || (currentUser as any)?.fullname || 'Trần Hữu Lực';
 
   // Window view state: 'compact' (~375px) or 'expanded' (~520px), plus 'minimized' (dock bar)
@@ -481,7 +482,9 @@ export default function AiConciergeFloating({
       const bookings = typeof window !== 'undefined' ? getFacilityBookings(aptCode) : [];
       const bills = typeof window !== 'undefined' ? getBills(aptCode) : [];
       const tickets = typeof window !== 'undefined' ? getTickets(aptCode) : [];
-      const visitors = typeof window !== 'undefined' ? getAllVisitorPasses() : [];
+      const visitorRes = await fetch('/api/visitor', { credentials: 'include' }).catch(() => null);
+      const visitorJson = visitorRes && visitorRes.ok ? await visitorRes.json().catch(() => null) : null;
+      const visitors = Array.isArray(visitorJson?.passes) ? visitorJson.passes : [];
       const members = typeof window !== 'undefined' ? getApartmentMembers(aptCode) : [];
 
       const response = await fetch('/api/ai/concierge', {
@@ -627,6 +630,7 @@ export default function AiConciergeFloating({
     }
   };
 
+  if (isOpen && missingApartment && (currentUser.role === 'OWNER' || currentUser.role === 'TENANT')) return <MissingApartmentNotice className="fixed bottom-4 right-4 z-50 max-w-sm shadow-2xl" />;
   return (
     <div className="pointer-events-none fixed inset-0 z-50 select-none">
       {/* ------------------------------------------------------------- */}

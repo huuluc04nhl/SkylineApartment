@@ -104,7 +104,7 @@ export default function AdminBuildingApartmentManager() {
   const { t, isEn } = useLanguage();
   // 1. Quản lý danh sách căn hộ thực tế từ apartmentStore & Skyline API
   const [apartments, setApartments] = useState<ApartmentUnit[]>([]);
-  const [selectedAptCode, setSelectedAptCode] = useState<string>('CH-06');
+  const [selectedAptCode, setSelectedAptCode] = useState<string>('');
   const [selectedBlock, setSelectedBlock] = useState<'BS-07' | 'BS-08' | 'BS-09' | 'BS-10'>('BS-07');
   const buildingColorTone: BuildingColorTone = 'GOLD_LUXURY';
 
@@ -331,7 +331,7 @@ export default function AdminBuildingApartmentManager() {
     setApartments(localUnits);
 
     let targetFloor = 30;
-    let targetCode = 'CH-06';
+    let targetCode = '';
     if (blockCode === 'BS-08') {
       targetFloor = 15;
       targetCode = 'CH-08';
@@ -426,8 +426,8 @@ export default function AdminBuildingApartmentManager() {
     setSelectedFloor(safeFloor);
     if (safeFloor >= 1) {
       // Chuyển mã căn hộ sang tầng mới tương ứng theo đúng vị trí
-      const baseCode = selectedAptCode?.includes('-') ? selectedAptCode.split('-').pop() : (selectedAptCode || 'CH-06');
-      const newTargetCode = (safeFloor === 30 && selectedBlock === 'BS-07') ? (baseCode || 'CH-06') : `${safeFloor}-${baseCode || 'CH-06'}`;
+      const baseCode = selectedAptCode?.includes('-') ? selectedAptCode.split('-').pop() : (selectedAptCode || '');
+      const newTargetCode = (safeFloor === 30 && selectedBlock === 'BS-07') ? (baseCode || '') : (baseCode ? `${safeFloor}-${baseCode}` : '');
       setSelectedAptCode(newTargetCode);
     }
   }, [currentTotalFloors, selectedAptCode, selectedBlock]);

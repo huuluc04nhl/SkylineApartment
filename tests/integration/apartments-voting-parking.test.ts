@@ -36,6 +36,7 @@ vi.mock('@/lib/server/communityVotingDb', async (importOriginal) => {
   return {
     ...actual,
     listVotingTopicsDb: vi.fn(async () => Array.from(state.topics.values())),
+    countEligibleApartmentsDb: vi.fn(async () => state.apartments.size),
     createVotingTopicDb: vi.fn(async (params: any) => {
       const id = 'vote-test-1';
       const topic = {
@@ -49,7 +50,7 @@ vi.mock('@/lib/server/communityVotingDb', async (importOriginal) => {
         deadline: params.deadline,
         status: 'OPEN',
         isOwnerOnly: params.isOwnerOnly,
-        totalEligibleApartments: 200,
+        totalEligibleApartments: params.totalEligibleApartments ?? state.apartments.size,
         totalVotes: 0,
         summaryReport: '',
         options: params.options.map((text: string, i: number) => ({ id: `opt-${i + 1}`, text, votes: 0 })),

@@ -45,19 +45,11 @@ import {
   Printer,
   X
 } from 'lucide-react';
-import { 
-  verifyVisitorQr, 
-  VerificationScanResult, 
-  getAllVisitorPasses,
+import type {
+  VerificationScanResult,
   GeneratedVisitorPass,
-  checkInVisitorPass,
-  checkOutVisitorPass,
-  deleteVisitorPass,
-  generateVisitorPassToken,
-  getGateAuditLogs,
   GateAuditLog,
   VisitorPassStatus,
-  clearAllVisitorData
 } from '@/lib/visitorStore';
 import { getApartmentUnits } from '@/lib/apartmentStore';
 import { cleanPhoneNumber, isValidPhoneNumber, getPhoneValidationError } from '@/lib/validationUtils';

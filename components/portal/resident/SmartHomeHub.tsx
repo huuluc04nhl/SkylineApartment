@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { 
   Cpu, 
   Zap, 
@@ -114,7 +116,7 @@ function LuxurySwitch({
 export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
   const { t, isEn } = useLanguage();
   const isOwner = currentUser.role === 'OWNER';
-  const aptCode = currentUser.apartment_code || 'CH-06';
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const aptUnit = getApartmentByCode(aptCode);
   const aptArea = aptUnit ? aptUnit.area : 42.0;
   const aptType = aptUnit ? aptUnit.typeLabel : '1PN - 1WC';
@@ -442,6 +444,7 @@ export default function SmartHomeHub({ currentUser }: SmartHomeHubProps) {
     return log.method === activeLogFilter;
   });
 
+  if (missingApartment) return <MissingApartmentNotice />;
   return (
     <div className="space-y-5 w-full animate-fadeIn select-none">
       {/* 1. APP HEADER: Thanh trạng thái căn hộ thông minh */}

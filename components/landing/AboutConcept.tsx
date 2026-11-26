@@ -120,7 +120,7 @@ export default function AboutConcept() {
                   : 'bg-white/95 text-gray-900 border-gray-200 shadow-xl'
               }`}>
                 <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#C5A880] font-semibold">
-                  {isAuthenticated && currentUser ? `${t('CÄƒn Há»™ Thá»±c Táº¿', 'Actual Apartment')} ${currentUser.apartment_code || 'CH-06'}` : t('CÄƒn Há»™ Máº«u Thá»±c Táº¿', 'Model Apartment')}
+                  {isAuthenticated && currentUser ? `${t('CÄƒn Há»™ Thá»±c Táº¿', 'Actual Apartment')} ${currentUser.apartment_code || ''}` : t('CÄƒn Há»™ Máº«u Thá»±c Táº¿', 'Model Apartment')}
                 </div>
                 <div className={`text-sm font-serif mt-1 font-bold break-words leading-snug ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {t('CÄƒn Há»™ TiÃªu Chuáº©n â€¢ Ban CÃ´ng View Há»“ & CÃ´ng ViÃªn', 'Standard Apartment â€¢ Balcony with Lake & Park View')}

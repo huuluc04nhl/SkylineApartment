@@ -6,13 +6,15 @@ import {
   verifyVisitorQrDb,
   checkInVisitorPassDb,
   checkOutVisitorPassDb,
+  deleteVisitorPassDb,
+  purgeExpiredVisitorPassesDb,
   listVisitorPassesDb,
   listGateLogsDb,
 } from '@/lib/server/visitorDb';
 
 /**
  * GET /api/visitor
- * Lookup visitor pass by id or pin (chỉ ADMIN, RECEPTIONIST, hoặc cư dân xem thẻ căn hộ mình)
+ * Lookup visitor pass by id or pin, or list passes + gateLogs.
  */
 export async function GET(request: Request) {
   const guard = await requireAuth(['ADMIN', 'RECEPTIONIST', 'OWNER', 'TENANT']);
@@ -41,10 +43,13 @@ export async function GET(request: Request) {
       });
     }
 
-    return NextResponse.json({
-      success: false,
-      message: 'Không tìm thấy thông tin thẻ khách thăm hợp lệ.',
-    }, { status: 404 });
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Không tìm thấy thông tin thẻ khách thăm hợp lệ.',
+      },
+      { status: 404 }
+    );
   }
 
   const isResident = guard.session.role === 'OWNER' || guard.session.role === 'TENANT';
@@ -68,11 +73,11 @@ export async function GET(request: Request) {
 
 /**
  * POST /api/visitor
- * Generate ephemeral token (OWNER/TENANT/ADMIN), verify/check-in/out (ADMIN/RECEPTIONIST).
+ * GENERATE/CREATE (OWNER/TENANT/ADMIN), VERIFY/CHECK_IN/CHECK_OUT (ADMIN/RECEPTIONIST), DELETE/PURGE_EXPIRED (ADMIN).
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const { action } = body;
 
     // 1. Generate ephemeral QR token
@@ -80,7 +85,19 @@ export async function POST(request: Request) {
       const guard = await requireAuth(['ADMIN', 'OWNER', 'TENANT']);
       if (!guard.ok) return guard.response;
 
-      const { apartmentCode, visitorName, phoneNumber, licensePlate, entryType, validHours, note } = body;
+      const {
+        apartmentCode,
+        hostName,
+        hostPhone,
+        towerName,
+        visitorName,
+        phoneNumber,
+        licensePlate,
+        entryType,
+        validHours,
+        note,
+      } = body;
+
       const effectiveApt = (
         guard.session.role === 'ADMIN'
           ? apartmentCode
@@ -90,8 +107,20 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, message: 'Thiếu mã căn hộ hợp lệ.' }, { status: 400 });
       }
 
+      const sessionName =
+        typeof guard.session.profile?.full_name === 'string' && guard.session.profile.full_name.trim()
+          ? guard.session.profile.full_name.trim()
+          : undefined;
+      const sessionPhone =
+        typeof guard.session.profile?.phone === 'string' && guard.session.profile.phone.trim()
+          ? guard.session.profile.phone.trim()
+          : undefined;
+
       const pass = await createVisitorPassDb({
         apartmentCode: effectiveApt,
+        hostName: guard.session.role === 'ADMIN' ? hostName || sessionName : sessionName || hostName,
+        hostPhone: guard.session.role === 'ADMIN' ? hostPhone || sessionPhone : sessionPhone || hostPhone,
+        towerName: typeof towerName === 'string' ? towerName : undefined,
         visitorName: visitorName || 'Khách Thăm Nhà',
         phoneNumber,
         licensePlate,
@@ -107,49 +136,117 @@ export async function POST(request: Request) {
       });
     }
 
-    // 2. Verify / Check-In / Check-Out chỉ dành cho ADMIN & RECEPTIONIST
+    // 2. Delete / Purge Expired (ADMIN only)
+    if (action === 'DELETE' || action === 'PURGE_EXPIRED') {
+      const adminGuard = await requireAuth(['ADMIN']);
+      if (!adminGuard.ok) return adminGuard.response;
+
+      if (action === 'PURGE_EXPIRED') {
+        const deletedCount = await purgeExpiredVisitorPassesDb();
+        return NextResponse.json({
+          success: true,
+          deletedCount,
+          message:
+            deletedCount > 0
+              ? `Đã xóa ${deletedCount} thẻ khách hết hạn khỏi hệ thống.`
+              : 'Không có thẻ khách hết hạn nào cần dọn dẹp.',
+        });
+      }
+
+      const passId = typeof body.passId === 'string' ? body.passId : '';
+      if (!passId.trim()) {
+        return NextResponse.json({ success: false, message: 'Thiếu mã thẻ khách cần xóa.' }, { status: 400 });
+      }
+      const deleted = await deleteVisitorPassDb(passId);
+      if (!deleted) {
+        return NextResponse.json({ success: false, message: 'Không tìm thấy mã thẻ khách.' }, { status: 404 });
+      }
+      return NextResponse.json({
+        success: true,
+        message: 'Đã hủy và xóa thẻ khách thành công.',
+      });
+    }
+
+    // 3. Verify / Check-In / Check-Out chỉ dành cho ADMIN & RECEPTIONIST
     const staffGuard = await requireAuth(['ADMIN', 'RECEPTIONIST']);
     if (!staffGuard.ok) return staffGuard.response;
 
+    const actorName =
+      (typeof staffGuard.session.profile?.full_name === 'string' && staffGuard.session.profile.full_name.trim()) ||
+      staffGuard.session.email ||
+      staffGuard.session.authUserId;
+    const checkpoint = typeof body.checkpoint === 'string' && body.checkpoint.trim() ? body.checkpoint.trim() : undefined;
+
     if (action === 'VERIFY' || action === 'VERIFY_SCAN') {
       const { qrCode } = body;
-      const result = await verifyVisitorQrDb(qrCode || '');
+      const result = await verifyVisitorQrDb(qrCode || '', checkpoint, actorName);
       return NextResponse.json({
         success: true,
         ...result,
       });
     }
 
-    // 3. Confirm Check-In
     if (action === 'CHECK_IN') {
       const { passId } = body;
-      const updated = await checkInVisitorPassDb(passId);
-      if (updated) {
-        return NextResponse.json({
-          success: true,
-          message: 'Đã check-in đón khách thành công.',
-          pass: updated
-        });
+      if (typeof passId !== 'string' || !passId.trim()) {
+        return NextResponse.json({ success: false, message: 'Thiếu mã thẻ khách.' }, { status: 400 });
       }
-      return NextResponse.json({ success: false, message: 'Không tìm thấy mã thẻ khách' }, { status: 404 });
+      try {
+        const updated = await checkInVisitorPassDb(passId, checkpoint, actorName);
+        if (updated) {
+          return NextResponse.json({
+            success: true,
+            message: 'Đã check-in đón khách thành công.',
+            pass: updated,
+          });
+        }
+        return NextResponse.json({ success: false, message: 'Không tìm thấy mã thẻ khách' }, { status: 404 });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Không thể check-in thẻ khách.';
+        return NextResponse.json({ success: false, message: msg }, { status: 400 });
+      }
     }
 
-    // 4. Confirm Check-Out
     if (action === 'CHECK_OUT') {
       const { passId } = body;
-      const updated = await checkOutVisitorPassDb(passId);
+      if (typeof passId !== 'string' || !passId.trim()) {
+        return NextResponse.json({ success: false, message: 'Thiếu mã thẻ khách.' }, { status: 400 });
+      }
+      const updated = await checkOutVisitorPassDb(passId, checkpoint, actorName);
       if (updated) {
         return NextResponse.json({
           success: true,
           message: 'Đã ghi nhận khách rời tòa nhà.',
-          pass: updated
+          pass: updated,
         });
       }
       return NextResponse.json({ success: false, message: 'Không tìm thấy mã thẻ khách' }, { status: 404 });
     }
 
     return NextResponse.json({ success: false, message: 'Hành động không hợp lệ' }, { status: 400 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Lỗi xử lý thẻ khách.';
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
+}
+
+export async function DELETE(request: Request) {
+  const adminGuard = await requireAuth(['ADMIN']);
+  if (!adminGuard.ok) return adminGuard.response;
+
+  const { searchParams } = new URL(request.url);
+  const passId = searchParams.get('id') || searchParams.get('passId') || '';
+  if (!passId.trim()) {
+    return NextResponse.json({ success: false, message: 'Thiếu mã thẻ khách cần xóa.' }, { status: 400 });
+  }
+
+  const deleted = await deleteVisitorPassDb(passId);
+  if (!deleted) {
+    return NextResponse.json({ success: false, message: 'Không tìm thấy mã thẻ khách.' }, { status: 404 });
+  }
+
+  return NextResponse.json({
+    success: true,
+    message: 'Đã hủy và xóa thẻ khách thành công.',
+  });
 }

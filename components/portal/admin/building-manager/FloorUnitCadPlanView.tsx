@@ -204,10 +204,10 @@ export default function FloorUnitCadPlanView({
                         <span className="text-gray-400">{t('Chủ hộ:', 'Owner:')} </span>
                         <strong className="text-white">
                           {activeUnit.status === 'OCCUPIED'
-                            ? (activeUnit.owner?.name || (activeUnit.code === 'CH-06' ? 'Trần Hữu Lực' : t('Cư Dân Đã Nhận Nhà', 'Handed-over Resident')))
+                            ? (activeUnit.owner?.name || t('Cư Dân Đã Nhận Nhà', 'Handed-over Resident'))
                             : t('Chưa Bàn Giao (Nhà Trống)', 'Not Handed Over (Vacant)')}
                         </strong>
-                        {activeUnit.status === 'OCCUPIED' && (activeUnit.owner?.phone || (activeUnit.code === 'CH-06' ? '0364967082' : '')) && (
+                        {activeUnit.status === 'OCCUPIED' && (activeUnit.owner?.phone) && (
                           <span className="text-gray-400 ml-1 font-mono">
                             ({activeUnit.owner?.phone || '0364967082'})
                           </span>

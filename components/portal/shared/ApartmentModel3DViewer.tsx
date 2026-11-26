@@ -108,7 +108,7 @@ function AnimatedDimV({ x, y1, y2, label }: { x: number; y1: number; y2: number;
 }
 
 export default function ApartmentModel3DViewer({
-  apartmentCode = 'CH-06',
+  apartmentCode,
   apartmentType = '2PN - 2WC',
   clearArea = 78.5,
   lights = { livingRoom: true, bedroomMaster: true, kitchen: true, balcony: false },

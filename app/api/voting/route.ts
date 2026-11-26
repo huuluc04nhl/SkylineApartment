@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth/guard';
 import {
   listVotingTopicsDb,
   createVotingTopicDb,
+  countEligibleApartmentsDb,
   castVoteDb,
   toggleVotingTopicStatusDb,
   VoteConflictError,
@@ -84,6 +85,12 @@ export async function POST(req: Request) {
       );
     }
 
+    const requestedEligible = Number(body.totalEligibleApartments);
+    const totalEligibleApartments =
+      Number.isFinite(requestedEligible) && requestedEligible > 0
+        ? requestedEligible
+        : await countEligibleApartmentsDb();
+
     const topic = await createVotingTopicDb({
       title,
       description,
@@ -91,7 +98,7 @@ export async function POST(req: Request) {
       createdBy: guard.session.profile.fullname || 'Ban Quản Trị Tòa Nhà',
       deadline,
       isOwnerOnly: body.isOwnerOnly ?? body.is_owner_only ?? true,
-      totalEligibleApartments: Number(body.totalEligibleApartments || 200),
+      totalEligibleApartments,
       summaryReport: body.summaryReport || '',
       options,
     });

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAsyncResource } from '@/lib/hooks/useAsyncResource';
 import { ResourceSkeleton, ResourceError, ResourceEmpty } from '@/components/ui/ResourceState';
+import { toast } from '@/components/ui/Toast';
 import jsQR from 'jsqr';
 import QRCode from 'qrcode';
 import { 
@@ -45,19 +46,11 @@ import {
   Printer,
   X
 } from 'lucide-react';
-import { 
-  verifyVisitorQr, 
-  VerificationScanResult, 
-  getAllVisitorPasses,
+import type {
+  VerificationScanResult,
   GeneratedVisitorPass,
-  checkInVisitorPass,
-  checkOutVisitorPass,
-  deleteVisitorPass,
-  generateVisitorPassToken,
-  getGateAuditLogs,
   GateAuditLog,
   VisitorPassStatus,
-  clearAllVisitorData
 } from '@/lib/visitorStore';
 import { getApartmentUnits } from '@/lib/apartmentStore';
 import { cleanPhoneNumber, isValidPhoneNumber, getPhoneValidationError } from '@/lib/validationUtils';
@@ -143,7 +136,7 @@ export default function AdminVisitorControl() {
   const [detailQrDataUrl, setDetailQrDataUrl] = useState<string>('');
 
   // Quick Pass Creation Form State (Cấp thẻ tại quầy)
-  const [newPassApt, setNewPassApt] = useState('CH-06');
+  const [newPassApt, setNewPassApt] = useState('');
   const [newPassVisitorName, setNewPassVisitorName] = useState('');
   const [newPassVisitorPhone, setNewPassVisitorPhone] = useState('');
   const [newPassPlate, setNewPassPlate] = useState('');
@@ -167,51 +160,93 @@ export default function AdminVisitorControl() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const animationFrameId = useRef<number | null>(null);
 
-  // Load passes from store
-  const refreshData = () => {
-    const list = getAllVisitorPasses();
-    setPassesList([...list]);
-    const logs = getGateAuditLogs();
-    setAuditLogs([...logs]);
-  };
+  const visitorResource = useAsyncResource<{ passes: GeneratedVisitorPass[]; gateLogs: GateAuditLog[] }>(async () => {
+    const res = await fetch('/api/visitor', { credentials: 'include' });
+    if (!res.ok) throw new Error(`Không thể tải dữ liệu kiểm soát khách (HTTP ${res.status})`);
+    const json = await res.json();
+    return {
+      passes: Array.isArray(json?.passes) ? json.passes : [],
+      gateLogs: Array.isArray(json?.gateLogs) ? json.gateLogs : [],
+    };
+  }, []);
 
   useEffect(() => {
-    refreshData();
-  }, []);
+    if (visitorResource.data) {
+      setPassesList(visitorResource.data.passes);
+      setAuditLogs(visitorResource.data.gateLogs);
+    }
+  }, [visitorResource.data]);
+
+  const refreshData = () => {
+    visitorResource.retry();
+  };
 
   const showFeedback = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setActionFeedback({ type, message });
+    if (type === 'error') toast.error(message);
+    else if (type === 'info') toast.info(message);
+    else toast.success(message);
     setTimeout(() => setActionFeedback(null), 3800);
   };
 
-  // Perform QR / PIN Verification
-  const handleVerify = (rawInput: string) => {
+  // Perform QR / PIN Verification via API
+  const handleVerify = async (rawInput: string) => {
     if (!rawInput.trim() || isScanning) return;
     setIsScanning(true);
+    try {
+      const res = await fetch('/api/visitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: 'VERIFY',
+          qrCode: rawInput.trim(),
+          checkpoint: selectedCheckpoint,
+        }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showFeedback(result?.message || 'Lỗi xác thực mã thẻ khách.', 'error');
+        return;
+      }
 
-    setTimeout(() => {
-      const result = verifyVisitorQr(rawInput.trim(), selectedCheckpoint);
       setScanResult(result);
-      setIsScanning(false);
-      refreshData();
-
-      // Nếu đang ở tab khác thì chuyển sang tab SCANNER để đối chiếu
       setActiveTab('SCANNER');
+      refreshData();
 
       if (result.canEnter && result.scanResult === 'VALID') {
         showFeedback(`Xác thực thành công! Khách: ${result.visitor?.visitorName} • Điểm đến: Căn ${result.host?.apartmentCode}`);
       } else if (result.scanResult === 'EXPIRED') {
-        showFeedback(`Thẻ khách đã hết hạn sử dụng!`, 'error');
+        showFeedback('Thẻ khách đã hết hạn sử dụng!', 'error');
       } else {
-        showFeedback(`Mã thẻ không hợp lệ hoặc không tồn tại trong hệ thống!`, 'error');
+        showFeedback(result?.message || 'Mã thẻ không hợp lệ hoặc không tồn tại trong hệ thống!', 'error');
       }
-    }, 250);
+    } catch {
+      showFeedback('Không thể kết nối máy chủ để xác thực mã thẻ.', 'error');
+    } finally {
+      setIsScanning(false);
+    }
   };
 
-  // Check-in Action
-  const handleCheckIn = (passId: string) => {
-    const updated = checkInVisitorPass(passId);
-    if (updated) {
+  // Check-in Action via API
+  const handleCheckIn = async (passId: string) => {
+    try {
+      const res = await fetch('/api/visitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: 'CHECK_IN',
+          passId,
+          checkpoint: selectedCheckpoint,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.pass) {
+        showFeedback(json?.message || 'Không thể check-in thẻ khách.', 'error');
+        return;
+      }
+      const updated: GeneratedVisitorPass = json.pass;
       showFeedback(`Đã đón tiếp và mời khách [${updated.visitorName}] lên Căn ${updated.apartmentCode}!`);
       if (scanResult && scanResult.visitor?.passId === passId) {
         setScanResult({
@@ -220,21 +255,38 @@ export default function AdminVisitorControl() {
           visitor: {
             ...scanResult.visitor,
             status: 'CHECKED_IN',
-            checkedInAt: updated.checkedInAt
-          }
+            checkedInAt: updated.checkedInAt,
+          },
         });
       }
       if (selectedPassForDetail && selectedPassForDetail.id === passId) {
         setSelectedPassForDetail(updated);
       }
       refreshData();
+    } catch {
+      showFeedback('Không thể kết nối máy chủ khi check-in.', 'error');
     }
   };
 
-  // Check-out Action
-  const handleCheckOut = (passId: string) => {
-    const updated = checkOutVisitorPass(passId);
-    if (updated) {
+  // Check-out Action via API
+  const handleCheckOut = async (passId: string) => {
+    try {
+      const res = await fetch('/api/visitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: 'CHECK_OUT',
+          passId,
+          checkpoint: selectedCheckpoint,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.pass) {
+        showFeedback(json?.message || 'Không thể check-out thẻ khách.', 'error');
+        return;
+      }
+      const updated: GeneratedVisitorPass = json.pass;
       showFeedback(`Đã ghi nhận khách [${updated.visitorName}] rời tòa nhà an toàn!`, 'info');
       if (scanResult && scanResult.visitor?.passId === passId) {
         setScanResult({
@@ -243,18 +295,20 @@ export default function AdminVisitorControl() {
           visitor: {
             ...scanResult.visitor,
             status: 'COMPLETED',
-            checkedOutAt: updated.checkedOutAt
-          }
+            checkedOutAt: updated.checkedOutAt,
+          },
         });
       }
       if (selectedPassForDetail && selectedPassForDetail.id === passId) {
         setSelectedPassForDetail(updated);
       }
       refreshData();
+    } catch {
+      showFeedback('Không thể kết nối máy chủ khi check-out.', 'error');
     }
   };
 
-  // Delete / Revoke Pass Action
+  // Delete / Revoke Pass Action via API
   const handleDeletePass = (pass: GeneratedVisitorPass) => {
     setDeleteModalConfig({
       isOpen: true,
@@ -262,34 +316,62 @@ export default function AdminVisitorControl() {
       message: `Bạn có chắc chắn muốn hủy và thu hồi thẻ đón khách của cư dân căn hộ ${pass.apartmentCode}? Mã PIN và QR Code liên kết sẽ bị vô hiệu hóa ngay tức thì trên tất cả các cửa tự động.`,
       itemCode: pass.id,
       itemName: `${pass.visitorName} (Căn ${pass.apartmentCode})`,
-      onConfirm: () => {
-        deleteVisitorPass(pass.id);
-        showFeedback(`Đã hủy thẻ khách [${pass.id}] thành công.`, 'info');
-        if (selectedPassForDetail?.id === pass.id) {
-          setSelectedPassForDetail(null);
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/visitor', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'DELETE', passId: pass.id }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            showFeedback(json?.message || 'Không thể xóa thẻ khách.', 'error');
+            return;
+          }
+          showFeedback(`Đã hủy thẻ khách [${pass.id}] thành công.`, 'info');
+          if (selectedPassForDetail?.id === pass.id) {
+            setSelectedPassForDetail(null);
+          }
+          if (scanResult?.visitor?.passId === pass.id) {
+            setScanResult(null);
+          }
+          refreshData();
+        } catch {
+          showFeedback('Không thể kết nối máy chủ khi xóa thẻ khách.', 'error');
         }
-        if (scanResult?.visitor?.passId === pass.id) {
-          setScanResult(null);
-        }
-        refreshData();
       },
     });
   };
 
-  // Reset / Xóa dữ liệu khách ảo để đảm bảo hệ thống hoàn toàn sạch sẽ
+  // Xóa các thẻ khách đã hết hạn trong database (ADMIN)
   const handleClearAllData = () => {
     setDeleteModalConfig({
       isOpen: true,
-      title: 'Đặt Lại Toàn Bộ Dữ Liệu Khách Thăm',
-      message: 'Xác nhận xóa sạch toàn bộ dữ liệu khách thăm và nhật ký ra vào thử nghiệm để bắt đầu mới hoàn toàn?',
-      itemCode: 'ALL_VISITORS',
-      itemName: 'Toàn bộ danh sách thẻ khách & Audit logs',
-      onConfirm: () => {
-        clearAllVisitorData();
-        showFeedback('Đã dọn dẹp sạch sẽ toàn bộ dữ liệu khách thăm.', 'info');
-        setSelectedPassForDetail(null);
-        setScanResult(null);
-        refreshData();
+      title: 'Dọn Dẹp Thẻ Khách Hết Hạn',
+      message: 'Xác nhận xóa toàn bộ thẻ khách đã hết hạn khỏi cơ sở dữ liệu?',
+      itemCode: 'EXPIRED_VISITORS',
+      itemName: 'Các thẻ khách đã hết hạn',
+      onConfirm: async () => {
+        try {
+          const res = await fetch('/api/visitor', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'PURGE_EXPIRED' }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            showFeedback(json?.message || 'Không thể dọn dẹp thẻ hết hạn.', 'error');
+            return;
+          }
+          showFeedback(json?.message || 'Đã dọn dẹp thẻ khách hết hạn.', 'info');
+          setSelectedPassForDetail(null);
+          setScanResult(null);
+          refreshData();
+        } catch {
+          showFeedback('Không thể kết nối máy chủ khi dọn dẹp dữ liệu.', 'error');
+        }
       },
     });
   };
@@ -421,34 +503,50 @@ export default function AdminVisitorControl() {
     }
 
     const selectedUnitObj = apartments.find(u => u.code === newPassApt);
-    const hostName = selectedUnitObj?.owner?.name || (newPassApt === 'CH-06' ? 'Trần Hữu Lực' : `Chủ Hộ Căn ${newPassApt}`);
+    const hostName = selectedUnitObj?.owner?.name || `Chủ Hộ Căn ${newPassApt}`;
     const hostPhone = selectedUnitObj?.owner?.phone || '0901234567';
 
-    const pass = generateVisitorPassToken({
-      apartmentCode: newPassApt,
-      hostName,
-      hostPhone,
-      visitorName: newPassVisitorName.trim(),
-      phoneNumber: newPassVisitorPhone.trim(),
-      licensePlate: newPassPlate.trim().toUpperCase(),
-      validHours: parseInt(newPassHours, 10) || 4,
-      note: newPassNote.trim() || 'Thẻ cấp trực tiếp tại quầy lễ tân'
-    });
-
     try {
-      const url = await QRCode.toDataURL(pass.qrData, {
-        width: 240,
-        margin: 1.5,
-        color: { dark: '#0D1117', light: '#FFFFFF' }
+      const res = await fetch('/api/visitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          action: 'CREATE',
+          apartmentCode: newPassApt,
+          hostName,
+          hostPhone,
+          visitorName: newPassVisitorName.trim(),
+          phoneNumber: newPassVisitorPhone.trim(),
+          licensePlate: newPassPlate.trim().toUpperCase(),
+          validHours: parseInt(newPassHours, 10) || 4,
+          note: newPassNote.trim() || 'Thẻ cấp trực tiếp tại quầy lễ tân',
+        }),
       });
-      setCreatedQrUrl(url);
-    } catch {
-      setCreatedQrUrl('');
-    }
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.pass) {
+        showFeedback(json?.message || 'Không thể cấp thẻ khách.', 'error');
+        return;
+      }
 
-    setCreatedQuickPass(pass);
-    refreshData();
-    showFeedback(`Đã cấp thẻ đón khách thành công! Mã PIN: ${pass.pinCode}`);
+      const pass: GeneratedVisitorPass = json.pass;
+      try {
+        const url = await QRCode.toDataURL(pass.qrData, {
+          width: 240,
+          margin: 1.5,
+          color: { dark: '#0D1117', light: '#FFFFFF' },
+        });
+        setCreatedQrUrl(url);
+      } catch {
+        setCreatedQrUrl('');
+      }
+
+      setCreatedQuickPass(pass);
+      refreshData();
+      showFeedback(`Đã cấp thẻ đón khách thành công! Mã PIN: ${pass.pinCode}`);
+    } catch {
+      showFeedback('Không thể kết nối máy chủ khi cấp thẻ khách.', 'error');
+    }
   };
 
   // Reset Quick Pass Form
@@ -499,13 +597,6 @@ export default function AdminVisitorControl() {
     );
   });
 
-  const visitorResource = useAsyncResource(async () => {
-    const res = await fetch('/api/visitor', { credentials: 'include' });
-    if (!res.ok) throw new Error(`Không thể tải dữ liệu kiểm soát khách (HTTP ${res.status})`);
-    const json = await res.json();
-    return Array.isArray(json?.passes) ? json.passes : [];
-  }, []);
-
   const visitorCtx: any = { t, isEn, isValidPhoneNumber, getPhoneValidationError, activeTab, setActiveTabState, selectedCheckpoint, setSelectedCheckpoint, viewLayout, setViewLayout, scanMode, setScanMode, isCameraActive, setIsCameraActive, cameraError, setCameraError, isScanning, setIsScanning, pinSearchInput, setPinSearchInput, scanResult, setScanResult, actionFeedback, setActionFeedback, passesList, setPassesList, filterStatus, setFilterStatus, tableSearch, setTableSearch, auditLogs, setAuditLogs, deleteModalConfig, setDeleteModalConfig, logSearch, setLogSearch, isQuickPassModalOpen, setIsQuickPassModalOpen, selectedPassForDetail, setSelectedPassForDetail, detailQrDataUrl, setDetailQrDataUrl, newPassApt, setNewPassApt, newPassVisitorName, setNewPassVisitorName, newPassVisitorPhone, setNewPassVisitorPhone, newPassPlate, setNewPassPlate, newPassHours, setNewPassHours, newPassNote, setNewPassNote, createdQuickPass, setCreatedQuickPass, createdQrUrl, setCreatedQrUrl, setActiveTab, apartments, videoRef, canvasRef, fileInputRef, animationFrameId, refreshData, showFeedback, handleVerify, handleCheckIn, handleCheckOut, handleDeletePass, handleClearAllData, scanVideoFrame, startCamera, stopCamera, handleImageUpload, openPassDetail, handleCreateQuickPass, resetQuickPassForm, totalPasses, inBuildingCount, pendingCount, completedCount, expiredCount, filteredPasses, filteredLogs, visitorResource };
   return (
     <div className="space-y-6 animate-fadeIn select-none">
@@ -513,7 +604,7 @@ export default function AdminVisitorControl() {
       {!visitorResource.loading && visitorResource.error && (
         <ResourceError message={visitorResource.error} onRetry={visitorResource.retry} />
       )}
-      {!visitorResource.loading && !visitorResource.error && (visitorResource.data?.length ?? 0) === 0 && (
+      {!visitorResource.loading && !visitorResource.error && (visitorResource.data?.passes?.length ?? 0) === 0 && (
         <ResourceEmpty message="Chưa có thẻ khách thăm nào trong hệ thống." />
       )}
       
@@ -734,9 +825,9 @@ export default function AdminVisitorControl() {
               type="button"
               onClick={handleClearAllData}
               className="px-2.5 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 text-[11px] font-mono transition-all flex items-center gap-1"
-              title={isEn ? 'Clear mock data to work with live data' : 'Xóa bỏ toàn bộ dữ liệu mẫu / dữ liệu rác để làm việc với dữ liệu thật'}
+              title={isEn ? 'Purge expired visitor passes from database' : 'Xóa toàn bộ thẻ khách đã hết hạn khỏi cơ sở dữ liệu'}
             >
-              <span>🗑️ {t('Làm Sạch Dữ Liệu', 'Clear Data')}</span>
+              <span>🗑️ {t('Dọn Thẻ Hết Hạn', 'Purge Expired')}</span>
             </button>
 
             <div className="flex items-center gap-1.5 pl-1 border-l border-[#222B35]">

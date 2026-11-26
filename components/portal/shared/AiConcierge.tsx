@@ -1,3 +1,4 @@
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -37,6 +38,7 @@ export default function AiConcierge() {
     time: new Date().toLocaleTimeString(english ? 'en-US' : 'vi-VN', { hour: '2-digit', minute: '2-digit' }),
   });
 
+  const { aptCode } = useResidentApartment();
   const [messages, setMessages] = useState<ChatMessageItem[]>([getInitialMessage(isEn)]);
 
   useEffect(() => {
@@ -107,7 +109,7 @@ export default function AiConcierge() {
         body: JSON.stringify({
           message: text,
           history: historyPayload,
-          aptCode: 'CH-06',
+          aptCode,
           userName: 'Trần Hữu Lực',
           userRole: 'OWNER',
           language: isEn ? 'en' : 'vi',
@@ -133,7 +135,7 @@ export default function AiConcierge() {
         try {
           if (data.action.type === 'BOOK_FACILITY') {
             const booked = createFacilityBooking(
-              'CH-06',
+              aptCode,
               data.action.facilityId || 'bbq-garden',
               data.action.facilityName || 'Vườn Nướng BBQ Chòi 02',
               data.action.bookingDate || new Date().toISOString().split('T')[0],
@@ -149,10 +151,10 @@ export default function AiConcierge() {
             );
             facilityBooking = booked.newBooking;
           } else if (data.action.type === 'CANCEL_BOOKING') {
-            const currentBookings = getFacilityBookings('CH-06');
+            const currentBookings = getFacilityBookings(aptCode);
             const targetId = data.action.bookingId || (currentBookings.find(b => b.status === 'CONFIRMED')?.id);
             if (targetId) {
-              const res = cancelFacilityBookingWithRefund('CH-06', targetId, data.action.reason || 'Resident requested via AI Chat');
+              const res = cancelFacilityBookingWithRefund(aptCode, targetId, data.action.reason || 'Resident requested via AI Chat');
               if (res.cancelledBooking) {
                 cancelledBooking = {
                   bookingId: res.cancelledBooking.id,

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -38,7 +38,6 @@ import {
 import {
   GeneratedVisitorPass,
   PassEntryType,
-  verifyVisitorQr,
   VerificationScanResult,
 } from '@/lib/visitorStore';
 import { useAsyncResource } from '@/lib/hooks/useAsyncResource';

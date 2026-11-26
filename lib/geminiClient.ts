@@ -1,6 +1,5 @@
 import { SKYLINE_FACILITIES } from './dataStore';
 import { getUserStore, getApartmentMembers } from './userStore';
-import { getAllVisitorPasses } from './visitorStore';
 import { getFacilityBookings } from './facilityStore';
 import { getBills, SKYLINE_BANK_INFO } from './billingStore';
 import { getTickets } from './ticketStore';
@@ -246,9 +245,9 @@ export function buildProjectSystemPrompt(contextOrAptCode: string | ConciergeCon
   const vehiclesStr = vehicleItems.join('\n');
 
   // 5. Thẻ khách thăm thực tế
-  const visitorPasses = (typeof contextOrAptCode === 'object' && Array.isArray(contextOrAptCode?.visitors) && contextOrAptCode.visitors.length > 0)
+  const visitorPasses = (typeof contextOrAptCode === 'object' && Array.isArray(contextOrAptCode?.visitors))
     ? contextOrAptCode.visitors
-    : getAllVisitorPasses().filter(p => p.apartmentCode === targetAptCode);
+    : [];
 
   const visitorsStr = visitorPasses.length > 0
     ? visitorPasses.map((p, idx) => `  ${idx + 1}. Thẻ khách [${p.id}]: Khách "${p.visitorName}" | SĐT: ${p.phoneNumber || 'Không có'} | Biển số xe: ${p.licensePlate || 'Đi bộ / Taxi'} | Mã PIN: ${p.pinCode} | Trạng thái: ${p.status === 'ACTIVE' ? 'Đang hiệu lực (Chờ khách đến)' : p.status === 'CHECKED_IN' ? 'Đã check-in tòa nhà' : p.status} | Hạn sử dụng: ${p.validUntil?.slice(0, 16).replace('T', ' ') || 'Trong ngày'} | Mục đích: ${p.purposeLabel || 'Thăm người thân'}`).join('\n')
@@ -525,9 +524,9 @@ export function generateSmartProjectFallback(
     : getApartmentMembers(targetAptCode);
 
   // 4. Thẻ khách thăm thực tế
-  const visitorPasses = (typeof contextOrAptCode === 'object' && Array.isArray(contextOrAptCode?.visitors) && contextOrAptCode.visitors.length > 0)
+  const visitorPasses = (typeof contextOrAptCode === 'object' && Array.isArray(contextOrAptCode?.visitors))
     ? contextOrAptCode.visitors
-    : getAllVisitorPasses().filter(p => p.apartmentCode === targetAptCode);
+    : [];
 
   // 5. Hóa đơn thực tế từ billingStore
   const bills = (typeof contextOrAptCode === 'object' && Array.isArray(contextOrAptCode?.bills) && contextOrAptCode.bills.length > 0)

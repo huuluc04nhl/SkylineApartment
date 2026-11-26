@@ -22,7 +22,7 @@ export default function TowerCollectionSummaryCard({ bills, onSelectTower }: Tow
 
   const towerStats = towers.map(tower => {
     const towerBills = bills.filter(
-      b => b.apt_code.startsWith(tower.code) || (tower.code === 'BS-08' && b.apt_code === 'CH-06')
+      b => b.apt_code.startsWith(tower.code)
     );
     const totalBilled = towerBills.reduce((s, b) => s + b.total_amount, 0);
     const paidBills = towerBills.filter(b => b.status === 'Paid');

@@ -424,7 +424,7 @@ export default function FloorPlanExplorer({ onOpenLogin }: FloorPlanExplorerProp
   // Xác định loại căn hộ mà cư dân đang sở hữu
   const userAptCategory = useMemo(() => {
     if (isOwnerOrResident && currentUser) {
-      return getUserAptCategory(currentUser.apartment_code || 'CH-06');
+      return getUserAptCategory(currentUser?.apartment_code || '');
     }
     return null;
   }, [isOwnerOrResident, currentUser]);
@@ -530,7 +530,7 @@ export default function FloorPlanExplorer({ onOpenLogin }: FloorPlanExplorerProp
                       ? 'VinHomes Manager' 
                       : isTechnician 
                         ? t('Kỹ Thuật Viên Vận Hành') 
-                        : `${t('Chủ Hộ Căn')} ${currentUser?.apartment_code || 'CH-06'}`}
+                        : `${t('Chủ Hộ Căn')} ${currentUser?.apartment_code || ''}`}
                   </div>
                 </div>
 
@@ -771,7 +771,7 @@ export default function FloorPlanExplorer({ onOpenLogin }: FloorPlanExplorerProp
                   <div className="text-xs">
                     <div className="text-blue-400 font-bold uppercase tracking-wider">{t('Mặt Bằng Dòng Căn Khác')}</div>
                     <div className={`text-[11px] mt-0.5 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {t('Căn hộ của bạn là')} <strong>{t('Căn')} {currentUser?.apartment_code || 'CH-06'}</strong> ({userAptCategory}).
+                      {t('Căn hộ của bạn là')} <strong>{t('Căn')} {currentUser?.apartment_code || ''}</strong> ({userAptCategory}).
                     </div>
                   </div>
                   {userAptCategory && (
@@ -970,7 +970,7 @@ export default function FloorPlanExplorer({ onOpenLogin }: FloorPlanExplorerProp
                       className="w-full py-3 bg-[#C5A880] hover:bg-[#D4AF37] text-[#0A0E17] font-bold text-xs tracking-wider uppercase rounded-none transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <Crown className="w-4 h-4" />
-                      <span>{t('Quay Về Căn Hộ Của Tôi')} ({currentUser?.apartment_code || 'CH-06'})</span>
+                      <span>{t('Quay Về Căn Hộ Của Tôi')} ({currentUser?.apartment_code || ''})</span>
                     </button>
                   )}
                   <Link

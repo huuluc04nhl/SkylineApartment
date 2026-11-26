@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { 
   ShieldCheck, 
   Wifi, 
@@ -37,7 +39,7 @@ export default function ResidentSmartCard({
   const [tapMessage, setTapMessage] = useState<string | null>(null);
 
   const isOwner = currentUser.role === 'OWNER';
-  const aptCode = currentUser.apartment_code || 'CH-06';
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const idSuffix = currentUser.id_card_no 
     ? currentUser.id_card_no.slice(-4) 
     : (currentUser.phone ? currentUser.phone.slice(-4) : '8899');
@@ -74,6 +76,7 @@ export default function ResidentSmartCard({
     }, 800);
   };
 
+  if (missingApartment) return <MissingApartmentNotice />;
   return (
     <div className={`space-y-4 ${className}`}>
       {/* 3D Perspective Card Container - Exact Physical Card Aspect Ratio 85.6mm x 54mm */}

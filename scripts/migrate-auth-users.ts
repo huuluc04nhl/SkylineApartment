@@ -25,6 +25,18 @@ function generateRandomPassword(length = 16): string {
   return crypto.randomBytes(length).toString('base64url').slice(0, length) + '!A9';
 }
 
+function resolveInitialPassword(role?: string | null): string {
+  const upper = (role || '').toUpperCase();
+  const roleKey =
+    upper === 'TECHNICIAN'
+      ? 'E2E_TECH_PASSWORD'
+      : upper === 'RECEPTIONIST'
+      ? 'E2E_RECEPTION_PASSWORD'
+      : `E2E_${upper}_PASSWORD`;
+  const fromEnv = process.env[roleKey] || process.env.E2E_DEFAULT_PASSWORD;
+  return fromEnv && fromEnv.trim() ? fromEnv.trim() : generateRandomPassword(16);
+}
+
 async function main() {
   loadEnvLocal();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -58,7 +70,7 @@ async function main() {
     let generatedPassword: string | null = null;
 
     if (!authUser) {
-      generatedPassword = generateRandomPassword(16);
+      generatedPassword = resolveInitialPassword(u.role);
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
         email,
         password: generatedPassword,

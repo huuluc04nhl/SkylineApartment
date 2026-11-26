@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { 
   BookOpen, 
   Search, 
@@ -253,6 +255,7 @@ const HANDBOOK_SECTIONS: HandbookSection[] = [
 
 export default function ResidentHandbook({ currentUser, onNavigate }: ResidentHandbookProps) {
   const { isEn } = useLanguage();
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSectionId, setSelectedSectionId] = useState<string>('noise');
   
@@ -288,9 +291,9 @@ export default function ResidentHandbook({ currentUser, onNavigate }: ResidentHa
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: isEn
-            ? `Resident inquiries regarding building regulations or resident handbook: "${q}". Please provide a concise, accurate, 5-star concierge-style answer in English based on The Tropical condominium regulations (Towers BS-07, BS-08, BS-09, BS-10) and apartment ${currentUser.apartment_code || 'CH-06'}. State specific hours or prohibitions.`
-            : `Cư dân hỏi về nội quy hoặc sổ tay chung cư: "${q}". Hãy giải đáp ngắn gọn, chuẩn xác, văn phong lễ tân 5 sao, dựa trên quy chế chung cư The Tropical (4 chung cư BS-07, BS-08, BS-09, BS-10) và căn hộ ${currentUser.apartment_code || 'CH-06'} tầng 30. Nêu rõ khung giờ hoặc điều cấm cụ thể nếu có.`,
-          aptCode: currentUser.apartment_code || 'CH-06',
+            ? `Resident inquiries regarding building regulations or resident handbook: "${q}". Please provide a concise, accurate, 5-star concierge-style answer in English based on The Tropical condominium regulations (Towers BS-07, BS-08, BS-09, BS-10) and apartment ${aptCode}. State specific hours or prohibitions.`
+            : `Cư dân hỏi về nội quy hoặc sổ tay chung cư: "${q}". Hãy giải đáp ngắn gọn, chuẩn xác, văn phong lễ tân 5 sao, dựa trên quy chế chung cư The Tropical (4 chung cư BS-07, BS-08, BS-09, BS-10) và căn hộ ${aptCode} tầng 30. Nêu rõ khung giờ hoặc điều cấm cụ thể nếu có.`,
+          aptCode: aptCode,
           userName: currentUser.full_name || (currentUser as any)?.fullname || 'Cư Dân',
           language: isEn ? 'en' : 'vi',
         })
@@ -308,6 +311,7 @@ export default function ResidentHandbook({ currentUser, onNavigate }: ResidentHa
     }
   };
 
+  if (missingApartment) return <MissingApartmentNotice />;
   return (
     <div className="space-y-6 w-full animate-fadeIn select-none">
       {/* 1. APP HEADER: Sổ Tay Cư Dân Số */}

@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { User as UserType } from '@/lib/dataStore';
 import { getCommunityPosts, syncCommunityPostsFromApi } from '@/lib/communityStore';
 import ResidentSmartCard from './ResidentSmartCard';
@@ -50,7 +52,7 @@ interface ResidentHomeProps {
 export default function ResidentHome({ currentUser, onNavigate, onOpenVisitorModal, onOpenAllServices }: ResidentHomeProps) {
   const { t, isEn } = useLanguage();
   const isOwner = currentUser.role === 'OWNER';
-  const aptCode = currentUser.apartment_code || 'CH-06';
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
 
   const [activeScene, setActiveScene] = useState<SceneType>(() => getSmartHomeState(aptCode).activeScene);
   const [sceneMessage, setSceneMessage] = useState<string | null>(null);
@@ -111,6 +113,7 @@ export default function ResidentHome({ currentUser, onNavigate, onOpenVisitorMod
 
   const userName = currentUser?.full_name || (currentUser as any)?.fullname || 'Cư Dân SKYLINE';
 
+  if (missingApartment) return <MissingApartmentNotice />;
   return (
     <div className="space-y-6 w-full animate-fadeIn">
       {/* Top Welcome & Environmental Widget Header */}

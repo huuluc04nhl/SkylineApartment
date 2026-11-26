@@ -302,7 +302,7 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                         ? 'VinHomes Manager' 
                         : currentUser.role === 'TECHNICIAN' 
                         ? t('Ká»¹ Thuáº­t ViÃªn', 'Technician') 
-                        : `${t('Chá»§ Há»™ CÄƒn', 'Apartment Owner')} ${currentUser.apartment_code || 'CH-06'}`}
+                        : `${t('Chá»§ Há»™ CÄƒn', 'Apartment Owner')} ${currentUser.apartment_code || t('Chưa gán căn hộ', 'Unassigned')}`}
                     </span>
                   </div>
                   <div className={`flex justify-between py-1.5 border-b ${isDark ? 'border-[#1E2631]' : 'border-gray-100'}`}>

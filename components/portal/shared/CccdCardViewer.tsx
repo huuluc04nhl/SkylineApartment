@@ -20,7 +20,7 @@ export interface CccdCardViewerProps {
   onClose: () => void;
   fullName: string;
   idCardNo: string;
-  apartmentCode?: string;
+  apartmentCode: string;
   frontImage?: string;
   backImage?: string;
   idDate?: string;
@@ -38,7 +38,7 @@ export default function CccdCardViewer({
   onClose,
   fullName,
   idCardNo,
-  apartmentCode = 'CH-06',
+  apartmentCode,
   frontImage = '',
   backImage = '',
   idDate = '',

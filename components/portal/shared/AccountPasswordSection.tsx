@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { 
   KeyRound, 
   Lock, 
@@ -36,7 +38,7 @@ export default function AccountPasswordSection({
   isModal = false,
 }: AccountPasswordSectionProps) {
   const { t, isEn } = useLanguage();
-  const aptCode = currentUser.apartment_code || 'CH-06';
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const isAdmin = currentUser.role === 'ADMIN';
   const isOwner = currentUser.role === 'OWNER';
 
@@ -221,6 +223,7 @@ export default function AccountPasswordSection({
     }
   };
 
+  if (missingApartment && (currentUser.role === 'OWNER' || currentUser.role === 'TENANT')) return <MissingApartmentNotice />;
   return (
     <div className={`space-y-6 animate-fadeIn ${isModal ? '' : 'w-full'}`}>
       {/* Top Banner: Sovereign Account Identification */}

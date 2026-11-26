@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { 
   Sparkles, 
   Shirt, 
@@ -54,7 +56,7 @@ interface ResidentServicesProps {
 
 export default function ResidentServices({ currentUser, onNavigateModule }: ResidentServicesProps) {
   const { t, isEn } = useLanguage();
-  const aptCode = currentUser.apartment_code || 'CH-06';
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const userName = currentUser.full_name || (currentUser as any)?.fullname || 'Cư Dân';
   const userPhone = currentUser.phone || '0901234567';
 
@@ -142,6 +144,7 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
     setCancelBookingTargetId(null);
   };
 
+  if (missingApartment) return <MissingApartmentNotice />;
   return (
     <div className="space-y-6 w-full animate-fadeIn select-none">
       {/* ------------------------------------------------------------- */}

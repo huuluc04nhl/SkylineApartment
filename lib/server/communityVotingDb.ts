@@ -90,7 +90,16 @@ export async function deleteCommunityPostDb(id: string): Promise<boolean> {
   return (data?.length ?? 0) > 0;
 }
 
-async function hydrateTopic(topic: VotingTopicRow): Promise<VotingTopicDto> {
+export async function countEligibleApartmentsDb(): Promise<number> {
+  const { count, error } = await supabaseAdmin
+    .from('apartments')
+    .select('apt_code', { count: 'exact', head: true })
+    .not('owner_id', 'is', null);
+  if (error) throw new Error(`Supabase apartments count error: ${error.message}`);
+  return count ?? 0;
+}
+
+async function hydrateTopic(topic: VotingTopicRow, fallbackEligibleCount?: number): Promise<VotingTopicDto> {
   const [{ data: opts, error: optErr }, { data: recs, error: recErr }] = await Promise.all([
     supabaseAdmin.from('voting_options').select('*').eq('topic_id', topic.id),
     supabaseAdmin.from('voting_records').select('*').eq('topic_id', topic.id),
@@ -105,6 +114,11 @@ async function hydrateTopic(topic: VotingTopicRow): Promise<VotingTopicDto> {
     votes: records.filter((r) => r.option_id === o.id).length || o.votes_count || 0,
   }));
 
+  const totalEligibleApartments =
+    typeof topic.total_eligible_apartments === 'number' && topic.total_eligible_apartments > 0
+      ? topic.total_eligible_apartments
+      : (fallbackEligibleCount ?? (await countEligibleApartmentsDb()));
+
   return {
     id: topic.id,
     code: topic.code,
@@ -116,7 +130,7 @@ async function hydrateTopic(topic: VotingTopicRow): Promise<VotingTopicDto> {
     deadline: topic.deadline,
     status: (topic.status as 'OPEN' | 'CLOSED') || 'OPEN',
     isOwnerOnly: topic.is_owner_only ?? true,
-    totalEligibleApartments: topic.total_eligible_apartments ?? 200,
+    totalEligibleApartments,
     totalVotes: records.length || topic.total_votes || 0,
     summaryReport: topic.summary_report || '',
     options,
@@ -130,12 +144,15 @@ async function hydrateTopic(topic: VotingTopicRow): Promise<VotingTopicDto> {
 }
 
 export async function listVotingTopicsDb(): Promise<VotingTopicDto[]> {
-  const { data: topics, error } = await supabaseAdmin
-    .from('voting_topics')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const [{ data: topics, error }, eligibleCount] = await Promise.all([
+    supabaseAdmin
+      .from('voting_topics')
+      .select('*')
+      .order('created_at', { ascending: false }),
+    countEligibleApartmentsDb(),
+  ]);
   if (error) throw new Error(`Supabase voting_topics select error: ${error.message}`);
-  return Promise.all((topics ?? []).map(hydrateTopic));
+  return Promise.all((topics ?? []).map((t) => hydrateTopic(t, eligibleCount)));
 }
 
 export async function createVotingTopicDb(params: {

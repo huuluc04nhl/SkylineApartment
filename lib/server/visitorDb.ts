@@ -5,10 +5,12 @@ import {
   type GeneratedVisitorPass,
   type VerificationScanResult,
   type GateAuditLog,
-  verifyVisitorQr as verifyQrHelper,
+  extractPassLookupKey,
 } from '@/lib/visitorStore';
 
 type VisitorPassRow = Database['public']['Tables']['visitor_passes']['Row'];
+
+const DEFAULT_CHECKPOINT = 'Sảnh Chính Lobby BS-07';
 
 function rowToVisitorPass(r: VisitorPassRow): GeneratedVisitorPass {
   return {
@@ -35,8 +37,34 @@ function rowToVisitorPass(r: VisitorPassRow): GeneratedVisitorPass {
   };
 }
 
+async function insertGateLogDb(params: {
+  pass: GeneratedVisitorPass;
+  action: 'SCAN' | 'CHECK_IN' | 'CHECK_OUT';
+  result: 'VALID' | 'EXPIRED' | 'INVALID';
+  checkpoint?: string;
+  actorName?: string;
+  scannedAt: string;
+}) {
+  const { error } = await supabaseAdmin.from('visitor_gate_logs').insert({
+    id: `LOG-${Date.now()}-${crypto.randomUUID().slice(0, 6)}`,
+    pass_id: params.pass.id,
+    apartment_code: params.pass.apartmentCode,
+    host_name: params.pass.hostName,
+    visitor_name: params.pass.visitorName,
+    license_plate: params.pass.licensePlate ?? null,
+    checkpoint: params.checkpoint?.trim() || DEFAULT_CHECKPOINT,
+    action: params.action,
+    result: params.result,
+    scanned_at: params.scannedAt,
+    notes: params.actorName ? `Actor: ${params.actorName}` : null,
+  });
+  if (error) {
+    console.warn('Không thể ghi visitor_gate_logs:', error.message);
+  }
+}
+
 export async function findVisitorPassByIdOrPinDb(idOrPin: string): Promise<GeneratedVisitorPass | null> {
-  const clean = idOrPin.trim();
+  const clean = extractPassLookupKey(idOrPin);
   if (!clean) return null;
   const { data, error } = await supabaseAdmin
     .from('visitor_passes')
@@ -52,6 +80,7 @@ export async function createVisitorPassDb(params: {
   apartmentCode: string;
   hostName?: string;
   hostPhone?: string;
+  towerName?: string;
   visitorName: string;
   phoneNumber?: string;
   licensePlate?: string;
@@ -81,6 +110,7 @@ export async function createVisitorPassDb(params: {
       apartment_code: params.apartmentCode,
       host_name: params.hostName || 'Chủ Hộ',
       host_phone: params.hostPhone || '',
+      tower_name: params.towerName ?? null,
       visitor_name: params.visitorName,
       visitor_phone: params.phoneNumber ?? null,
       license_plate: params.licensePlate ?? null,
@@ -100,41 +130,102 @@ export async function createVisitorPassDb(params: {
   return rowToVisitorPass(data);
 }
 
-export async function verifyVisitorQrDb(qrCode: string): Promise<VerificationScanResult> {
-  const clean = (qrCode || '').trim();
-  const dbPass = await findVisitorPassByIdOrPinDb(clean);
-  if (dbPass) {
-    const expired = new Date(dbPass.validUntil).getTime() < Date.now();
-    if (expired || dbPass.status === 'EXPIRED') {
-      return {
-        scanResult: 'EXPIRED',
-        title: 'Thẻ khách đã hết hạn',
-        message: 'Thẻ khách đã hết hạn hiệu lực.',
-        canEnter: false,
-        scannedAt: new Date().toISOString(),
-      };
-    }
+export async function verifyVisitorQrDb(
+  qrCode: string,
+  checkpoint: string = DEFAULT_CHECKPOINT,
+  actorName?: string
+): Promise<VerificationScanResult> {
+  const scannedAt = new Date().toISOString();
+  const dbPass = await findVisitorPassByIdOrPinDb(qrCode);
+
+  if (!dbPass) {
     return {
-      scanResult: 'VALID',
-      title: 'Thẻ khách hợp lệ',
-      message: `Hợp lệ: Khách ${dbPass.visitorName} lên căn ${dbPass.apartmentCode}.`,
-      canEnter: true,
-      scannedAt: new Date().toISOString(),
-      host: {
-        apartmentCode: dbPass.apartmentCode,
-        hostName: dbPass.hostName,
-        hostPhone: dbPass.hostPhone,
-        towerName: dbPass.towerName || 'Tropical BS-07',
-      },
+      scanResult: 'INVALID',
+      title: 'Mã thẻ không hợp lệ',
+      message: 'Không tìm thấy thẻ khách thăm hoặc mã PIN tương ứng trong hệ thống.',
+      canEnter: false,
+      scannedAt,
+      checkpoint,
     };
   }
-  return verifyQrHelper(clean);
+
+  const expired = new Date(dbPass.validUntil).getTime() < Date.now() || dbPass.status === 'EXPIRED';
+  await insertGateLogDb({
+    pass: dbPass,
+    action: 'SCAN',
+    result: expired ? 'EXPIRED' : 'VALID',
+    checkpoint,
+    actorName,
+    scannedAt,
+  });
+
+  const visitorInfo: VerificationScanResult['visitor'] = {
+    passId: dbPass.id,
+    visitorName: dbPass.visitorName,
+    phoneNumber: dbPass.phoneNumber,
+    licensePlate: dbPass.licensePlate,
+    validHours: dbPass.validHours,
+    createdAt: dbPass.createdAt,
+    validUntil: dbPass.validUntil,
+    status: expired ? 'EXPIRED' : dbPass.status,
+    checkedInAt: dbPass.checkedInAt,
+    checkedOutAt: dbPass.checkedOutAt,
+    pinCode: dbPass.pinCode,
+  };
+
+  const hostInfo: VerificationScanResult['host'] = {
+    apartmentCode: dbPass.apartmentCode,
+    hostName: dbPass.hostName,
+    hostPhone: dbPass.hostPhone,
+    towerName: dbPass.towerName || 'Tropical BS-07',
+  };
+
+  if (expired) {
+    return {
+      scanResult: 'EXPIRED',
+      title: 'Thẻ khách đã hết hạn',
+      message: `Thẻ ${dbPass.id} của khách ${dbPass.visitorName} đã hết hạn hiệu lực.`,
+      canEnter: false,
+      scannedAt,
+      checkpoint,
+      host: hostInfo,
+      visitor: visitorInfo,
+    };
+  }
+
+  return {
+    scanResult: 'VALID',
+    title: 'Thẻ khách hợp lệ',
+    message: `Hợp lệ: Khách ${dbPass.visitorName} lên căn ${dbPass.apartmentCode}.`,
+    canEnter: true,
+    scannedAt,
+    checkpoint,
+    host: hostInfo,
+    visitor: visitorInfo,
+  };
 }
 
-export async function checkInVisitorPassDb(passId: string): Promise<GeneratedVisitorPass | null> {
+export async function checkInVisitorPassDb(
+  passId: string,
+  checkpoint: string = DEFAULT_CHECKPOINT,
+  actorName?: string
+): Promise<GeneratedVisitorPass | null> {
   const pass = await findVisitorPassByIdOrPinDb(passId);
   if (!pass) return null;
+
   const now = new Date().toISOString();
+  const expired = new Date(pass.validUntil).getTime() < Date.now() || pass.status === 'EXPIRED';
+  if (expired) {
+    await insertGateLogDb({
+      pass,
+      action: 'CHECK_IN',
+      result: 'EXPIRED',
+      checkpoint,
+      actorName,
+      scannedAt: now,
+    });
+    throw new Error('Thẻ khách đã hết hạn hiệu lực, không thể check-in.');
+  }
 
   const { data, error } = await supabaseAdmin
     .from('visitor_passes')
@@ -144,23 +235,24 @@ export async function checkInVisitorPassDb(passId: string): Promise<GeneratedVis
     .single();
   if (error) throw new Error(`Supabase visitor_passes check-in error: ${error.message}`);
 
-  await supabaseAdmin.from('visitor_gate_logs').insert({
-    id: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    pass_id: pass.id,
-    apartment_code: pass.apartmentCode,
-    host_name: pass.hostName,
-    visitor_name: pass.visitorName,
-    license_plate: pass.licensePlate ?? null,
-    checkpoint: 'Sảnh Chính Lobby BS-07',
+  const updated = rowToVisitorPass(data);
+  await insertGateLogDb({
+    pass: updated,
     action: 'CHECK_IN',
     result: 'VALID',
-    scanned_at: now,
+    checkpoint,
+    actorName,
+    scannedAt: now,
   });
 
-  return rowToVisitorPass(data);
+  return updated;
 }
 
-export async function checkOutVisitorPassDb(passId: string): Promise<GeneratedVisitorPass | null> {
+export async function checkOutVisitorPassDb(
+  passId: string,
+  checkpoint: string = DEFAULT_CHECKPOINT,
+  actorName?: string
+): Promise<GeneratedVisitorPass | null> {
   const pass = await findVisitorPassByIdOrPinDb(passId);
   if (!pass) return null;
   const now = new Date().toISOString();
@@ -173,22 +265,48 @@ export async function checkOutVisitorPassDb(passId: string): Promise<GeneratedVi
     .single();
   if (error) throw new Error(`Supabase visitor_passes check-out error: ${error.message}`);
 
-  await supabaseAdmin.from('visitor_gate_logs').insert({
-    id: `LOG-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    pass_id: pass.id,
-    apartment_code: pass.apartmentCode,
-    host_name: pass.hostName,
-    visitor_name: pass.visitorName,
-    license_plate: pass.licensePlate ?? null,
-    checkpoint: 'Sảnh Chính Lobby BS-07',
+  const updated = rowToVisitorPass(data);
+  await insertGateLogDb({
+    pass: updated,
     action: 'CHECK_OUT',
     result: 'VALID',
-    scanned_at: now,
+    checkpoint,
+    actorName,
+    scannedAt: now,
   });
 
-  return rowToVisitorPass(data);
+  return updated;
 }
 
+export async function deleteVisitorPassDb(passId: string): Promise<boolean> {
+  const clean = passId.trim();
+  if (!clean) return false;
+  await supabaseAdmin.from('visitor_gate_logs').delete().eq('pass_id', clean);
+  const { data, error } = await supabaseAdmin
+    .from('visitor_passes')
+    .delete()
+    .eq('id', clean)
+    .select('id');
+  if (error) throw new Error(`Supabase visitor_passes delete error: ${error.message}`);
+  return Array.isArray(data) && data.length > 0;
+}
+
+export async function purgeExpiredVisitorPassesDb(): Promise<number> {
+  const now = new Date().toISOString();
+  const { data: expiredRows, error: selectErr } = await supabaseAdmin
+    .from('visitor_passes')
+    .select('id')
+    .or(`status.eq.EXPIRED,valid_until.lt.${now}`);
+  if (selectErr) throw new Error(`Supabase visitor_passes expired query error: ${selectErr.message}`);
+
+  const ids = (expiredRows ?? []).map((r) => r.id);
+  if (ids.length === 0) return 0;
+
+  await supabaseAdmin.from('visitor_gate_logs').delete().in('pass_id', ids);
+  const { error: delErr } = await supabaseAdmin.from('visitor_passes').delete().in('id', ids);
+  if (delErr) throw new Error(`Supabase visitor_passes purge error: ${delErr.message}`);
+  return ids.length;
+}
 
 export async function listVisitorPassesDb(filter?: {
   apartmentCode?: string;
@@ -240,12 +358,13 @@ export async function listGateLogsDb(filter?: {
       hostName: r.host_name || '',
       visitorName: r.visitor_name || '',
       licensePlate: r.license_plate ?? undefined,
-      checkpoint: r.checkpoint || 'Sảnh Chính Lobby BS-07',
+      checkpoint: r.checkpoint || DEFAULT_CHECKPOINT,
       action: (r.action as GateAuditLog['action']) || 'CHECK_IN',
       result: (r.result as GateAuditLog['result']) || 'VALID',
       scannedAt,
       timestamp: scannedAt,
-      note: '',
+      note: r.notes || '',
+      notes: r.notes || undefined,
     };
   });
 }

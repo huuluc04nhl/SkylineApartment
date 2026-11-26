@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { 
   Wrench, 
   Clock, 
@@ -148,7 +150,7 @@ interface TicketServiceProps {
 export default function TicketService({ currentUser }: TicketServiceProps) {
   const { t, isEn, language } = useLanguage();
   // Lấy động 100% từ tài khoản người dùng đăng nhập qua API
-  const aptCode = currentUser?.apartment_code?.trim() || '';
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const residentName = currentUser?.full_name || (currentUser as any)?.fullname || currentUser?.username || 'Cư dân';
   const residentPhone = currentUser?.phone?.trim() || '';
   const residentEmail = currentUser?.email?.trim() || '';
@@ -513,6 +515,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
     return Array.isArray(json?.tickets) ? json.tickets : [];
   }, []);
 
+  if (missingApartment) return <MissingApartmentNotice />;
   return (
     <div className="space-y-8 w-full animate-fadeIn">
       {ticketServiceResource.loading && <ResourceSkeleton label="Đang tải yêu cầu dịch vụ..." />}

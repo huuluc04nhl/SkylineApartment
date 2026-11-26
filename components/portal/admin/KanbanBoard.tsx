@@ -115,7 +115,7 @@ export default function KanbanBoard() {
   // BQL Direct Ticket Intake Modal States (Hotline 1900 8899)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [apartmentUnits, setApartmentUnits] = useState<ApartmentUnit[]>([]);
-  const [newAptCode, setNewAptCode] = useState<string>('CH-06');
+  const [newAptCode, setNewAptCode] = useState<string>('');
   const [newResidentName, setNewResidentName] = useState<string>('');
   const [newResidentPhone, setNewResidentPhone] = useState<string>('');
   const [newCategory, setNewCategory] = useState<'Điện' | 'Nước' | 'Vệ sinh' | 'An ninh' | 'Khác'>('Điện');
@@ -372,6 +372,10 @@ export default function KanbanBoard() {
 
   const handleCreateTicketSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newAptCode.trim()) {
+      toast.warning('Vui lòng chọn mã căn hộ!');
+      return;
+    }
     if (!newContent.trim()) {
       toast.warning('Vui lòng nhập mô tả sự cố hoặc yêu cầu!');
       return;
@@ -383,7 +387,7 @@ export default function KanbanBoard() {
     setIsSubmittingNewTicket(true);
     try {
       const res = await createTicketAsync({
-        apt_code: newAptCode || 'CH-06',
+        apt_code: newAptCode.trim(),
         resident_name: newResidentName || 'Cư dân Skyline',
         resident_phone: newResidentPhone || '1900 8899',
         content: newContent.trim(),

@@ -59,3 +59,72 @@ jobs:
           NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
           NEXT_PUBLIC_DEMO_MODE: 'false'
         run: npm run build
+
+  e2e:
+    needs: verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase, reset DB & export env
+        run: |
+          supabase start
+          supabase db reset
+          supabase status -o env | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' > /tmp/sb_env
+          source /tmp/sb_env
+          echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+
+      - name: Seed Supabase Auth users for E2E
+        env:
+          E2E_OWNER_PASSWORD: ${{ secrets.E2E_OWNER_PASSWORD }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_TECH_PASSWORD: ${{ secrets.E2E_TECH_PASSWORD }}
+          E2E_RECEPTION_PASSWORD: ${{ secrets.E2E_RECEPTION_PASSWORD }}
+          E2E_DEFAULT_PASSWORD: ${{ secrets.E2E_DEFAULT_PASSWORD }}
+        run: npx tsx scripts/migrate-auth-users.ts
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        env:
+          NEXT_PUBLIC_DEMO_MODE: 'false'
+          NEXT_PUBLIC_BASE_URL: http://127.0.0.1:3000
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+          VNP_TMN_CODE: ${{ secrets.VNP_TMN_CODE }}
+          VNP_HASH_SECRET: ${{ secrets.VNP_HASH_SECRET }}
+          VNP_URL: ${{ secrets.VNP_URL }}
+          E2E_OWNER_PASSWORD: ${{ secrets.E2E_OWNER_PASSWORD }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_TECH_PASSWORD: ${{ secrets.E2E_TECH_PASSWORD }}
+          E2E_RECEPTION_PASSWORD: ${{ secrets.E2E_RECEPTION_PASSWORD }}
+          E2E_DEFAULT_PASSWORD: ${{ secrets.E2E_DEFAULT_PASSWORD }}
+        run: npm run test:e2e
+
+      - name: Upload Playwright screenshots & report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-artifacts
+          path: |
+            docs/screenshots/
+            playwright-report/
+          retention-days: 14

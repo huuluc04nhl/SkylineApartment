@@ -89,7 +89,7 @@ export default function HeaderNav({ onOpenLogin }: HeaderNavProps) {
                   {currentUser.full_name}
                 </div>
                 <div className="text-[10px] text-[#C5A880] font-mono uppercase font-bold whitespace-nowrap">
-                  {currentUser.role === 'ADMIN' ? 'VinHomes Manager' : `${t('Căn')} ${currentUser.apartment_code || 'CH-06'} (${t(currentUser.role)})`}
+                  {currentUser.role === 'ADMIN' ? 'VinHomes Manager' : `${t('Căn')} ${currentUser.apartment_code || t('Chưa gán', 'Unassigned')} (${t(currentUser.role)})`}
                 </div>
               </div>
 

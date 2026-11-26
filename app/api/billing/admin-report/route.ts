@@ -19,7 +19,7 @@ async function queryTowerDebtSummary(towerCode?: string) {
   const relevantTowers = targetTower && towers.includes(targetTower) ? [targetTower] : towers;
 
   const result = relevantTowers.map(tower => {
-    const towerBills = allBills.filter(b => b.apartment_code.startsWith(tower) || (tower === 'BS-08' && b.apartment_code === 'CH-06'));
+    const towerBills = allBills.filter(b => b.apartment_code.startsWith(tower));
     const totalBilled = towerBills.reduce((s, b) => s + b.total_amount, 0);
     const paidBills = towerBills.filter(b => b.status === 'Paid');
     const totalCollected = paidBills.reduce((s, b) => s + b.total_amount, 0);

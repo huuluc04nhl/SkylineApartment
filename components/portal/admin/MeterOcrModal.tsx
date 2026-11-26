@@ -12,7 +12,7 @@ interface MeterOcrModalProps {
 
 export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrModalProps) {
   useEscapeKey(isOpen, onClose);
-  const [aptCode, setAptCode] = useState('CH-06');
+  const [aptCode, setAptCode] = useState('');
   const [meterType, setMeterType] = useState<'ELECTRIC' | 'WATER'>('ELECTRIC');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);

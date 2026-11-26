@@ -1,5 +1,7 @@
 ﻿'use client';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
+import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
+import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 
 import React, { useState, useMemo } from 'react';
 import {
@@ -63,7 +65,7 @@ export default function ResidentAllServicesModal({
   const [searchQuery, setSearchQuery] = useState('');
 
   const isOwner = currentUser.role === 'OWNER';
-  const aptCode = currentUser.apartment_code || 'CH-06';
+  const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
 
   const categories: ServiceCategory[] = useMemo(() => {
     return [
@@ -260,6 +262,7 @@ export default function ResidentAllServicesModal({
 
   if (!isOpen) return null;
 
+  if (isOpen && missingApartment) return <MissingApartmentNotice />;
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center animate-fadeIn select-none">
       {/* Backdrop */}

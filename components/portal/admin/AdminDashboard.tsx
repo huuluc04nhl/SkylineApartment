@@ -17,7 +17,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { getApartmentUnits } from '@/lib/apartmentStore';
-import { getAllVisitorPasses, getGateAuditLogs } from '@/lib/visitorStore';
+import type { GeneratedVisitorPass, GateAuditLog } from '@/lib/visitorStore';
 import { getBills } from '@/lib/billingStore';
 import { useLanguage } from '@/lib/languageContext';
 
@@ -205,20 +205,24 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  const visitorPasses = useMemo(() => {
-    try {
-      return getAllVisitorPasses();
-    } catch {
-      return [];
-    }
-  }, []);
+  const [visitorPasses, setVisitorPasses] = useState<GeneratedVisitorPass[]>([]);
+  const [auditLogs, setAuditLogs] = useState<GateAuditLog[]>([]);
 
-  const auditLogs = useMemo(() => {
-    try {
-      return getGateAuditLogs();
-    } catch {
-      return [];
-    }
+  useEffect(() => {
+    let active = true;
+    fetch('/api/visitor', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (!active || !json) return;
+        if (Array.isArray(json.passes)) setVisitorPasses(json.passes);
+        if (Array.isArray(json.gateLogs)) setAuditLogs(json.gateLogs);
+      })
+      .catch((err) => {
+        console.warn('Lỗi tải dữ liệu khách thăm cho Dashboard:', err);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const occupiedUnits = useMemo(() => {
