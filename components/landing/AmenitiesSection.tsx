@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { DEMO_FACILITIES, Facility } from '@/lib/dataStore';
+import Image from 'next/image';
+import { SKYLINE_FACILITIES, Facility } from '@/lib/dataStore';
 import { Star, Clock, Sparkles, ArrowRight } from 'lucide-react';
 import { useTheme } from '@/lib/themeContext';
 import { useLanguage } from '@/lib/languageContext';
@@ -51,7 +52,7 @@ export default function AmenitiesSection() {
 
         {/* Facilities Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {DEMO_FACILITIES.map((facility: Facility) => (
+          {SKYLINE_FACILITIES.map((facility: Facility) => (
             <div
               key={facility.id}
               className={`rounded-none overflow-hidden group transition-all duration-300 hover:-translate-y-1 ${
@@ -62,9 +63,11 @@ export default function AmenitiesSection() {
             >
               {/* Image */}
               <div className="relative h-52 overflow-hidden">
-                <img
+                <Image
                   src={facility.hero_image_url}
                   alt={facility.name}
+                  width={800}
+                  height={500}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className={`absolute inset-0 pointer-events-none ${

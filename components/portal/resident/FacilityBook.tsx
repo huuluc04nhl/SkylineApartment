@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DEMO_FACILITIES, Facility, User } from '@/lib/dataStore';
+import { SKYLINE_FACILITIES, Facility, User } from '@/lib/dataStore';
 import { CalendarCheck, Clock, Users, CheckCircle2, Star, ShieldCheck, QrCode } from 'lucide-react';
 import { 
   createFacilityBooking, 
@@ -11,6 +11,7 @@ import {
   FacilityBooking 
 } from '@/lib/facilityStore';
 import { useLanguage } from '@/lib/languageContext';
+import { toast } from '@/components/ui/Toast';
 
 interface FacilityBookProps {
   currentUser?: User;
@@ -18,10 +19,10 @@ interface FacilityBookProps {
 
 export default function FacilityBook({ currentUser }: FacilityBookProps) {
   const { t, isEn } = useLanguage();
-  const aptCode = currentUser?.apartment_code || 'CH-06';
+  const aptCode = currentUser?.apartment_code || '';
   const userName = currentUser?.full_name || (currentUser as any)?.fullname || 'Cư Dân';
 
-  const [selectedFacility, setSelectedFacility] = useState<Facility>(DEMO_FACILITIES[0]);
+  const [selectedFacility, setSelectedFacility] = useState<Facility>(SKYLINE_FACILITIES[0]);
   const [bookingDate, setBookingDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [timeSlot, setTimeSlot] = useState('18:00 - 20:00 (Buổi tối)');
   const [guestCount, setGuestCount] = useState(2);
@@ -38,7 +39,7 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
   const handleBooking = (e: React.FormEvent) => {
     e.preventDefault();
     if (quota.remaining <= 0) {
-      alert(t('Căn hộ của Quý cư dân đã sử dụng hết hạn mức tiện ích trong tháng!', 'Your apartment has used up its monthly amenity booking quota!'));
+      toast.warning(t('Căn hộ của Quý cư dân đã sử dụng hết hạn mức tiện ích trong tháng!', 'Your apartment has used up its monthly amenity booking quota!'));
       return;
     }
 
@@ -59,7 +60,7 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
     );
 
     if (!result.success || !result.newBooking) {
-      alert(t(`⚠️ Không thể đặt chỗ: ${result.error || 'Khung giờ này đã kín hoặc bị trùng lịch.'}`, `⚠️ Booking failed: ${result.error || 'This time slot is full or has a scheduling conflict.'}`));
+      toast.error(t(`Không thể đặt chỗ: ${result.error || 'Khung giờ này đã kín hoặc bị trùng lịch.'}`, `Booking failed: ${result.error || 'This time slot is full or has a scheduling conflict.'}`));
       return;
     }
 
@@ -103,7 +104,7 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
 
       {/* Facilities Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {DEMO_FACILITIES.map((f) => {
+        {SKYLINE_FACILITIES.map((f) => {
           const isSelected = selectedFacility.id === f.id;
           return (
             <div

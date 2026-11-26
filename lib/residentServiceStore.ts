@@ -1,16 +1,16 @@
-/**
+﻿/**
  * Skyline Smart Residence - Resident Services Store
- * Quản lý danh mục & đơn đặt dịch vụ đời sống cao cấp cho Cư Dân:
- * - Giặt ủi & Giặt hấp cao cấp (Giao nhận tận cửa)
- * - Cho thuê người giúp việc & Dọn dẹp căn hộ theo giờ
- * - Thuê Huấn luyện viên cá nhân PT Bơi lội (Sky Pool Tầng 25) & PT Gym (Tầng 3)
- * - Chăm sóc xe & Rửa xe cao cấp tại Hầm B2
- * - Spa & Wellness (Massage thư giãn, Chăm sóc da mặt, Xông hơi trị liệu)
- * - Nhà Hàng & Suất Ăn (Skyline Kitchen & Café, Giao suất ăn tận căn hộ)
- * - Di Chuyển Thông Minh (Xe điện buggey nội khu, Đưa đón sân bay VIP, Vé tháng VinBus)
+ * Quáº£n lÃ½ danh má»¥c & Ä‘Æ¡n Ä‘áº·t dá»‹ch vá»¥ Ä‘á»i sá»‘ng cao cáº¥p cho CÆ° DÃ¢n:
+ * - Giáº·t á»§i & Giáº·t háº¥p cao cáº¥p (Giao nháº­n táº­n cá»­a)
+ * - Cho thuÃª ngÆ°á»i giÃºp viá»‡c & Dá»n dáº¹p cÄƒn há»™ theo giá»
+ * - ThuÃª Huáº¥n luyá»‡n viÃªn cÃ¡ nhÃ¢n PT BÆ¡i lá»™i (Sky Pool Táº§ng 25) & PT Gym (Táº§ng 3)
+ * - ChÄƒm sÃ³c xe & Rá»­a xe cao cáº¥p táº¡i Háº§m B2
+ * - Spa & Wellness (Massage thÆ° giÃ£n, ChÄƒm sÃ³c da máº·t, XÃ´ng hÆ¡i trá»‹ liá»‡u)
+ * - NhÃ  HÃ ng & Suáº¥t Ä‚n (Skyline Kitchen & CafÃ©, Giao suáº¥t Äƒn táº­n cÄƒn há»™)
+ * - Di Chuyá»ƒn ThÃ´ng Minh (Xe Ä‘iá»‡n buggey ná»™i khu, ÄÆ°a Ä‘Ã³n sÃ¢n bay VIP, VÃ© thÃ¡ng VinBus)
  * 
- * Lưu ý: Các tiện ích không gian (Hồ bơi, Gym, Sân Tennis/Bóng rổ, Yoga, Vườn BBQ) 
- * được quản lý riêng biệt tại SmartFacilityPass (Tiện Ích & Thẻ Thông Minh).
+ * LÆ°u Ã½: CÃ¡c tiá»‡n Ã­ch khÃ´ng gian (Há»“ bÆ¡i, Gym, SÃ¢n Tennis/BÃ³ng rá»•, Yoga, VÆ°á»n BBQ) 
+ * Ä‘Æ°á»£c quáº£n lÃ½ riÃªng biá»‡t táº¡i SmartFacilityPass (Tiá»‡n Ãch & Tháº» ThÃ´ng Minh).
  */
 
 import { addServiceChargeToBill } from './billingStore';
@@ -75,335 +75,335 @@ export interface ServiceBooking {
 
 
 export const RESIDENT_SERVICES_CATALOG: ResidentServiceItem[] = [
-  // 1. GIẶT ỦI & GIẶT HẤP
+  // 1. GIáº¶T á»¦I & GIáº¶T Háº¤P
   {
     id: 'srv-laundry',
-    name: 'Giặt Ủi & Giặt Hấp Cao Cấp',
+    name: 'Giáº·t á»¦i & Giáº·t Háº¥p Cao Cáº¥p',
     category: 'LAUNDRY',
-    tagline: 'Nhận & giao đồ tận cửa căn hộ trong 24h',
-    description: 'Quy trình giặt sấy công nghệ Nhật Bản, bảo vệ sợi vải, dung môi giặt hấp hữu cơ sinh học cao cấp không mùi hóa chất.',
+    tagline: 'Nháº­n & giao Ä‘á»“ táº­n cá»­a cÄƒn há»™ trong 24h',
+    description: 'Quy trÃ¬nh giáº·t sáº¥y cÃ´ng nghá»‡ Nháº­t Báº£n, báº£o vá»‡ sá»£i váº£i, dung mÃ´i giáº·t háº¥p há»¯u cÆ¡ sinh há»c cao cáº¥p khÃ´ng mÃ¹i hÃ³a cháº¥t.',
     rating: 4.9,
     reviewCount: 142,
-    location: 'Sảnh Đón & Tầng B1',
-    imageUrl: 'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=600&auto=format&fit=crop&q=80',
-    badge: 'Giao Nhận Tận Cửa',
-    operatingHours: '07:30 - 21:30 Hàng Ngày',
+    location: 'Sáº£nh ÄÃ³n & Táº§ng B1',
+    imageUrl: '/masterplan/vinhomes-amenities-map.jpg',
+    badge: 'Giao Nháº­n Táº­n Cá»­a',
+    operatingHours: '07:30 - 21:30 HÃ ng NgÃ y',
     packages: [
       {
         id: 'pkg-laundry-wash',
-        name: 'Giặt Sấy Thơm & Gấp Gọn',
+        name: 'Giáº·t Sáº¥y ThÆ¡m & Gáº¥p Gá»n',
         unit: 'kg',
         unitPrice: 20000,
-        description: 'Phân loại màu sắc, sấy khô mềm mại, tiệt trùng tia UV.',
-        estimatedDuration: 'Giao sau 12 giờ',
+        description: 'PhÃ¢n loáº¡i mÃ u sáº¯c, sáº¥y khÃ´ má»m máº¡i, tiá»‡t trÃ¹ng tia UV.',
+        estimatedDuration: 'Giao sau 12 giá»',
       },
       {
         id: 'pkg-laundry-dryclean-suit',
-        name: 'Giặt Hấp Veston & Trang Phục Cao Cấp',
-        unit: 'bộ',
+        name: 'Giáº·t Háº¥p Veston & Trang Phá»¥c Cao Cáº¥p',
+        unit: 'bá»™',
         unitPrice: 80000,
-        description: 'Giặt khô bằng dung môi Hydrocarbon hữu cơ chuyên dụng, ủi hơi form chuẩn.',
-        estimatedDuration: 'Giao sau 24 giờ',
+        description: 'Giáº·t khÃ´ báº±ng dung mÃ´i Hydrocarbon há»¯u cÆ¡ chuyÃªn dá»¥ng, á»§i hÆ¡i form chuáº©n.',
+        estimatedDuration: 'Giao sau 24 giá»',
       },
       {
         id: 'pkg-laundry-bedding',
-        name: 'Giặt Hấp Chăn Ga Gối & Topper',
-        unit: 'bộ',
+        name: 'Giáº·t Háº¥p ChÄƒn Ga Gá»‘i & Topper',
+        unit: 'bá»™',
         unitPrice: 120000,
-        description: 'Khử khuẩn mạt bụi, thơm hương lavender tự nhiên.',
-        estimatedDuration: 'Giao sau 24 giờ',
+        description: 'Khá»­ khuáº©n máº¡t bá»¥i, thÆ¡m hÆ°Æ¡ng lavender tá»± nhiÃªn.',
+        estimatedDuration: 'Giao sau 24 giá»',
       },
     ],
   },
 
-  // 2. GIÚP VIỆC & DỌN DẸP THEO GIỜ
+  // 2. GIÃšP VIá»†C & Dá»ŒN Dáº¸P THEO GIá»œ
   {
     id: 'srv-cleaning',
-    name: 'Cho Thuê Giúp Việc & Dọn Dẹp Nhà',
+    name: 'Cho ThuÃª GiÃºp Viá»‡c & Dá»n Dáº¹p NhÃ ',
     category: 'HOUSEKEEPING',
-    tagline: 'Nhân viên kiểm định lý lịch e-KYC, tay nghề 5 sao',
-    description: 'Dịch vụ buồng phòng tiêu chuẩn khách sạn 5 sao. Nhân viên mang đầy đủ hóa chất sinh học tẩy rửa, máy hút bụi chuyên dụng.',
+    tagline: 'NhÃ¢n viÃªn kiá»ƒm Ä‘á»‹nh lÃ½ lá»‹ch e-KYC, tay nghá» 5 sao',
+    description: 'Dá»‹ch vá»¥ buá»“ng phÃ²ng tiÃªu chuáº©n khÃ¡ch sáº¡n 5 sao. NhÃ¢n viÃªn mang Ä‘áº§y Ä‘á»§ hÃ³a cháº¥t sinh há»c táº©y rá»­a, mÃ¡y hÃºt bá»¥i chuyÃªn dá»¥ng.',
     rating: 5.0,
     reviewCount: 218,
-    location: 'Đội Buồng Phòng Skyline',
-    imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&auto=format&fit=crop&q=80',
-    badge: 'Được Đặt Nhiều Nhất',
-    operatingHours: '08:00 - 20:00 Hàng Ngày',
+    location: 'Äá»™i Buá»“ng PhÃ²ng Skyline',
+    imageUrl: '/masterplan/vinhomes-amenities-map.jpg',
+    badge: 'ÄÆ°á»£c Äáº·t Nhiá»u Nháº¥t',
+    operatingHours: '08:00 - 20:00 HÃ ng NgÃ y',
     packages: [
       {
         id: 'pkg-clean-2h',
-        name: 'Dọn Dẹp Tiêu Chuẩn (Ca 2 Giờ)',
+        name: 'Dá»n Dáº¹p TiÃªu Chuáº©n (Ca 2 Giá»)',
         unit: 'ca',
         unitPrice: 180000,
-        description: 'Lau dọn phòng khách, phòng ngủ, nhà vệ sinh, rửa chén bát và gom rác.',
-        estimatedDuration: '2 giờ làm việc',
+        description: 'Lau dá»n phÃ²ng khÃ¡ch, phÃ²ng ngá»§, nhÃ  vá»‡ sinh, rá»­a chÃ©n bÃ¡t vÃ  gom rÃ¡c.',
+        estimatedDuration: '2 giá» lÃ m viá»‡c',
       },
       {
         id: 'pkg-clean-3h',
-        name: 'Dọn Dẹp Chuyên Sâu (Ca 3 Giờ)',
+        name: 'Dá»n Dáº¹p ChuyÃªn SÃ¢u (Ca 3 Giá»)',
         unit: 'ca',
         unitPrice: 260000,
-        description: 'Dọn toàn diện căn hộ 2-3 phòng ngủ, lau cửa kính, hút bụi sofa & ban công.',
-        estimatedDuration: '3 giờ làm việc',
+        description: 'Dá»n toÃ n diá»‡n cÄƒn há»™ 2-3 phÃ²ng ngá»§, lau cá»­a kÃ­nh, hÃºt bá»¥i sofa & ban cÃ´ng.',
+        estimatedDuration: '3 giá» lÃ m viá»‡c',
       },
       {
         id: 'pkg-clean-postparty',
-        name: 'Tổng Vệ Sinh Sau Tiệc / Tiệc BBQ',
-        unit: 'lần',
+        name: 'Tá»•ng Vá»‡ Sinh Sau Tiá»‡c / Tiá»‡c BBQ',
+        unit: 'láº§n',
         unitPrice: 450000,
-        description: 'Dọn sạch vết dầu mỡ bếp, gom rửa đồ tiệc, khử mùi thức ăn và làm sáng bóng sàn nhà.',
-        estimatedDuration: '3.5 - 4 giờ',
+        description: 'Dá»n sáº¡ch váº¿t dáº§u má»¡ báº¿p, gom rá»­a Ä‘á»“ tiá»‡c, khá»­ mÃ¹i thá»©c Äƒn vÃ  lÃ m sÃ¡ng bÃ³ng sÃ n nhÃ .',
+        estimatedDuration: '3.5 - 4 giá»',
       },
       {
         id: 'pkg-clean-sofa-steam',
-        name: 'Giặt Ghế Sofa Hơi Nước Nóng Diệt Khuẩn',
-        unit: 'bộ',
+        name: 'Giáº·t Gháº¿ Sofa HÆ¡i NÆ°á»›c NÃ³ng Diá»‡t Khuáº©n',
+        unit: 'bá»™',
         unitPrice: 350000,
-        description: 'Công nghệ hơi nước nóng 140°C diệt 99.9% vi khuẩn, bọ rệp và nấm mốc nệm/sofa.',
-        estimatedDuration: '1.5 giờ',
+        description: 'CÃ´ng nghá»‡ hÆ¡i nÆ°á»›c nÃ³ng 140Â°C diá»‡t 99.9% vi khuáº©n, bá» rá»‡p vÃ  náº¥m má»‘c ná»‡m/sofa.',
+        estimatedDuration: '1.5 giá»',
       },
     ],
   },
 
-  // 3. THUÊ PT BƠI & PT GYM
+  // 3. THUÃŠ PT BÆ I & PT GYM
   {
     id: 'srv-pt-sports',
-    name: 'Thuê Huấn Luyện Viên Cá Nhân (PT)',
+    name: 'ThuÃª Huáº¥n Luyá»‡n ViÃªn CÃ¡ NhÃ¢n (PT)',
     category: 'PERSONAL_TRAINER',
-    tagline: 'Kèm riêng 1-1 tại Hồ bơi Tầng 25 & Gym Tầng 3',
-    description: 'Đội ngũ HLV có chứng chỉ quốc tế ACE / NASM / Cử nhân TDTT. Lộ trình cá nhân hóa cho trẻ em, người lớn, chỉnh dáng bơi & tăng cơ giảm mỡ.',
+    tagline: 'KÃ¨m riÃªng 1-1 táº¡i Há»“ bÆ¡i Táº§ng 25 & Gym Táº§ng 3',
+    description: 'Äá»™i ngÅ© HLV cÃ³ chá»©ng chá»‰ quá»‘c táº¿ ACE / NASM / Cá»­ nhÃ¢n TDTT. Lá»™ trÃ¬nh cÃ¡ nhÃ¢n hÃ³a cho tráº» em, ngÆ°á»i lá»›n, chá»‰nh dÃ¡ng bÆ¡i & tÄƒng cÆ¡ giáº£m má»¡.',
     rating: 4.95,
     reviewCount: 96,
-    location: 'Hồ Bơi Tầng 25 & Gym Tầng 3',
-    imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&auto=format&fit=crop&q=80',
-    badge: 'Chuyên Gia 1-Kèm-1',
-    operatingHours: '06:00 - 21:00 Hàng Ngày',
+    location: 'Há»“ BÆ¡i Táº§ng 25 & Gym Táº§ng 3',
+    imageUrl: '/masterplan/vinhomes-amenities-map.jpg',
+    badge: 'ChuyÃªn Gia 1-KÃ¨m-1',
+    operatingHours: '06:00 - 21:00 HÃ ng NgÃ y',
     packages: [
       {
         id: 'pkg-pt-swim-single',
-        name: 'PT Bơi Lội Kèm Riêng (1 Buổi 60 Phút)',
-        unit: 'buổi',
+        name: 'PT BÆ¡i Lá»™i KÃ¨m RiÃªng (1 Buá»•i 60 PhÃºt)',
+        unit: 'buá»•i',
         unitPrice: 350000,
-        description: 'Kèm trực tiếp tại Hồ bơi vô cực Tầng 25: học bơi ếch/sải/ngửa, chỉnh kỹ thuật thở nước & an toàn bơi.',
-        estimatedDuration: '60 phút',
+        description: 'KÃ¨m trá»±c tiáº¿p táº¡i Há»“ bÆ¡i vÃ´ cá»±c Táº§ng 25: há»c bÆ¡i áº¿ch/sáº£i/ngá»­a, chá»‰nh ká»¹ thuáº­t thá»Ÿ nÆ°á»›c & an toÃ n bÆ¡i.',
+        estimatedDuration: '60 phÃºt',
       },
       {
         id: 'pkg-pt-swim-10',
-        name: 'Gói PT Bơi Lội Cấp Tốc (10 Buổi)',
-        unit: 'khóa',
+        name: 'GÃ³i PT BÆ¡i Lá»™i Cáº¥p Tá»‘c (10 Buá»•i)',
+        unit: 'khÃ³a',
         unitPrice: 3150000,
-        description: 'Cam kết biết bơi chuẩn kỹ thuật sau 10 buổi. Tiết kiệm 10% so với học lẻ.',
-        estimatedDuration: '10 buổi (60 phút/buổi)',
+        description: 'Cam káº¿t biáº¿t bÆ¡i chuáº©n ká»¹ thuáº­t sau 10 buá»•i. Tiáº¿t kiá»‡m 10% so vá»›i há»c láº».',
+        estimatedDuration: '10 buá»•i (60 phÃºt/buá»•i)',
       },
       {
         id: 'pkg-pt-gym-single',
-        name: 'PT Gym Technogym (1 Buổi 60 Phút)',
-        unit: 'buổi',
+        name: 'PT Gym Technogym (1 Buá»•i 60 PhÃºt)',
+        unit: 'buá»•i',
         unitPrice: 300000,
-        description: 'Đo chỉ số InBody miễn phí, hướng dẫn kỹ thuật tập máy an toàn, lên giáo trình dinh dưỡng.',
-        estimatedDuration: '60 phút',
+        description: 'Äo chá»‰ sá»‘ InBody miá»…n phÃ­, hÆ°á»›ng dáº«n ká»¹ thuáº­t táº­p mÃ¡y an toÃ n, lÃªn giÃ¡o trÃ¬nh dinh dÆ°á»¡ng.',
+        estimatedDuration: '60 phÃºt',
       },
       {
         id: 'pkg-pt-gym-10',
-        name: 'Gói PT Gym Giảm Mỡ / Tăng Cơ (10 Buổi)',
-        unit: 'khóa',
+        name: 'GÃ³i PT Gym Giáº£m Má»¡ / TÄƒng CÆ¡ (10 Buá»•i)',
+        unit: 'khÃ³a',
         unitPrice: 2700000,
-        description: 'Lộ trình siết cơ hoặc tăng cân khoa học theo sát tiến độ hàng tuần.',
-        estimatedDuration: '10 buổi (60 phút/buổi)',
+        description: 'Lá»™ trÃ¬nh siáº¿t cÆ¡ hoáº·c tÄƒng cÃ¢n khoa há»c theo sÃ¡t tiáº¿n Ä‘á»™ hÃ ng tuáº§n.',
+        estimatedDuration: '10 buá»•i (60 phÃºt/buá»•i)',
       },
     ],
   },
 
-  // 4. CHĂM SÓC & RỬA XE HẦM B2
+  // 4. CHÄ‚M SÃ“C & Rá»¬A XE Háº¦M B2
   {
     id: 'srv-car-detailing',
-    name: 'Chăm Sóc & Rửa Xe Thông Minh',
+    name: 'ChÄƒm SÃ³c & Rá»­a Xe ThÃ´ng Minh',
     category: 'CAR_CARE',
-    tagline: 'Rửa bọt tuyết & hút bụi nội thất tại Hầm B2',
-    description: 'Khu vực dịch vụ chăm sóc xe thông minh tại Hầm B2. Tiện lợi nhận và trả xe ngay vị trí đỗ của cư dân.',
+    tagline: 'Rá»­a bá»t tuyáº¿t & hÃºt bá»¥i ná»™i tháº¥t táº¡i Háº§m B2',
+    description: 'Khu vá»±c dá»‹ch vá»¥ chÄƒm sÃ³c xe thÃ´ng minh táº¡i Háº§m B2. Tiá»‡n lá»£i nháº­n vÃ  tráº£ xe ngay vá»‹ trÃ­ Ä‘á»— cá»§a cÆ° dÃ¢n.',
     rating: 4.88,
     reviewCount: 84,
-    location: 'Khu Vực Kỹ Thuật Hầm B2',
-    imageUrl: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=600&auto=format&fit=crop&q=80',
-    badge: 'Tiện Lợi Dưới Hầm',
-    operatingHours: '07:00 - 19:30 Hàng Ngày',
+    location: 'Khu Vá»±c Ká»¹ Thuáº­t Háº§m B2',
+    imageUrl: '/masterplan/vinhomes-amenities-map.jpg',
+    badge: 'Tiá»‡n Lá»£i DÆ°á»›i Háº§m',
+    operatingHours: '07:00 - 19:30 HÃ ng NgÃ y',
     packages: [
       {
         id: 'pkg-car-moto',
-        name: 'Rửa Xe Máy Bọt Tuyết & Dưỡng Lốp',
+        name: 'Rá»­a Xe MÃ¡y Bá»t Tuyáº¿t & DÆ°á»¡ng Lá»‘p',
         unit: 'xe',
         unitPrice: 30000,
-        description: 'Rửa gầm, xịt bọt tuyết bóng sơn và phủ dưỡng chống oxy hóa lốp xe.',
-        estimatedDuration: '25 phút',
+        description: 'Rá»­a gáº§m, xá»‹t bá»t tuyáº¿t bÃ³ng sÆ¡n vÃ  phá»§ dÆ°á»¡ng chá»‘ng oxy hÃ³a lá»‘p xe.',
+        estimatedDuration: '25 phÃºt',
       },
       {
         id: 'pkg-car-auto-standard',
-        name: 'Rửa Ô Tô & Hút Bụi Nội Thất (Sedan/Hatchback)',
+        name: 'Rá»­a Ã” TÃ´ & HÃºt Bá»¥i Ná»™i Tháº¥t (Sedan/Hatchback)',
         unit: 'xe',
         unitPrice: 100000,
-        description: 'Rửa ngoại thất sạch bóng, hút bụi sàn ghế, khử khuẩn điều hòa bằng tinh dầu sả chanh.',
-        estimatedDuration: '45 phút',
+        description: 'Rá»­a ngoáº¡i tháº¥t sáº¡ch bÃ³ng, hÃºt bá»¥i sÃ n gháº¿, khá»­ khuáº©n Ä‘iá»u hÃ²a báº±ng tinh dáº§u sáº£ chanh.',
+        estimatedDuration: '45 phÃºt',
       },
       {
         id: 'pkg-car-auto-suv',
-        name: 'Rửa Ô Tô SUV / 7 Chỗ Chuyên Sâu',
+        name: 'Rá»­a Ã” TÃ´ SUV / 7 Chá»— ChuyÃªn SÃ¢u',
         unit: 'xe',
         unitPrice: 130000,
-        description: 'Rửa sạch gầm, vệ sinh khoang hành lý, lau dưỡng da nội thất chuyên dụng.',
-        estimatedDuration: '60 phút',
+        description: 'Rá»­a sáº¡ch gáº§m, vá»‡ sinh khoang hÃ nh lÃ½, lau dÆ°á»¡ng da ná»™i tháº¥t chuyÃªn dá»¥ng.',
+        estimatedDuration: '60 phÃºt',
       },
     ],
   },
 
-  // 5. SPA & WELLNESS — Phòng Xông Hơi Đá Muối & Massage Cao Cấp Tầng 3
+  // 5. SPA & WELLNESS â€” PhÃ²ng XÃ´ng HÆ¡i ÄÃ¡ Muá»‘i & Massage Cao Cáº¥p Táº§ng 3
   {
     id: 'srv-spa-wellness',
-    name: 'Spa & Wellness Cao Cấp',
+    name: 'Spa & Wellness Cao Cáº¥p',
     category: 'SPA_WELLNESS',
-    tagline: 'Massage thư giãn & xông hơi muối đá tầng 3',
-    description: 'Trải nghiệm thư giãn 5 sao ngay trong khuôn viên Skyline. Đội ngũ chuyên viên spa được đào tạo bài bản tại Thái Lan, sử dụng tinh dầu hữu cơ thiên nhiên và đá nóng Himalaya.',
+    tagline: 'Massage thÆ° giÃ£n & xÃ´ng hÆ¡i muá»‘i Ä‘Ã¡ táº§ng 3',
+    description: 'Tráº£i nghiá»‡m thÆ° giÃ£n 5 sao ngay trong khuÃ´n viÃªn Skyline. Äá»™i ngÅ© chuyÃªn viÃªn spa Ä‘Æ°á»£c Ä‘Ã o táº¡o bÃ i báº£n táº¡i ThÃ¡i Lan, sá»­ dá»¥ng tinh dáº§u há»¯u cÆ¡ thiÃªn nhiÃªn vÃ  Ä‘Ã¡ nÃ³ng Himalaya.',
     rating: 4.97,
     reviewCount: 163,
-    location: 'Tầng 3 (Khu Wellness & Spa)',
-    imageUrl: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&auto=format&fit=crop&q=80',
-    badge: 'Được Yêu Thích Nhất',
-    operatingHours: '09:00 - 21:00 Hàng Ngày',
+    location: 'Táº§ng 3 (Khu Wellness & Spa)',
+    imageUrl: '/masterplan/vinhomes-amenities-map.jpg',
+    badge: 'ÄÆ°á»£c YÃªu ThÃ­ch Nháº¥t',
+    operatingHours: '09:00 - 21:00 HÃ ng NgÃ y',
     packages: [
       {
         id: 'pkg-spa-massage-60',
-        name: 'Massage Thư Giãn Toàn Thân (60 Phút)',
-        unit: 'lần',
+        name: 'Massage ThÆ° GiÃ£n ToÃ n ThÃ¢n (60 PhÃºt)',
+        unit: 'láº§n',
         unitPrice: 450000,
-        description: 'Kết hợp kỹ thuật massage Thụy Điển & Balinese, giảm căng cơ, cải thiện tuần hoàn máu.',
-        estimatedDuration: '60 phút',
+        description: 'Káº¿t há»£p ká»¹ thuáº­t massage Thá»¥y Äiá»ƒn & Balinese, giáº£m cÄƒng cÆ¡, cáº£i thiá»‡n tuáº§n hoÃ n mÃ¡u.',
+        estimatedDuration: '60 phÃºt',
       },
       {
         id: 'pkg-spa-massage-90',
-        name: 'Massage Đá Nóng Himalaya Cao Cấp (90 Phút)',
-        unit: 'lần',
+        name: 'Massage ÄÃ¡ NÃ³ng Himalaya Cao Cáº¥p (90 PhÃºt)',
+        unit: 'láº§n',
         unitPrice: 680000,
-        description: 'Đá nóng basalt kết hợp tinh dầu sả gừng giải độc, phục hồi năng lượng sâu cơ bắp sau ngày dài.',
-        estimatedDuration: '90 phút',
+        description: 'ÄÃ¡ nÃ³ng basalt káº¿t há»£p tinh dáº§u sáº£ gá»«ng giáº£i Ä‘á»™c, phá»¥c há»“i nÄƒng lÆ°á»£ng sÃ¢u cÆ¡ báº¯p sau ngÃ y dÃ i.',
+        estimatedDuration: '90 phÃºt',
       },
       {
         id: 'pkg-spa-sauna-family',
-        name: 'Xông Hơi Đá Muối Phòng Gia Đình (2 Người)',
+        name: 'XÃ´ng HÆ¡i ÄÃ¡ Muá»‘i PhÃ²ng Gia ÄÃ¬nh (2 NgÆ°á»i)',
         unit: 'ca',
         unitPrice: 550000,
-        description: 'Phòng xông riêng tư cho cặp đôi/gia đình. Đá muối Himalaya 48°C, tinh dầu thảo mộc khử độc.',
-        estimatedDuration: '60 phút/ca',
+        description: 'PhÃ²ng xÃ´ng riÃªng tÆ° cho cáº·p Ä‘Ã´i/gia Ä‘Ã¬nh. ÄÃ¡ muá»‘i Himalaya 48Â°C, tinh dáº§u tháº£o má»™c khá»­ Ä‘á»™c.',
+        estimatedDuration: '60 phÃºt/ca',
       },
       {
         id: 'pkg-spa-facial',
-        name: 'Chăm Sóc Da Mặt Chuyên Sâu (Facial Treatment)',
-        unit: 'lần',
+        name: 'ChÄƒm SÃ³c Da Máº·t ChuyÃªn SÃ¢u (Facial Treatment)',
+        unit: 'láº§n',
         unitPrice: 380000,
-        description: 'Làm sạch sâu lỗ chân lông, đắp mặt nạ collagen thủy phân, tăng độ ẩm và đàn hồi da.',
-        estimatedDuration: '60 phút',
+        description: 'LÃ m sáº¡ch sÃ¢u lá»— chÃ¢n lÃ´ng, Ä‘áº¯p máº·t náº¡ collagen thá»§y phÃ¢n, tÄƒng Ä‘á»™ áº©m vÃ  Ä‘Ã n há»“i da.',
+        estimatedDuration: '60 phÃºt',
       },
     ],
   },
 
-  // 6. NHÀ HÀNG & SUẤT ĂN — Skyline Kitchen & Giao Tận Căn Hộ
+  // 6. NHÃ€ HÃ€NG & SUáº¤T Ä‚N â€” Skyline Kitchen & Giao Táº­n CÄƒn Há»™
   {
     id: 'srv-restaurant',
-    name: 'Nhà Hàng & Giao Suất Ăn Tận Cửa',
+    name: 'NhÃ  HÃ ng & Giao Suáº¥t Ä‚n Táº­n Cá»­a',
     category: 'RESTAURANT',
-    tagline: 'Đặt bàn nhà hàng Skyline & giao cơm bếp Việt tận căn hộ',
-    description: 'Nhà hàng Skyline Kitchen & Café phục vụ ẩm thực Á-Âu tinh tế ngay tầng 1. Giao suất ăn đóng gói tươi nóng từ bếp trưởng chuyên nghiệp, giao trong 30 phút, đúng giờ tận cửa căn hộ.',
+    tagline: 'Äáº·t bÃ n nhÃ  hÃ ng Skyline & giao cÆ¡m báº¿p Viá»‡t táº­n cÄƒn há»™',
+    description: 'NhÃ  hÃ ng Skyline Kitchen & CafÃ© phá»¥c vá»¥ áº©m thá»±c Ã-Ã‚u tinh táº¿ ngay táº§ng 1. Giao suáº¥t Äƒn Ä‘Ã³ng gÃ³i tÆ°Æ¡i nÃ³ng tá»« báº¿p trÆ°á»Ÿng chuyÃªn nghiá»‡p, giao trong 30 phÃºt, Ä‘Ãºng giá» táº­n cá»­a cÄƒn há»™.',
     rating: 4.88,
     reviewCount: 211,
-    location: 'Tầng 1 (Skyline Kitchen & Café)',
-    imageUrl: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&auto=format&fit=crop&q=80',
-    badge: 'Giao Trong 30 Phút',
-    operatingHours: '06:30 - 22:00 Hàng Ngày',
+    location: 'Táº§ng 1 (Skyline Kitchen & CafÃ©)',
+    imageUrl: '/masterplan/vinhomes-amenities-map.jpg',
+    badge: 'Giao Trong 30 PhÃºt',
+    operatingHours: '06:30 - 22:00 HÃ ng NgÃ y',
     packages: [
       {
         id: 'pkg-rest-combo-lunch',
-        name: 'Combo Cơm Phần Trưa Bếp Việt (1 Người)',
-        unit: 'phần',
+        name: 'Combo CÆ¡m Pháº§n TrÆ°a Báº¿p Viá»‡t (1 NgÆ°á»i)',
+        unit: 'pháº§n',
         unitPrice: 85000,
-        description: 'Cơm trắng + 1 món mặn + canh + tráng miệng. Giao nóng đến cửa căn hộ trong 30 phút.',
-        estimatedDuration: 'Giao trong 30 phút',
+        description: 'CÆ¡m tráº¯ng + 1 mÃ³n máº·n + canh + trÃ¡ng miá»‡ng. Giao nÃ³ng Ä‘áº¿n cá»­a cÄƒn há»™ trong 30 phÃºt.',
+        estimatedDuration: 'Giao trong 30 phÃºt',
       },
       {
         id: 'pkg-rest-dim-sum',
-        name: 'Set Dim Sum Sáng (2 Người)',
+        name: 'Set Dim Sum SÃ¡ng (2 NgÆ°á»i)',
         unit: 'set',
         unitPrice: 160000,
-        description: 'Trà Tàu nóng + 5 loại bánh dim sum đặc trưng Hồng Kông từ bếp trưởng 5 sao.',
-        estimatedDuration: 'Giao trong 25 phút',
+        description: 'TrÃ  TÃ u nÃ³ng + 5 loáº¡i bÃ¡nh dim sum Ä‘áº·c trÆ°ng Há»“ng KÃ´ng tá»« báº¿p trÆ°á»Ÿng 5 sao.',
+        estimatedDuration: 'Giao trong 25 phÃºt',
       },
       {
         id: 'pkg-rest-book-table',
-        name: 'Đặt Bàn Nhà Hàng (Tối đa 6 người)',
-        unit: 'bàn',
+        name: 'Äáº·t BÃ n NhÃ  HÃ ng (Tá»‘i Ä‘a 6 ngÆ°á»i)',
+        unit: 'bÃ n',
         unitPrice: 0,
-        description: 'Đặt bàn ưu tiên tại nhà hàng Skyline Kitchen. Miễn phí giữ chỗ. Menu A-la-carte tại chỗ.',
-        estimatedDuration: 'Liên hệ xác nhận khung giờ',
+        description: 'Äáº·t bÃ n Æ°u tiÃªn táº¡i nhÃ  hÃ ng Skyline Kitchen. Miá»…n phÃ­ giá»¯ chá»—. Menu A-la-carte táº¡i chá»—.',
+        estimatedDuration: 'LiÃªn há»‡ xÃ¡c nháº­n khung giá»',
       },
       {
         id: 'pkg-rest-amenities-basket',
-        name: 'Giỏ Quà Trái Cây Cao Cấp & Bánh Ngọt Tầng Cao',
-        unit: 'giỏ',
+        name: 'Giá» QuÃ  TrÃ¡i CÃ¢y Cao Cáº¥p & BÃ¡nh Ngá»t Táº§ng Cao',
+        unit: 'giá»',
         unitPrice: 280000,
-        description: 'Hoa quả nhập khẩu Hàn Quốc tươi, bánh Macaron & Éclair từ bếp bánh của nhà hàng. Phù hợp tặng quà cư dân mới.',
-        estimatedDuration: 'Giao trong 45 phút',
+        description: 'Hoa quáº£ nháº­p kháº©u HÃ n Quá»‘c tÆ°Æ¡i, bÃ¡nh Macaron & Ã‰clair tá»« báº¿p bÃ¡nh cá»§a nhÃ  hÃ ng. PhÃ¹ há»£p táº·ng quÃ  cÆ° dÃ¢n má»›i.',
+        estimatedDuration: 'Giao trong 45 phÃºt',
       },
     ],
   },
 
-  // 7. DI CHUYỂN THÔNG MINH — VinBus, Xe điện, Đưa đón sân bay
+  // 7. DI CHUYá»‚N THÃ”NG MINH â€” VinBus, Xe Ä‘iá»‡n, ÄÆ°a Ä‘Ã³n sÃ¢n bay
   {
     id: 'srv-transport',
-    name: 'Di Chuyển Thông Minh Nội Khu',
+    name: 'Di Chuyá»ƒn ThÃ´ng Minh Ná»™i Khu',
     category: 'TRANSPORT',
-    tagline: 'VinBus điện, xe buggey nội khu & đưa đón sân bay Tân Sơn Nhất',
-    description: 'Dịch vụ di chuyển xanh – thông minh trong và ngoài Vinhomes Grand Park. Từ xe buggey điện kết nối nội khu đến đặt xe đưa đón sân bay Tân Sơn Nhất tiêu chuẩn VIP.',
+    tagline: 'VinBus Ä‘iá»‡n, xe buggey ná»™i khu & Ä‘Æ°a Ä‘Ã³n sÃ¢n bay TÃ¢n SÆ¡n Nháº¥t',
+    description: 'Dá»‹ch vá»¥ di chuyá»ƒn xanh â€“ thÃ´ng minh trong vÃ  ngoÃ i Vinhomes Grand Park. Tá»« xe buggey Ä‘iá»‡n káº¿t ná»‘i ná»™i khu Ä‘áº¿n Ä‘áº·t xe Ä‘Æ°a Ä‘Ã³n sÃ¢n bay TÃ¢n SÆ¡n Nháº¥t tiÃªu chuáº©n VIP.',
     rating: 4.82,
     reviewCount: 129,
-    location: 'Sảnh Đón Tầng 1 / Trạm VinBus Nội Khu',
-    imageUrl: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&auto=format&fit=crop&q=80',
-    badge: 'Di Chuyển Xanh',
-    operatingHours: '05:30 - 23:30 Hàng Ngày',
+    location: 'Sáº£nh ÄÃ³n Táº§ng 1 / Tráº¡m VinBus Ná»™i Khu',
+    imageUrl: '/masterplan/vinhomes-amenities-map.jpg',
+    badge: 'Di Chuyá»ƒn Xanh',
+    operatingHours: '05:30 - 23:30 HÃ ng NgÃ y',
     packages: [
       {
         id: 'pkg-trans-buggy-intra',
-        name: 'Xe Buggey Điện Nội Khu (1 Chiều)',
-        unit: 'chuyến',
+        name: 'Xe Buggey Äiá»‡n Ná»™i Khu (1 Chiá»u)',
+        unit: 'chuyáº¿n',
         unitPrice: 20000,
-        description: 'Đưa đón trong phạm vi Vinhomes Grand Park: Vincom Mega Mall, Bến xe điện, Vinmec, Vinschool.',
-        estimatedDuration: '10 - 20 phút',
+        description: 'ÄÆ°a Ä‘Ã³n trong pháº¡m vi Vinhomes Grand Park: Vincom Mega Mall, Báº¿n xe Ä‘iá»‡n, Vinmec, Vinschool.',
+        estimatedDuration: '10 - 20 phÃºt',
       },
       {
         id: 'pkg-trans-airport',
-        name: 'Đưa Đón Sân Bay Tân Sơn Nhất (Ô Tô 4 Chỗ)',
-        unit: 'chuyến',
+        name: 'ÄÆ°a ÄÃ³n SÃ¢n Bay TÃ¢n SÆ¡n Nháº¥t (Ã” TÃ´ 4 Chá»—)',
+        unit: 'chuyáº¿n',
         unitPrice: 350000,
-        description: 'Đặt lịch trước 2 giờ. Lái xe chuyên nghiệp trang phục lịch sự, xe sạch & đúng giờ.',
-        estimatedDuration: '45 - 60 phút (tùy giờ cao điểm)',
+        description: 'Äáº·t lá»‹ch trÆ°á»›c 2 giá». LÃ¡i xe chuyÃªn nghiá»‡p trang phá»¥c lá»‹ch sá»±, xe sáº¡ch & Ä‘Ãºng giá».',
+        estimatedDuration: '45 - 60 phÃºt (tÃ¹y giá» cao Ä‘iá»ƒm)',
       },
       {
         id: 'pkg-trans-airport-suv',
-        name: 'Đưa Đón Sân Bay VIP (SUV 7 Chỗ)',
-        unit: 'chuyến',
+        name: 'ÄÆ°a ÄÃ³n SÃ¢n Bay VIP (SUV 7 Chá»—)',
+        unit: 'chuyáº¿n',
         unitPrice: 480000,
-        description: 'Dịch vụ cao cấp xe Innova/Fortuner, hỗ trợ hành lý, theo dõi chuyến bay & đón đúng cửa xuất.',
-        estimatedDuration: '45 - 60 phút',
+        description: 'Dá»‹ch vá»¥ cao cáº¥p xe Innova/Fortuner, há»— trá»£ hÃ nh lÃ½, theo dÃµi chuyáº¿n bay & Ä‘Ã³n Ä‘Ãºng cá»­a xuáº¥t.',
+        estimatedDuration: '45 - 60 phÃºt',
       },
       {
         id: 'pkg-trans-vinbus-monthly',
-        name: 'Vé Tháng VinBus Điện D4 (Trung Tâm TP)',
-        unit: 'thẻ/tháng',
+        name: 'VÃ© ThÃ¡ng VinBus Äiá»‡n D4 (Trung TÃ¢m TP)',
+        unit: 'tháº»/thÃ¡ng',
         unitPrice: 230000,
-        description: 'Vé tháng VinBus tuyến D4 kết nối trực tiếp Quận 1, Bến Thành & các tiện ích Vinhomes.',
-        estimatedDuration: 'Hiệu lực 30 ngày',
+        description: 'VÃ© thÃ¡ng VinBus tuyáº¿n D4 káº¿t ná»‘i trá»±c tiáº¿p Quáº­n 1, Báº¿n ThÃ nh & cÃ¡c tiá»‡n Ã­ch Vinhomes.',
+        estimatedDuration: 'Hiá»‡u lá»±c 30 ngÃ y',
       },
     ],
   },
 ];
 
-// Danh sách đơn đặt dịch vụ ban đầu hoàn toàn sạch, không có dữ liệu ảo/mẫu
+// Danh sÃ¡ch Ä‘Æ¡n Ä‘áº·t dá»‹ch vá»¥ ban Ä‘áº§u hoÃ n toÃ n sáº¡ch, khÃ´ng cÃ³ dá»¯ liá»‡u áº£o/máº«u
 const INITIAL_DEMO_BOOKINGS: ServiceBooking[] = [];
 
 declare global {
@@ -425,7 +425,7 @@ function notifyServicesUpdated() {
 }
 
 /**
- * Lấy toàn bộ danh sách đơn đặt dịch vụ thực tế (In-Memory Store - Không localStorage)
+ * Láº¥y toÃ n bá»™ danh sÃ¡ch Ä‘Æ¡n Ä‘áº·t dá»‹ch vá»¥ thá»±c táº¿ (In-Memory Store - KhÃ´ng localStorage)
  */
 export function getResidentBookings(aptCode?: string): ServiceBooking[] {
   let list = getBookingsStore().filter(
@@ -440,7 +440,7 @@ export function getResidentBookings(aptCode?: string): ServiceBooking[] {
 }
 
 /**
- * Lưu danh sách đơn đặt dịch vụ vào In-Memory Store
+ * LÆ°u danh sÃ¡ch Ä‘Æ¡n Ä‘áº·t dá»‹ch vá»¥ vÃ o In-Memory Store
  */
 export function saveResidentBookings(bookings: ServiceBooking[]): void {
   globalThis.__SKYLINE_RESIDENT_BOOKINGS = bookings;
@@ -448,7 +448,7 @@ export function saveResidentBookings(bookings: ServiceBooking[]): void {
 }
 
 /**
- * Tạo mới đơn đặt dịch vụ
+ * Táº¡o má»›i Ä‘Æ¡n Ä‘áº·t dá»‹ch vá»¥
  */
 export function createResidentBooking(params: {
   aptCode: string;
@@ -479,29 +479,29 @@ export function createResidentBooking(params: {
   const bookingCode = `SRV-${codePrefix}-${randomNum}`;
   const totalPrice = pkg.unitPrice * Math.max(1, params.quantity);
 
-  // Chỉ định nhân viên phụ trách tự động theo ca
-  let assignedStaff = 'Đội Dịch Vụ Cư Dân Skyline';
+  // Chá»‰ Ä‘á»‹nh nhÃ¢n viÃªn phá»¥ trÃ¡ch tá»± Ä‘á»™ng theo ca
+  let assignedStaff = 'Äá»™i Dá»‹ch Vá»¥ CÆ° DÃ¢n Skyline';
   let staffPhone = '1900 8899';
   if (service.category === 'LAUNDRY') {
-    assignedStaff = 'Lê Thị Thu (Trưởng nhóm giặt ủi BQL)';
+    assignedStaff = 'LÃª Thá»‹ Thu (TrÆ°á»Ÿng nhÃ³m giáº·t á»§i BQL)';
     staffPhone = '0908 112 233';
   } else if (service.category === 'HOUSEKEEPING') {
-    assignedStaff = 'Trần Thị Mỹ Duyên (Chuyên viên buồng phòng)';
+    assignedStaff = 'Tráº§n Thá»‹ Má»¹ DuyÃªn (ChuyÃªn viÃªn buá»“ng phÃ²ng)';
     staffPhone = '0912 334 455';
   } else if (service.category === 'PERSONAL_TRAINER') {
-    assignedStaff = 'HLV Phan Minh Hải (Chứng chỉ ACE Tầng 25)';
+    assignedStaff = 'HLV Phan Minh Háº£i (Chá»©ng chá»‰ ACE Táº§ng 25)';
     staffPhone = '0933 445 566';
   } else if (service.category === 'CAR_CARE') {
-    assignedStaff = 'Nguyễn Văn Đạt (Kỹ thuật viên rửa xe B2)';
+    assignedStaff = 'Nguyá»…n VÄƒn Äáº¡t (Ká»¹ thuáº­t viÃªn rá»­a xe B2)';
     staffPhone = '0944 556 677';
   } else if (service.category === 'SPA_WELLNESS') {
-    assignedStaff = 'Chuyên viên Spa Nguyễn Thị Lan Anh (Tầng 3)';
+    assignedStaff = 'ChuyÃªn viÃªn Spa Nguyá»…n Thá»‹ Lan Anh (Táº§ng 3)';
     staffPhone = '0955 667 788';
   } else if (service.category === 'RESTAURANT') {
-    assignedStaff = 'Bếp Trưởng Skyline Kitchen (Tầng 1)';
+    assignedStaff = 'Báº¿p TrÆ°á»Ÿng Skyline Kitchen (Táº§ng 1)';
     staffPhone = '0977 889 900';
   } else if (service.category === 'TRANSPORT') {
-    assignedStaff = 'Điều Phối Viên Di Chuyển Nội Khu';
+    assignedStaff = 'Äiá»u Phá»‘i ViÃªn Di Chuyá»ƒn Ná»™i Khu';
     staffPhone = '0988 990 011';
   }
 
@@ -539,10 +539,10 @@ export function createResidentBooking(params: {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newBooking),
-    }).catch((err) => console.error('Lỗi lưu đặt dịch vụ lên Supabase:', err));
+    }).catch((err) => console.error('Lá»—i lÆ°u Ä‘áº·t dá»‹ch vá»¥ lÃªn Supabase:', err));
   }
 
-  // Nếu chọn "Gộp vào hóa đơn", tự động chèn vào hóa đơn chưa thanh toán của căn hộ
+  // Náº¿u chá»n "Gá»™p vÃ o hÃ³a Ä‘Æ¡n", tá»± Ä‘á»™ng chÃ¨n vÃ o hÃ³a Ä‘Æ¡n chÆ°a thanh toÃ¡n cá»§a cÄƒn há»™
   if (params.paymentChoice === 'ADD_TO_BILL') {
     const serviceType = service.category === 'LAUNDRY' ? 'Laundry' :
                         service.category === 'HOUSEKEEPING' ? 'Housekeeping' :
@@ -567,7 +567,7 @@ export function createResidentBooking(params: {
 }
 
 /**
- * Hủy đơn đặt dịch vụ
+ * Há»§y Ä‘Æ¡n Ä‘áº·t dá»‹ch vá»¥
  */
 export function cancelResidentBooking(bookingId: string): boolean {
   const currentList = getResidentBookings();
@@ -587,7 +587,7 @@ export function cancelResidentBooking(bookingId: string): boolean {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: bookingId, status: 'CANCELLED' }),
-      }).catch((err) => console.error('Lỗi hủy dịch vụ trên Supabase:', err));
+      }).catch((err) => console.error('Lá»—i há»§y dá»‹ch vá»¥ trÃªn Supabase:', err));
     }
   }
   return found;
@@ -599,7 +599,7 @@ export async function syncResidentBookingsFromDb(aptCode?: string): Promise<Serv
   if (aptCode) params.set('aptCode', aptCode);
   const res = await fetch(`/api/resident-services${params.toString() ? `?${params.toString()}` : ''}`);
   if (!res.ok) {
-    throw new Error(`Không thể tải lịch sử đặt dịch vụ (${res.status})`);
+    throw new Error(`KhÃ´ng thá»ƒ táº£i lá»‹ch sá»­ Ä‘áº·t dá»‹ch vá»¥ (${res.status})`);
   }
   const data = await res.json();
   const list: ServiceBooking[] = Array.isArray(data?.bookings) ? data.bookings : [];

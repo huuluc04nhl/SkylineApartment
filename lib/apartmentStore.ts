@@ -1,12 +1,12 @@
 /**
  * Skyline Smart Residence & The Tropical - Apartment Management Store
- * Client/Server Store backed by skylineDb and API routes.
+ * Client/Server Store backed by Supabase (/api/apartments).
  * Zero LocalStorage. Zero External Mock APIs. Zero Dummy Generator Loops.
  */
 
 import { ApartmentRecord, TowerId } from './db/schema';
 
-const apartmentsCache: ApartmentRecord[] = [];
+const apartmentsByCode = new Map<string, ApartmentRecord>();
 import {
   ApartmentMember,
   registerNewOwnerUser,
@@ -143,67 +143,30 @@ export interface SkylineApartmentRaw {
   updated_at?: string;
 }
 
-export const DEFAULT_SKYLINE_APARTMENTS_DATA: SkylineApartmentRaw[] = [
-  {
-    id: 898,
-    title: 'Tropical BS-07 CH-06',
-    slug: 'tropical-bs-07-ch-06-30',
-    code: 'CH-06',
-    area: '42',
-    bed: '1',
-    wc: '1',
-    floor: '30',
-    ownerid: '0364967082',
-    block: { ID: 880, post_title: 'Tropical BS-07' },
-    created_at: '2026-09-21 08:58:30',
-    updated_at: '2026-09-21 08:58:30'
-  },
-  {
-    id: 901,
-    title: 'Tropical BS-08 CH-08',
-    slug: 'tropical-bs-08-ch-08-15',
-    code: 'CH-08',
-    area: '46.5',
-    bed: '1',
-    wc: '1',
-    floor: '15',
-    ownerid: '0325524482',
-    block: { ID: 881, post_title: 'Tropical BS-08' },
-    created_at: '2026-09-21 09:00:55',
-    updated_at: '2026-09-21 09:00:55'
-  },
-  {
-    id: 895,
-    title: 'Tropical BS-09 CH-12',
-    slug: 'tropical-bs-09-ch-12-12',
-    code: 'CH-12',
-    area: '44.5',
-    bed: '1',
-    wc: '1',
-    floor: '12',
-    ownerid: '0977758215',
-    block: { ID: 882, post_title: 'Tropical BS-09' },
-    created_at: '2026-09-21 08:57:12',
-    updated_at: '2026-09-21 08:57:12'
-  },
-  {
-    id: 892,
-    title: 'Tropical BS-10 CH-02',
-    slug: 'tropical-bs-10-ch-02-18',
-    code: 'CH-02',
-    area: '38.2',
-    bed: '1',
-    wc: '1',
-    floor: '18',
-    ownerid: '0909262626',
-    block: { ID: 883, post_title: 'Tropical BS-10' },
-    created_at: '2026-09-21 08:56:00',
-    updated_at: '2026-09-21 08:56:00'
-  }
-];
-
 export async function fetchSkylineApartmentRaws(): Promise<SkylineApartmentRaw[]> {
-  return DEFAULT_SKYLINE_APARTMENTS_DATA;
+  if (typeof window === 'undefined') return [];
+  try {
+    const res = await fetch('/api/apartments', { credentials: 'include' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const rows: ApartmentRecord[] = Array.isArray(data?.apartments) ? data.apartments : [];
+    return rows.map((r, idx) => ({
+      id: idx + 1,
+      title: `Tropical ${r.tower_code} ${r.apt_code}`,
+      slug: `${r.tower_code.toLowerCase()}-${r.apt_code.toLowerCase()}`,
+      code: r.apt_code,
+      area: String(r.clear_area),
+      bed: String(r.bedrooms),
+      wc: String(r.bathrooms),
+      floor: String(r.floor_number),
+      ownerid: r.owner_id || '',
+      block: { ID: r.block_id, post_title: `Tropical ${r.tower_code}` },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export const SKYLINE_FLOOR_ARCH_UNITS = [
@@ -241,7 +204,7 @@ function blockCodeFromId(blockId: number): string {
 }
 
 /**
- * Ánh xạ ApartmentRecord chuẩn trong skylineDb sang ApartmentUnit hiển thị cho UI
+ * Ánh xạ ApartmentRecord chuẩn từ Supabase sang ApartmentUnit hiển thị cho UI
  */
 export function recordToApartmentUnit(rec: ApartmentRecord): ApartmentUnit {
   const bCode = blockCodeFromId(rec.block_id);
@@ -308,7 +271,7 @@ export function recordToApartmentUnit(rec: ApartmentRecord): ApartmentUnit {
 }
 
 /**
- * Trả về danh sách căn hộ thực tế từ skylineDb
+ * Trả về danh sách căn hộ thực tế đã đồng bộ từ Supabase
  */
 export function generateSkylineBlockUnits(
   _nksApts?: any[],
@@ -323,27 +286,44 @@ export function getApartmentStorageKey(blockCode: string = 'BS-07'): string {
 }
 
 /**
- * Lấy danh sách căn hộ theo Block từ skylineDb
+ * Lấy danh sách căn hộ theo Block từ bộ nhớ đồng bộ với Supabase
  */
 export function getApartmentUnits(blockCode: string = 'BS-07'): ApartmentUnit[] {
+  const all = Array.from(apartmentsByCode.values());
   const bId = blockIdFromCode(blockCode);
   const records = bId !== undefined
-    ? apartmentsCache.filter(a => a.block_id === bId)
-    : apartmentsCache;
+    ? all.filter(a => a.block_id === bId || a.tower_code.toUpperCase() === blockCode.toUpperCase())
+    : all;
 
   return records.map(recordToApartmentUnit);
 }
 
 /**
- * Đồng bộ danh sách căn hộ (Trả về dữ liệu database nội bộ)
+ * Đồng bộ danh sách căn hộ từ /api/apartments (Supabase)
  */
 export async function syncApartmentsFromApi(blockCode: string = 'BS-07'): Promise<ApartmentUnit[]> {
+  if (typeof window !== 'undefined') {
+    try {
+      const qs = blockCode ? `?block=${encodeURIComponent(blockCode)}` : '';
+      const res = await fetch(`/api/apartments${qs}`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        const rows: ApartmentRecord[] = Array.isArray(data?.apartments) ? data.apartments : [];
+        rows.forEach(r => {
+          apartmentsByCode.set(r.apt_code.toUpperCase(), r);
+        });
+        window.dispatchEvent(new CustomEvent('skyline_apartments_updated', { detail: { blockCode } }));
+      }
+    } catch (err) {
+      console.warn('syncApartmentsFromApi error:', err);
+    }
+  }
   return getApartmentUnits(blockCode);
 }
 export const syncApartmentsLegacy = syncApartmentsFromApi;
 
 /**
- * Tìm 1 căn hộ theo mã căn từ skylineDb
+ * Tìm 1 căn hộ theo mã căn từ dữ liệu đã đồng bộ
  */
 export function getApartmentByCode(code: string, blockCode?: string): ApartmentUnit | undefined {
   if (!code) return undefined;
@@ -354,13 +334,7 @@ export function getApartmentByCode(code: string, blockCode?: string): ApartmentU
   const exact = allUnits.find(u => u.code.toUpperCase() === clean || u.fullCode?.toUpperCase() === clean);
   if (exact) return exact;
 
-  // 2. Chuyển đổi mềm (Backward Compatibility): 12A05 -> CH-06
-  if (clean === '12A05' || clean === '12A5') {
-    const ownerUnit = allUnits.find(u => u.code === 'CH-06');
-    if (ownerUnit) return ownerUnit;
-  }
-
-  // 3. Khớp tiền tố/hậu tố tầng
+  // 2. Khớp tiền tố/hậu tố tầng
   const partial = allUnits.find(u =>
     u.code.toUpperCase().endsWith(`-${clean}`) ||
     clean.endsWith(`-${u.code.toUpperCase()}`) ||
@@ -372,7 +346,7 @@ export function getApartmentByCode(code: string, blockCode?: string): ApartmentU
 }
 
 /**
- * Lưu danh sách căn hộ vào skylineDb
+ * Lưu danh sách căn hộ vào Supabase qua /api/apartments
  */
 export function saveApartmentsList(units: ApartmentUnit[], blockCode?: string): boolean {
   units.forEach(u => {
@@ -385,21 +359,20 @@ export function saveApartmentsList(units: ApartmentUnit[], blockCode?: string): 
 }
 
 /**
- * Thêm một căn hộ mới vào skylineDb
+ * Thêm một căn hộ mới vào Supabase qua /api/apartments
  */
 export function addApartmentUnit(unit: ApartmentUnit, blockCode?: string): boolean {
   const bCode = blockCode || (unit.towerName?.includes('08') ? 'BS-08' : unit.towerName?.includes('09') ? 'BS-09' : unit.towerName?.includes('10') ? 'BS-10' : 'BS-07');
   const bId = blockIdFromCode(bCode) || 880;
 
   const cleanCode = unit.code.toUpperCase().trim();
-  const existing = apartmentsCache.find(a => a.apt_code.toUpperCase() === cleanCode);
-  if (existing) return false;
+  if (apartmentsByCode.has(cleanCode)) return false;
 
   const newRec: ApartmentRecord = {
     id: unit.id || `apt-${bCode.toLowerCase()}-${unit.code.toLowerCase()}`,
     apt_code: unit.code,
     block_id: bId,
-    tower_code: unit.tower || 'A',
+    tower_code: unit.tower || (bCode as TowerId),
     floor_number: unit.floor,
     wing: (unit.wing || 'NORTH') as any,
     apt_type: unit.type,
@@ -427,24 +400,30 @@ export function addApartmentUnit(unit: ApartmentUnit, blockCode?: string): boole
     }))
   };
 
-  apartmentsCache.push(newRec);
+  apartmentsByCode.set(cleanCode, newRec);
   if (typeof window !== 'undefined') {
+    fetch('/api/apartments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(newRec),
+    }).catch(err => console.warn('POST /api/apartments error:', err));
     window.dispatchEvent(new CustomEvent('skyline_apartments_updated', { detail: { blockCode: bCode } }));
   }
   return true;
 }
 
 /**
- * Cập nhật thông số căn hộ trong skylineDb
+ * Cập nhật thông số căn hộ qua /api/apartments
  */
 export function updateApartmentUnit(code: string, patch: Partial<ApartmentUnit>, blockCode?: string): boolean {
   const cleanCode = code.toUpperCase().trim();
-  const idx = apartmentsCache.findIndex(a =>
+  const existing = Array.from(apartmentsByCode.values()).find(a =>
     a.apt_code.toUpperCase() === cleanCode ||
     a.id?.toUpperCase() === cleanCode ||
     `${a.floor_number.toString().padStart(2, '0')}-${a.apt_code}`.toUpperCase() === cleanCode
   );
-  if (idx < 0) return false;
+  if (!existing) return false;
 
   const dbPatch: Partial<ApartmentRecord> = {};
   if (patch.status) dbPatch.status = patch.status;
@@ -466,8 +445,14 @@ export function updateApartmentUnit(code: string, patch: Partial<ApartmentUnit>,
     }));
   }
 
-  apartmentsCache[idx] = { ...apartmentsCache[idx], ...dbPatch };
+  apartmentsByCode.set(existing.apt_code.toUpperCase(), { ...existing, ...dbPatch });
   if (typeof window !== 'undefined') {
+    fetch('/api/apartments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ apt_code: existing.apt_code, ...dbPatch }),
+    }).catch(err => console.warn('PATCH /api/apartments error:', err));
     window.dispatchEvent(new CustomEvent('skyline_apartments_updated', { detail: { aptCode: code, blockCode } }));
   }
   return true;
@@ -475,7 +460,7 @@ export function updateApartmentUnit(code: string, patch: Partial<ApartmentUnit>,
 
 export function addApartmentMaintenanceRecord(code: string, record: ApartmentMaintenanceRecord, blockCode?: string): boolean {
   const cleanCode = code.toUpperCase().trim();
-  const existing = apartmentsCache.find(a => a.apt_code.toUpperCase() === cleanCode);
+  const existing = apartmentsByCode.get(cleanCode);
   if (!existing) return false;
 
   if (typeof window !== 'undefined') {
@@ -486,14 +471,18 @@ export function addApartmentMaintenanceRecord(code: string, record: ApartmentMai
 
 export function deleteApartmentUnit(code: string, blockCode?: string): boolean {
   const cleanCode = code.toUpperCase().trim();
-  const idx = apartmentsCache.findIndex(a =>
+  const existing = Array.from(apartmentsByCode.values()).find(a =>
     a.apt_code.toUpperCase() === cleanCode ||
     a.id?.toUpperCase() === cleanCode
   );
-  if (idx < 0) return false;
+  if (!existing) return false;
 
-  apartmentsCache.splice(idx, 1);
+  apartmentsByCode.delete(existing.apt_code.toUpperCase());
   if (typeof window !== 'undefined') {
+    fetch(`/api/apartments?code=${encodeURIComponent(existing.apt_code)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    }).catch(err => console.warn('DELETE /api/apartments error:', err));
     window.dispatchEvent(new CustomEvent('skyline_apartments_updated', { detail: { aptCode: code, blockCode } }));
   }
   return true;
@@ -555,7 +544,7 @@ export function evictApartmentResident(code: string, blockCode?: string): boolea
   clearApartmentMembers(code, blockCode);
 
   const cleanCode = code.toUpperCase().trim();
-  const existing = apartmentsCache.find(a => a.apt_code.toUpperCase() === cleanCode);
+  const existing = apartmentsByCode.get(cleanCode);
   if (existing) {
     existing.status = 'VACANT';
     existing.owner_id = null;
@@ -563,6 +552,19 @@ export function evictApartmentResident(code: string, blockCode?: string): boolea
     existing.handover_protocol = null;
     existing.vehicles = [];
     if (typeof window !== 'undefined') {
+      fetch('/api/apartments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          apt_code: existing.apt_code,
+          status: 'VACANT',
+          owner_id: null,
+          handover_date: null,
+          handover_protocol: null,
+          vehicles: [],
+        }),
+      }).catch(err => console.warn('PATCH /api/apartments evict error:', err));
       window.dispatchEvent(new CustomEvent('skyline_apartments_updated', { detail: { aptCode: code, blockCode } }));
     }
     return true;
@@ -579,7 +581,7 @@ export function updateApartmentBillingStatus(code: string, _status: 'PAID' | 'UN
 
 export function addApartmentVehicle(code: string, vehicle: ApartmentVehicle): boolean {
   const cleanCode = code.toUpperCase().trim();
-  const existing = apartmentsCache.find(a => a.apt_code.toUpperCase() === cleanCode);
+  const existing = apartmentsByCode.get(cleanCode);
   if (!existing) return false;
 
   const currentVehicles = existing.vehicles || [];
@@ -601,7 +603,7 @@ export function addApartmentVehicle(code: string, vehicle: ApartmentVehicle): bo
 
 export function removeApartmentVehicle(code: string, vehicleId: string): boolean {
   const cleanCode = code.toUpperCase().trim();
-  const existing = apartmentsCache.find(a => a.apt_code.toUpperCase() === cleanCode);
+  const existing = apartmentsByCode.get(cleanCode);
   if (!existing || !existing.vehicles) return false;
 
   const updatedVehicles = existing.vehicles.filter(v => v.id !== vehicleId);

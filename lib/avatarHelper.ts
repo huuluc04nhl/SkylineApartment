@@ -1,27 +1,32 @@
 /**
  * SKYLINE SMART RESIDENCE - USER AVATAR HELPER
  * Ensures all avatar displays across Sidebar, Topbar Dropdown, Profile, and Modals
- * strictly resolve clean, high-taste avatar URLs.
+ * strictly resolve clean, high-taste avatar URLs without external stock photo dependencies.
  */
+
+export function getInitialsAvatar(name?: string): string {
+  const clean = (name || 'SK').trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  const initials =
+    parts.length >= 2
+      ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+      : clean.slice(0, 2).toUpperCase();
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" fill="#141B24"/><rect x="2" y="2" width="124" height="124" fill="none" stroke="#C5A880" stroke-width="3"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#C5A880" font-family="sans-serif" font-size="44" font-weight="700">${initials}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
 
 export function formatApiAvatarUrl(rawAvatar?: string | null, name: string = 'Skyline'): string {
   if (!rawAvatar || typeof rawAvatar !== 'string') {
-    const initials = encodeURIComponent((name || 'Skyline').slice(0, 2).toUpperCase());
-    return `https://ui-avatars.com/api/?name=${initials}&background=1C2533&color=C5A880&bold=true`;
+    return getInitialsAvatar(name);
   }
 
   const trimmed = rawAvatar.trim();
   if (!trimmed) {
-    const initials = encodeURIComponent((name || 'Skyline').slice(0, 2).toUpperCase());
-    return `https://ui-avatars.com/api/?name=${initials}&background=1C2533&color=C5A880&bold=true`;
+    return getInitialsAvatar(name);
   }
 
-  // Base64 data image from FaceID scan or upload
-  if (trimmed.startsWith('data:image/')) {
-    return trimmed;
-  }
-
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+  if (trimmed.startsWith('data:image/') || trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
     return trimmed;
   }
 

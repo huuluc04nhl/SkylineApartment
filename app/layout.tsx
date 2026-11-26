@@ -5,6 +5,7 @@ import { AuthProvider } from '@/lib/authContext';
 import { ThemeProvider } from '@/lib/themeContext';
 import { LanguageProvider, type Language } from '@/lib/languageContext';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+import { ToastProvider } from '@/components/ui/Toast';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -45,8 +46,10 @@ export default function RootLayout({
         <LanguageProvider initialLanguage={initialLanguage}>
           <ThemeProvider>
             <AuthProvider>
-              {children}
-              <LanguageSwitcher variant="floating" />
+              <ToastProvider>
+                {children}
+                <LanguageSwitcher variant="floating" />
+              </ToastProvider>
             </AuthProvider>
           </ThemeProvider>
         </LanguageProvider>

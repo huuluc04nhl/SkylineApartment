@@ -1,3 +1,4 @@
+﻿import { getInitialsAvatar } from '@/lib/avatarHelper';
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/guard';
 import { registerOwnerUserDb } from '@/lib/server/userDb';
@@ -6,7 +7,7 @@ import { ApartmentHandoverProtocol } from '@/lib/apartmentStore';
 
 /**
  * POST /api/user/handover
- * API Cấp tài khoản Cư Dân & Bàn Giao Căn Hộ Chính Thức (Chỉ ADMIN)
+ * API Cáº¥p tÃ i khoáº£n CÆ° DÃ¢n & BÃ n Giao CÄƒn Há»™ ChÃ­nh Thá»©c (Chá»‰ ADMIN)
  */
 export async function POST(req: Request) {
   try {
@@ -26,31 +27,31 @@ export async function POST(req: Request) {
       handoverProtocol 
     } = body;
 
-    // 1. Kiểm tra tính hợp lệ của dữ liệu đầu vào
+    // 1. Kiá»ƒm tra tÃ­nh há»£p lá»‡ cá»§a dá»¯ liá»‡u Ä‘áº§u vÃ o
     if (!apartmentCode || typeof apartmentCode !== 'string') {
       return NextResponse.json(
-        { success: false, message: 'Vui lòng cung cấp mã căn hộ cần bàn giao.' },
+        { success: false, message: 'Vui lÃ²ng cung cáº¥p mÃ£ cÄƒn há»™ cáº§n bÃ n giao.' },
         { status: 400 }
       );
     }
 
     if (!fullName || typeof fullName !== 'string' || !fullName.trim()) {
       return NextResponse.json(
-        { success: false, message: 'Vui lòng cung cấp họ tên chủ hộ / người tiếp nhận.' },
+        { success: false, message: 'Vui lÃ²ng cung cáº¥p há» tÃªn chá»§ há»™ / ngÆ°á»i tiáº¿p nháº­n.' },
         { status: 400 }
       );
     }
 
     if (!phone || typeof phone !== 'string' || !phone.trim()) {
       return NextResponse.json(
-        { success: false, message: 'Vui lòng cung cấp số điện thoại làm tài khoản đăng nhập.' },
+        { success: false, message: 'Vui lÃ²ng cung cáº¥p sá»‘ Ä‘iá»‡n thoáº¡i lÃ m tÃ i khoáº£n Ä‘Äƒng nháº­p.' },
         { status: 400 }
       );
     }
 
     if (!idCard || typeof idCard !== 'string' || idCard.trim().length < 9) {
       return NextResponse.json(
-        { success: false, message: 'Vui lòng cung cấp số thẻ CCCD hợp lệ (9 đến 12 số).' },
+        { success: false, message: 'Vui lÃ²ng cung cáº¥p sá»‘ tháº» CCCD há»£p lá»‡ (9 Ä‘áº¿n 12 sá»‘).' },
         { status: 400 }
       );
     }
@@ -60,9 +61,9 @@ export async function POST(req: Request) {
     const cleanName = fullName.trim();
     const cleanIdCard = idCard.trim();
     const cleanEmail = email?.trim() || `${cleanPhone}@skyline.residence.vn`;
-    const cleanAvatar = avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&h=400&fit=crop&crop=face';
+    const cleanAvatar = avatarUrl || getInitialsAvatar('Skyline Resident');
 
-    // 2. Cấp tài khoản Cư Dân chính thức trên Supabase Auth + profiles + users
+    // 2. Cáº¥p tÃ i khoáº£n CÆ° DÃ¢n chÃ­nh thá»©c trÃªn Supabase Auth + profiles + users
     const provisionedUser = await registerOwnerUserDb({
       name: cleanName,
       phone: cleanPhone,
@@ -70,11 +71,11 @@ export async function POST(req: Request) {
       cccd: cleanIdCard,
       apartmentCode: cleanCode,
       dob: dob?.trim() || '1992-06-15',
-      pob: pob?.trim() || 'TP. Hồ Chí Minh',
+      pob: pob?.trim() || 'TP. Há»“ ChÃ­ Minh',
       avatarUrl: cleanAvatar
     });
 
-    // 3. Chuẩn hóa Biên bản bàn giao kỹ thuật (Handover Protocol)
+    // 3. Chuáº©n hÃ³a BiÃªn báº£n bÃ n giao ká»¹ thuáº­t (Handover Protocol)
     const todayStr = new Date().toLocaleDateString('vi-VN');
     const dateCode = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const protocolCode = handoverProtocol?.protocolCode || `BBBG-SKYLINE-${cleanCode}-${dateCode}`;
@@ -87,10 +88,10 @@ export async function POST(req: Request) {
       cardsCount: Number(handoverProtocol?.cardsCount) || 2,
       initialElectricMeter: Number(handoverProtocol?.initialElectricMeter) || 0,
       initialWaterMeter: Number(handoverProtocol?.initialWaterMeter) || 0,
-      notes: handoverProtocol?.notes || 'Đã nghiệm thu kỹ thuật bàn giao căn hộ, bàn giao chìa khóa cơ và cấp thẻ từ cư dân.'
+      notes: handoverProtocol?.notes || 'ÄÃ£ nghiá»‡m thu ká»¹ thuáº­t bÃ n giao cÄƒn há»™, bÃ n giao chÃ¬a khÃ³a cÆ¡ vÃ  cáº¥p tháº» tá»« cÆ° dÃ¢n.'
     };
 
-    // 4. Cập nhật hồ sơ căn hộ trong Supabase sang trạng thái OCCUPIED
+    // 4. Cáº­p nháº­t há»“ sÆ¡ cÄƒn há»™ trong Supabase sang tráº¡ng thÃ¡i OCCUPIED
     await assignApartmentResidentDb({
       aptCode: cleanCode,
       ownerId: provisionedUser.id,
@@ -100,7 +101,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Đã cấp tài khoản cư dân chính thức cho chủ hộ ${cleanName} và bàn giao căn hộ ${cleanCode} thành công.`,
+      message: `ÄÃ£ cáº¥p tÃ i khoáº£n cÆ° dÃ¢n chÃ­nh thá»©c cho chá»§ há»™ ${cleanName} vÃ  bÃ n giao cÄƒn há»™ ${cleanCode} thÃ nh cÃ´ng.`,
       account: {
         id: provisionedUser.id,
         username: provisionedUser.username,
@@ -110,7 +111,7 @@ export async function POST(req: Request) {
         idCard: provisionedUser.id_number || provisionedUser.id_card_no,
         apartmentCode: provisionedUser.apartment_code,
         role: 'OWNER',
-        initialPassword: '•••••••• (Được cấp qua email/đặt lại mật khẩu)',
+        initialPassword: 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢ (ÄÆ°á»£c cáº¥p qua email/Ä‘áº·t láº¡i máº­t kháº©u)',
         provisionedAt: new Date().toISOString()
       },
       protocol: finalProtocol
@@ -120,7 +121,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { 
         success: false, 
-        message: 'Lỗi máy chủ khi xử lý cấp tài khoản bàn giao: ' + (error?.message || '') 
+        message: 'Lá»—i mÃ¡y chá»§ khi xá»­ lÃ½ cáº¥p tÃ i khoáº£n bÃ n giao: ' + (error?.message || '') 
       },
       { status: 500 }
     );

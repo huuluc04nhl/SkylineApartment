@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useAsyncResource } from '@/lib/hooks/useAsyncResource';
+import { ResourceSkeleton, ResourceError, ResourceEmpty } from '@/components/ui/ResourceState';
 import { 
   getApartmentUnits, 
   getApartmentByCode, 
@@ -586,8 +588,22 @@ export default function AdminBuildingApartmentManager() {
     return list;
   }, [displayUnits, currentTotalFloors]);
 
+  const apartmentsResource = useAsyncResource(async () => {
+    const res = await fetch('/api/apartments', { credentials: 'include' });
+    if (!res.ok) throw new Error(`Không thể tải danh sách căn hộ (HTTP ${res.status})`);
+    const json = await res.json();
+    return Array.isArray(json?.apartments) ? json.apartments : [];
+  }, []);
+
   return (
     <div className="space-y-6 animate-fadeIn select-none">
+      {apartmentsResource.loading && <ResourceSkeleton label="Đang tải sơ đồ tòa nhà & căn hộ..." />}
+      {!apartmentsResource.loading && apartmentsResource.error && (
+        <ResourceError message={apartmentsResource.error} onRetry={apartmentsResource.retry} />
+      )}
+      {!apartmentsResource.loading && !apartmentsResource.error && displayUnits.length === 0 && (
+        <ResourceEmpty message="Chưa có dữ liệu căn hộ nào trong tòa nhà." />
+      )}
       {/* ============================================================= */}
       {/* 1. TIÊU ĐỀ HỆ THỐNG QUẢN LÝ CĂN HỘ BQL                        */}
       {/* ============================================================= */}

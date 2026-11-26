@@ -19,6 +19,8 @@ import {
 import { generateVietQrUrl, SKYLINE_BANK_INFO } from '@/lib/billingStore';
 import { useLanguage } from '@/lib/languageContext';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+import { toast } from '@/components/ui/Toast';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 const POPULAR_BANKS = [
   { code: 'NCB', nameKey: 'Ngân hàng NCB (Test)', fallback: 'NCB Bank (Test)', color: 'bg-blue-900/30 border-blue-500 text-blue-400' },
@@ -114,19 +116,19 @@ function VnpayGatewayInner() {
       if (data.success && data.redirectUrl) {
         window.location.href = data.redirectUrl;
       } else {
-        alert(data.message || t('Lỗi xử lý xác nhận thanh toán VNPAY', 'Error processing VNPAY payment confirmation'));
+        toast.error(data.message || t('Lỗi xử lý xác nhận thanh toán VNPAY', 'Error processing VNPAY payment confirmation'));
         setIsSubmitting(false);
       }
     } catch (err: any) {
-      alert(t('Lỗi kết nối cổng thanh toán:', 'Payment gateway connection error:') + ' ' + (err?.message || ''));
+      toast.error(t('Lỗi kết nối cổng thanh toán:', 'Payment gateway connection error:') + ' ' + (err?.message || ''));
       setIsSubmitting(false);
     }
   };
 
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
   const handleCancelPayment = () => {
-    if (confirm(t('Quý khách có chắc chắn muốn hủy phiên giao dịch này không?', 'Are you sure you want to cancel this payment transaction?'))) {
-      router.push('/portal?tab=resident-finance&vnp_status=failed&code=24');
-    }
+    setShowCancelConfirm(true);
   };
 
   return (
@@ -485,6 +487,17 @@ function VnpayGatewayInner() {
       <footer className="bg-[#0D1117] border-t border-[#222B35] py-4 text-center text-xs text-gray-500">
         <p>{t('Cổng thanh toán điện tử VNPAY • Hợp tác cùng Skyline Smart Residence • Hotline 1900 55 55 77', 'VNPAY Payment Gateway • In partnership with Skyline Smart Residence • Hotline 1900 55 55 77')}</p>
       </footer>
+
+      <ConfirmDialog
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={() => router.push('/portal?tab=resident-finance&vnp_status=failed&code=24')}
+        title={t('Xác nhận hủy giao dịch', 'Confirm Cancel Transaction')}
+        message={t('Quý khách có chắc chắn muốn hủy phiên giao dịch này không?', 'Are you sure you want to cancel this payment transaction?')}
+        confirmText={t('Hủy giao dịch', 'Cancel Payment')}
+        cancelText={t('Tiếp tục thanh toán', 'Continue Payment')}
+        isDanger
+      />
     </div>
   );
 }

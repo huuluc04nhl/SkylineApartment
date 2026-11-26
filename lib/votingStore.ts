@@ -9,9 +9,6 @@
 
 import { VotingTopicRecord, VotingRecordItem } from './db/schema';
 
-const votingTopicsCache: VotingTopicRecord[] = [];
-const votingRecordsCache: VotingRecordItem[] = [];
-
 export type VotingLegalType = 
   | 'Bầu Ban Quản Trị' 
   | 'Đóng góp Quỹ Bảo trì' 
@@ -50,94 +47,7 @@ export interface VotingTopic {
   summaryReport?: string;
 }
 
-const VOTING_STORAGE_KEY = 'skyline_voting_topics_v5';
-
-export const INITIAL_VOTING_TOPICS: VotingTopic[] = [
-  {
-    id: 'vote-01',
-    code: 'BQ-2026-01',
-    title: 'Biểu quyết Thông qua Phương án Nâng cấp Hệ thống Kiểm soát Xe Tự Động Hầm B1 - B2',
-    description: 'Chiến dịch lấy ý kiến hợp pháp của các Chủ sở hữu căn hộ về việc trích Quỹ Bảo trì để trang bị camera AI LPR đọc biển số tự động tốc độ cao và mở rộng làn xe máy giờ cao điểm tại Hầm B1/B2 Tòa BS-07. Dự toán thực hiện: 150.000.000 VNĐ theo báo giá cạnh tranh.',
-    legalType: 'Đóng góp Quỹ Bảo trì',
-    createdBy: 'Ban Quản Trị & Kỹ Thuật Tòa Nhà',
-    createdAt: '2026-08-20T08:00:00',
-    deadline: '2026-10-15T23:59:59',
-    status: 'OPEN',
-    isOwnerOnly: true,
-    totalEligibleApartments: 200,
-    totalVotes: 0,
-    options: [
-      { id: 'opt-1-1', text: 'Đồng ý phương án nâng cấp (Dự toán 150 triệu VNĐ từ Quỹ Bảo trì)', votes: 0 },
-      { id: 'opt-1-2', text: 'Không đồng ý, giữ nguyên hiện trạng kiểm soát thủ công', votes: 0 },
-      { id: 'opt-1-3', text: 'Đồng ý nhưng yêu cầu điều chỉnh giảm dự toán xuống dưới 120 triệu VNĐ', votes: 0 },
-    ],
-    voters: [],
-    summaryReport: 'Hệ thống kiểm soát xe hiện tại vào giờ cao điểm (07:00 - 08:30) thường ùn ứ từ 3-5 phút. Việc nâng cấp cảm biến RFID tầm xa và camera AI YOLOv8 giúp giải phóng xe trong dưới 0.3s/lượt.',
-  },
-  {
-    id: 'vote-02',
-    code: 'BQ-2026-02',
-    title: 'Lấy ý kiến Điều chỉnh Giờ giấc Hoạt động Khu Thể Thao & Tiện Ích Nội Khu The Tropical',
-    description: 'Theo đề xuất của cư dân về việc tăng thời gian tập luyện và thư giãn buổi tối sau giờ làm việc, Ban Quản Lý xin ý kiến biểu quyết kéo dài giờ hoạt động sân thể thao và tiện ích nội khu đến 22:30 hàng ngày. Chi phí chiếu sáng và vệ sinh đã được cân đối trong ngân sách dịch vụ.',
-    legalType: 'Quy Chế Chung Cư',
-    createdBy: 'Bộ Phận Vận Hành Ban Quản Lý',
-    createdAt: '2026-09-01T08:00:00',
-    deadline: '2026-10-20T23:59:59',
-    status: 'OPEN',
-    isOwnerOnly: false,
-    totalEligibleApartments: 200,
-    totalVotes: 0,
-    options: [
-      { id: 'opt-2-1', text: 'Nhất trí kéo dài mở cửa đến 22:30 tất cả các ngày trong tuần', votes: 0 },
-      { id: 'opt-2-2', text: 'Chỉ kéo dài đến 22:30 vào các ngày cuối tuần (Thứ Sáu, Thứ Bảy, Chủ Nhật)', votes: 0 },
-      { id: 'opt-2-3', text: 'Giữ nguyên khung giờ đóng cửa lúc 21:30 để đảm bảo yên tĩnh cho cư dân các tầng thấp', votes: 0 },
-    ],
-    voters: [],
-    summaryReport: 'Đội bảo vệ cam kết tuần tra kiểm soát tiếng ồn sau 22:00 nhằm đảm bảo không gian yên tĩnh và nghỉ ngơi cho các tầng căn hộ xung quanh.',
-  },
-  {
-    id: 'vote-03',
-    code: 'BQ-2026-03',
-    title: 'Hội nghị Nhà Chung Cư: Lựa chọn Đơn vị Quản lý Vận hành Chung Cư BS-07 Giai đoạn 2026 - 2028',
-    description: 'Biểu quyết lựa chọn đơn vị trúng thầu cung cấp dịch vụ quản lý vận hành tòa nhà Chung Cư BS-07 The Tropical tiêu chuẩn cao cấp giữa các nhà thầu đã vượt qua vòng thẩm định hồ sơ năng lực.',
-    legalType: 'Bầu Ban Quản Trị',
-    createdBy: 'Hội Nghị Nhà Chung Cư',
-    createdAt: '2026-09-05T09:00:00',
-    deadline: '2026-10-30T23:59:59',
-    status: 'OPEN',
-    isOwnerOnly: true,
-    totalEligibleApartments: 200,
-    totalVotes: 0,
-    options: [
-      { id: 'opt-3-1', text: 'Công ty Quản Lý Bất Động Sản Skyline Living Pro (Giá thầu: 11.000 đ/m²)', votes: 0 },
-      { id: 'opt-3-2', text: 'Tập đoàn Quản lý Bất động sản Savills Việt Nam (Giá thầu: 14.500 đ/m²)', votes: 0 },
-      { id: 'opt-3-3', text: 'Công ty Cổ phần Dịch vụ Đô thị CBRE Property (Giá thầu: 13.800 đ/m²)', votes: 0 },
-    ],
-    voters: [],
-    summaryReport: 'Toàn bộ hồ sơ đề xuất kỹ thuật, cam kết SLA bảo trì và báo cáo tài chính của 3 đơn vị đã được niêm yết công khai tại văn phòng Ban Quản Lý và trên cổng thông tin số.',
-  },
-  {
-    id: 'vote-04',
-    code: 'BQ-2026-04',
-    title: 'Thông qua Chủ trương Bố trí Khu Sạc Xe Điện Thông Minh An Toàn PCCC tại Hầm B1',
-    description: 'Bình chọn phương án phối hợp lắp đặt 8 trụ sạc xe ô tô điện và 20 vị trí sạc xe máy điện công nghệ ngắt nguồn tự động khi đầy pin, tích hợp cảm biến nhiệt và hệ thống chữa cháy aerosol chuyên dụng.',
-    legalType: 'Ý kiến Cải tạo',
-    createdBy: 'Ban Quản Trị Tòa Nhà',
-    createdAt: '2026-07-15T08:00:00',
-    deadline: '2026-08-30T23:59:59',
-    status: 'CLOSED',
-    isOwnerOnly: true,
-    totalEligibleApartments: 200,
-    totalVotes: 0,
-    options: [
-      { id: 'opt-4-1', text: 'Nhất trí thông qua phương án lắp đặt trạm sạc theo tiêu chuẩn an toàn PCCC', votes: 0 },
-      { id: 'opt-4-2', text: 'Đồng ý nhưng yêu cầu chuyển trạm sạc ra khu vực sân thoáng ngoài trời', votes: 0 },
-      { id: 'opt-4-3', text: 'Không đồng ý lắp đặt trạm sạc xe điện trong hầm', votes: 0 },
-    ],
-    voters: [],
-    summaryReport: 'Cuộc biểu quyết đã kết thúc với sự tham gia của các căn hộ tòa nhà. Dự án đã được Ban Quản Lý nghiệm thu và đưa vào vận hành.',
-  },
-];
+export const INITIAL_VOTING_TOPICS: VotingTopic[] = [];
 
 function notifyVotingUpdated() {
   if (typeof window !== 'undefined') {
@@ -145,17 +55,8 @@ function notifyVotingUpdated() {
   }
 }
 
-/**
- * Lấy toàn bộ danh sách cuộc biểu quyết
- */
-
 export function topicRecordToTopic(rec: VotingTopicRecord): VotingTopic {
-  const voters = votingRecordsCache.filter(v => v.topic_id === rec.id).map(v => ({
-    aptCode: v.apartment_code,
-    voterName: 'Cư dân',
-    optionId: v.option_id,
-    votedAt: v.voted_at
-  }));
+  const voters: VoterRecord[] = [];
 
   return {
     id: rec.id,
@@ -186,50 +87,25 @@ export function getVotingTopics(): VotingTopic[] {
   return inMemoryVotingTopics;
 }
 
+export async function syncVotingTopicsFromApi(): Promise<VotingTopic[]> {
+  if (typeof window === 'undefined') return inMemoryVotingTopics;
+  try {
+    const res = await fetch('/api/voting', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data?.topics)) {
+        inMemoryVotingTopics = data.topics;
+        notifyVotingUpdated();
+      }
+    }
+  } catch (err) {
+    console.warn('syncVotingTopicsFromApi error:', err);
+  }
+  return inMemoryVotingTopics;
+}
+
 export function saveVotingTopics(topics: VotingTopic[]): void {
   inMemoryVotingTopics = [...topics];
-  topics.forEach(t => {
-    const existingIdx = votingTopicsCache.findIndex(item => item.id === t.id);
-    const rec: VotingTopicRecord = {
-      id: t.id,
-      code: t.code,
-      title: t.title,
-      description: t.description,
-      legal_type: t.legalType,
-      created_by: t.createdBy,
-      deadline: t.deadline,
-      status: t.status,
-      is_owner_only: t.isOwnerOnly,
-      total_eligible_apartments: t.totalEligibleApartments,
-      total_votes: t.totalVotes,
-      summary_report: t.summaryReport,
-      created_at: t.createdAt,
-      options: t.options
-    };
-    if (existingIdx >= 0) {
-      votingTopicsCache[existingIdx] = rec;
-    } else {
-      votingTopicsCache.push(rec);
-    }
-
-    // Cập nhật votingRecords trong cache
-    t.voters.forEach(v => {
-      const vRec = votingRecordsCache.find(item => item.topic_id === t.id && item.apartment_code.toUpperCase() === v.aptCode.toUpperCase());
-      if (vRec) {
-        vRec.option_id = v.optionId;
-        vRec.voted_at = v.votedAt;
-      } else {
-        votingRecordsCache.push({
-          id: `vr-${t.id}-${v.aptCode.toLowerCase()}`,
-          topic_id: t.id,
-          user_id: undefined,
-          apartment_code: v.aptCode,
-          option_id: v.optionId,
-          voted_at: v.votedAt
-        });
-      }
-    });
-  });
   notifyVotingUpdated();
 }
 
@@ -259,30 +135,31 @@ export function castVote(params: {
   }
 
   const existingVoterIndex = topic.voters.findIndex(v => v.aptCode.trim().toUpperCase() === cleanApt);
-
-  let updatedVoters = [...topic.voters];
-
   if (existingVoterIndex !== -1) {
-    // Đã biểu quyết trước đó -> Cập nhật lại lựa chọn
-    const prevOptionId = topic.voters[existingVoterIndex].optionId;
-    if (prevOptionId === params.optionId) {
-      return { success: true, message: 'Lá phiếu của bạn đã được ghi nhận trước đó.', topic };
-    }
-
-    updatedVoters[existingVoterIndex] = {
-      aptCode: cleanApt,
-      voterName: params.voterName,
-      optionId: params.optionId,
-      votedAt: new Date().toISOString(),
+    return {
+      success: false,
+      message: `Căn hộ ${cleanApt} đã bỏ phiếu cho chủ đề này rồi.`,
+      topic,
     };
-  } else {
-    // Biểu quyết lần đầu
-    updatedVoters.push({
+  }
+
+  const updatedVoters = [
+    ...topic.voters,
+    {
       aptCode: cleanApt,
       voterName: params.voterName,
       optionId: params.optionId,
       votedAt: new Date().toISOString(),
-    });
+    },
+  ];
+
+  if (typeof window !== 'undefined') {
+    fetch('/api/voting', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'VOTE', topicId: params.topicId, optionId: params.optionId }),
+    }).catch(err => console.warn('POST /api/voting VOTE error:', err));
   }
 
   // Luôn tính toán số phiếu của từng phương án và tổng số phiếu trực tiếp từ danh sách cử tri thực tế (100% không dữ liệu ảo)
@@ -304,9 +181,7 @@ export function castVote(params: {
 
   return {
     success: true,
-    message: existingVoterIndex !== -1
-      ? `Đã cập nhật lại phương án biểu quyết của Căn ${cleanApt} thành công!`
-      : `Lá phiếu biểu quyết của Căn ${cleanApt} đã được mã hóa và ghi nhận thành công!`,
+    message: `Lá phiếu biểu quyết của Căn ${cleanApt} đã được mã hóa và ghi nhận thành công!`,
     topic: updatedTopic,
   };
 }
@@ -357,6 +232,24 @@ export function createVotingTopic(params: {
   const nextList = [newTopic, ...topics];
   saveVotingTopics(nextList);
 
+  if (typeof window !== 'undefined') {
+    fetch('/api/voting', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        action: 'CREATE',
+        title: params.title,
+        description: params.description,
+        legalType: params.legalType,
+        deadline: params.deadline,
+        isOwnerOnly: params.isOwnerOnly,
+        options: params.options,
+        summaryReport: params.summaryReport,
+      }),
+    }).catch(err => console.warn('POST /api/voting CREATE error:', err));
+  }
+
   return newTopic;
 }
 
@@ -380,6 +273,14 @@ export function toggleVotingTopicStatus(topicId: string): VotingTopic | null {
 
   if (updated) {
     saveVotingTopics(nextList);
+    if (typeof window !== 'undefined') {
+      fetch('/api/voting', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ topicId }),
+      }).catch(err => console.warn('PATCH /api/voting error:', err));
+    }
   }
 
   return updated;

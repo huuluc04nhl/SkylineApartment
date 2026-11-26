@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useAsyncResource } from '@/lib/hooks/useAsyncResource';
+import { ResourceSkeleton, ResourceError, ResourceEmpty } from '@/components/ui/ResourceState';
 import { 
   MessageSquareQuote,
   Vote, 
@@ -416,8 +418,22 @@ export default function SurveysVoting({ currentUser }: SurveysVotingProps) {
     }
   };
 
+  const votingResource = useAsyncResource(async () => {
+    const res = await fetch('/api/voting', { credentials: 'include' });
+    if (!res.ok) throw new Error(`Không thể tải dữ liệu biểu quyết (HTTP ${res.status})`);
+    const json = await res.json();
+    return Array.isArray(json?.topics) ? json.topics : [];
+  }, []);
+
   return (
     <div className="space-y-6 select-none animate-fadeIn pb-16">
+      {votingResource.loading && <ResourceSkeleton label="Đang tải danh sách biểu quyết & cộng đồng..." />}
+      {!votingResource.loading && votingResource.error && (
+        <ResourceError message={votingResource.error} onRetry={votingResource.retry} />
+      )}
+      {!votingResource.loading && !votingResource.error && posts.length === 0 && (
+        <ResourceEmpty message="Chưa có cuộc biểu quyết hoặc bài viết cộng đồng nào." />
+      )}
       {/* Toast Notification */}
       {toastMsg && (
         <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3 border shadow-2xl backdrop-blur-xl animate-slideDown ${

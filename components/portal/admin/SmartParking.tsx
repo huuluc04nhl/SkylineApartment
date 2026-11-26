@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  Car, 
-  Bike, 
-  Search, 
-  Plus, 
-  Trash2, 
-  LayoutGrid, 
+import {
+  Car,
+  Bike,
+  Search,
+  Plus,
+  Trash2,
+  LayoutGrid,
   CreditCard,
   Building,
   UserCheck,
@@ -25,15 +25,18 @@ import {
   Zap,
   Info
 } from 'lucide-react';
-import { 
-  getApartmentUnits, 
-  addApartmentVehicle, 
-  removeApartmentVehicle, 
+import {
+  getApartmentUnits,
+  syncApartmentsFromApi,
+  addApartmentVehicle,
+  removeApartmentVehicle,
   ApartmentVehicle,
-  ApartmentUnit 
+  ApartmentUnit
 } from '@/lib/apartmentStore';
 import { useLanguage } from '@/lib/languageContext';
 import ConfirmDeleteModal from '@/components/portal/shared/ConfirmDeleteModal';
+import { useAsyncResource } from '@/lib/hooks/useAsyncResource';
+import { ResourceSkeleton, ResourceError, ResourceEmpty } from '@/components/ui/ResourceState';
 
 interface RegisteredVehicleWithUnit extends ApartmentVehicle {
   aptCode: string;
@@ -63,6 +66,9 @@ export default function SmartParking() {
 
   // Apartment Data & Registered Vehicles
   const [apartments, setApartments] = useState<ApartmentUnit[]>([]);
+  const [parkingSlots, setParkingSlots] = useState<any[]>([]);
+  const [isLoadingParking, setIsLoadingParking] = useState<boolean>(true);
+  const [parkingError, setParkingError] = useState<string>('');
   const [activeMainTab, setActiveMainTab] = useState<'MATRIX' | 'REGISTRY' | 'WAITLIST'>('MATRIX');
   const [searchPlate, setSearchPlate] = useState('');
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'CAR' | 'MOTORBIKE'>('ALL');
@@ -90,24 +96,64 @@ export default function SmartParking() {
   // Selected declared vehicle index when apartment has multiple declared vehicles
   const [selectedVehicleIdx, setSelectedVehicleIdx] = useState<number>(0);
 
-  // Initial load
-  useEffect(() => {
-    try {
-      const data = getApartmentUnits();
-      setApartments(data);
-      if (data.length > 0) {
-        setRegAptCode(data[0].code);
-      }
-    } catch {
-      setApartments([]);
+  const parkingResource = useAsyncResource(async () => {
+    const [apts, parkingRes] = await Promise.all([
+      syncApartmentsFromApi(''),
+      fetch('/api/parking', { credentials: 'include' }),
+    ]);
+    setApartments(apts.length > 0 ? apts : getApartmentUnits());
+    if (apts.length > 0 && !regAptCode) {
+      setRegAptCode(apts[0].code);
     }
+    if (!parkingRes.ok) {
+      const errJson = await parkingRes.json().catch(() => ({}));
+      throw new Error(errJson?.message || `HTTP ${parkingRes.status}`);
+    }
+    const parkingJson = await parkingRes.json();
+    const slots = Array.isArray(parkingJson?.slots) ? parkingJson.slots : [];
+    setParkingSlots(slots);
+    setIsLoadingParking(false);
+    setParkingError('');
+    return slots;
   }, []);
+
+  const loadParkingData = async () => {
+    parkingResource.retry();
+  };
+
+  useEffect(() => {
+    setIsLoadingParking(parkingResource.loading);
+    setParkingError(parkingResource.error || '');
+  }, [parkingResource.loading, parkingResource.error]);
 
   const registeredVehicles: RegisteredVehicleWithUnit[] = useMemo(() => {
     const list: RegisteredVehicleWithUnit[] = [];
+    const seenKeys = new Set<string>();
+
+    parkingSlots
+      .filter((s) => s.status === 'OCCUPIED' && s.apartment_code && s.assigned_license_plate)
+      .forEach((s) => {
+        const apt = apartments.find((a) => a.code.toUpperCase() === String(s.apartment_code).toUpperCase());
+        const key = `${String(s.apartment_code).toUpperCase()}-${String(s.assigned_license_plate).toUpperCase()}`;
+        seenKeys.add(key);
+        list.push({
+          id: s.id,
+          type: s.vehicle_type === 'MOTORCYCLE' ? 'MOTORBIKE' : 'CAR',
+          plate: s.assigned_license_plate,
+          brand: s.vehicle_type === 'MOTORCYCLE' ? 'Xe máy' : 'Ô tô',
+          cardNo: s.rfid_card_code || `RFID-${s.slot_code}`,
+          slot: s.slot_code,
+          aptCode: s.apartment_code,
+          ownerName: apt?.owner?.name || (isEn ? 'Resident' : 'Cư dân căn hộ'),
+          floor: apt?.floor || 0,
+        });
+      });
+
     apartments.forEach(apt => {
       if (apt.vehicles && apt.vehicles.length > 0) {
         apt.vehicles.forEach(v => {
+          const key = `${apt.code.toUpperCase()}-${v.plate.toUpperCase()}`;
+          if (seenKeys.has(key)) return;
           list.push({
             ...v,
             aptCode: apt.code,
@@ -118,7 +164,7 @@ export default function SmartParking() {
       }
     });
     return list;
-  }, [apartments, isEn]);
+  }, [apartments, parkingSlots, isEn]);
 
   // Operational Multi-Hub Capacity Specs
   const B2_FIXED_CAR_SLOTS = 60; // Hầm B2 Zone A: Ô cố định VIP
@@ -203,8 +249,8 @@ export default function SmartParking() {
 
   const hasResident = useMemo(() => {
     return Boolean(
-      activeApartmentUnit?.owner?.name || 
-      activeApartmentUnit?.status === 'OCCUPIED' || 
+      activeApartmentUnit?.owner?.name ||
+      activeApartmentUnit?.status === 'OCCUPIED' ||
       (activeApartmentUnit?.members && activeApartmentUnit.members.length > 0)
     );
   }, [activeApartmentUnit]);
@@ -274,8 +320,8 @@ export default function SmartParking() {
       return free ? free.code : (wing === 'SOUTH' ? 'B1-M08' : 'B1-M02');
     }
     if (targetZone === 'FIXED_B2') {
-      const preferred = wing === 'SOUTH' 
-        ? ['B2-A06', 'B2-A07', 'B2-A08', 'B2-A05', 'B2-A09'] 
+      const preferred = wing === 'SOUTH'
+        ? ['B2-A06', 'B2-A07', 'B2-A08', 'B2-A05', 'B2-A09']
         : ['B2-A03', 'B2-A02', 'B2-A04', 'B2-A01'];
       const preferredFree = b2FixedSlots.find(s => !s.assigned && preferred.includes(s.code));
       if (preferredFree) return preferredFree.code;
@@ -283,8 +329,8 @@ export default function SmartParking() {
       return anyFree ? anyFree.code : (wing === 'SOUTH' ? 'B2-A06' : 'B2-A03');
     }
     if (targetZone === 'FLOATING_B2') {
-      const preferred = wing === 'SOUTH' 
-        ? ['B2-B08', 'B2-B07', 'B2-B09', 'B2-B06'] 
+      const preferred = wing === 'SOUTH'
+        ? ['B2-B08', 'B2-B07', 'B2-B09', 'B2-B06']
         : ['B2-B04', 'B2-B03', 'B2-B05', 'B2-B02'];
       const preferredFree = b2FloatingSlots.find(s => !s.assigned && preferred.includes(s.code));
       if (preferredFree) return preferredFree.code;
@@ -371,7 +417,7 @@ export default function SmartParking() {
   }, [regAptCode, activeApartmentUnit, hasResident, detectedResidentVehicles, selectedVehicleIdx, regTargetZone]);
 
   // Handler: Register New Vehicle or Enqueue to Waitlist
-  const handleRegisterVehicle = (e: React.FormEvent) => {
+  const handleRegisterVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegFormError('');
     setRegSuccessMsg('');
@@ -453,10 +499,29 @@ export default function SmartParking() {
       slot: slotCode,
     };
 
-    const ok = addApartmentVehicle(regAptCode, newVehicle);
-    if (ok) {
-      const refreshed = getApartmentUnits();
-      setApartments(refreshed);
+    try {
+      const res = await fetch('/api/parking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          slotCode,
+          floorNumber: regType === 'CAR' ? -2 : -1,
+          vehicleType: regType === 'CAR' ? 'CAR' : 'MOTORCYCLE',
+          apartmentCode: regAptCode,
+          licensePlate: newVehicle.plate,
+          rfidCardCode: generatedCardNo,
+          monthlyFee: regType === 'CAR' ? 1200000 : 120000,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setRegFormError(json?.message || (isEn ? 'Failed to assign parking slot.' : 'Không thể gán vị trí đỗ xe.'));
+        return;
+      }
+
+      addApartmentVehicle(regAptCode, newVehicle);
+      await loadParkingData();
       setRegSuccessMsg(
         isEn
           ? `Vehicle ${newVehicle.plate} successfully assigned to Unit ${regAptCode} (Slot ${slotCode})`
@@ -469,26 +534,40 @@ export default function SmartParking() {
         setIsRegisterModalOpen(false);
         setRegSuccessMsg('');
       }, 1400);
-    } else {
-      setRegFormError(isEn ? 'Failed to save vehicle. Check apartment code.' : 'Lỗi khi lưu phương tiện. Kiểm tra lại mã căn.');
+    } catch {
+      setRegFormError(isEn ? 'Network error while saving parking slot.' : 'Lỗi kết nối khi lưu vị trí đỗ xe.');
     }
   };
 
   // Handler: Approve Waitlist Item directly to slot
-  const handleApproveWaitlistEntry = (entry: ParkingWaitlistEntry, targetSlotCode: string) => {
+  const handleApproveWaitlistEntry = async (entry: ParkingWaitlistEntry, targetSlotCode: string) => {
+    const rfidCardCode = `RFID-${entry.aptCode}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
     const newVehicle: ApartmentVehicle = {
       id: `veh-${Date.now()}`,
       type: entry.vehicleType,
       plate: entry.plate,
       brand: entry.brand,
-      cardNo: `RFID-${entry.aptCode}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`,
+      cardNo: rfidCardCode,
       slot: targetSlotCode,
     };
 
-    const ok = addApartmentVehicle(entry.aptCode, newVehicle);
-    if (ok) {
-      const refreshed = getApartmentUnits();
-      setApartments(refreshed);
+    const res = await fetch('/api/parking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        slotCode: targetSlotCode,
+        floorNumber: entry.vehicleType === 'CAR' ? -2 : -1,
+        vehicleType: entry.vehicleType === 'CAR' ? 'CAR' : 'MOTORCYCLE',
+        apartmentCode: entry.aptCode,
+        licensePlate: entry.plate,
+        rfidCardCode,
+        monthlyFee: entry.vehicleType === 'CAR' ? 1200000 : 120000,
+      }),
+    });
+    if (res.ok) {
+      addApartmentVehicle(entry.aptCode, newVehicle);
+      await loadParkingData();
       saveWaitlistState(waitlist.filter(w => w.id !== entry.id));
     }
   };
@@ -503,16 +582,17 @@ export default function SmartParking() {
     setRevokeVehicleTarget({ aptCode, vehicleId, plate });
   };
 
-  const confirmRevokeVehicle = () => {
+  const confirmRevokeVehicle = async () => {
     if (!revokeVehicleTarget) return;
-    const { aptCode, vehicleId } = revokeVehicleTarget;
-    const ok = removeApartmentVehicle(aptCode, vehicleId);
-    if (ok) {
-      const refreshed = getApartmentUnits();
-      setApartments(refreshed);
-      if (selectedSlotCode && currentSlotDetail?.assigned?.id === vehicleId) {
-        setSelectedSlotCode(null);
-      }
+    const { aptCode, vehicleId, plate } = revokeVehicleTarget;
+    await fetch(`/api/parking?apartmentCode=${encodeURIComponent(aptCode)}&licensePlate=${encodeURIComponent(plate)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    }).catch(() => { });
+    removeApartmentVehicle(aptCode, vehicleId);
+    await loadParkingData();
+    if (selectedSlotCode && currentSlotDetail?.assigned?.id === vehicleId) {
+      setSelectedSlotCode(null);
     }
     setRevokeVehicleTarget(null);
   };
@@ -552,9 +632,9 @@ export default function SmartParking() {
           <button
             type="button"
             onClick={() => {
-              const defaultUnit = apartments.find(a => a.code === regAptCode) || 
-                                  apartments.find(a => a.vehicles && a.vehicles.length > 0) || 
-                                  apartments[0];
+              const defaultUnit = apartments.find(a => a.code === regAptCode) ||
+                apartments.find(a => a.vehicles && a.vehicles.length > 0) ||
+                apartments[0];
               if (defaultUnit) {
                 handleApartmentSelect(defaultUnit.code);
               }
@@ -568,6 +648,13 @@ export default function SmartParking() {
           </button>
         </div>
       </div>
+
+      {/* Loading / Error / Empty states for /api/parking */}
+      {isLoadingParking && <ResourceSkeleton label={isEn ? 'Loading parking slots...' : 'Đang tải dữ liệu bãi đỗ xe...'} />}
+      {!isLoadingParking && parkingError && <ResourceError message={parkingError} onRetry={loadParkingData} />}
+      {!isLoadingParking && !parkingError && registeredVehicles.length === 0 && (
+        <ResourceEmpty message={isEn ? 'No vehicles or parking slots assigned yet.' : 'Chưa có phương tiện hoặc vị trí đỗ xe nào được gán trong hệ thống.'} />
+      )}
 
       {/* 2. Top Multi-Hub KPI Cards (Pixel-Perfect Alignment across all 4 cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -594,9 +681,8 @@ export default function SmartParking() {
 
           <div className="w-full h-1.5 bg-[#0A0E14] border border-[#222B35] overflow-hidden">
             <div
-              className={`h-full transition-all duration-500 ${
-                carOccupancyPct >= 90 ? 'bg-rose-500' : carOccupancyPct >= 70 ? 'bg-amber-500' : 'bg-emerald-500'
-              }`}
+              className={`h-full transition-all duration-500 ${carOccupancyPct >= 90 ? 'bg-rose-500' : carOccupancyPct >= 70 ? 'bg-amber-500' : 'bg-emerald-500'
+                }`}
               style={{ width: `${Math.max(registeredCars > 0 ? 5 : 0, carOccupancyPct)}%` }}
             />
           </div>
@@ -664,9 +750,8 @@ export default function SmartParking() {
 
           <div className="w-full h-1.5 bg-[#0A0E14] border border-[#222B35] overflow-hidden">
             <div
-              className={`h-full transition-all duration-500 ${
-                motoOccupancyPct >= 90 ? 'bg-rose-500' : 'bg-cyan-500'
-              }`}
+              className={`h-full transition-all duration-500 ${motoOccupancyPct >= 90 ? 'bg-rose-500' : 'bg-cyan-500'
+                }`}
               style={{ width: `${Math.max(registeredMotos > 0 ? 4 : 0, motoOccupancyPct)}%` }}
             />
           </div>
@@ -723,11 +808,10 @@ export default function SmartParking() {
         <button
           type="button"
           onClick={() => setActiveMainTab('MATRIX')}
-          className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider font-mono flex items-center gap-2 border-b-2 transition-all rounded-none whitespace-nowrap ${
-            activeMainTab === 'MATRIX'
-              ? 'border-[#C5A880] text-white bg-[#121820]'
-              : 'border-transparent text-gray-400 hover:text-white'
-          }`}
+          className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider font-mono flex items-center gap-2 border-b-2 transition-all rounded-none whitespace-nowrap ${activeMainTab === 'MATRIX'
+            ? 'border-[#C5A880] text-white bg-[#121820]'
+            : 'border-transparent text-gray-400 hover:text-white'
+            }`}
         >
           <LayoutGrid className="w-3.5 h-3.5 text-[#C5A880]" />
           {t('Sơ Đồ Phân Bổ Không Gian Ô Đỗ', 'Parking Slot Matrix Map')}
@@ -736,11 +820,10 @@ export default function SmartParking() {
         <button
           type="button"
           onClick={() => setActiveMainTab('REGISTRY')}
-          className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider font-mono flex items-center gap-2 border-b-2 transition-all rounded-none whitespace-nowrap ${
-            activeMainTab === 'REGISTRY'
-              ? 'border-[#C5A880] text-white bg-[#121820]'
-              : 'border-transparent text-gray-400 hover:text-white'
-          }`}
+          className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider font-mono flex items-center gap-2 border-b-2 transition-all rounded-none whitespace-nowrap ${activeMainTab === 'REGISTRY'
+            ? 'border-[#C5A880] text-white bg-[#121820]'
+            : 'border-transparent text-gray-400 hover:text-white'
+            }`}
         >
           <Car className="w-3.5 h-3.5 text-[#C5A880]" />
           {t('Danh Sách Xe Đã Cấp Thẻ', 'Registered Vehicle Pass List')} ({filteredVehicles.length})
@@ -749,11 +832,10 @@ export default function SmartParking() {
         <button
           type="button"
           onClick={() => setActiveMainTab('WAITLIST')}
-          className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider font-mono flex items-center gap-2 border-b-2 transition-all rounded-none whitespace-nowrap ${
-            activeMainTab === 'WAITLIST'
-              ? 'border-[#C5A880] text-white bg-[#121820]'
-              : 'border-transparent text-gray-400 hover:text-white'
-          }`}
+          className={`px-4 py-2.5 text-xs font-semibold uppercase tracking-wider font-mono flex items-center gap-2 border-b-2 transition-all rounded-none whitespace-nowrap ${activeMainTab === 'WAITLIST'
+            ? 'border-[#C5A880] text-white bg-[#121820]'
+            : 'border-transparent text-gray-400 hover:text-white'
+            }`}
         >
           <Clock className="w-3.5 h-3.5 text-amber-400" />
           {t('Hàng Đợi Waitlist', 'Waitlist Queue')} ({waitlist.length})
@@ -778,11 +860,10 @@ export default function SmartParking() {
               <button
                 type="button"
                 onClick={() => setSelectedFloorMap('B2_FIXED')}
-                className={`px-2.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
-                  selectedFloorMap === 'B2_FIXED'
-                    ? 'bg-[#C5A880] text-black font-bold'
-                    : 'bg-[#161B22] text-gray-400 hover:text-white border border-[#2D3748]'
-                }`}
+                className={`px-2.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${selectedFloorMap === 'B2_FIXED'
+                  ? 'bg-[#C5A880] text-black font-bold'
+                  : 'bg-[#161B22] text-gray-400 hover:text-white border border-[#2D3748]'
+                  }`}
               >
                 <Car className="w-3.5 h-3.5" />
                 {t('B2: Ô Cố Định VIP', 'B2: Fixed VIP')}
@@ -790,11 +871,10 @@ export default function SmartParking() {
               <button
                 type="button"
                 onClick={() => setSelectedFloorMap('B2_FLOATING')}
-                className={`px-2.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
-                  selectedFloorMap === 'B2_FLOATING'
-                    ? 'bg-[#C5A880] text-black font-bold'
-                    : 'bg-[#161B22] text-gray-400 hover:text-white border border-[#2D3748]'
-                }`}
+                className={`px-2.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${selectedFloorMap === 'B2_FLOATING'
+                  ? 'bg-[#C5A880] text-black font-bold'
+                  : 'bg-[#161B22] text-gray-400 hover:text-white border border-[#2D3748]'
+                  }`}
               >
                 <Car className="w-3.5 h-3.5" />
                 {t('B2: Đỗ Tự Do', 'B2: Floating')}
@@ -802,11 +882,10 @@ export default function SmartParking() {
               <button
                 type="button"
                 onClick={() => setSelectedFloorMap('SOLARI_HUB')}
-                className={`px-2.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
-                  selectedFloorMap === 'SOLARI_HUB'
-                    ? 'bg-[#C5A880] text-black font-bold'
-                    : 'bg-[#161B22] text-gray-400 hover:text-white border border-[#2D3748]'
-                }`}
+                className={`px-2.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${selectedFloorMap === 'SOLARI_HUB'
+                  ? 'bg-[#C5A880] text-black font-bold'
+                  : 'bg-[#161B22] text-gray-400 hover:text-white border border-[#2D3748]'
+                  }`}
               >
                 <Warehouse className="w-3.5 h-3.5" />
                 {t('Nhà Xe Solari Hub', 'Solari Hub Garage')}
@@ -814,11 +893,10 @@ export default function SmartParking() {
               <button
                 type="button"
                 onClick={() => setSelectedFloorMap('B1_MOTO')}
-                className={`px-2.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
-                  selectedFloorMap === 'B1_MOTO'
-                    ? 'bg-[#C5A880] text-black font-bold'
-                    : 'bg-[#161B22] text-gray-400 hover:text-white border border-[#2D3748]'
-                }`}
+                className={`px-2.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${selectedFloorMap === 'B1_MOTO'
+                  ? 'bg-[#C5A880] text-black font-bold'
+                  : 'bg-[#161B22] text-gray-400 hover:text-white border border-[#2D3748]'
+                  }`}
               >
                 <Bike className="w-3.5 h-3.5" />
                 {t('Hầm B1: Xe Máy', 'Basement B1: Motorbikes')}
@@ -835,10 +913,10 @@ export default function SmartParking() {
                   {selectedFloorMap === 'B2_FIXED'
                     ? t('HẦM B2 ZONE A: Ô CỐ ĐỊNH ĐỊNH DANH VIP', 'BASEMENT B2 ZONE A: DEDICATED VIP FIXED SLOTS')
                     : selectedFloorMap === 'B2_FLOATING'
-                    ? t('HẦM B2 ZONE B: KHU ĐỖ TỰ DO CHIA SẺ', 'BASEMENT B2 ZONE B: SHARED FLOATING SLOTS')
-                    : selectedFloorMap === 'SOLARI_HUB'
-                    ? t('NHÀ XE CAO TẦNG BEVERLY SOLARI HUB (ĐIỀU PHỐI MỞ RỘNG)', 'BEVERLY SOLARI MULTI-STOREY GARAGE (EXPANDED DISPATCH)')
-                    : t('HẦM B1: XE MÁY CƯ DÂN TOÀN TÒA BS-07', 'BASEMENT B1: RESIDENT MOTORBIKES FOR BS-07')}
+                      ? t('HẦM B2 ZONE B: KHU ĐỖ TỰ DO CHIA SẺ', 'BASEMENT B2 ZONE B: SHARED FLOATING SLOTS')
+                      : selectedFloorMap === 'SOLARI_HUB'
+                        ? t('NHÀ XE CAO TẦNG BEVERLY SOLARI HUB (ĐIỀU PHỐI MỞ RỘNG)', 'BEVERLY SOLARI MULTI-STOREY GARAGE (EXPANDED DISPATCH)')
+                        : t('HẦM B1: XE MÁY CƯ DÂN TOÀN TÒA BS-07', 'BASEMENT B1: RESIDENT MOTORBIKES FOR BS-07')}
                 </span>
                 <span className="text-[#C5A880]">{t('24 - 32 Ô ĐẠI DIỆN', '24 - 32 SAMPLE SLOTS')}</span>
               </div>
@@ -848,10 +926,10 @@ export default function SmartParking() {
                   selectedFloorMap === 'B2_FIXED'
                     ? b2FixedSlots
                     : selectedFloorMap === 'B2_FLOATING'
-                    ? b2FloatingSlots
-                    : selectedFloorMap === 'SOLARI_HUB'
-                    ? solariHubSlots
-                    : b1Slots
+                      ? b2FloatingSlots
+                      : selectedFloorMap === 'SOLARI_HUB'
+                        ? solariHubSlots
+                        : b1Slots
                 ).map((slot) => {
                   const isSelected = selectedSlotCode === slot.code;
                   const isOccupied = !!slot.assigned;
@@ -861,13 +939,12 @@ export default function SmartParking() {
                       key={slot.code}
                       type="button"
                       onClick={() => setSelectedSlotCode(slot.code)}
-                      className={`p-2 border text-center transition-all flex flex-col justify-between h-20 rounded-none relative group ${
-                        isSelected
-                          ? 'bg-[#C5A880]/20 border-[#C5A880] shadow-[0_0_12px_rgba(197,168,128,0.25)]'
-                          : isOccupied
+                      className={`p-2 border text-center transition-all flex flex-col justify-between h-20 rounded-none relative group ${isSelected
+                        ? 'bg-[#C5A880]/20 border-[#C5A880] shadow-[0_0_12px_rgba(197,168,128,0.25)]'
+                        : isOccupied
                           ? 'bg-[#1C2533] border-[#C5A880]/60 hover:border-[#C5A880]'
                           : 'bg-[#121820] border-[#2D3748] hover:border-gray-500 opacity-70 hover:opacity-100'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between w-full text-[10px] font-mono">
                         <span className={`font-bold ${isSelected ? 'text-[#C5A880]' : isOccupied ? 'text-white' : 'text-gray-400'}`}>
@@ -937,11 +1014,10 @@ export default function SmartParking() {
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-gray-400">{t('Trạng Thái:', 'Status:')}</span>
-                      <span className={`font-mono text-xs font-semibold px-2 py-0.5 border ${
-                        currentSlotDetail.assigned
-                          ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/50'
-                          : 'bg-gray-900 text-gray-400 border-gray-700'
-                      }`}>
+                      <span className={`font-mono text-xs font-semibold px-2 py-0.5 border ${currentSlotDetail.assigned
+                        ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/50'
+                        : 'bg-gray-900 text-gray-400 border-gray-700'
+                        }`}>
                         {currentSlotDetail.assigned ? t('ĐÃ ĐƯỢC CẤP', 'ASSIGNED') : t('CÒN TRỐNG', 'VACANT')}
                       </span>
                     </div>
@@ -981,8 +1057,8 @@ export default function SmartParking() {
                         <button
                           type="button"
                           onClick={() => handleRevokeVehicle(
-                            currentSlotDetail.assigned!.aptCode, 
-                            currentSlotDetail.assigned!.id, 
+                            currentSlotDetail.assigned!.aptCode,
+                            currentSlotDetail.assigned!.id,
                             currentSlotDetail.assigned!.plate
                           )}
                           className="w-full py-1.5 px-3 bg-rose-950/40 hover:bg-rose-900 border border-rose-500/50 text-rose-300 text-xs font-mono font-semibold transition-colors rounded-none flex items-center justify-center gap-1.5"
@@ -1115,7 +1191,7 @@ export default function SmartParking() {
                     <td colSpan={9} className="p-8 text-center text-gray-500 font-mono space-y-2">
                       <Car className="w-8 h-8 text-gray-600 mx-auto" />
                       <div>
-                        {searchPlate.trim() 
+                        {searchPlate.trim()
                           ? t('Không tìm thấy phương tiện nào phù hợp với từ khóa tìm kiếm.', 'No vehicles matched your search filter.')
                           : t('Chưa có phương tiện nào được cấp quyền trong tòa nhà. Hãy nhấn "+ Cấp Thẻ / Đăng Ký Ô Đỗ" để đăng ký.', 'No authorized vehicles found. Click "+ Issue Pass / Assign Slot" to register.')}
                       </div>
@@ -1128,11 +1204,10 @@ export default function SmartParking() {
                         {veh.plate}
                       </td>
                       <td className="p-3">
-                        <span className={`px-2 py-0.5 text-[10px] font-semibold uppercase font-mono ${
-                          veh.type === 'CAR'
-                            ? 'bg-amber-950/60 text-amber-300 border border-amber-500/40'
-                            : 'bg-cyan-950/60 text-cyan-300 border border-cyan-500/40'
-                        }`}>
+                        <span className={`px-2 py-0.5 text-[10px] font-semibold uppercase font-mono ${veh.type === 'CAR'
+                          ? 'bg-amber-950/60 text-amber-300 border border-amber-500/40'
+                          : 'bg-cyan-950/60 text-cyan-300 border border-cyan-500/40'
+                          }`}>
                           {veh.type === 'CAR' ? t('Ô Tô', 'Car') : t('Xe Máy', 'Motorbike')}
                         </span>
                       </td>
@@ -1320,8 +1395,8 @@ export default function SmartParking() {
                   {isEn ? 'PARKING PASS ISSUANCE & AUTO ALLOCATION' : 'CẤP THẺ XE & ĐIỀU PHỐI Ô ĐỖ THÔNG MINH'}
                 </div>
                 <h3 className="font-serif text-lg font-bold text-white mt-0.5">
-                  {regActionType === 'WAITLIST' 
-                    ? (isEn ? 'Enqueue to Parking Waitlist' : 'Đưa Vào Hàng Đợi Xét Duyệt (Waitlist)') 
+                  {regActionType === 'WAITLIST'
+                    ? (isEn ? 'Enqueue to Parking Waitlist' : 'Đưa Vào Hàng Đợi Xét Duyệt (Waitlist)')
                     : (isEn ? 'Issue Parking Pass & Assign Slot' : 'Cấp Thẻ & Điều Phối Vị Trí Đỗ Xe')}
                 </h3>
               </div>
@@ -1403,11 +1478,10 @@ export default function SmartParking() {
                           const wing = activeApartmentUnit?.wing || 'SOUTH';
                           setRegCustomSlot(computeOptimalSlot(veh.type, regTargetZone, wing));
                         }}
-                        className={`w-full p-2 text-left border flex items-center justify-between font-mono text-xs transition-colors rounded-none ${
-                          selectedVehicleIdx === idx
-                            ? 'border-[#C5A880] bg-[#C5A880]/15 text-white'
-                            : 'border-[#222B35] bg-[#121820] text-gray-400 hover:text-white'
-                        }`}
+                        className={`w-full p-2 text-left border flex items-center justify-between font-mono text-xs transition-colors rounded-none ${selectedVehicleIdx === idx
+                          ? 'border-[#C5A880] bg-[#C5A880]/15 text-white'
+                          : 'border-[#222B35] bg-[#121820] text-gray-400 hover:text-white'
+                          }`}
                       >
                         <div className="flex items-center gap-2">
                           {veh.type === 'CAR' ? <Car className="w-3.5 h-3.5 text-[#C5A880]" /> : <Bike className="w-3.5 h-3.5 text-cyan-400" />}
@@ -1432,11 +1506,10 @@ export default function SmartParking() {
                   <button
                     type="button"
                     onClick={() => setRegType('CAR')}
-                    className={`py-2 px-3 border text-left flex items-center gap-2 rounded-none transition-colors ${
-                      regType === 'CAR'
-                        ? 'border-[#C5A880] bg-[#C5A880]/15 text-white shadow-[0_0_10px_rgba(197,168,128,0.15)]'
-                        : 'border-[#2D3748] bg-[#161B22] text-gray-500'
-                    }`}
+                    className={`py-2 px-3 border text-left flex items-center gap-2 rounded-none transition-colors ${regType === 'CAR'
+                      ? 'border-[#C5A880] bg-[#C5A880]/15 text-white shadow-[0_0_10px_rgba(197,168,128,0.15)]'
+                      : 'border-[#2D3748] bg-[#161B22] text-gray-500'
+                      }`}
                   >
                     <Car className="w-4 h-4 text-[#C5A880]" />
                     <div>
@@ -1448,11 +1521,10 @@ export default function SmartParking() {
                   <button
                     type="button"
                     onClick={() => setRegType('MOTORBIKE')}
-                    className={`py-2 px-3 border text-left flex items-center gap-2 rounded-none transition-colors ${
-                      regType === 'MOTORBIKE'
-                        ? 'border-cyan-400 bg-cyan-950/25 text-white shadow-[0_0_10px_rgba(6,182,212,0.15)]'
-                        : 'border-[#2D3748] bg-[#161B22] text-gray-500'
-                    }`}
+                    className={`py-2 px-3 border text-left flex items-center gap-2 rounded-none transition-colors ${regType === 'MOTORBIKE'
+                      ? 'border-cyan-400 bg-cyan-950/25 text-white shadow-[0_0_10px_rgba(6,182,212,0.15)]'
+                      : 'border-[#2D3748] bg-[#161B22] text-gray-500'
+                      }`}
                   >
                     <Bike className="w-4 h-4 text-cyan-400" />
                     <div>
@@ -1473,11 +1545,10 @@ export default function SmartParking() {
                     <button
                       type="button"
                       onClick={() => setRegTargetZone('FIXED_B2')}
-                      className={`p-2 border text-left rounded-none font-mono text-[11px] transition-colors ${
-                        regTargetZone === 'FIXED_B2'
-                          ? 'border-[#C5A880] bg-[#C5A880]/15 text-white'
-                          : 'border-[#2D3748] bg-[#161B22] text-gray-400 hover:text-white'
-                      }`}
+                      className={`p-2 border text-left rounded-none font-mono text-[11px] transition-colors ${regTargetZone === 'FIXED_B2'
+                        ? 'border-[#C5A880] bg-[#C5A880]/15 text-white'
+                        : 'border-[#2D3748] bg-[#161B22] text-gray-400 hover:text-white'
+                        }`}
                     >
                       <div className="font-bold">{t('Hầm B2 Cố Định', 'Fixed B2')}</div>
                       <div className="text-[9px] text-gray-400">{t('Zone A VIP', 'Zone A VIP')}</div>
@@ -1485,11 +1556,10 @@ export default function SmartParking() {
                     <button
                       type="button"
                       onClick={() => setRegTargetZone('FLOATING_B2')}
-                      className={`p-2 border text-left rounded-none font-mono text-[11px] transition-colors ${
-                        regTargetZone === 'FLOATING_B2'
-                          ? 'border-[#C5A880] bg-[#C5A880]/15 text-white'
-                          : 'border-[#2D3748] bg-[#161B22] text-gray-400 hover:text-white'
-                      }`}
+                      className={`p-2 border text-left rounded-none font-mono text-[11px] transition-colors ${regTargetZone === 'FLOATING_B2'
+                        ? 'border-[#C5A880] bg-[#C5A880]/15 text-white'
+                        : 'border-[#2D3748] bg-[#161B22] text-gray-400 hover:text-white'
+                        }`}
                     >
                       <div className="font-bold">{t('Hầm B2 Tự Do', 'Floating B2')}</div>
                       <div className="text-[9px] text-gray-400">{t('Zone B Luân Phiên', 'Zone B Rotating')}</div>
@@ -1497,11 +1567,10 @@ export default function SmartParking() {
                     <button
                       type="button"
                       onClick={() => setRegTargetZone('SOLARI_HUB')}
-                      className={`p-2 border text-left rounded-none font-mono text-[11px] transition-colors ${
-                        regTargetZone === 'SOLARI_HUB'
-                          ? 'border-amber-400 bg-amber-950/25 text-white'
-                          : 'border-[#2D3748] bg-[#161B22] text-gray-400 hover:text-white'
-                      }`}
+                      className={`p-2 border text-left rounded-none font-mono text-[11px] transition-colors ${regTargetZone === 'SOLARI_HUB'
+                        ? 'border-amber-400 bg-amber-950/25 text-white'
+                        : 'border-[#2D3748] bg-[#161B22] text-gray-400 hover:text-white'
+                        }`}
                     >
                       <div className="font-bold">{t('Solari Hub', 'Solari Hub')}</div>
                       <div className="text-[9px] text-amber-400">{t('Nhà Xe Liên Tòa', 'Hub Garage')}</div>
@@ -1568,11 +1637,10 @@ export default function SmartParking() {
                   <button
                     type="button"
                     onClick={() => setRegActionType('DIRECT_ISSUE')}
-                    className={`py-2 px-3 border text-left rounded-none font-mono text-xs transition-colors ${
-                      regActionType === 'DIRECT_ISSUE'
-                        ? 'border-emerald-500 bg-emerald-950/25 text-white'
-                        : 'border-[#2D3748] bg-[#161B22] text-gray-400'
-                    }`}
+                    className={`py-2 px-3 border text-left rounded-none font-mono text-xs transition-colors ${regActionType === 'DIRECT_ISSUE'
+                      ? 'border-emerald-500 bg-emerald-950/25 text-white'
+                      : 'border-[#2D3748] bg-[#161B22] text-gray-400'
+                      }`}
                   >
                     <div className="font-bold">{isEn ? 'Direct Pass Issue' : 'Cấp Slot Ngay'}</div>
                     <div className="text-[10px] text-emerald-400">{isEn ? 'Assign slot & issue RFID' : 'Gán ô & phát thẻ RFID'}</div>
@@ -1581,11 +1649,10 @@ export default function SmartParking() {
                   <button
                     type="button"
                     onClick={() => setRegActionType('WAITLIST')}
-                    className={`py-2 px-3 border text-left rounded-none font-mono text-xs transition-colors ${
-                      regActionType === 'WAITLIST'
-                        ? 'border-amber-400 bg-amber-950/25 text-white'
-                        : 'border-[#2D3748] bg-[#161B22] text-gray-400'
-                    }`}
+                    className={`py-2 px-3 border text-left rounded-none font-mono text-xs transition-colors ${regActionType === 'WAITLIST'
+                      ? 'border-amber-400 bg-amber-950/25 text-white'
+                      : 'border-[#2D3748] bg-[#161B22] text-gray-400'
+                      }`}
                   >
                     <div className="font-bold">{isEn ? 'Waitlist Queue' : 'Hàng Đợi Waitlist'}</div>
                     <div className="text-[10px] text-amber-400">{isEn ? 'Queue for review' : 'Xếp hàng chờ duyệt'}</div>
@@ -1604,15 +1671,14 @@ export default function SmartParking() {
                 <button
                   type="submit"
                   disabled={!hasResident}
-                  className={`px-5 py-2 font-semibold uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 text-xs ${
-                    hasResident
-                      ? 'bg-[#C5A880] hover:bg-[#E2C9A5] text-[#0A0E14]'
-                      : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                  }`}
+                  className={`px-5 py-2 font-semibold uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 text-xs ${hasResident
+                    ? 'bg-[#C5A880] hover:bg-[#E2C9A5] text-[#0A0E14]'
+                    : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                    }`}
                 >
                   <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                  {regActionType === 'WAITLIST' 
-                    ? (isEn ? 'Confirm Enqueue' : 'Xác Nhận Xếp Hàng Đợi') 
+                  {regActionType === 'WAITLIST'
+                    ? (isEn ? 'Confirm Enqueue' : 'Xác Nhận Xếp Hàng Đợi')
                     : (isEn ? 'Confirm Pass Issue' : 'Xác Nhận Cấp Thẻ')}
                 </button>
               </div>
@@ -1626,7 +1692,7 @@ export default function SmartParking() {
         onClose={() => setRevokeVehicleTarget(null)}
         onConfirm={confirmRevokeVehicle}
         title={isEn ? 'Revoke Vehicle & Parking Pass' : 'Thu Hồi Thẻ Xe & Slot Đỗ Xe'}
-        message={isEn 
+        message={isEn
           ? `Confirm revoking vehicle and parking permit for unit ${revokeVehicleTarget?.aptCode}? Automatic barrier access will be disabled.`
           : `Xác nhận thu hồi và xóa thẻ đỗ xe của căn hộ ${revokeVehicleTarget?.aptCode}? Thẻ RFID và nhận diện biển số tại barie hầm xe sẽ bị hủy ngay lập tức.`
         }

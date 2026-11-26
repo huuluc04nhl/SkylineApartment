@@ -637,7 +637,7 @@ export default function VisitorQrModal({
 
                   {/* QR Image Container */}
                   <div className="flex flex-col sm:flex-row items-center gap-3.5 bg-[#0A0E14] p-3.5 rounded-none border border-[#222B35]">
-                    <div className="bg-white p-2 rounded-none shadow-inner flex-shrink-0 group relative cursor-pointer" onClick={handleDownloadCardImage} title={isEn ? 'Click to save image' : 'Nhấn để lưu ảnh'}>
+                    <button type="button" className="bg-white p-2 rounded-none shadow-inner flex-shrink-0 group relative cursor-pointer" onClick={handleDownloadCardImage} title={isEn ? 'Click to save image' : 'Nhấn để lưu ảnh'} aria-label={isEn ? 'Save QR pass image' : 'Lưu ảnh mã QR khách thăm'}>
                       <img
                         src={qrDataUrl || `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(activePass.qrData)}`}
                         alt={isEn ? 'Guest QR Pass' : 'QR Mời Khách'}
@@ -646,7 +646,7 @@ export default function VisitorQrModal({
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-none flex items-center justify-center text-white text-[10px] font-bold gap-1">
                         <Download className="w-3.5 h-3.5" /> Lưu ảnh
                       </div>
-                    </div>
+                    </button>
 
                     <div className="space-y-2 text-xs flex-1 w-full sm:w-auto">
                       <div className="p-2 bg-[#121820] border border-[#222B35] rounded-none flex items-center justify-between">

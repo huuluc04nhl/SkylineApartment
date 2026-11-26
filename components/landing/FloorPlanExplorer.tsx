@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { 
   Box, 
@@ -642,9 +643,11 @@ export default function FloorPlanExplorer({ onOpenLogin }: FloorPlanExplorerProp
 
             {/* KHUNG ẢNH 3D ISOMETRIC CUTAWAY */}
             <div className="relative flex-1 min-h-[360px] sm:min-h-[420px] md:min-h-[460px] bg-[#05070A] overflow-hidden group">
-              <img
+              <Image
                 src={currentApartment.render3DUrl}
                 alt={t(currentApartment.name)}
+                width={1000}
+                height={700}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
 

@@ -380,6 +380,7 @@ export default function CccdOcrScannerModal({
 
           <button
             onClick={onClose}
+            aria-label="Đóng máy quét CCCD"
             className="p-2 text-gray-400 hover:text-white hover:bg-[#161B22] rounded-none transition-colors flex-shrink-0"
           >
             <X className="w-5 h-5" />

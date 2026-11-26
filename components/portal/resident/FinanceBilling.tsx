@@ -60,6 +60,9 @@ import {
 } from '@/lib/billingStore';
 import { exportInvoicePdf } from '@/lib/pdfExport';
 import { useLanguage } from '@/lib/languageContext';
+import { toast } from '@/components/ui/Toast';
+import { useAsyncResource } from '@/lib/hooks/useAsyncResource';
+import { ResourceSkeleton, ResourceError, ResourceEmpty } from '@/components/ui/ResourceState';
 import BillingAiAssistantDrawer from './BillingAiAssistantDrawer';
 import InvoiceExplanationModal, { InvoiceExplanationData } from './InvoiceExplanationModal';
 import CostForecastCard from './CostForecastCard';
@@ -297,11 +300,11 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
       if (data.success && data.paymentUrl) {
         window.location.href = data.paymentUrl;
       } else {
-        alert(data.message || 'Không thể tạo liên kết thanh toán VNPAY');
+        toast.error(data.message || 'Không thể tạo liên kết thanh toán VNPAY');
         setIsRedirectingVnpay(false);
       }
     } catch (err: any) {
-      alert('Lỗi kết nối cổng thanh toán VNPAY: ' + (err?.message || ''));
+      toast.error('Lỗi kết nối cổng thanh toán VNPAY: ' + (err?.message || ''));
       setIsRedirectingVnpay(false);
     }
   };
@@ -668,8 +671,22 @@ export default function FinanceBilling({ currentUser }: FinanceBillingProps) {
     URL.revokeObjectURL(url);
   };
 
+  const billingResource = useAsyncResource(async () => {
+    const res = await fetch('/api/billing', { credentials: 'include' });
+    if (!res.ok) throw new Error(`Không thể tải hóa đơn tài chính (HTTP ${res.status})`);
+    const json = await res.json();
+    return Array.isArray(json?.bills) ? json.bills : [];
+  }, []);
+
   return (
     <div className="space-y-6 w-full animate-fadeIn relative">
+      {billingResource.loading && <ResourceSkeleton label="Đang tải dữ liệu hóa đơn..." />}
+      {!billingResource.loading && billingResource.error && (
+        <ResourceError message={billingResource.error} onRetry={billingResource.retry} />
+      )}
+      {!billingResource.loading && !billingResource.error && bills.length === 0 && (
+        <ResourceEmpty message="Chưa có hóa đơn phí dịch vụ nào." />
+      )}
       {/* Toast Báo Kết Quả Thanh Toán Thành Công */}
       {paymentSuccessToast && (
         <div className="fixed top-6 right-6 z-[9999] max-w-md w-full bg-[#121820] border-2 border-[#10B981] p-4 shadow-2xl animate-fadeIn text-white">

@@ -9,8 +9,6 @@
 import { UserRole } from './dataStore';
 import { CommunityPostRecord } from './db/schema';
 
-const communityPostsCache: CommunityPostRecord[] = [];
-
 export type PostCategory = 'ANNOUNCEMENT' | 'VOTING' | 'MARKETPLACE' | 'DISCUSSION';
 
 export interface PollOption {
@@ -180,33 +178,25 @@ export function getCommunityPosts(): CommunityPost[] {
   return inMemoryCommunityPosts;
 }
 
+export async function syncCommunityPostsFromApi(): Promise<CommunityPost[]> {
+  if (typeof window === 'undefined') return inMemoryCommunityPosts;
+  try {
+    const res = await fetch('/api/community', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data?.posts)) {
+        inMemoryCommunityPosts = data.posts.map(communityRecordToPost);
+        window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: inMemoryCommunityPosts }));
+      }
+    }
+  } catch (err) {
+    console.warn('syncCommunityPostsFromApi error:', err);
+  }
+  return inMemoryCommunityPosts;
+}
+
 function saveCommunityPosts(posts: CommunityPost[]) {
   inMemoryCommunityPosts = [...posts];
-  posts.forEach(p => {
-    const existingIdx = communityPostsCache.findIndex(item => item.id === p.id);
-    const rec: CommunityPostRecord = {
-      id: p.id,
-      author_name: p.authorName,
-      author_role: p.authorRole,
-      apt_code: p.aptCode,
-      avatar_url: p.avatarUrl,
-      title: p.title,
-      content: p.content,
-      category: p.category === 'ANNOUNCEMENT' ? 'Thông báo' : p.category === 'VOTING' ? 'Biểu quyết' : p.category === 'MARKETPLACE' ? 'Rao vặt' : 'Cộng đồng',
-      ai_moderation: p.aiModeration,
-      ai_sentiment: p.aiSentiment,
-      tags: p.tags,
-      likes: p.likes.length,
-      comments_count: p.comments.length,
-      is_pinned: p.isPinned,
-      created_at: p.createdAt
-    };
-    if (existingIdx >= 0) {
-      communityPostsCache[existingIdx] = rec;
-    } else {
-      communityPostsCache.push(rec);
-    }
-  });
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: posts }));
   }
@@ -264,6 +254,14 @@ export async function createCommunityPostWithAi(
 
   const updated = [post, ...posts];
   saveCommunityPosts(updated);
+  if (typeof window !== 'undefined') {
+    fetch('/api/community', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(post),
+    }).catch(err => console.warn('POST /api/community error:', err));
+  }
   return post;
 }
 
@@ -292,6 +290,14 @@ export function createCommunityPost(
 
   const updated = [post, ...posts];
   saveCommunityPosts(updated);
+  if (typeof window !== 'undefined') {
+    fetch('/api/community', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(post),
+    }).catch(err => console.warn('POST /api/community error:', err));
+  }
   return post;
 }
 

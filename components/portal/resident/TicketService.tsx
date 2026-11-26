@@ -45,6 +45,9 @@ import {
 import { TicketCategoryType, findInquiryAnswer } from '@/lib/ticketClassification';
 import { fileToBase64, compressImageFile } from '@/lib/imageUtils';
 import { useLanguage } from '@/lib/languageContext';
+import { toast } from '@/components/ui/Toast';
+import { useAsyncResource } from '@/lib/hooks/useAsyncResource';
+import { ResourceSkeleton, ResourceError, ResourceEmpty } from '@/components/ui/ResourceState';
 import { cleanPhoneNumber, isValidPhoneNumber, getPhoneValidationError } from '@/lib/validationUtils';
 
 export interface RepairPreset {
@@ -347,7 +350,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Vui lòng chọn tệp hình ảnh hợp lệ (JPG, PNG).');
+      toast.warning('Vui lòng chọn tệp hình ảnh hợp lệ (JPG, PNG).');
       return;
     }
 
@@ -406,7 +409,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
       }
     } catch (err) {
       console.warn('Lỗi đọc ảnh:', err);
-      alert('Không thể đọc tệp hình ảnh. Quý cư dân vui lòng thử lại.');
+      toast.error('Không thể đọc tệp hình ảnh. Quý cư dân vui lòng thử lại.');
     } finally {
       setIsUploadingImage(false);
     }
@@ -415,11 +418,11 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) {
-      alert('Vui lòng nhập mô tả sự cố hoặc chạm chọn một gợi ý nhanh bên trên.');
+      toast.warning('Vui lòng nhập mô tả sự cố hoặc chạm chọn một gợi ý nhanh bên trên.');
       return;
     }
     if (contactPhone.trim() && !isValidPhoneNumber(contactPhone)) {
-      alert(getPhoneValidationError(contactPhone) || 'Số điện thoại liên hệ không hợp lệ!');
+      toast.warning(getPhoneValidationError(contactPhone) || 'Số điện thoại liên hệ không hợp lệ!');
       return;
     }
     if (isSubmitting) return;
@@ -487,7 +490,7 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
       }
     } catch (err) {
       console.error('Lỗi gửi ticket:', err);
-      alert('Hệ thống tạm thời gặp gián đoạn kết nối. Yêu cầu của bạn đã được ghi nhận trên thiết bị.');
+      toast.error('Hệ thống tạm thời gặp gián đoạn kết nối. Yêu cầu của bạn đã được ghi nhận trên thiết bị.');
     } finally {
       setIsSubmitting(false);
     }
@@ -503,8 +506,22 @@ export default function TicketService({ currentUser }: TicketServiceProps) {
     setTimeout(() => setRateSuccessMsg(null), 3000);
   };
 
+  const ticketServiceResource = useAsyncResource(async () => {
+    const res = await fetch('/api/tickets', { credentials: 'include' });
+    if (!res.ok) throw new Error(`Không thể tải lịch sử phản ánh (HTTP ${res.status})`);
+    const json = await res.json();
+    return Array.isArray(json?.tickets) ? json.tickets : [];
+  }, []);
+
   return (
     <div className="space-y-8 w-full animate-fadeIn">
+      {ticketServiceResource.loading && <ResourceSkeleton label="Đang tải yêu cầu dịch vụ..." />}
+      {!ticketServiceResource.loading && ticketServiceResource.error && (
+        <ResourceError message={ticketServiceResource.error} onRetry={ticketServiceResource.retry} />
+      )}
+      {!ticketServiceResource.loading && !ticketServiceResource.error && tickets.length === 0 && (
+        <ResourceEmpty message="Bạn chưa gửi yêu cầu hỗ trợ kỹ thuật nào." />
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222B35] pb-4">
         <div>

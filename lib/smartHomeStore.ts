@@ -68,7 +68,7 @@ export interface AutomationRule {
 }
 
 const DEFAULT_STATE: SmartHomeState = {
-  apartmentCode: 'CH-06',
+  apartmentCode: '',
   lights: {
     livingRoom: true,
     bedroomMaster: true,
@@ -160,14 +160,14 @@ const DEFAULT_RULES: AutomationRule[] = [
 const inMemorySmartHomeMap = new Map<string, SmartHomeState>();
 const inMemoryRulesMap = new Map<string, AutomationRule[]>();
 
-export function getSmartHomeState(aptCode: string = 'CH-06'): SmartHomeState {
+export function getSmartHomeState(aptCode: string = ''): SmartHomeState {
   if (!inMemorySmartHomeMap.has(aptCode)) {
     inMemorySmartHomeMap.set(aptCode, { ...DEFAULT_STATE, apartmentCode: aptCode });
   }
   return inMemorySmartHomeMap.get(aptCode)!;
 }
 
-export async function syncSmartHomeFromDb(aptCode: string = 'CH-06'): Promise<SmartHomeState> {
+export async function syncSmartHomeFromDb(aptCode: string = ''): Promise<SmartHomeState> {
   if (typeof window === 'undefined') return getSmartHomeState(aptCode);
   const res = await fetch(`/api/smarthome?aptCode=${encodeURIComponent(aptCode)}`);
   if (!res.ok) {
@@ -464,7 +464,7 @@ export function applyScene(aptCode: string, scene: SceneType): { state: SmartHom
 }
 
 
-export function getAutomationRules(aptCode: string = 'CH-06'): AutomationRule[] {
+export function getAutomationRules(aptCode: string = ''): AutomationRule[] {
   if (!inMemoryRulesMap.has(aptCode)) {
     inMemoryRulesMap.set(aptCode, [...DEFAULT_RULES]);
   }

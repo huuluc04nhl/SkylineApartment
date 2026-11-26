@@ -1,6 +1,7 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { Sparkles } from 'lucide-react';
 import { useTheme } from '@/lib/themeContext';
 import { useAuth } from '@/lib/authContext';
@@ -18,7 +19,7 @@ export default function AboutConcept() {
         ? 'bg-[#0D1117] text-white border-[#1E293B]' 
         : 'bg-white text-gray-900 border-gray-200'
     }`}>
-      {/* Background glow tinh tế */}
+      {/* Background glow tinh táº¿ */}
       <div className="absolute top-1/4 right-0 w-96 h-96 bg-[#C5A880]/5 rounded-none blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -30,12 +31,12 @@ export default function AboutConcept() {
               : 'bg-amber-50 border border-[#C5A880]/60 text-amber-900 shadow-sm'
           }`}>
             <Sparkles className="w-3.5 h-3.5 text-[#C5A880]" />
-            <span>{t('Triết Lý Thiết Kế & Không Gian', 'Design Philosophy & Space')}</span>
+            <span>{t('Triáº¿t LÃ½ Thiáº¿t Káº¿ & KhÃ´ng Gian', 'Design Philosophy & Space')}</span>
           </div>
           <h2 className={`text-3xl sm:text-4xl font-serif leading-tight font-bold tracking-tight ${
             isDark ? 'text-white' : 'text-gray-900'
           }`}>
-            {t('Sự Giao Thoa Giữa Nghệ Thuật Kiến Trúc Tối Giản Và Vận Hành Số Hóa', 'The Convergence of Minimalist Architecture & Digital Operations')}
+            {t('Sá»± Giao Thoa Giá»¯a Nghá»‡ Thuáº­t Kiáº¿n TrÃºc Tá»‘i Giáº£n VÃ  Váº­n HÃ nh Sá»‘ HÃ³a', 'The Convergence of Minimalist Architecture & Digital Operations')}
           </h2>
           <div className="w-16 h-0.5 bg-[#C5A880]"></div>
         </div>
@@ -53,8 +54,8 @@ export default function AboutConcept() {
                 </>
               ) : (
                 <>
-                  Lấy cảm hứng từ phong cách kiến trúc căn hộ cao cấp quốc tế bên bờ sông,{' '}
-                  <strong className={isDark ? 'text-white' : 'text-gray-900'}>SKYLINE Smart Residence</strong> tập trung vào hình khối sắc nét, tỷ lệ không gian mở thoáng đãng và đón trọn ánh sáng tự nhiên cùng gió sông mát lành.
+                  Láº¥y cáº£m há»©ng tá»« phong cÃ¡ch kiáº¿n trÃºc cÄƒn há»™ cao cáº¥p quá»‘c táº¿ bÃªn bá» sÃ´ng,{' '}
+                  <strong className={isDark ? 'text-white' : 'text-gray-900'}>SKYLINE Smart Residence</strong> táº­p trung vÃ o hÃ¬nh khá»‘i sáº¯c nÃ©t, tá»· lá»‡ khÃ´ng gian má»Ÿ thoÃ¡ng Ä‘Ã£ng vÃ  Ä‘Ã³n trá»n Ã¡nh sÃ¡ng tá»± nhiÃªn cÃ¹ng giÃ³ sÃ´ng mÃ¡t lÃ nh.
                 </>
               )}
             </p>
@@ -65,7 +66,7 @@ export default function AboutConcept() {
                 </>
               ) : (
                 <>
-                  {isEn ? 'The breakthrough of the project is the integration of an AI Core running seamlessly underneath all engineering infrastructure. Residents no longer need manual maintenance requests or paperwork: all support tickets, access control, billing, and security are automated with near-absolute precision.' : 'Điểm đột phá của dự án là việc tích hợp một Lõi Trí Tuệ Nhân Tạo (AI Core) chạy ngầm trong toàn bộ hạ tầng kỹ thuật. Cư dân không còn phải chờ đợi bảo dưỡng thủ công hay gặp phiền toái với các thủ tục giấy tờ: mọi yêu cầu hỗ trợ, kiểm soát ra vào, hóa đơn và an ninh đều được tự động hóa với độ chính xác gần như tuyệt đối.'}
+                  {isEn ? 'The breakthrough of the project is the integration of an AI Core running seamlessly underneath all engineering infrastructure. Residents no longer need manual maintenance requests or paperwork: all support tickets, access control, billing, and security are automated with near-absolute precision.' : 'Äiá»ƒm Ä‘á»™t phÃ¡ cá»§a dá»± Ã¡n lÃ  viá»‡c tÃ­ch há»£p má»™t LÃµi TrÃ­ Tuá»‡ NhÃ¢n Táº¡o (AI Core) cháº¡y ngáº§m trong toÃ n bá»™ háº¡ táº§ng ká»¹ thuáº­t. CÆ° dÃ¢n khÃ´ng cÃ²n pháº£i chá» Ä‘á»£i báº£o dÆ°á»¡ng thá»§ cÃ´ng hay gáº·p phiá»n toÃ¡i vá»›i cÃ¡c thá»§ tá»¥c giáº¥y tá»: má»i yÃªu cáº§u há»— trá»£, kiá»ƒm soÃ¡t ra vÃ o, hÃ³a Ä‘Æ¡n vÃ  an ninh Ä‘á»u Ä‘Æ°á»£c tá»± Ä‘á»™ng hÃ³a vá»›i Ä‘á»™ chÃ­nh xÃ¡c gáº§n nhÆ° tuyá»‡t Ä‘á»‘i.'}
                 </>
               )}
             </p>
@@ -77,10 +78,10 @@ export default function AboutConcept() {
                   : 'bg-slate-50 border border-gray-200'
               }`}>
                 <div className={`font-serif text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('Quyền Tự Trị Căn Hộ', 'Apartment Autonomy')}
+                  {t('Quyá»n Tá»± Trá»‹ CÄƒn Há»™', 'Apartment Autonomy')}
                 </div>
                 <div className={`text-xs font-light ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t('Chủ hộ toàn quyền cấp phát FaceID và quản lý thành viên cư trú.', 'Owners have full autonomy to grant FaceID access and manage residential members.')}
+                  {t('Chá»§ há»™ toÃ n quyá»n cáº¥p phÃ¡t FaceID vÃ  quáº£n lÃ½ thÃ nh viÃªn cÆ° trÃº.', 'Owners have full autonomy to grant FaceID access and manage residential members.')}
                 </div>
               </div>
               <div className={`p-4 rounded-none border-l-4 border-l-[#C5A880] space-y-1 shadow-lg transition-colors ${
@@ -89,10 +90,10 @@ export default function AboutConcept() {
                   : 'bg-slate-50 border border-gray-200'
               }`}>
                 <div className={`font-serif text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('An Ninh Đa Lớp 24/7', 'Multi-layer 24/7 Security')}
+                  {t('An Ninh Äa Lá»›p 24/7', 'Multi-layer 24/7 Security')}
                 </div>
                 <div className={`text-xs font-light ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {t('Phân tầng thang máy bảo mật và camera Vision AI quét biển số xe tự động.', 'Secured elevator zoning and Vision AI cameras with automated license plate scanning.')}
+                  {t('PhÃ¢n táº§ng thang mÃ¡y báº£o máº­t vÃ  camera Vision AI quÃ©t biá»ƒn sá»‘ xe tá»± Ä‘á»™ng.', 'Secured elevator zoning and Vision AI cameras with automated license plate scanning.')}
                 </div>
               </div>
             </div>
@@ -104,9 +105,11 @@ export default function AboutConcept() {
                 ? 'border-[#C5A880]/40 bg-[#121824]' 
                 : 'border-gray-200 bg-slate-100'
             }`}>
-              <img
-                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80"
+              <Image
+                src="/masterplan/the-tropical-masterplan.png"
                 alt="Skyline Luxury Architecture"
+                width={1200}
+                height={800}
                 className="w-full h-[360px] sm:h-[400px] object-cover rounded-none transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 pointer-events-none rounded-none bg-gradient-to-t from-black/75 via-transparent to-transparent" />
@@ -117,15 +120,15 @@ export default function AboutConcept() {
                   : 'bg-white/95 text-gray-900 border-gray-200 shadow-xl'
               }`}>
                 <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#C5A880] font-semibold">
-                  {isAuthenticated && currentUser ? `${t('Căn Hộ Thực Tế', 'Actual Apartment')} ${currentUser.apartment_code || 'CH-06'}` : t('Căn Hộ Mẫu Thực Tế', 'Model Apartment')}
+                  {isAuthenticated && currentUser ? `${t('CÄƒn Há»™ Thá»±c Táº¿', 'Actual Apartment')} ${currentUser.apartment_code || 'CH-06'}` : t('CÄƒn Há»™ Máº«u Thá»±c Táº¿', 'Model Apartment')}
                 </div>
                 <div className={`text-sm font-serif mt-1 font-bold break-words leading-snug ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  {t('Căn Hộ Tiêu Chuẩn • Ban Công View Hồ & Công Viên', 'Standard Apartment • Balcony with Lake & Park View')}
+                  {t('CÄƒn Há»™ TiÃªu Chuáº©n â€¢ Ban CÃ´ng View Há»“ & CÃ´ng ViÃªn', 'Standard Apartment â€¢ Balcony with Lake & Park View')}
                 </div>
                 <div className={`text-xs font-light mt-1 break-words leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                   {isAuthenticated && currentUser 
-                    ? `${t('Tầng 30 • Chung Cư BS-07 (The Tropical) • Cư dân:', 'Floor 30 • BS-07 Tower (The Tropical) • Resident:')} ${currentUser.full_name}`
-                    : t('Tầng 30 • Chung Cư BS-07 (The Tropical) • Tiêu Chuẩn Bàn Giao Cao Cấp', 'Floor 30 • BS-07 Tower (The Tropical) • Luxury Handover Standards')}
+                    ? `${t('Táº§ng 30 â€¢ Chung CÆ° BS-07 (The Tropical) â€¢ CÆ° dÃ¢n:', 'Floor 30 â€¢ BS-07 Tower (The Tropical) â€¢ Resident:')} ${currentUser.full_name}`
+                    : t('Táº§ng 30 â€¢ Chung CÆ° BS-07 (The Tropical) â€¢ TiÃªu Chuáº©n BÃ n Giao Cao Cáº¥p', 'Floor 30 â€¢ BS-07 Tower (The Tropical) â€¢ Luxury Handover Standards')}
                 </div>
               </div>
             </div>

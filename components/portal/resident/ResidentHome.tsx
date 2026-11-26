@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User as UserType, DEMO_COMMUNITY_POSTS } from '@/lib/dataStore';
+import { User as UserType } from '@/lib/dataStore';
+import { getCommunityPosts, syncCommunityPostsFromApi } from '@/lib/communityStore';
 import ResidentSmartCard from './ResidentSmartCard';
 import { 
   QrCode, 
@@ -596,11 +597,11 @@ export default function ResidentHome({ currentUser, onNavigate, onOpenVisitorMod
             </div>
 
             <div className="space-y-3">
-              {DEMO_COMMUNITY_POSTS.map((post) => (
+              {getCommunityPosts().map((post) => (
                 <div key={post.id} className="p-3.5 bg-[#161B22] border border-[#222B35] space-y-1.5 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs">{t(post.author_name)}</span>
-                    <span className="text-[10px] text-gray-400 font-mono">{t(post.created_at)}</span>
+                    <span className="font-bold text-white text-xs">{t(post.authorName)}</span>
+                    <span className="text-[10px] text-gray-400 font-mono">{t(post.createdAt)}</span>
                   </div>
                   <h4 className="font-semibold text-gray-200">{t(post.title)}</h4>
                   <p className="text-gray-400 text-[11px] font-light leading-relaxed">{t(post.content)}</p>

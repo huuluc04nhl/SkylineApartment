@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useAsyncResource } from '@/lib/hooks/useAsyncResource';
+import { ResourceSkeleton, ResourceError, ResourceEmpty } from '@/components/ui/ResourceState';
 import jsQR from 'jsqr';
 import QRCode from 'qrcode';
 import { 
@@ -494,8 +496,22 @@ export default function AdminVisitorControl() {
     );
   });
 
+  const visitorResource = useAsyncResource(async () => {
+    const res = await fetch('/api/visitor', { credentials: 'include' });
+    if (!res.ok) throw new Error(`Không thể tải dữ liệu kiểm soát khách (HTTP ${res.status})`);
+    const json = await res.json();
+    return Array.isArray(json?.passes) ? json.passes : [];
+  }, []);
+
   return (
     <div className="space-y-6 animate-fadeIn select-none">
+      {visitorResource.loading && <ResourceSkeleton label="Đang tải dữ liệu khách ra vào..." />}
+      {!visitorResource.loading && visitorResource.error && (
+        <ResourceError message={visitorResource.error} onRetry={visitorResource.retry} />
+      )}
+      {!visitorResource.loading && !visitorResource.error && (visitorResource.data?.length ?? 0) === 0 && (
+        <ResourceEmpty message="Chưa có thẻ khách thăm nào trong hệ thống." />
+      )}
       
       {/* Toast Feedback Notification */}
       {actionFeedback && (

@@ -3,11 +3,10 @@
 // User & Apartment Member Store backed by Supabase profiles & apartment_members.
 // Zero LocalStorage. Zero External Mock APIs.
 // ============================================================================
-import { updateDemoUser, addOrUpdateDemoUser } from '@/lib/dataStore';
 import { UserRecord, ApartmentMemberRecord } from '@/lib/db/schema';
 
-const usersCache: UserRecord[] = [];
-const membersCache: ApartmentMemberRecord[] = [];
+const usersById = new Map<string, UserRecord>();
+const membersById = new Map<string, ApartmentMemberRecord>();
 
 export interface StoredUser {
   id: string;
@@ -147,7 +146,7 @@ export function findUserStore(identifier?: string): StoredUser | null {
   const clean = identifier.trim();
   const norm = clean.toLowerCase();
 
-  const match = usersCache.find(u =>
+  const match = Array.from(usersById.values()).find(u =>
     u.id.toLowerCase() === norm ||
     u.username.toLowerCase() === norm ||
     (u.phone && u.phone.trim() === clean) ||
@@ -164,7 +163,8 @@ export function findUserStore(identifier?: string): StoredUser | null {
  */
 export function getUserStore(identifier?: string): StoredUser {
   if (!identifier) {
-    const defaultOwner = usersCache.find(u => u.id === 'user-owner-1') || usersCache.find(u => u.role === 'OWNER');
+    const all = Array.from(usersById.values());
+    const defaultOwner = usersById.get('user-owner-1') || all.find(u => u.role === 'OWNER');
     return defaultOwner ? userRecordToStoredUser(defaultOwner) : (null as any);
   }
 
@@ -191,24 +191,11 @@ export function updateUserStore(identifier: string, updates: Partial<StoredUser>
   if (updates.pob) patch.pob = updates.pob;
   if (updates.password) patch.password_hash = updates.password;
 
-  const idx = current ? usersCache.findIndex(u => u.id === current.id) : -1;
-  if (idx >= 0) {
-    usersCache[idx] = { ...usersCache[idx], ...patch };
+  const existing = current ? usersById.get(current.id) : undefined;
+  const updatedRec = existing ? { ...existing, ...patch } : undefined;
+  if (updatedRec) {
+    usersById.set(updatedRec.id, updatedRec);
   }
-  const updatedRec = idx >= 0 ? usersCache[idx] : undefined;
-
-  // Sync sang DEMO_USERS
-  updateDemoUser(current.id, {
-    full_name: patch.full_name,
-    email: patch.email,
-    phone: patch.phone,
-    id_card_no: patch.id_card_no,
-    avatar_url: patch.avatar_url,
-    license_plate: patch.license_plate || undefined,
-    dob: patch.dob || undefined,
-    pob: patch.pob || undefined,
-    password: patch.password_hash,
-  });
 
   return updatedRec ? userRecordToStoredUser(updatedRec) : current;
 }
@@ -239,7 +226,6 @@ export function registerNewOwnerUser(data: {
   avatarUrl?: string;
 }): StoredUser {
   const userId = `user-owner-${data.apartmentCode.toLowerCase()}`;
-  const existingIdx = usersCache.findIndex(u => u.id === userId);
 
   const rec: UserRecord = {
     id: userId,
@@ -261,31 +247,7 @@ export function registerNewOwnerUser(data: {
     emergency_phone: data.phone.trim()
   };
 
-  if (existingIdx >= 0) {
-    usersCache[existingIdx] = rec;
-  } else {
-    usersCache.push(rec);
-  }
-
-  addOrUpdateDemoUser({
-    id: rec.id,
-    role: 'OWNER',
-    username: rec.username,
-    full_name: rec.full_name,
-    phone: rec.phone,
-    email: rec.email,
-    id_card_no: rec.id_card_no,
-    id_card_number: rec.id_card_no,
-    id_date: rec.id_date,
-    id_place: rec.id_place,
-    avatar_url: rec.avatar_url,
-    ui_language: 'vi',
-    apartment_code: rec.apartment_code || undefined,
-    relationship: 'Owner',
-    dob: rec.dob || undefined,
-    pob: rec.pob || undefined,
-    password: '',
-  });
+  usersById.set(userId, rec);
 
   return userRecordToStoredUser(rec);
 }
@@ -297,16 +259,16 @@ export function registerNewOwnerUser(data: {
 export function getApartmentMembers(aptCode: string, _blockCode?: string): ApartmentMember[] {
   const cleanCode = (aptCode || '').toUpperCase().trim();
   if (!cleanCode) return [];
-  return membersCache
+  return Array.from(membersById.values())
     .filter(m => m.apartment_code.toUpperCase() === cleanCode)
     .map(apartmentMemberRecordToMember);
 }
 
 export function clearApartmentMembers(aptCode: string = '', blockCode?: string): void {
   const cleanCode = aptCode.toUpperCase().trim();
-  for (let i = membersCache.length - 1; i >= 0; i--) {
-    if (!cleanCode || membersCache[i].apartment_code.toUpperCase() === cleanCode) {
-      membersCache.splice(i, 1);
+  for (const [key, m] of Array.from(membersById.entries())) {
+    if (!cleanCode || m.apartment_code.toUpperCase() === cleanCode) {
+      membersById.delete(key);
     }
   }
   if (typeof window !== 'undefined') {
@@ -353,12 +315,7 @@ export function addApartmentMember(aptCode: string, member: ApartmentMember, blo
     created_at: member.addedDate || new Date().toISOString()
   };
 
-  const existingIdx = membersCache.findIndex(m => m.id === rec.id);
-  if (existingIdx >= 0) {
-    membersCache[existingIdx] = rec;
-  } else {
-    membersCache.push(rec);
-  }
+  membersById.set(rec.id, rec);
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('skyline_family_updated', { detail: { aptCode: cleanCode, blockCode } }));
@@ -370,7 +327,7 @@ export function addApartmentMember(aptCode: string, member: ApartmentMember, blo
 
 export function updateApartmentMember(aptCode: string, memberId: string, updates: Partial<ApartmentMember>, blockCode?: string): ApartmentMember[] {
   const cleanCode = aptCode.toUpperCase().trim();
-  const existing = membersCache.find(m =>
+  const existing = Array.from(membersById.values()).find(m =>
     (m.apartment_code.toUpperCase() === cleanCode) &&
     (m.id === memberId || m.phone === memberId || m.id_card === memberId)
   );
@@ -384,6 +341,7 @@ export function updateApartmentMember(aptCode: string, memberId: string, updates
     if (updates.faceStatus) existing.face_status = updates.faceStatus;
     if (updates.avatarUrl) existing.avatar_url = updates.avatarUrl;
     if (updates.licensePlate) existing.license_plate = updates.licensePlate;
+    membersById.set(existing.id, existing);
   }
 
   if (typeof window !== 'undefined') {
@@ -396,13 +354,13 @@ export function updateApartmentMember(aptCode: string, memberId: string, updates
 
 export function removeApartmentMember(aptCode: string, memberId: string, blockCode?: string): ApartmentMember[] {
   const cleanCode = aptCode.toUpperCase().trim();
-  const idx = membersCache.findIndex(m =>
+  const existing = Array.from(membersById.values()).find(m =>
     (m.apartment_code.toUpperCase() === cleanCode) &&
     (m.id === memberId || m.phone === memberId)
   );
 
-  if (idx >= 0) {
-    membersCache.splice(idx, 1);
+  if (existing) {
+    membersById.delete(existing.id);
   }
 
   if (typeof window !== 'undefined') {

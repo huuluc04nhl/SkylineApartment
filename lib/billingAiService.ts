@@ -75,7 +75,7 @@ export const BILLING_TOOLS = {
    * 1. Lấy danh sách hóa đơn của căn hộ
    */
   getInvoices: async (args: { aptCode?: string }, ctx: BillingToolContext) => {
-    const targetApt = ctx.isAdmin && args.aptCode ? args.aptCode.trim().toUpperCase() : ctx.user.apartment_code || 'CH-06';
+    const targetApt = ctx.isAdmin && args.aptCode ? args.aptCode.trim().toUpperCase() : ctx.user.apartment_code || '';
     const bills = await listBillsWithDetailsDb(targetApt);
 
     return {
@@ -97,7 +97,7 @@ export const BILLING_TOOLS = {
    * 2. Lấy chi tiết từng dòng dịch vụ của một hóa đơn
    */
   getInvoiceDetail: async (args: { billId: string; aptCode?: string }, ctx: BillingToolContext) => {
-    const targetApt = ctx.isAdmin && args.aptCode ? args.aptCode.trim().toUpperCase() : ctx.user.apartment_code || 'CH-06';
+    const targetApt = ctx.isAdmin && args.aptCode ? args.aptCode.trim().toUpperCase() : ctx.user.apartment_code || '';
     const bill = await getBillWithDetailsByIdDb(args.billId);
 
     if (!bill) {
@@ -134,7 +134,7 @@ export const BILLING_TOOLS = {
    * 3. Lịch sử đọc chỉ số công tơ điện và nước
    */
   getMeterHistory: async (args: { meterType?: 'ELECTRIC' | 'WATER'; aptCode?: string }, ctx: BillingToolContext) => {
-    const targetApt = ctx.isAdmin && args.aptCode ? args.aptCode.trim().toUpperCase() : ctx.user.apartment_code || 'CH-06';
+    const targetApt = ctx.isAdmin && args.aptCode ? args.aptCode.trim().toUpperCase() : ctx.user.apartment_code || '';
     let readings: MeterReadingRecord[] = [];
     if (args.meterType) {
       readings = await listMeterReadingsDb(targetApt, args.meterType);
@@ -166,7 +166,7 @@ export const BILLING_TOOLS = {
    * 4. Báo cáo tổng nợ và các khoản chưa thanh toán
    */
   getDebtSummary: async (args: { aptCode?: string }, ctx: BillingToolContext) => {
-    const targetApt = ctx.isAdmin && args.aptCode ? args.aptCode.trim().toUpperCase() : ctx.user.apartment_code || 'CH-06';
+    const targetApt = ctx.isAdmin && args.aptCode ? args.aptCode.trim().toUpperCase() : ctx.user.apartment_code || '';
     const allBills = await listBillsWithDetailsDb(targetApt);
     const unpaidBills = allBills.filter(b => b.status === 'Unpaid' || b.status === 'Overdue');
 
@@ -293,7 +293,7 @@ export const GEMINI_BILLING_TOOL_DECLARATIONS = [
 // SYSTEM PROMPTS (Strict Privacy & Anti-Injection)
 // ============================================================================
 export function buildResidentSystemPrompt(user: StoredUser): string {
-  const aptCode = user.apartment_code || 'CH-06';
+  const aptCode = user.apartment_code || '';
   const ownerName = user.full_name || user.fullname || 'Cư Dân';
 
   return `Bạn là "Trợ Lý Hóa Đơn AI" - chuyên viên tư vấn tài chính & sinh hoạt chính thức của Ban Quản Lý Chung Cư Cao Cấp Skyline Residence (The Tropical Beverly Solari).

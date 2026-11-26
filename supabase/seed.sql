@@ -317,3 +317,20 @@ INSERT INTO voting_records (id, topic_id, user_id, apartment_code, voter_name, o
 VALUES 
 ('vr-01', 'vote-01', 'user-owner-1', 'CH-06', 'Trần Hữu Lực', 'opt-1', '2026-08-21 14:30:00+07')
 ON CONFLICT (id) DO NOTHING;
+
+-- 11. BUILDING DEVICES & SECURITY ALERTS
+INSERT INTO building_devices (id, name, category, location, health_score, predict_date, last_maintenance, status)
+VALUES
+('dev-01', 'Thang máy Otis SkyRise #01 (Tòa BS-07)', 'Thang máy', 'Trục thang máy chính Block BS-07', 94, '2026-11-15', '2026-08-10', 'Hoạt động tốt'),
+('dev-02', 'Thang máy Otis SkyRise #02 (Tòa BS-07)', 'Thang máy', 'Trục thang máy chính Block BS-07', 72, '2026-09-02', '2026-07-28', 'Cần kiểm tra'),
+('dev-03', 'Cụm máy bơm tăng áp Grundfos Hydro MPC', 'Máy bơm', 'Phòng kỹ thuật nước Tầng Hầm B2', 96, '2026-12-05', '2026-08-15', 'Hoạt động tốt'),
+('dev-04', 'Hệ thống báo cháy & chữa cháy tự động Sprinkler', 'Hệ thống PCCC', 'Toàn khu phức hợp The Tropical (BS-07 -> BS-10)', 98, '2027-01-20', '2026-08-20', 'Hoạt động tốt'),
+('dev-05', 'Trạm biến áp khô ABB 2500kVA', 'Trạm biến áp', 'Trạm điện trung thế Tầng Hầm B1', 89, '2026-10-30', '2026-08-05', 'Hoạt động tốt'),
+('dev-06', 'Barrier tự động đọc thẻ RFID & Biển số AI LPR', 'Barrier', 'Cổng kiểm soát xe Hầm B1 / B2', 91, '2026-11-01', '2026-08-12', 'Hoạt động tốt'),
+('dev-07', 'Hệ thống quạt hút khói & tạo áp cầu thang thoát hiểm', 'Thông gió & Hút khói', 'Buồng thang bộ thoát hiểm & Hầm B1/B2', 88, '2026-10-18', '2026-07-20', 'Hoạt động tốt')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO security_alerts (id, alert_type, title, location, camera_id, snapshot_url, confidence, status)
+VALUES
+('alt-01', 'Fire', 'Phát hiện nhiệt độ bất thường tại khu vực kỹ thuật Block BS-07', 'Tầng Hầm B1 - Trạm Biến Áp BS-07', 'CAM-B1-04', '/masterplan/the-tropical-masterplan.png', 0.96, 'Resolved')
+ON CONFLICT (id) DO NOTHING;

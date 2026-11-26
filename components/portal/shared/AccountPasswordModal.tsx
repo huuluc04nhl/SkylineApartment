@@ -45,6 +45,7 @@ export default function AccountPasswordModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Đóng đổi mật khẩu"
             className="p-2 text-gray-400 hover:text-white hover:bg-[#1E2631] transition-colors rounded-none border border-transparent hover:border-[#2D3748]"
           >
             <X className="w-5 h-5" />

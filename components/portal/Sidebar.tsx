@@ -255,7 +255,7 @@ export default function Sidebar({
                 </div>
               </div>
             ) : (
-              <div className="relative group cursor-pointer flex flex-col items-center" onClick={onToggleCollapse}>
+              <button type="button" className="relative group cursor-pointer flex flex-col items-center bg-transparent border-0 p-0" onClick={onToggleCollapse} aria-label={t('Mở rộng thanh điều hướng', 'Expand sidebar')}>
                 <div className="relative">
                   <img
                     src={liveAvatar || getUserApiAvatar(currentUser)}
@@ -273,7 +273,7 @@ export default function Sidebar({
                   <div className="font-bold text-white">{currentUser.full_name || t('Cư Dân', 'Resident')}</div>
                   <div className="text-[10px] text-[#C5A880] font-mono">{role === 'ADMIN' ? 'VinHomes Manager' : `${t('Căn')} ${currentUser.apartment_code || 'CH-06'}`}</div>
                 </div>
-              </div>
+              </button>
             )}
 
             {/* Mobile Close Button */}

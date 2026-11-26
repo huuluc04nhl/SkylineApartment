@@ -1,11 +1,4 @@
-import {
-  DEMO_USERS,
-  DEMO_APARTMENTS,
-  DEMO_BILLS,
-  DEMO_TICKETS,
-  DEMO_FACILITIES,
-  DEMO_COMMUNITY_POSTS,
-} from './dataStore';
+import { SKYLINE_FACILITIES } from './dataStore';
 import { getUserStore, getApartmentMembers } from './userStore';
 import { getAllVisitorPasses } from './visitorStore';
 import { getFacilityBookings } from './facilityStore';
@@ -183,66 +176,54 @@ export interface ConciergeContext {
   language?: 'en' | 'vi';
 }
 
-const DEFAULT_BOOKINGS_CH06: ConciergeBookingItem[] = [
-  {
-    id: 'BK-SAUNA-9821',
-    facilityId: 'fac-sauna',
-    facilityName: 'Phòng Xông Hơi Đá Muối Himalaya (Private VIP Tầng 3)',
-    bookingDate: new Date().toISOString().split('T')[0],
-    timeSlot: '18:00 - 20:00 (2 Tiếng - Tối nay)',
-    ticketCode: 'SKY-SAUNA-CH06-7799',
-    pricing: '500.000 đ / giờ (Phòng gia đình VIP)',
-    depositAmount: 1000000,
-    status: 'CONFIRMED',
-  },
-];
+// Bookings are resolved dynamically from session context or facilityStore.
 
 /**
  * Dynamic Project Knowledge Base Builder
  * Injects actual dynamic data from the project (apartments, residents, members, vehicles, bills, tickets, facilities, bookings, visitors) into the AI system prompt
  */
-export function buildProjectSystemPrompt(contextOrAptCode: string | ConciergeContext = 'CH-06'): string {
-  const rawCode = typeof contextOrAptCode === 'string' ? contextOrAptCode : contextOrAptCode?.aptCode || 'CH-06';
+export function buildProjectSystemPrompt(contextOrAptCode: string | ConciergeContext): string {
+  const rawCode = typeof contextOrAptCode === 'string' ? contextOrAptCode : contextOrAptCode?.aptCode || '';
   const targetAptCode = rawCode.trim().toUpperCase();
-  const isOwnerUnit = targetAptCode === 'CH-06' || targetAptCode === '12A05' || targetAptCode === '12A5' || targetAptCode.endsWith('CH-06');
+  if (!targetAptCode) {
+    throw new Error('Thiếu thông tin căn hộ từ phiên đăng nhập.');
+  }
 
   // 1. Căn hộ chuẩn xác từ store
-  const aptFromStore = getApartmentByCode(targetAptCode);
-  const apt: any = aptFromStore || (isOwnerUnit ? DEMO_APARTMENTS[0] : (DEMO_APARTMENTS.find(a => a.apt_code.toUpperCase() === targetAptCode) || DEMO_APARTMENTS[0]));
-  const aptDisplayName = isOwnerUnit ? 'CH-06 (Tòa The Tropical BS-07, Tầng 30)' : (apt?.code || apt?.apt_code || targetAptCode);
-  const aptAreaClear = isOwnerUnit ? 42.0 : (apt?.clear_area || apt?.area || 42.0);
-  const aptAreaWall = isOwnerUnit ? 46.0 : (apt?.wall_area || apt?.wallArea || 46.0);
-  const aptBedrooms = isOwnerUnit ? 1 : (apt?.bedrooms || 1);
-  const aptBathrooms = isOwnerUnit ? 1 : (apt?.bathrooms || 1);
+  const apt: any = getApartmentByCode(targetAptCode);
+  const aptDisplayName = apt?.code || apt?.apt_code || targetAptCode;
+  const aptAreaClear = apt?.clear_area || apt?.area || 0;
+  const aptAreaWall = apt?.wall_area || apt?.wallArea || 0;
+  const aptBedrooms = apt?.bedrooms || 0;
+  const aptBathrooms = apt?.bathrooms || 0;
 
-  // 2. Chủ hộ & Cư dân
-  const rawOwner = DEMO_USERS.find((u) => (isOwnerUnit ? (u.apartment_code === 'CH-06' || u.id === 'user-owner-1') : u.apartment_code === targetAptCode)) || DEMO_USERS[2];
-  const liveOwner = getUserStore(rawOwner.id) || rawOwner;
+  // 2. Chủ hộ & Cư dân từ ngữ cảnh phiên
+  const liveOwner = getUserStore(targetAptCode);
 
   const residentName = (typeof contextOrAptCode === 'object' && contextOrAptCode?.userName)
     ? contextOrAptCode.userName
-    : (liveOwner.fullname || liveOwner.full_name || rawOwner.full_name || 'Trần Hữu Lực');
+    : (liveOwner?.fullname || liveOwner?.full_name || 'Cư dân Skyline');
 
   const residentRole = (typeof contextOrAptCode === 'object' && contextOrAptCode?.userRole)
     ? contextOrAptCode.userRole
-    : (liveOwner.role || rawOwner.role || 'OWNER');
+    : (liveOwner?.role || 'OWNER');
 
   const residentPhone = (typeof contextOrAptCode === 'object' && contextOrAptCode?.phone)
     ? contextOrAptCode.phone
-    : (liveOwner.phone || rawOwner.phone || '0364967082');
+    : (liveOwner?.phone || '');
 
   const residentIdCard = (typeof contextOrAptCode === 'object' && contextOrAptCode?.idCard)
     ? contextOrAptCode.idCard
-    : (liveOwner.id_number || liveOwner.id_card_no || rawOwner.id_card_no || '067204000961');
+    : (liveOwner?.id_number || liveOwner?.id_card_no || '');
 
   const residentLicensePlate = (typeof contextOrAptCode === 'object' && contextOrAptCode?.licensePlate)
     ? contextOrAptCode.licensePlate
-    : (liveOwner.license_plate || '51K-889.99');
+    : (liveOwner?.license_plate || '');
 
   // 3. Thành viên gia đình đăng ký thường trú
   const familyMembers = (typeof contextOrAptCode === 'object' && Array.isArray(contextOrAptCode?.members) && contextOrAptCode.members.length > 0)
     ? contextOrAptCode.members
-    : getApartmentMembers(isOwnerUnit ? 'CH-06' : targetAptCode);
+    : getApartmentMembers(targetAptCode);
 
   const familyStr = familyMembers.length > 0
     ? familyMembers.map((m, idx) => `  ${idx + 1}. ${m.fullName} (${m.relationship || 'Thành viên'}): SĐT ${m.phone || 'Chưa cập nhật'} | CCCD: ${m.idCard || 'Đã định danh'} | Biển số xe: ${m.licensePlate || 'Không có'} | FaceID: ${m.faceStatus || 'Đã xác thực'}`).join('\n')
@@ -267,7 +248,7 @@ export function buildProjectSystemPrompt(contextOrAptCode: string | ConciergeCon
   // 5. Thẻ khách thăm thực tế
   const visitorPasses = (typeof contextOrAptCode === 'object' && Array.isArray(contextOrAptCode?.visitors) && contextOrAptCode.visitors.length > 0)
     ? contextOrAptCode.visitors
-    : getAllVisitorPasses().filter(p => isOwnerUnit ? (p.apartmentCode === 'CH-06' || p.apartmentCode === '12A05') : p.apartmentCode === targetAptCode);
+    : getAllVisitorPasses().filter(p => p.apartmentCode === targetAptCode);
 
   const visitorsStr = visitorPasses.length > 0
     ? visitorPasses.map((p, idx) => `  ${idx + 1}. Thẻ khách [${p.id}]: Khách "${p.visitorName}" | SĐT: ${p.phoneNumber || 'Không có'} | Biển số xe: ${p.licensePlate || 'Đi bộ / Taxi'} | Mã PIN: ${p.pinCode} | Trạng thái: ${p.status === 'ACTIVE' ? 'Đang hiệu lực (Chờ khách đến)' : p.status === 'CHECKED_IN' ? 'Đã check-in tòa nhà' : p.status} | Hạn sử dụng: ${p.validUntil?.slice(0, 16).replace('T', ' ') || 'Trong ngày'} | Mục đích: ${p.purposeLabel || 'Thăm người thân'}`).join('\n')
@@ -280,25 +261,24 @@ export function buildProjectSystemPrompt(contextOrAptCode: string | ConciergeCon
 
   const billsStr = bills.length > 0
     ? bills.slice(0, 3).map((b: any) => {
-        const details = (b.details || []).map((d: any) => `  + ${d.service_name || d.service_type}: ${Number(d.total_line_amount || 0).toLocaleString('vi-VN')} đ (${d.usage || 0} ${d.unit || ''}) ${d.ai_anomaly ? `(⚠️ Cảnh báo: ${d.anomaly_reason})` : ''}`).join('\n');
-        return `- Hóa đơn ${b.billing_month} (Mã: ${b.id}): Tổng ${Number(b.total_amount || 0).toLocaleString('vi-VN')} VNĐ - Trạng thái: ${b.status === 'Paid' ? 'ĐÃ THANH TOÁN' : 'CHƯA THANH TOÁN (Hạn chót: ' + (b.due_date ? b.due_date.slice(0, 10) : '30/08/2026') + ')'}\n${details}`;
-      }).join('\n\n')
+      const details = (b.details || []).map((d: any) => `  + ${d.service_name || d.service_type}: ${Number(d.total_line_amount || 0).toLocaleString('vi-VN')} đ (${d.usage || 0} ${d.unit || ''}) ${d.ai_anomaly ? `(⚠️ Cảnh báo: ${d.anomaly_reason})` : ''}`).join('\n');
+      return `- Hóa đơn ${b.billing_month} (Mã: ${b.id}): Tổng ${Number(b.total_amount || 0).toLocaleString('vi-VN')} VNĐ - Trạng thái: ${b.status === 'Paid' ? 'ĐÃ THANH TOÁN' : 'CHƯA THANH TOÁN (Hạn chót: ' + (b.due_date ? b.due_date.slice(0, 10) : '30/08/2026') + ')'}\n${details}`;
+    }).join('\n\n')
     : '- Không có hóa đơn nợ';
 
   // 7. Phiếu sự cố kỹ thuật từ ticketStore
   const activeTickets = (typeof contextOrAptCode === 'object' && Array.isArray(contextOrAptCode?.tickets) && contextOrAptCode.tickets.length > 0)
     ? contextOrAptCode.tickets
     : (() => {
-        const stored = getTickets(isOwnerUnit ? 'CH-06' : targetAptCode, residentPhone);
-        if (stored && stored.length > 0) return stored;
-        return DEMO_TICKETS;
-      })();
+      const stored = getTickets(targetAptCode, residentPhone);
+      return stored || [];
+    })();
 
   const ticketsStr = activeTickets.length > 0
     ? activeTickets.slice(0, 5).map((t: any) => {
-        const statusLabel = t.status === 'In_Progress' ? 'Đang xử lý' : t.status === 'Assigned' ? 'Đã phân công' : t.status === 'Resolved' ? 'Đã giải quyết' : 'Mới tiếp nhận';
-        return `- Phiếu #${t.id} [${t.ai_category || t.ticket_type_label || 'Kỹ thuật'}]: "${(t.content || '').replace(/\n/g, ' ')}" -> Trạng thái: ${statusLabel}, Kỹ thuật viên phụ trách: ${t.assigned_technician || 'Lê Văn Nam (Cơ Điện & Nước)'}, Cam kết hỗ trợ: Có mặt trong 15 - 60 phút`;
-      }).join('\n')
+      const statusLabel = t.status === 'In_Progress' ? 'Đang xử lý' : t.status === 'Assigned' ? 'Đã phân công' : t.status === 'Resolved' ? 'Đã giải quyết' : 'Mới tiếp nhận';
+      return `- Phiếu #${t.id} [${t.ai_category || t.ticket_type_label || 'Kỹ thuật'}]: "${(t.content || '').replace(/\n/g, ' ')}" -> Trạng thái: ${statusLabel}, Kỹ thuật viên phụ trách: ${t.assigned_technician || 'Lê Văn Nam (Cơ Điện & Nước)'}, Cam kết hỗ trợ: Có mặt trong 15 - 60 phút`;
+    }).join('\n')
     : '- Không có phiếu báo hỏng nào đang xử lý';
 
   // 8. Đặt lịch tiện ích
@@ -308,10 +288,8 @@ export function buildProjectSystemPrompt(contextOrAptCode: string | ConciergeCon
   } else {
     try {
       const stored = getFacilityBookings(targetAptCode);
-      const storedOwner = isOwnerUnit ? getFacilityBookings('CH-06') : [];
-      const combined = stored.length > 0 ? stored : storedOwner;
-      if (combined.length > 0) {
-        activeBookings = combined.map(b => ({
+      if (stored.length > 0) {
+        activeBookings = stored.map(b => ({
           id: b.id,
           facilityId: b.facilityId,
           facilityName: b.facilityName,
@@ -327,19 +305,17 @@ export function buildProjectSystemPrompt(contextOrAptCode: string | ConciergeCon
       // fallback
     }
   }
-  if (activeBookings.length === 0 && isOwnerUnit) {
-    activeBookings = DEFAULT_BOOKINGS_CH06;
-  }
+  // Bookings loaded from context or store
 
   const bookingsStr = activeBookings.length > 0
     ? activeBookings.map((b) => `- Lịch đặt ${b.facilityName} [Mã vé: ${b.ticketCode}]: Ngày ${b.bookingDate}, Khung giờ: ${b.timeSlot}, Trạng thái: ${b.status}, Số tiền giữ chỗ: ${(b.depositAmount || 0).toLocaleString('vi-VN')} đ`).join('\n')
     : '- Chưa có lịch đặt chỗ tiện ích nào đang chờ';
 
-  const facilitiesStr = DEMO_FACILITIES
+  const facilitiesStr = SKYLINE_FACILITIES
     .map((f) => `- ${f.name} [${f.category}]: Mở cửa ${f.operating_hours}, Hạn mức: ${f.max_quota_per_month} lượt/tháng, Giá: ${f.pricing}`)
     .join('\n');
 
-  const smartWidgets = (apt as any).smart_widgets || DEMO_APARTMENTS[0].smart_widgets;
+  const smartWidgets = apt?.smart_widgets || [];
   const smartDevicesStr = (smartWidgets || [])
     .map((w: any) => `- ${w.name} (${w.type}): Trạng thái ${w.status}`)
     .join('\n');
@@ -511,33 +487,33 @@ CRITICAL MULTI-LINGUAL DIRECTIVE (ENGLISH MODE ACTIVE):
  */
 export function generateSmartProjectFallback(
   message: string,
-  contextOrAptCode: string | ConciergeContext = 'CH-06'
+  contextOrAptCode: string | ConciergeContext
 ): string {
   const text = message.toLowerCase();
-  const rawCode = typeof contextOrAptCode === 'string' ? contextOrAptCode : contextOrAptCode?.aptCode || 'CH-06';
+  const rawCode = typeof contextOrAptCode === 'string' ? contextOrAptCode : contextOrAptCode?.aptCode || '';
   const targetAptCode = rawCode.trim().toUpperCase();
-  const isOwnerUnit = targetAptCode === 'CH-06' || targetAptCode === '12A05' || targetAptCode === '12A5' || targetAptCode.endsWith('CH-06');
+  if (!targetAptCode) {
+    return 'Không thể xác định mã căn hộ từ phiên đăng nhập. Vui lòng đăng nhập lại hoặc liên hệ Ban Quản Lý (1900 8899).';
+  }
 
   // 1. Căn hộ chuẩn xác từ store
-  const aptFromStore = getApartmentByCode(targetAptCode);
-  const apt: any = aptFromStore || (isOwnerUnit ? DEMO_APARTMENTS[0] : (DEMO_APARTMENTS.find(a => a.apt_code.toUpperCase() === targetAptCode) || DEMO_APARTMENTS[0]));
-  const aptDisplayName = isOwnerUnit ? 'CH-06 (Tòa The Tropical BS-07, Tầng 30)' : (apt?.code || apt?.apt_code || targetAptCode);
-  const aptAreaClear = isOwnerUnit ? 42.0 : (apt?.clear_area || apt?.area || 42.0);
-  const aptAreaWall = isOwnerUnit ? 46.0 : (apt?.wall_area || apt?.wallArea || 46.0);
-  const aptBedrooms = isOwnerUnit ? 1 : (apt?.bedrooms || 1);
-  const aptBathrooms = isOwnerUnit ? 1 : (apt?.bathrooms || 1);
+  const apt: any = getApartmentByCode(targetAptCode);
+  const aptDisplayName = apt?.code || apt?.apt_code || targetAptCode;
+  const aptAreaClear = apt?.clear_area || apt?.area || 0;
+  const aptAreaWall = apt?.wall_area || apt?.wallArea || 0;
+  const aptBedrooms = apt?.bedrooms || 0;
+  const aptBathrooms = apt?.bathrooms || 0;
 
   // 2. Chủ hộ & Cư dân
-  const rawOwner = DEMO_USERS.find((u) => (isOwnerUnit ? (u.apartment_code === 'CH-06' || u.id === 'user-owner-1') : u.apartment_code === targetAptCode)) || DEMO_USERS[2];
-  const liveOwner = getUserStore(rawOwner.id) || rawOwner;
+  const liveOwner = getUserStore(targetAptCode);
 
   const residentName = (typeof contextOrAptCode === 'object' && contextOrAptCode?.userName)
     ? contextOrAptCode.userName
-    : (liveOwner.fullname || liveOwner.full_name || rawOwner.full_name || 'Trần Hữu Lực');
+    : (liveOwner?.fullname || liveOwner?.full_name || 'Cư dân Skyline');
 
   const residentPhone = (typeof contextOrAptCode === 'object' && contextOrAptCode?.phone)
     ? contextOrAptCode.phone
-    : (liveOwner.phone || rawOwner.phone || '0364967082');
+    : (liveOwner?.phone || '');
 
   const residentLicensePlate = (typeof contextOrAptCode === 'object' && contextOrAptCode?.licensePlate)
     ? contextOrAptCode.licensePlate
@@ -546,12 +522,12 @@ export function generateSmartProjectFallback(
   // 3. Thành viên gia đình đăng ký thường trú
   const familyMembers = (typeof contextOrAptCode === 'object' && Array.isArray(contextOrAptCode?.members) && contextOrAptCode.members.length > 0)
     ? contextOrAptCode.members
-    : getApartmentMembers(isOwnerUnit ? 'CH-06' : targetAptCode);
+    : getApartmentMembers(targetAptCode);
 
   // 4. Thẻ khách thăm thực tế
   const visitorPasses = (typeof contextOrAptCode === 'object' && Array.isArray(contextOrAptCode?.visitors) && contextOrAptCode.visitors.length > 0)
     ? contextOrAptCode.visitors
-    : getAllVisitorPasses().filter(p => isOwnerUnit ? (p.apartmentCode === 'CH-06' || p.apartmentCode === '12A05') : p.apartmentCode === targetAptCode);
+    : getAllVisitorPasses().filter(p => p.apartmentCode === targetAptCode);
 
   // 5. Hóa đơn thực tế từ billingStore
   const bills = (typeof contextOrAptCode === 'object' && Array.isArray(contextOrAptCode?.bills) && contextOrAptCode.bills.length > 0)
@@ -563,11 +539,7 @@ export function generateSmartProjectFallback(
   // 6. Phiếu kỹ thuật từ ticketStore
   const activeTickets = (typeof contextOrAptCode === 'object' && Array.isArray(contextOrAptCode?.tickets) && contextOrAptCode.tickets.length > 0)
     ? contextOrAptCode.tickets
-    : (() => {
-        const stored = getTickets(isOwnerUnit ? 'CH-06' : targetAptCode, residentPhone);
-        if (stored && stored.length > 0) return stored;
-        return DEMO_TICKETS;
-      })();
+    : getTickets(targetAptCode, residentPhone);
 
   // 7. Đặt lịch tiện ích
   let activeBookings: ConciergeBookingItem[] = [];
@@ -576,10 +548,8 @@ export function generateSmartProjectFallback(
   } else {
     try {
       const stored = getFacilityBookings(targetAptCode);
-      const storedOwner = isOwnerUnit ? getFacilityBookings('CH-06') : [];
-      const combined = stored.length > 0 ? stored : storedOwner;
-      if (combined.length > 0) {
-        activeBookings = combined.map(b => ({
+      if (stored.length > 0) {
+        activeBookings = stored.map(b => ({
           id: b.id,
           facilityId: b.facilityId,
           facilityName: b.facilityName,
@@ -595,32 +565,30 @@ export function generateSmartProjectFallback(
       // fallback
     }
   }
-  if (activeBookings.length === 0 && isOwnerUnit) {
-    activeBookings = DEFAULT_BOOKINGS_CH06;
-  }
+  // Bookings loaded from context or store
 
 
   // 0a. Strict Out-of-Scope / Irrelevant Queries Handler (Chống phản hồi không liên quan)
-  const isOffTopic = 
-    text.includes('code') || 
-    text.includes('lập trình') || 
-    text.includes('python') || 
-    text.includes('javascript') || 
-    text.includes('html') || 
-    text.includes('react') || 
-    text.includes('giải toán') || 
-    text.includes('thời tiết') || 
-    text.includes('nấu ăn') || 
-    text.includes('công thức') || 
-    text.includes('chứng khoán') || 
-    text.includes('bitcoin') || 
-    text.includes('crypto') || 
-    text.includes('chiến tranh') || 
-    text.includes('tổng thống') || 
-    text.includes('ca sĩ') || 
-    text.includes('bài hát') || 
-    text.includes('vinhomes') || 
-    text.includes('novaland') || 
+  const isOffTopic =
+    text.includes('code') ||
+    text.includes('lập trình') ||
+    text.includes('python') ||
+    text.includes('javascript') ||
+    text.includes('html') ||
+    text.includes('react') ||
+    text.includes('giải toán') ||
+    text.includes('thời tiết') ||
+    text.includes('nấu ăn') ||
+    text.includes('công thức') ||
+    text.includes('chứng khoán') ||
+    text.includes('bitcoin') ||
+    text.includes('crypto') ||
+    text.includes('chiến tranh') ||
+    text.includes('tổng thống') ||
+    text.includes('ca sĩ') ||
+    text.includes('bài hát') ||
+    text.includes('vinhomes') ||
+    text.includes('novaland') ||
     text.includes('masteri');
 
   if (isOffTopic) {
@@ -635,13 +603,13 @@ Quý cư dân có cần tôi hỗ trợ kiểm tra thông tin nào về căn h�
 
   // 0b. Greeting / Introduction Queries
   if (
-    text === 'xin chào' || 
-    text === 'chào' || 
-    text === 'chào bạn' || 
-    text === 'hello' || 
-    text === 'hi' || 
-    text === 'bạn là ai' || 
-    text.includes('chào trợ lý') || 
+    text === 'xin chào' ||
+    text === 'chào' ||
+    text === 'chào bạn' ||
+    text === 'hello' ||
+    text === 'hi' ||
+    text === 'bạn là ai' ||
+    text.includes('chào trợ lý') ||
     text === 'alo'
   ) {
     return `Kính chào Quý cư dân ${residentName} (Căn hộ ${targetAptCode})!
@@ -673,15 +641,15 @@ Quý cư dân cần tôi hỗ trợ thông tin nào về căn hộ hôm nay ạ?
 
   // 0b. Building Architecture, Scale, Floors, Apartments count per floor
   if (
-    text.includes('bao nhiêu căn') || 
-    text.includes('mấy căn') || 
-    text.includes('1 tầng') || 
-    text.includes('mỗi tầng') || 
-    text.includes('bao nhiêu tầng') || 
-    text.includes('mấy tầng') || 
-    text.includes('quy mô') || 
-    text.includes('cấu trúc') || 
-    text.includes('mặt bằng') || 
+    text.includes('bao nhiêu căn') ||
+    text.includes('mấy căn') ||
+    text.includes('1 tầng') ||
+    text.includes('mỗi tầng') ||
+    text.includes('bao nhiêu tầng') ||
+    text.includes('mấy tầng') ||
+    text.includes('quy mô') ||
+    text.includes('cấu trúc') ||
+    text.includes('mặt bằng') ||
     text.includes('tổng số căn') ||
     text.includes('tổng số tầng') ||
     text.includes('tòa') ||
@@ -759,7 +727,7 @@ Quý cư dân chỉ cần quét mã QR tại cổng hoặc chạm thẻ cư dân
   // 2. Inquiries about Visitor Passes / Guest QR / Guest PIN (Khách thăm, thẻ khách, mã khách)
   if (text.includes('khách') || text.includes('visitor') || text.includes('thăm') || text.includes('mã pin') || text.includes('mã qr khách')) {
     if (visitorPasses.length > 0) {
-      const passLines = visitorPasses.map((p, idx) => 
+      const passLines = visitorPasses.map((p, idx) =>
         `* **Khách ${idx + 1}: ${p.visitorName}**
   - **Mã vé:** \`${p.id}\` | **Mã PIN mở cổng:** \`${p.pinCode}\`
   - **Số điện thoại:** ${p.phoneNumber || 'Không cung cấp'}
@@ -786,7 +754,7 @@ Quý cư dân có thể vào mục **Khách Thăm & QR Code** trên ứng dụng
   // 3. Inquiries about Bill / Finance / Money / Water fee
   if (text.includes('hóa đơn') || text.includes('tiền') || text.includes('nước') || text.includes('điện') || text.includes('phí') || text.includes('nợ') || text.includes('thanh toán')) {
     if (latestBill) {
-      const detailsList = (latestBill.details || []).map((d: any) => 
+      const detailsList = (latestBill.details || []).map((d: any) =>
         `  - ${d.service_name || d.service_type}: **${Number(d.total_line_amount || 0).toLocaleString('vi-VN')} đ** (${d.usage || 0} ${d.unit || ''}) ${d.ai_anomaly ? `\n    ⚠️ *Lưu ý:* ${d.anomaly_reason}` : ''}`
       ).join('\n');
 
@@ -814,12 +782,12 @@ ${detailsList || '  - Tiền điện, tiền nước và phí quản lý vận h
 
   // 4. Inquiries about Maintenance / Repair / Technical Ticket
   if (text.includes('sửa') || text.includes('hỏng') || text.includes('vòi') || text.includes('rò rỉ') || text.includes('kỹ thuật') || text.includes('sự cố') || text.includes('thợ') || text.includes('phiếu') || text.includes('ticket')) {
-    const activeTicket = activeTickets[0] || DEMO_TICKETS[0];
+    const activeTicket = activeTickets[0];
     if (activeTicket) {
       const ticketId = activeTicket.id ? `#${activeTicket.id}` : "#925";
       const ticketContent = (activeTicket.content || activeTicket.description || '').replace(/\n/g, ' ');
       const techName = activeTicket.assigned_technician || activeTicket.engineername || 'Trần Đình Trọng (Chuyên viên Kỹ thuật & Thiết bị)';
-      
+
       const ticketsList = activeTickets.slice(0, 3).map((t: any) => {
         const tId = t.id ? `#${t.id}` : "";
         const st = (t.status === 'Resolved' || t.status === 'resolved' || t.status === 'publish') ? '✅ Đã hoàn thành' : '🛠️ Đang xử lý';
@@ -1003,7 +971,7 @@ Thẻ vé đã được cập nhật trạng thái ĐÃ HỦY trên toàn bộ c
 
   // 6b. Inquiries about Facilities requiring Booking / Reservation (Tiện ích cần đặt trước / đăng ký trước)
   if (
-    (text.includes('tiện ích') || text.includes('dịch vụ')) && 
+    (text.includes('tiện ích') || text.includes('dịch vụ')) &&
     (text.includes('đặt trước') || text.includes('đăng ký') || text.includes('hẹn trước') || text.includes('lịch hẹn') || text.includes('giữ chỗ') || text.includes('cần đặt') || text.includes('thu phí') || text.includes('tính phí'))
   ) {
     return `Dạ thưa Quý cư dân ${residentName}, tại Chung Cư Skyline (25 Tầng), chỉ có **2 tiện ích đặc quyền riêng tư** bắt buộc cần đăng ký lịch hẹn trước:
@@ -1029,7 +997,7 @@ Quý cư dân có thể vào tab **Đăng Ký Đặt Chỗ & Vé Điện Tử** 
 
   // 6c. Inquiries about Free / Open Access Facilities (Tiện ích miễn phí / vào tự do)
   if (
-    (text.includes('tiện ích') || text.includes('dịch vụ')) && 
+    (text.includes('tiện ích') || text.includes('dịch vụ')) &&
     (text.includes('miễn phí') || text.includes('tự do') || text.includes('không cần đặt') || text.includes('không tốn tiền'))
   ) {
     return `Dạ thưa Quý cư dân ${residentName}, tại Chung Cư Skyline có **3 đại tiện ích hoàn toàn miễn phí** và Quý vị có thể **vào tự do** bất cứ lúc nào:
@@ -1124,8 +1092,12 @@ export interface ChatMessage {
 export async function askGeminiConcierge(
   message: string,
   history: ChatMessage[] = [],
-  contextOrAptCode: string | ConciergeContext = 'CH-06'
+  contextOrAptCode: string | ConciergeContext
 ): Promise<string> {
+  const aptCheck = typeof contextOrAptCode === 'string' ? contextOrAptCode.trim() : contextOrAptCode?.aptCode?.trim();
+  if (!aptCheck) {
+    throw new Error('Thiếu mã căn hộ từ phiên đăng nhập.');
+  }
   // If API key is not configured or too short/placeholder, use smart project fallback
   if (!GEMINI_API_KEY || GEMINI_API_KEY.length < 20) {
     console.info('GEMINI_API_KEY is not configured. Using smart project data engine.');

@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useAsyncResource } from '@/lib/hooks/useAsyncResource';
+import { ResourceSkeleton, ResourceError, ResourceEmpty } from '@/components/ui/ResourceState';
 import { 
   User as UserIcon, 
   ShieldCheck, 
@@ -588,8 +590,22 @@ export default function ProfileEkyc({ currentUser }: ProfileEkycProps) {
     }
   };
 
+  const profileResource = useAsyncResource(async () => {
+    const res = await fetch('/api/user', { credentials: 'include' });
+    if (!res.ok) throw new Error(`Không thể tải hồ sơ cá nhân & e-KYC (HTTP ${res.status})`);
+    const json = await res.json();
+    return json?.user || null;
+  }, []);
+
   return (
     <div className="space-y-6 w-full animate-fadeIn select-none">
+      {profileResource.loading && <ResourceSkeleton label="Đang tải hồ sơ cá nhân & e-KYC..." />}
+      {!profileResource.loading && profileResource.error && (
+        <ResourceError message={profileResource.error} onRetry={profileResource.retry} />
+      )}
+      {!profileResource.loading && !profileResource.error && !profileResource.data && !fullName && (
+        <ResourceEmpty message="Chưa có dữ liệu hồ sơ cư dân." />
+      )}
       {/* Header */}
       {/* Top Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-[#222B35] pb-3 sm:pb-4">

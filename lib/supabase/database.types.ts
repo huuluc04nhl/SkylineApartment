@@ -459,6 +459,42 @@ export type Database = {
           },
         ]
       }
+      building_devices: {
+        Row: {
+          category: string
+          created_at: string
+          health_score: number
+          id: string
+          last_maintenance: string | null
+          location: string
+          name: string
+          predict_date: string | null
+          status: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          health_score?: number
+          id: string
+          last_maintenance?: string | null
+          location: string
+          name: string
+          predict_date?: string | null
+          status?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          health_score?: number
+          id?: string
+          last_maintenance?: string | null
+          location?: string
+          name?: string
+          predict_date?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       community_posts: {
         Row: {
           ai_moderation: string | null
@@ -1217,6 +1253,42 @@ export type Database = {
             referencedColumns: ["apt_code"]
           },
         ]
+      }
+      security_alerts: {
+        Row: {
+          alert_type: string
+          camera_id: string | null
+          confidence: number | null
+          created_at: string
+          id: string
+          location: string
+          snapshot_url: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          alert_type: string
+          camera_id?: string | null
+          confidence?: number | null
+          created_at?: string
+          id: string
+          location: string
+          snapshot_url?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          alert_type?: string
+          camera_id?: string | null
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          location?: string
+          snapshot_url?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: []
       }
       service_tickets: {
         Row: {

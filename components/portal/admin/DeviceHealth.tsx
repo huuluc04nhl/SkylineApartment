@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DEMO_DEVICES, Device } from '@/lib/dataStore';
+import { Device } from '@/lib/dataStore';
 import { getTechnicians, createTicketAsync, TechnicianProfile } from '@/lib/ticketStore';
 import { 
   Activity, 
@@ -37,9 +37,12 @@ import {
 } from 'lucide-react';
 import { exportMaintenanceTicketPdf } from '@/lib/pdfExport';
 import { useLanguage } from '@/lib/languageContext';
+import { toast as appToast } from '@/components/ui/Toast';
+import { useAsyncResource } from '@/lib/hooks/useAsyncResource';
+import { ResourceSkeleton, ResourceError, ResourceEmpty } from '@/components/ui/ResourceState';
 import ConfirmDeleteModal from '@/components/portal/shared/ConfirmDeleteModal';
 
-let inMemoryDevices: Device[] = [...DEMO_DEVICES];
+let inMemoryDevices: Device[] = [];
 
 function getStoredDevices(): Device[] {
   return inMemoryDevices;
@@ -236,7 +239,7 @@ export default function DeviceHealth() {
   const handleSaveAddDevice = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim()) {
-      alert(t('Vui lòng nhập tên thiết bị!', 'Please enter equipment name!'));
+      appToast.warning(t('Vui lòng nhập tên thiết bị!', 'Please enter equipment name!'));
       return;
     }
     const newDev: Device = {
@@ -314,10 +317,9 @@ export default function DeviceHealth() {
       ),
       itemCode: 'BMS_DEFAULT',
       itemName: 'Hạ tầng thiết bị The Tropical',
-      onConfirm: () => {
-        setDevices(DEMO_DEVICES);
-        saveStoredDevices(DEMO_DEVICES);
-        showToast(t('Đã Khôi Phục', 'Restored'), t('Đã tải lại cấu hình thiết bị chuẩn hạ tầng The Tropical.', 'Reloaded standard The Tropical facility specifications.'));
+      onConfirm: async () => {
+        deviceHealthResource.retry();
+        showToast(t('Đã Tải Lại', 'Reloaded'), t('Đã đồng bộ lại danh sách thiết bị từ Supabase.', 'Reloaded equipment registry from Supabase.'));
       }
     });
   };
@@ -372,8 +374,25 @@ export default function DeviceHealth() {
     );
   };
 
+  const deviceHealthResource = useAsyncResource(async () => {
+    const res = await fetch('/api/devices', { credentials: 'include' });
+    if (!res.ok) throw new Error(`Không thể tải dữ liệu thiết bị tòa nhà (HTTP ${res.status})`);
+    const json = await res.json();
+    const list: Device[] = Array.isArray(json?.devices) ? json.devices : [];
+    setDevices(list);
+    saveStoredDevices(list);
+    return list;
+  }, []);
+
   return (
     <div className="space-y-6 relative animate-fadeIn">
+      {deviceHealthResource.loading && <ResourceSkeleton label="Đang tải tình trạng thiết bị IoT..." />}
+      {!deviceHealthResource.loading && deviceHealthResource.error && (
+        <ResourceError message={deviceHealthResource.error} onRetry={deviceHealthResource.retry} />
+      )}
+      {!deviceHealthResource.loading && !deviceHealthResource.error && devices.length === 0 && (
+        <ResourceEmpty message="Chưa có thiết bị IoT nào được ghi nhận." />
+      )}
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-5 right-5 z-50 max-w-md bg-[#161B22] border border-[#C5A880] p-4 shadow-2xl animate-fadeIn flex items-start justify-between gap-3 text-white rounded-none">

@@ -73,6 +73,9 @@ import {
 } from '@/lib/ticketClassification';
 import { fileToBase64 } from '@/lib/imageUtils';
 import { useLanguage } from '@/lib/languageContext';
+import { toast } from '@/components/ui/Toast';
+import { useAsyncResource } from '@/lib/hooks/useAsyncResource';
+import { ResourceSkeleton, ResourceError, ResourceEmpty } from '@/components/ui/ResourceState';
 import ConfirmDeleteModal from '@/components/portal/shared/ConfirmDeleteModal';
 import { cleanPhoneNumber, isValidPhoneNumber, getPhoneValidationError } from '@/lib/validationUtils';
 
@@ -367,11 +370,11 @@ export default function KanbanBoard() {
   const handleCreateTicketSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newContent.trim()) {
-      alert('Vui lòng nhập mô tả sự cố hoặc yêu cầu!');
+      toast.warning('Vui lòng nhập mô tả sự cố hoặc yêu cầu!');
       return;
     }
     if (newResidentPhone.trim() && newResidentPhone.trim() !== '1900 8899' && !isValidPhoneNumber(newResidentPhone)) {
-      alert(getPhoneValidationError(newResidentPhone) || 'Số điện thoại liên hệ không hợp lệ!');
+      toast.warning(getPhoneValidationError(newResidentPhone) || 'Số điện thoại liên hệ không hợp lệ!');
       return;
     }
     setIsSubmittingNewTicket(true);
@@ -391,7 +394,7 @@ export default function KanbanBoard() {
       setTimeout(() => setActionSuccessMsg(null), 4000);
     } catch (err) {
       console.error('Lỗi tiếp nhận sự cố:', err);
-      alert('Có lỗi khi tạo phiếu sự cố. Vui lòng kiểm tra lại.');
+      toast.error('Có lỗi khi tạo phiếu sự cố. Vui lòng kiểm tra lại.');
     } finally {
       setIsSubmittingNewTicket(false);
     }
@@ -517,7 +520,7 @@ export default function KanbanBoard() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Vui lòng chọn tệp hình ảnh hợp lệ (JPG, PNG).');
+      toast.warning('Vui lòng chọn tệp hình ảnh hợp lệ (JPG, PNG).');
       return;
     }
 
@@ -529,7 +532,7 @@ export default function KanbanBoard() {
         handleVerifyResolutionImage(b64, resolvingTicket, resolutionNotes);
       }
     } catch (err) {
-      alert('Không thể đọc file ảnh. Vui lòng thử lại.');
+      toast.error('Không thể đọc file ảnh. Vui lòng thử lại.');
     } finally {
       setIsReadingAfterImage(false);
     }
@@ -541,18 +544,18 @@ export default function KanbanBoard() {
     if (!resolvingTicket) return;
 
     if (!afterImageBase64) {
-      alert('Vui lòng chụp hoặc tải ảnh hiện trường sau khi sửa chữa để nghiệm thu!');
+      toast.warning('Vui lòng chụp hoặc tải ảnh hiện trường sau khi sửa chữa để nghiệm thu!');
       return;
     }
 
     if (!resolutionNotes.trim()) {
-      alert('Vui lòng nhập ghi chú kỹ thuật khi nghiệm thu bàn giao!');
+      toast.warning('Vui lòng nhập ghi chú kỹ thuật khi nghiệm thu bàn giao!');
       return;
     }
 
     const isProblematic = aiVerificationResult && (aiVerificationResult.status === 'SUSPICIOUS' || aiVerificationResult.status === 'INCOMPLETE');
     if (isProblematic && !allowOverrideVerification) {
-      alert('AI cảnh báo chất lượng ảnh hoặc kết quả sửa chữa chưa đạt chuẩn! Vui lòng chọn "Từ Chối & Yêu Cầu Sửa Lại" hoặc tích chọn duyệt ngoại lệ nếu đã thẩm định thực tế.');
+      toast.warning('AI cảnh báo chất lượng ảnh hoặc kết quả sửa chữa chưa đạt chuẩn! Vui lòng chọn "Từ Chối & Yêu Cầu Sửa Lại" hoặc tích chọn duyệt ngoại lệ nếu đã thẩm định thực tế.');
       return;
     }
 
@@ -592,8 +595,22 @@ export default function KanbanBoard() {
   const totalFund = payrollList.reduce((acc, p) => acc + p.totalIncome, 0);
   const totalCompletedMonth = tickets.filter(t => t.status === 'Resolved').length;
 
+  const ticketsResource = useAsyncResource(async () => {
+    const res = await fetch('/api/tickets', { credentials: 'include' });
+    if (!res.ok) throw new Error(`Không thể tải danh sách phiếu kỹ thuật (HTTP ${res.status})`);
+    const json = await res.json();
+    return Array.isArray(json?.tickets) ? json.tickets : [];
+  }, []);
+
   return (
     <div className="space-y-6 animate-fadeIn">
+      {ticketsResource.loading && <ResourceSkeleton label="Đang tải bảng điều phối kỹ thuật..." />}
+      {!ticketsResource.loading && ticketsResource.error && (
+        <ResourceError message={ticketsResource.error} onRetry={ticketsResource.retry} />
+      )}
+      {!ticketsResource.loading && !ticketsResource.error && tickets.length === 0 && (
+        <ResourceEmpty message="Chưa có phiếu yêu cầu kỹ thuật nào." />
+      )}
       {/* Header & Sub-Navigation Tabs */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#222B35] pb-4">
         <div>
