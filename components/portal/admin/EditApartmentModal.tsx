@@ -135,7 +135,7 @@ export default function EditApartmentModal({
               </span>
             </h3>
           </div>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-white p-1" title={t('Đóng', 'Close')}>
+          <button aria-label="Đóng" type="button" onClick={onClose} className="text-gray-400 hover:text-white p-1" title={t('Đóng', 'Close')}>
             <X className="w-5 h-5" />
           </button>
         </div>

@@ -167,7 +167,7 @@ export default function VisitorAuditAndModals({ ctx }: { ctx: any }) {
                   Cấp Thẻ Đón Khách Nhanh Tại Quầy
                 </h3>
               </div>
-              <button
+              <button aria-label="Đóng"
                 type="button"
                 onClick={resetQuickPassForm}
                 className="text-gray-400 hover:text-white p-1"

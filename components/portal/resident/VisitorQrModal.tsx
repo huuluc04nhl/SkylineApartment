@@ -502,7 +502,7 @@ export default function VisitorQrModal({
             </h2>
           </div>
 
-          <button
+          <button aria-label="Đóng"
             onClick={onClose}
             className="p-1.5 rounded-none text-gray-400 hover:text-white hover:bg-[#161B22] transition-colors cursor-pointer"
           >

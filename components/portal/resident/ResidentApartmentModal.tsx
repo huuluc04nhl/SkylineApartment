@@ -212,7 +212,7 @@ export default function ResidentApartmentModal({
             </div>
           </div>
 
-          <button
+          <button aria-label="Đóng"
             type="button"
             onClick={onClose}
             className="p-1.5 text-gray-400 hover:text-white hover:bg-[#1C2533] border border-transparent hover:border-gray-700 transition-colors"

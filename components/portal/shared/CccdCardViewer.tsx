@@ -136,7 +136,7 @@ export default function CccdCardViewer({
             </p>
           </div>
 
-          <button
+          <button aria-label="Đóng"
             type="button"
             onClick={onClose}
             className="p-2 text-gray-400 hover:text-white bg-[#161B22] border border-[#2D3748] hover:border-[#C5A880] rounded-none transition-colors"
@@ -187,7 +187,7 @@ export default function CccdCardViewer({
           {/* Inspection Tools */}
           <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-[#222B35]">
             <div className="flex items-center gap-1.5">
-              <button
+              <button aria-label="Thu nhỏ"
                 type="button"
                 onClick={handleZoomOut}
                 disabled={!hasImage}
@@ -201,7 +201,7 @@ export default function CccdCardViewer({
                 {Math.round(zoomLevel * 100)}%
               </span>
 
-              <button
+              <button aria-label="Phóng to"
                 type="button"
                 onClick={handleZoomIn}
                 disabled={!hasImage}
@@ -211,7 +211,7 @@ export default function CccdCardViewer({
                 <ZoomIn className="w-4 h-4" />
               </button>
 
-              <button
+              <button aria-label="Xoay ảnh"
                 type="button"
                 onClick={handleRotate}
                 disabled={!hasImage}

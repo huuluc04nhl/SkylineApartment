@@ -710,7 +710,7 @@ export default function AiConciergeFloating({
             >
               <ChevronUp className="w-4 h-4" />
             </button>
-            <button
+            <button aria-label="Đóng"
               type="button"
               onClick={onToggle}
               className="p-1.5 text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-none transition-colors border-0"
@@ -769,7 +769,7 @@ export default function AiConciergeFloating({
 
             {/* Header Control Buttons */}
             <div className="flex items-center gap-0.5 sm:gap-1 text-gray-400 flex-shrink-0">
-              <button
+              <button aria-label="Làm mới"
                 type="button"
                 onClick={handleResetChat}
                 className="p-1.5 sm:p-2 hover:bg-white/10 text-gray-400 hover:text-white rounded-none transition-colors border-0"
@@ -799,7 +799,7 @@ export default function AiConciergeFloating({
               </button>
 
               {/* Close button */}
-              <button
+              <button aria-label="Đóng"
                 type="button"
                 onClick={onToggle}
                 className="p-1.5 sm:p-2 hover:bg-rose-500/20 text-gray-400 hover:text-rose-400 rounded-none transition-colors border-0"
@@ -973,7 +973,7 @@ export default function AiConciergeFloating({
                 </button>
               )}
 
-              <button
+              <button aria-label="Gửi"
                 type="submit"
                 disabled={!inputText.trim() || isTyping}
                 className={`w-8 h-8 sm:w-9 sm:h-9 rounded-none transition-all flex items-center justify-center font-bold flex-shrink-0 border-0 ${

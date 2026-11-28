@@ -302,7 +302,7 @@ export default function ApartmentDetailModal({
               </button>
             )}
 
-            <button
+            <button aria-label="Đóng"
               type="button"
               onClick={onClose}
               className="p-1.5 text-gray-400 hover:text-white hover:bg-[#161B22] transition-colors rounded-none"

@@ -375,7 +375,7 @@ export default function Sidebar({
             </>
           ) : (
             <div className="relative group">
-              <button
+              <button aria-label="Đăng xuất"
                 type="button"
                 onClick={onLogout}
                 className="w-10 h-10 flex items-center justify-center rounded-none bg-[#161B22] hover:bg-red-950/80 border border-gray-800 hover:border-red-500 text-gray-400 hover:text-red-300 transition-colors"

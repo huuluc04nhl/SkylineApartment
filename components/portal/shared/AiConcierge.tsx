@@ -336,7 +336,7 @@ export default function AiConcierge() {
               disabled={isTyping}
               className="flex-1 bg-[#161B22] text-xs text-white px-3 py-2.5 focus:outline-none disabled:opacity-50 placeholder-gray-500 rounded-none border-0"
             />
-            <button
+            <button aria-label="Gửi"
               type="submit"
               disabled={!inputMsg.trim() || isTyping}
               className="p-2.5 bg-[#C5A880] text-[#0D1117] hover:bg-white transition-colors disabled:opacity-40 font-bold rounded-none border-0"

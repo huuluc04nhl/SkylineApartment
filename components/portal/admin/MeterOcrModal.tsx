@@ -158,7 +158,7 @@ export default function MeterOcrModal({ isOpen, onClose, onSuccess }: MeterOcrMo
               </p>
             </div>
           </div>
-          <button
+          <button aria-label="Đóng"
             onClick={onClose}
             className="p-1.5 text-gray-400 hover:text-white hover:bg-[#1E2530] transition-colors"
           >

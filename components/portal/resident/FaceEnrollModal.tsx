@@ -707,7 +707,7 @@ export default function FaceEnrollModal({
             </div>
           </div>
 
-          <button
+          <button aria-label="Đóng"
             type="button"
             onClick={onClose}
             className="text-gray-400 hover:text-white p-1 transition-colors"

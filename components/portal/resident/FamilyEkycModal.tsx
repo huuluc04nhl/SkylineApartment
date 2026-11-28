@@ -111,7 +111,7 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                 >
                   <Scan className="w-3.5 h-3.5 text-[#0D1117]" /> Tải Ảnh CCCD
                 </button>
-                <button
+                <button aria-label="Đóng"
                   type="button"
                   onClick={handleCloseEkycModal}
                   className="text-gray-400 hover:text-white p-1 rounded-none hover:bg-[#161D26] transition-colors cursor-pointer"

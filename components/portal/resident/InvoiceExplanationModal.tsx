@@ -83,7 +83,7 @@ export default function InvoiceExplanationModal({
             </div>
           </div>
 
-          <button
+          <button aria-label="Đóng"
             onClick={onClose}
             className="p-1.5 text-gray-400 hover:text-white hover:bg-[#1C2533] transition-colors rounded-none"
             title={t('Đóng', 'Close')}

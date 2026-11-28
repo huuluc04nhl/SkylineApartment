@@ -171,7 +171,7 @@ export default function BillingAiAssistantDrawer({
           </div>
         </div>
 
-        <button
+        <button aria-label="Đóng"
           onClick={onClose}
           className="p-1.5 text-gray-400 hover:text-white hover:bg-[#1A222C] transition-colors rounded-none"
           title={t('Đóng', 'Close')}
@@ -279,7 +279,7 @@ export default function BillingAiAssistantDrawer({
             disabled={isLoading}
             className="flex-1 bg-[#0A0E17] border border-[#2D3748] focus:border-[#C5A880] text-xs text-white px-3 py-2.5 outline-none rounded-none placeholder-gray-500"
           />
-          <button
+          <button aria-label="Gửi"
             type="submit"
             disabled={isLoading || !inputValue.trim()}
             className="px-3.5 py-2.5 bg-[#C5A880] text-[#0D1117] hover:bg-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed font-bold shrink-0 flex items-center justify-center rounded-none"

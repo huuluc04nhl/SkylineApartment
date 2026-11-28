@@ -196,7 +196,7 @@ export default function MacroCitySvgModel({
             </button>
 
             {onOpenZoomModal && (
-              <button
+              <button aria-label="Phóng to"
                 type="button"
                 onClick={onOpenZoomModal}
                 className="p-1 bg-[#121A26] hover:bg-[#C5A880] hover:text-black border border-[#223247] text-gray-300 transition-all ml-0.5"

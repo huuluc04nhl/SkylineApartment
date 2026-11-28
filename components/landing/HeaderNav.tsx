@@ -101,7 +101,7 @@ export default function HeaderNav({ onOpenLogin }: HeaderNavProps) {
                 {t('nav.dashboard', 'Vào Bảng Điều Khiển')}
               </Link>
 
-              <button
+              <button aria-label="Đăng xuất"
                 onClick={logout}
                 className="p-1.5 text-gray-400 hover:text-red-400 transition-colors rounded-none shrink-0"
                 title={t('nav.logout', 'Đăng xuất')}

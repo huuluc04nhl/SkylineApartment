@@ -292,7 +292,7 @@ export default function AssignResidentModal({
                   <span className="font-mono text-gray-300">{t('Giá:', 'Price:')} {unit.priceBillion} {t('tỷ VNĐ', 'Billion VND')}</span>
                 </div>
               </div>
-              <button 
+              <button aria-label="Đóng" 
                 type="button" 
                 onClick={onClose} 
                 className="text-gray-400 hover:text-white p-1 hover:bg-[#161B22] transition-colors"
