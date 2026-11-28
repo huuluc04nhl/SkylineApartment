@@ -39,6 +39,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      card_token_uses: {
+        Row: {
+          expires_at: string
+          jti: string
+          used_at: string
+        }
+        Insert: {
+          expires_at: string
+          jti: string
+          used_at?: string
+        }
+        Update: {
+          expires_at?: string
+          jti?: string
+          used_at?: string
+        }
+        Relationships: []
+      }
       ai_chat_conversations: {
         Row: {
           apartment_code: string | null

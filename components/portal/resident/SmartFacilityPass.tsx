@@ -54,7 +54,6 @@ import {
   cancelFacilityBooking,
   cancelFacilityBookingWithRefund,
   calculateRefundEstimate,
-  checkinWithTicket,
   getFacilityMonthlyQuota,
   getFacilitySlotStatus,
   FACILITY_LIMIT_RULES,
@@ -452,15 +451,25 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     }, 700);
   };
 
-  // Quẹt vé điện tử QR để vào cửa
-  const handleCheckinTicket = (ticketCode: string) => {
-    const result = checkinWithTicket(aptCode, ticketCode);
-    if (result.success) {
-      toast.success(result.message);
-      setBookings(getFacilityBookings(aptCode));
-      setAccessLogs(getFacilityCheckinLogs(aptCode));
-    } else {
-      toast.error(result.message);
+  // Quẹt vé điện tử QR để vào cửa qua server
+  const handleCheckinTicket = async (ticketCode: string) => {
+    try {
+      const res = await fetch('/api/facilities/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action: 'CHECK_IN_FACILITY_TICKET', ticketCode }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json?.success) {
+        toast.success(json.message || 'Check-in vé tiện ích thành công.');
+        const synced = await syncFacilityBookingsFromDb(aptCode);
+        setBookings(synced);
+      } else {
+        toast.error(json?.message || 'Không thể check-in vé tiện ích.');
+      }
+    } catch {
+      toast.error('Lỗi kết nối máy chủ khi check-in vé tiện ích.');
     }
   };
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { buildVnpayPaymentUrl } from '@/lib/vnpay';
 import { requireAuth } from '@/lib/auth/guard';
 import { getBillWithDetailsByIdDb } from '@/lib/server/billingDb';
+import { getClientIp } from '@/lib/server/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,9 +57,9 @@ export async function POST(req: Request) {
     const aptCode = bill.apartment_code;
     const month = bill.billing_month;
 
-    // Lấy IP client từ headers
-    const forwarded = req.headers.get('x-forwarded-for');
-    const ipAddr = forwarded ? forwarded.split(',')[0].trim() : '127.0.0.1';
+    // Lấy IP client an toàn qua TRUSTED_PROXY_COUNT
+    const resolvedIp = getClientIp(req);
+    const ipAddr = resolvedIp === 'unknown' ? '127.0.0.1' : resolvedIp;
 
     // Lấy domain hiện tại (ưu tiên origin client, host header, hoặc Vercel production)
     const host = req.headers.get('host');

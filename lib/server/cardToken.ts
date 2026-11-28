@@ -4,6 +4,7 @@ import crypto from 'crypto';
 const TOKEN_PREFIX = 'SKYLINE_CARD_V1.';
 
 export interface ResidentCardTokenPayload {
+  jti: string;
   sub: string;
   apt: string;
   role: string;
@@ -12,9 +13,11 @@ export interface ResidentCardTokenPayload {
 }
 
 function getCardSigningSecret(): string {
-  const secret = process.env.RESIDENT_CARD_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-  if (!secret) {
-    throw new Error('Thiếu biến môi trường RESIDENT_CARD_SECRET để ký thẻ cư dân.');
+  const secret = (process.env.RESIDENT_CARD_SECRET || '').trim();
+  if (secret.length < 32) {
+    throw new Error(
+      'Thiếu hoặc sai biến môi trường RESIDENT_CARD_SECRET (bắt buộc tối thiểu 32 ký tự để ký thẻ cư dân).'
+    );
   }
   return secret;
 }
@@ -26,6 +29,7 @@ export function signResidentCardToken(
   const iat = Math.floor(Date.now() / 1000);
   const exp = iat + ttlSeconds;
   const payload: ResidentCardTokenPayload = {
+    jti: crypto.randomUUID(),
     sub: params.userId,
     apt: params.apartmentCode,
     role: params.role,
@@ -81,7 +85,13 @@ export function verifyResidentCardToken(
     return { valid: false, reason: 'INVALID_FORMAT' };
   }
 
-  if (!payload || typeof payload.sub !== 'string' || typeof payload.exp !== 'number') {
+  if (
+    !payload ||
+    typeof payload.jti !== 'string' ||
+    !payload.jti.trim() ||
+    typeof payload.sub !== 'string' ||
+    typeof payload.exp !== 'number'
+  ) {
     return { valid: false, reason: 'INVALID_FORMAT' };
   }
 

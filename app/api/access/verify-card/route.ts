@@ -13,7 +13,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, status: 'INVALID_FORMAT', message: 'Thiếu mã QR thẻ cư dân.' }, { status: 400 });
   }
 
-  const verified = verifyResidentCardToken(token);
+  let verified;
+  try {
+    verified = verifyResidentCardToken(token);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Lỗi cấu hình khóa ký thẻ cư dân.';
+    return NextResponse.json({ success: false, message }, { status: 500 });
+  }
+
   if (!verified.valid) {
     const message =
       verified.reason === 'EXPIRED'
@@ -56,6 +63,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, status: 'ACCOUNT_NOT_FOUND', message: 'Tài khoản cư dân không còn hoạt động.' }, { status: 404 });
   }
 
+  // Dọn các jti đã hết hạn và ghi nhận jti một lần (chống replay)
+  const nowIso = new Date().toISOString();
+  await supabaseAdmin.from('card_token_uses').delete().lt('expires_at', nowIso);
+
+  const { error: jtiErr } = await supabaseAdmin.from('card_token_uses').insert({
+    jti: payload.jti,
+    used_at: nowIso,
+    expires_at: new Date(payload.exp * 1000).toISOString(),
+  });
+
+  if (jtiErr) {
+    const isDuplicate =
+      (jtiErr as { code?: string }).code === '23505' ||
+      /duplicate key|unique constraint/i.test(jtiErr.message || '');
+    if (isDuplicate) {
+      return NextResponse.json(
+        { success: false, status: 'ALREADY_USED', message: 'Mã đã dùng' },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json({ success: false, message: `Lỗi xác thực jti: ${jtiErr.message}` }, { status: 500 });
+  }
+
   if (aptCode) {
     await supabaseAdmin.from('smart_door_access_logs').insert({
       id: `CARD-LOG-${Date.now()}-${crypto.randomUUID().slice(0, 6)}`,
@@ -65,7 +95,7 @@ export async function POST(request: Request) {
       method: 'QR_CODE',
       status: 'SUCCESS',
       detail: `Xác thực thẻ cư dân động tại sảnh (Staff: ${staffActor})`,
-      timestamp: new Date().toISOString(),
+      timestamp: nowIso,
     });
   }
 

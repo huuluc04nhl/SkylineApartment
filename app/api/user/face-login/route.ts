@@ -3,16 +3,11 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { identifyFaceAmongEnrolled, EnrolledFaceProfile } from '@/lib/biometricFaceEngine';
 import { findUserByIdentifierDb } from '@/lib/server/userDb';
+import { getClientIp } from '@/lib/server/rateLimit';
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_ATTEMPTS = 5;
 const ipAttempts = new Map<string, { count: number; resetAt: number }>();
-
-function getClientIp(req: Request): string {
-  const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return req.headers.get('x-real-ip') || 'unknown';
-}
 
 async function checkRateLimit(ip: string): Promise<boolean> {
   if (typeof (supabaseAdmin as any).rpc === 'function') {

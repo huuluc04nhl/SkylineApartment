@@ -15,6 +15,7 @@ vi.mock('@/lib/server/visitorDb', async (importOriginal) => {
 
 vi.mock('@/lib/server/rateLimit', () => ({
   checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
+  getClientIp: () => '127.0.0.1',
 }));
 
 vi.mock('@/lib/languageContext', () => ({

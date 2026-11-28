@@ -579,6 +579,19 @@ export interface CreateBookingResult {
 /**
  * Tạo mới đặt chỗ tiện ích thực tế - Có bẫy lỗi trùng giờ, duplicate và giới hạn sức chứa
  */
+const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+export function generateFacilityTicketCode(aptCode: string): string {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  let suffix = '';
+  for (let i = 0; i < 8; i++) {
+    suffix += BASE32_ALPHABET[bytes[i] % 32];
+  }
+  const cleanApt = (aptCode || 'UNIT').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+  return `FAC-${cleanApt}-${suffix}`;
+}
+
 export function createFacilityBooking(
   aptCode: string,
   facilityId: string,
@@ -612,7 +625,6 @@ export function createFacilityBooking(
   }
 
   const allCurrent = getAllFacilityBookings();
-  const ticketNum = Math.floor(1000 + Math.random() * 9000);
   const newBooking: FacilityBooking = {
     id: `BK-${Date.now().toString().slice(-6)}`,
     aptCode,
@@ -628,7 +640,7 @@ export function createFacilityBooking(
     depositAmount,
     isPrivate,
     paymentMethod,
-    ticketCode: `SKY-PASS-${aptCode}-${ticketNum}`,
+    ticketCode: generateFacilityTicketCode(aptCode),
     status: 'CONFIRMED',
     createdAt: new Date().toISOString(),
   };
@@ -650,49 +662,6 @@ export function createFacilityBooking(
   }
 
   return { success: true, bookings: aptList, newBooking };
-}
-
-/**
- * Quẹt vé điện tử QR để check-in tại cổng tiện ích
- */
-export function checkinWithTicket(aptCode: string, ticketCode: string): { success: boolean; message: string; booking?: FacilityBooking } {
-  const current = getFacilityBookings(aptCode);
-  const booking = current.find(b => b.ticketCode === ticketCode);
-
-  if (!booking) {
-    return { success: false, message: 'Mã vé không tồn tại trên hệ thống.' };
-  }
-  if (booking.status === 'CANCELLED') {
-    return { success: false, message: 'Vé này đã bị hủy trước đó.' };
-  }
-  if (booking.status === 'CHECKED_IN') {
-    return { success: true, message: 'Vé đã được check-in trước đó. Cổng barrier mở tự động.', booking };
-  }
-
-  const updated = current.map(b => b.ticketCode === ticketCode ? { ...b, status: 'CHECKED_IN' as const } : b);
-  setStorageItem(`${FACILITY_BOOKINGS_PREFIX}${aptCode}`, updated);
-
-  const allCurrent = getAllFacilityBookings();
-  const updatedAll = allCurrent.map(b => b.ticketCode === ticketCode ? { ...b, status: 'CHECKED_IN' as const } : b);
-  saveAllFacilityBookings(updatedAll);
-
-  // Ghi log check-in
-  addFacilityCheckinLog(aptCode, {
-    facilityId: booking.facilityId,
-    facilityName: booking.facilityName,
-    userName: booking.bookerName,
-    role: 'Cư Dân',
-    method: 'NFC_CARD',
-    cardUid: ticketCode,
-    status: 'SUCCESS',
-    detail: `Check-in bằng Mã Vé Điện Tử QR (${ticketCode}) tại cổng ${booking.facilityName} • Cổng mở 0.3s`
-  });
-
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('skyline_facility_booked', { detail: { ticketCode, status: 'CHECKED_IN' } }));
-  }
-
-  return { success: true, message: `Check-in vé thành công! Xin chào ${booking.bookerName}. Chúc bạn có thời gian vui vẻ tại ${booking.facilityName}.`, booking: { ...booking, status: 'CHECKED_IN' } };
 }
 
 /**

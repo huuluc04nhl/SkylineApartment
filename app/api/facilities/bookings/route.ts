@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/guard';
+import { generateFacilityTicketCode } from '@/lib/facilityStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
     if (!guard.ok) return guard.response;
 
     const body = await req.json().catch(() => ({}));
-    if (!body.id || !body.facilityId || !body.ticketCode) {
+    if (!body.id || !body.facilityId) {
       return NextResponse.json({ success: false, message: 'Thiếu thông tin đặt tiện ích.' }, { status: 400 });
     }
 
@@ -71,30 +72,51 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: 'Thiếu mã căn hộ hợp lệ.' }, { status: 400 });
     }
 
-    const { data, error } = await guard.supabase
-      .from('facility_bookings')
-      .upsert({
-        id: body.id,
-        apartment_code: aptCode,
-        facility_id: body.facilityId,
-        booker_id: guard.session.authUserId,
-        booker_name: guard.session.profile.fullname || 'Cư Dân Skyline',
-        ticket_code: body.ticketCode,
-        booking_date: body.bookingDate || new Date().toISOString().slice(0, 10),
-        time_slot: body.timeSlot || '',
-        guest_count: body.guestCount ?? 1,
-        duration_hours: body.durationHours ?? 1,
-        deposit_amount: body.depositAmount ?? 0,
-        pricing: body.pricing || '',
-        payment_method: body.paymentMethod || null,
-        status: body.status || 'CONFIRMED',
-        notes: body.notes || null,
-      })
-      .select('*')
-      .single();
+    let ticketCode =
+      typeof body.ticketCode === 'string' && /^FAC-[A-Z0-9-]+-[A-Z2-7]{8}$/i.test(body.ticketCode.trim())
+        ? body.ticketCode.trim().toUpperCase()
+        : generateFacilityTicketCode(aptCode);
 
-    if (error) throw new Error(`Supabase facility_bookings upsert error: ${error.message}`);
-    return NextResponse.json({ success: true, booking: data });
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const { data, error } = await guard.supabase
+        .from('facility_bookings')
+        .upsert({
+          id: body.id,
+          apartment_code: aptCode,
+          facility_id: body.facilityId,
+          booker_id: guard.session.authUserId,
+          booker_name: guard.session.profile.fullname || 'Cư Dân Skyline',
+          ticket_code: ticketCode,
+          booking_date: body.bookingDate || new Date().toISOString().slice(0, 10),
+          time_slot: body.timeSlot || '',
+          guest_count: body.guestCount ?? 1,
+          duration_hours: body.durationHours ?? 1,
+          deposit_amount: body.depositAmount ?? 0,
+          pricing: body.pricing || '',
+          payment_method: body.paymentMethod || null,
+          status: body.status || 'CONFIRMED',
+          notes: body.notes || null,
+        })
+        .select('*')
+        .single();
+
+      if (!error) {
+        return NextResponse.json({
+          success: true,
+          booking: { ...data, ticketCode: data.ticket_code },
+        });
+      }
+
+      const isUniqueViolation =
+        (error as { code?: string }).code === '23505' ||
+        /duplicate key|unique constraint/i.test(error.message || '');
+      if (!isUniqueViolation || attempt === 4) {
+        throw new Error(`Supabase facility_bookings upsert error: ${error.message}`);
+      }
+      ticketCode = generateFacilityTicketCode(aptCode);
+    }
+
+    return NextResponse.json({ success: false, message: 'Không thể cấp mã vé tiện ích duy nhất.' }, { status: 500 });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }

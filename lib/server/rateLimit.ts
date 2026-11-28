@@ -62,8 +62,22 @@ export async function resetRateLimit(key: string): Promise<void> {
   }
 }
 
-export function extractClientIp(req: Request): string {
-  const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim() || 'unknown';
+export function getClientIp(req: Request): string {
+  const trustedProxyCount = Number.parseInt(process.env.TRUSTED_PROXY_COUNT || '0', 10);
+  if (Number.isFinite(trustedProxyCount) && trustedProxyCount > 0) {
+    const forwarded = req.headers.get('x-forwarded-for');
+    if (forwarded) {
+      const parts = forwarded
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+      if (parts.length > 0) {
+        const idx = parts.length - trustedProxyCount;
+        return parts[idx >= 0 ? idx : 0];
+      }
+    }
+  }
   return req.headers.get('x-real-ip')?.trim() || 'unknown';
 }
+
+export const extractClientIp = getClientIp;

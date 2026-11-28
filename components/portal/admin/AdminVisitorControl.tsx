@@ -243,7 +243,7 @@ export default function AdminVisitorControl() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ ticketCode: clean }),
+          body: JSON.stringify({ action: 'CHECK_IN_FACILITY_TICKET', ticketCode: clean }),
         });
         const json = await res.json().catch(() => ({}));
         const valid = res.ok && json?.success;

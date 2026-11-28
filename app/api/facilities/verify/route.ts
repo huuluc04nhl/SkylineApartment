@@ -31,7 +31,7 @@ function isBookingWithinTimeWindow(bookingDate: string, timeSlot: string, now = 
 }
 
 export async function POST(request: Request) {
-  const guard = await requireAuth(['ADMIN', 'RECEPTIONIST']);
+  const guard = await requireAuth(['ADMIN', 'RECEPTIONIST', 'OWNER', 'TENANT']);
   if (!guard.ok) return guard.response;
 
   const body = await request.json().catch(() => ({}));
@@ -54,7 +54,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, status: 'INVALID', message: 'Không tìm thấy vé tiện ích hợp lệ.' }, { status: 404 });
   }
 
-  const staffActor =
+  const isResident = guard.session.role === 'OWNER' || guard.session.role === 'TENANT';
+  if (
+    isResident &&
+    (!guard.session.apartment_code ||
+      booking.apartment_code.toUpperCase() !== guard.session.apartment_code.trim().toUpperCase())
+  ) {
+    return NextResponse.json(
+      { success: false, status: 'FORBIDDEN', message: 'Bạn không có quyền check-in vé tiện ích của căn hộ khác.' },
+      { status: 403 }
+    );
+  }
+
+  const actor =
     (typeof guard.session.profile?.full_name === 'string' && guard.session.profile.full_name.trim()) ||
     guard.session.email ||
     guard.session.authUserId;
@@ -65,12 +77,12 @@ export async function POST(request: Request) {
       facility_id: booking.facility_id,
       apartment_code: booking.apartment_code,
       user_name: booking.booker_name,
-      user_role: 'RESIDENT',
+      user_role: guard.session.role,
       method: 'QR_CODE',
       card_uid: booking.ticket_code,
       status,
       scanned_at: new Date().toISOString(),
-      notes: `${notes} (Staff: ${staffActor})`,
+      notes: `${notes} (Actor: ${actor})`,
     });
   };
 
@@ -92,18 +104,26 @@ export async function POST(request: Request) {
     );
   }
 
+  // Atomic check-in: chỉ cập nhật khi status chưa là CHECKED_IN và chưa CANCELLED
   const { data: updated, error: updateErr } = await supabaseAdmin
     .from('facility_bookings')
     .update({ status: 'CHECKED_IN' })
     .eq('id', booking.id)
+    .neq('status', 'CHECKED_IN')
+    .neq('status', 'CANCELLED')
     .select('*')
-    .single();
+    .maybeSingle();
 
   if (updateErr) {
     return NextResponse.json({ success: false, message: `Không thể cập nhật trạng thái vé: ${updateErr.message}` }, { status: 500 });
   }
 
-  await writeAccessLog('SUCCESS', `Xác thực vé tiện ích ${booking.ticket_code}`);
+  if (!updated) {
+    await writeAccessLog('DENIED', 'Vé đã được sử dụng đồng thời');
+    return NextResponse.json({ success: false, status: 'ALREADY_USED', message: 'Vé tiện ích này đã được sử dụng.' }, { status: 409 });
+  }
+
+  await writeAccessLog('SUCCESS', `Check-in vé tiện ích ${booking.ticket_code}`);
 
   return NextResponse.json({
     success: true,

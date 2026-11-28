@@ -6,7 +6,7 @@ export { getPublicEnv, publicEnvSchema };
 
 export const serverEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'Thiếu SUPABASE_SERVICE_ROLE_KEY'),
-  RESIDENT_CARD_SECRET: z.string().min(16, 'RESIDENT_CARD_SECRET phải tối thiểu 16 ký tự').optional(),
+  RESIDENT_CARD_SECRET: z.string().min(32, 'RESIDENT_CARD_SECRET phải tối thiểu 32 ký tự').optional(),
   GEMINI_API_KEY: z.string().min(1, 'Thiếu GEMINI_API_KEY').optional(),
   VNP_TMN_CODE: z.string().min(1, 'Thiếu VNP_TMN_CODE'),
   VNP_HASH_SECRET: z.string().min(1, 'Thiếu VNP_HASH_SECRET'),

@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
 import { findVisitorPassByIdOrPinDb } from '@/lib/server/visitorDb';
-import { checkRateLimit } from '@/lib/server/rateLimit';
-
-function getClientIp(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return request.headers.get('x-real-ip') || 'unknown';
-}
+import { checkRateLimit, getClientIp } from '@/lib/server/rateLimit';
 
 /**
  * GET /api/visitor/public?id=SKY-PASS-...&pin=123456
