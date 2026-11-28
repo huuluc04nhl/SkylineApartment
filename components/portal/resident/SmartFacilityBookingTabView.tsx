@@ -62,13 +62,9 @@ import {
   FacilityBooking
 } from '@/lib/facilityStore';
 
-interface SmartFacilityPassProps {
-  currentUser: User;
-  onNavigateModule?: (moduleId: string) => void;
-}
+import type { FacilityContext } from './smartFacilityTypes';
 
-
-export default function SmartFacilityBookingTabView({ ctx }: { ctx: any }) {
+export default function SmartFacilityBookingTabView({ ctx }: { ctx: FacilityContext }) {
   const { t, isEn, currentUser, onNavigateModule, aptCode, missingApartment, isOwner, userName, activeTab, setActiveTab, filterCategory, setFilterCategory, logFilter, setLogFilter, showSmartCardModal, setShowSmartCardModal, turnstileModalFac, setTurnstileModalFac, turnstileMethod, setTurnstileMethod, isTurnstileScanning, setIsTurnstileScanning, turnstileSuccessMsg, setTurnstileSuccessMsg, accessLogs, setAccessLogs, bookings, setBookings, quota, setQuota, bookingFacilityId, setBookingFacilityId, bookingDate, setBookingDate, bookingTimeSlot, setBookingTimeSlot, bookingGuestCount, setBookingGuestCount, bookingDurationHours, setBookingDurationHours, bookingPaymentMethod, setBookingPaymentMethod, bookingNotes, setBookingNotes, bookingSuccessMsg, setBookingSuccessMsg, bookingErrorMsg, setBookingErrorMsg, refundModalBooking, setRefundModalBooking, refundReason, setRefundReason, isProcessingRefund, setIsProcessingRefund, refundResultAlert, setRefundResultAlert, amenitiesList, todayStr, facilityTimeSlots, currentSlotStatus, currentLimitRule, handleExecuteTurnstileCheckin, handleCheckinTicket, handleCreateBooking, handleOpenRefundModal, handleConfirmRefund, filteredAmenities, filteredLogs } = ctx;
   return (
     <>
@@ -452,7 +448,7 @@ export default function SmartFacilityBookingTabView({ ctx }: { ctx: any }) {
                 </div>
               ) : (
                 <div className="space-y-3 max-h-[540px] overflow-y-auto pr-1">
-                  {bookings.map((b: any) => {
+                  {bookings.map((b: FacilityBooking) => {
                     const isConfirmed = b.status === 'CONFIRMED';
                     const isCheckedIn = b.status === 'CHECKED_IN';
                     const isCancelled = b.status === 'CANCELLED';

@@ -48,6 +48,7 @@ jobs:
 
       - name: Run automated tests (including RLS isolation)
         env:
+          RESIDENT_CARD_SECRET: ci-test-resident-card-secret-32-chars!!
           VNP_TMN_CODE: ${{ secrets.VNP_TMN_CODE }}
           VNP_HASH_SECRET: ${{ secrets.VNP_HASH_SECRET }}
           VNP_URL: ${{ secrets.VNP_URL }}
@@ -59,6 +60,7 @@ jobs:
 
       - name: Build Next.js production bundle
         env:
+          RESIDENT_CARD_SECRET: ci-test-resident-card-secret-32-chars!!
           VNP_TMN_CODE: ${{ secrets.VNP_TMN_CODE }}
           VNP_HASH_SECRET: ${{ secrets.VNP_HASH_SECRET }}
           VNP_URL: ${{ secrets.VNP_URL }}
@@ -112,6 +114,7 @@ jobs:
 
       - name: Run Playwright E2E tests
         env:
+          RESIDENT_CARD_SECRET: ci-test-resident-card-secret-32-chars!!
           NEXT_PUBLIC_DEMO_MODE: 'false'
           NEXT_PUBLIC_BASE_URL: http://127.0.0.1:3000
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000

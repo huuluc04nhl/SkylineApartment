@@ -5,21 +5,21 @@ import Image from 'next/image';
 import QrImage from '@/components/ui/QrImage';
 import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
 import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
-import { 
-  CreditCard, 
-  QrCode, 
-  ScanFace, 
-  CheckCircle2, 
-  Sparkles, 
-  Star, 
-  Users, 
-  Clock, 
-  ShieldCheck, 
-  Waves, 
-  Dumbbell, 
-  Flame, 
-  Smile, 
-  UtensilsCrossed, 
+import {
+  CreditCard,
+  QrCode,
+  ScanFace,
+  CheckCircle2,
+  Sparkles,
+  Star,
+  Users,
+  Clock,
+  ShieldCheck,
+  Waves,
+  Dumbbell,
+  Flame,
+  Smile,
+  UtensilsCrossed,
   History,
   DoorOpen,
   CalendarCheck,
@@ -46,12 +46,12 @@ import ResidentSmartCard from './ResidentSmartCard';
 import { useLanguage } from '@/lib/languageContext';
 import { toast } from '@/components/ui/Toast';
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser';
-import { 
-  getFacilityCheckinLogs, 
-  addFacilityCheckinLog, 
-  getFacilityBookings, 
+import {
+  getFacilityCheckinLogs,
+  addFacilityCheckinLog,
+  getFacilityBookings,
   syncFacilityBookingsFromDb,
-  createFacilityBooking, 
+  createFacilityBooking,
   cancelFacilityBooking,
   cancelFacilityBookingWithRefund,
   calculateRefundEstimate,
@@ -67,13 +67,14 @@ interface SmartFacilityPassProps {
   onNavigateModule?: (moduleId: string) => void;
 }
 
+import type { FacilityAmenityItem, FacilityContext } from './smartFacilityTypes';
 import SmartFacilityBookingTabView from './SmartFacilityBookingTabView';
 import SmartFacilityLogsAndModals from './SmartFacilityLogsAndModals';
 export default function SmartFacilityPass({ currentUser, onNavigateModule }: SmartFacilityPassProps) {
   const { t, isEn } = useLanguage();
   const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const isOwner = currentUser.role === 'OWNER';
-  const userName = currentUser?.full_name || (currentUser as any)?.fullname || 'Cư Dân';
+  const userName = currentUser?.full_name || 'Cư Dân';
 
   // 3 Chức năng rõ ràng
   const [activeTab, setActiveTab] = useState<'DISCOVER' | 'BOOKING' | 'LOGS'>('DISCOVER');
@@ -82,7 +83,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
 
   // Modal State
   const [showSmartCardModal, setShowSmartCardModal] = useState(false);
-  const [turnstileModalFac, setTurnstileModalFac] = useState<any | null>(null);
+  const [turnstileModalFac, setTurnstileModalFac] = useState<FacilityAmenityItem | null>(null);
   const [turnstileMethod, setTurnstileMethod] = useState<'NFC' | 'FACE_ID'>('NFC');
   const [isTurnstileScanning, setIsTurnstileScanning] = useState(false);
   const [turnstileSuccessMsg, setTurnstileSuccessMsg] = useState<string | null>(null);
@@ -412,7 +413,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
               setBookings(list);
               setQuota(getFacilityMonthlyQuota(aptCode));
             })
-            .catch(() => {});
+            .catch(() => { });
         }
       )
       .subscribe();
@@ -432,7 +433,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     setTimeout(() => {
       setIsTurnstileScanning(false);
       const methodText = turnstileMethod === 'NFC' ? 'Thẻ Cư Dân' : 'Nhận Diện Khuôn Mặt';
-      
+
       // Ghi log thực tế vào Store
       const updated = addFacilityCheckinLog(aptCode, {
         facilityId: turnstileModalFac.id,
@@ -486,8 +487,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     const isPrivate = fac.id === 'fac-sauna';
     const isBbq = fac.id === 'fac-bbq';
     const depositAmount = isPrivate ? bookingDurationHours * 500000 : (isBbq ? 600000 : 0);
-    const pricingText = isPrivate 
-      ? `${(bookingDurationHours * 500000).toLocaleString('vi-VN')} đ (${bookingDurationHours} tiếng phòng VIP)` 
+    const pricingText = isPrivate
+      ? `${(bookingDurationHours * 500000).toLocaleString('vi-VN')} đ (${bookingDurationHours} tiếng phòng VIP)`
       : (isBbq ? '600.000 đ / ca tiệc BBQ' : 'Miễn phí theo Thẻ Cư Dân');
 
     const result = createFacilityBooking(
@@ -516,8 +517,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     setBookingNotes('');
     setBookingSuccessMsg(
       `🎉 Đặt chỗ thành công! Mã vé điện tử: [${result.newBooking.ticketCode}]. ` +
-      (depositAmount > 0 
-        ? `Đã xác nhận thanh toán giữ chỗ ${depositAmount.toLocaleString('vi-VN')} đ (${bookingPaymentMethod}). ` 
+      (depositAmount > 0
+        ? `Đã xác nhận thanh toán giữ chỗ ${depositAmount.toLocaleString('vi-VN')} đ (${bookingPaymentMethod}). `
         : '') +
       `Quý cư dân có thể quẹt vé QR tại cổng hoặc hủy hoàn tiền nếu có việc bận đột xuất.`
     );
@@ -559,8 +560,25 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     return log.facilityId === logFilter;
   });
 
+  const facilityCtx: FacilityContext = {
+    t, isEn, currentUser, onNavigateModule, aptCode, missingApartment, isOwner, userName,
+    activeTab, setActiveTab, filterCategory, setFilterCategory, logFilter, setLogFilter,
+    showSmartCardModal, setShowSmartCardModal, turnstileModalFac, setTurnstileModalFac,
+    turnstileMethod, setTurnstileMethod, isTurnstileScanning, setIsTurnstileScanning,
+    turnstileSuccessMsg, setTurnstileSuccessMsg, accessLogs, setAccessLogs,
+    bookings, setBookings, quota, setQuota, bookingFacilityId, setBookingFacilityId,
+    bookingDate, setBookingDate, bookingTimeSlot, setBookingTimeSlot,
+    bookingGuestCount, setBookingGuestCount, bookingDurationHours, setBookingDurationHours,
+    bookingPaymentMethod, setBookingPaymentMethod, bookingNotes, setBookingNotes,
+    bookingSuccessMsg, setBookingSuccessMsg, bookingErrorMsg, setBookingErrorMsg,
+    refundModalBooking, setRefundModalBooking, refundReason, setRefundReason,
+    isProcessingRefund, setIsProcessingRefund, refundResultAlert, setRefundResultAlert,
+    amenitiesList, todayStr, facilityTimeSlots, currentSlotStatus, currentLimitRule,
+    handleExecuteTurnstileCheckin, handleCheckinTicket, handleCreateBooking,
+    handleOpenRefundModal, handleConfirmRefund, filteredAmenities, filteredLogs,
+  };
+
   if (missingApartment) return <MissingApartmentNotice />;
-  const facilityCtx: any = { t, isEn, currentUser, onNavigateModule, aptCode, missingApartment, isOwner, userName, activeTab, setActiveTab, filterCategory, setFilterCategory, logFilter, setLogFilter, showSmartCardModal, setShowSmartCardModal, turnstileModalFac, setTurnstileModalFac, turnstileMethod, setTurnstileMethod, isTurnstileScanning, setIsTurnstileScanning, turnstileSuccessMsg, setTurnstileSuccessMsg, accessLogs, setAccessLogs, bookings, setBookings, quota, setQuota, bookingFacilityId, setBookingFacilityId, bookingDate, setBookingDate, bookingTimeSlot, setBookingTimeSlot, bookingGuestCount, setBookingGuestCount, bookingDurationHours, setBookingDurationHours, bookingPaymentMethod, setBookingPaymentMethod, bookingNotes, setBookingNotes, bookingSuccessMsg, setBookingSuccessMsg, bookingErrorMsg, setBookingErrorMsg, refundModalBooking, setRefundModalBooking, refundReason, setRefundReason, isProcessingRefund, setIsProcessingRefund, refundResultAlert, setRefundResultAlert, amenitiesList, todayStr, facilityTimeSlots, currentSlotStatus, currentLimitRule, handleExecuteTurnstileCheckin, handleCheckinTicket, handleCreateBooking, handleOpenRefundModal, handleConfirmRefund, filteredAmenities, filteredLogs };
   return (
     <div className="space-y-6 w-full animate-fadeIn">
       {/* ============================================================= */}
@@ -613,11 +631,10 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
         <button
           type="button"
           onClick={() => setActiveTab('DISCOVER')}
-          className={`px-3 sm:px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${
-            activeTab === 'DISCOVER'
-              ? 'bg-[#C5A880] text-[#0D1117] shadow-lg'
-              : 'bg-[#121820] text-gray-400 hover:text-white border border-[#222B35]'
-          }`}
+          className={`px-3 sm:px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${activeTab === 'DISCOVER'
+            ? 'bg-[#C5A880] text-[#0D1117] shadow-lg'
+            : 'bg-[#121820] text-gray-400 hover:text-white border border-[#222B35]'
+            }`}
         >
           <DoorOpen className="w-4 h-4" />
           <span><span className="sm:hidden">{isEn ? 'Amenities' : 'Tiện Ích'}</span><span className="hidden sm:inline">{isEn ? '1. Amenities Catalog' : '1. Danh Mục Tiện Ích'}</span> ({amenitiesList.length})</span>
@@ -627,11 +644,10 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
         <button
           type="button"
           onClick={() => setActiveTab('BOOKING')}
-          className={`px-3 sm:px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${
-            activeTab === 'BOOKING'
-              ? 'bg-[#C5A880] text-[#0D1117] shadow-lg'
-              : 'bg-[#121820] text-gray-400 hover:text-white border border-[#222B35]'
-          }`}
+          className={`px-3 sm:px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${activeTab === 'BOOKING'
+            ? 'bg-[#C5A880] text-[#0D1117] shadow-lg'
+            : 'bg-[#121820] text-gray-400 hover:text-white border border-[#222B35]'
+            }`}
         >
           <CalendarCheck className="w-4 h-4" />
           <span><span className="sm:hidden">{isEn ? 'Bookings' : 'Đặt Chỗ'}</span><span className="hidden sm:inline">{isEn ? '2. Bookings & Passes' : '2. Đặt Chỗ & Vé Vào'}</span> ({bookings.filter(b => b.status === 'CONFIRMED').length})</span>
@@ -641,11 +657,10 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
         <button
           type="button"
           onClick={() => setActiveTab('LOGS')}
-          className={`px-3 sm:px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${
-            activeTab === 'LOGS'
-              ? 'bg-[#C5A880] text-[#0D1117] shadow-lg'
-              : 'bg-[#121820] text-gray-400 hover:text-white border border-[#222B35]'
-          }`}
+          className={`px-3 sm:px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-all flex items-center gap-1.5 shrink-0 active:scale-95 ${activeTab === 'LOGS'
+            ? 'bg-[#C5A880] text-[#0D1117] shadow-lg'
+            : 'bg-[#121820] text-gray-400 hover:text-white border border-[#222B35]'
+            }`}
         >
           <History className="w-4 h-4" />
           <span><span className="sm:hidden">{isEn ? 'History' : 'Lịch Sử'}</span><span className="hidden sm:inline">{isEn ? '3. Access Log' : '3. Nhật Ký Ra Vào'}</span> ({accessLogs.length})</span>
@@ -662,18 +677,16 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
             <button
               type="button"
               onClick={() => setFilterCategory('ALL')}
-              className={`px-2.5 py-1.5 text-xs font-bold rounded-none transition-colors shrink-0 ${
-                filterCategory === 'ALL' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
-              }`}
+              className={`px-2.5 py-1.5 text-xs font-bold rounded-none transition-colors shrink-0 ${filterCategory === 'ALL' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
+                }`}
             >
               {isEn ? `All (${amenitiesList.length})` : `Tất Cả (${amenitiesList.length})`}
             </button>
             <button
               type="button"
               onClick={() => setFilterCategory('SPORTS')}
-              className={`px-2.5 py-1.5 text-xs font-bold rounded-none transition-colors shrink-0 ${
-                filterCategory === 'SPORTS' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
-              }`}
+              className={`px-2.5 py-1.5 text-xs font-bold rounded-none transition-colors shrink-0 ${filterCategory === 'SPORTS' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
+                }`}
             >
               <span className="sm:hidden">{isEn ? 'Sports' : 'Thể Thao'}</span>
               <span className="hidden sm:inline">{isEn ? 'Sports & Swimming Pool' : 'Thể Thao & Hồ Bơi'}</span> ({amenitiesList.filter(a => a.category === 'SPORTS').length})
@@ -681,9 +694,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
             <button
               type="button"
               onClick={() => setFilterCategory('WELLNESS')}
-              className={`px-2.5 py-1.5 text-xs font-bold rounded-none transition-colors shrink-0 ${
-                filterCategory === 'WELLNESS' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
-              }`}
+              className={`px-2.5 py-1.5 text-xs font-bold rounded-none transition-colors shrink-0 ${filterCategory === 'WELLNESS' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
+                }`}
             >
               <span className="sm:hidden">{isEn ? 'Wellness' : 'Sức Khỏe'}</span>
               <span className="hidden sm:inline">{isEn ? 'Wellness & Children' : 'Sức Khỏe & Trẻ Em'}</span> ({amenitiesList.filter(a => a.category === 'WELLNESS').length})
@@ -691,9 +703,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
             <button
               type="button"
               onClick={() => setFilterCategory('PARK')}
-              className={`px-2.5 py-1.5 text-xs font-bold rounded-none transition-colors shrink-0 ${
-                filterCategory === 'PARK' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
-              }`}
+              className={`px-2.5 py-1.5 text-xs font-bold rounded-none transition-colors shrink-0 ${filterCategory === 'PARK' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
+                }`}
             >
               <span className="sm:hidden">{isEn ? 'Parks' : 'Công Viên'}</span>
               <span className="hidden sm:inline">{isEn ? 'Parks & Landscape' : 'Công Viên & Cảnh Quan'}</span> ({amenitiesList.filter(a => a.category === 'PARK').length})
@@ -701,9 +712,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
             <button
               type="button"
               onClick={() => setFilterCategory('PARTY')}
-              className={`px-2.5 py-1.5 text-xs font-bold rounded-none transition-colors shrink-0 ${
-                filterCategory === 'PARTY' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
-              }`}
+              className={`px-2.5 py-1.5 text-xs font-bold rounded-none transition-colors shrink-0 ${filterCategory === 'PARTY' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
+                }`}
             >
               <span className="sm:hidden">{isEn ? 'BBQ' : 'Tiệc BBQ'}</span>
               <span className="hidden sm:inline">{isEn ? 'BBQ Party & Social Area' : 'Tiệc BBQ & Sân Nhóm'}</span> ({amenitiesList.filter(a => a.category === 'PARTY').length})
@@ -740,11 +750,10 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
 
                     {/* Badge Quyền Truy Cập */}
                     <div className="absolute top-3 right-3">
-                      <span className={`px-2 py-0.5 text-[9px] font-mono font-bold uppercase rounded-none border ${
-                        isFreeEntry 
-                          ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50' 
-                          : 'bg-amber-950/90 text-amber-300 border-amber-500/50'
-                      }`}>
+                      <span className={`px-2 py-0.5 text-[9px] font-mono font-bold uppercase rounded-none border ${isFreeEntry
+                        ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50'
+                        : 'bg-amber-950/90 text-amber-300 border-amber-500/50'
+                        }`}>
                         {isFreeEntry ? t('CỔNG TỰ ĐỘNG') : t('CẦN ĐẶT LỊCH')}
                       </span>
                     </div>
@@ -819,9 +828,6 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
         </div>
       )}
 
-      {/* ============================================================= */}
-      {/* CHỨC NĂNG 2: ĐẶT CHỖ TIỆN ÍCH & VÉ ĐIỆN TỬ QR                   */}
-      {/* ============================================================= */}
       <SmartFacilityBookingTabView ctx={facilityCtx} />
       <SmartFacilityLogsAndModals ctx={facilityCtx} />
     </div>

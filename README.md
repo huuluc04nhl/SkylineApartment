@@ -29,7 +29,7 @@ cp .env.example .env.local
 ```
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`: khóa public của project Supabase.
 - `SUPABASE_SERVICE_ROLE_KEY`: khóa service role (**chỉ dùng ở server**, không gắn `NEXT_PUBLIC_`).
-- `RESIDENT_CARD_SECRET`: khóa bí mật ký HMAC thẻ cư dân động (**chỉ dùng ở server**, bắt buộc tối thiểu 32 ký tự).
+- `RESIDENT_CARD_SECRET`: khóa bí mật ký HMAC thẻ cư dân động (**chỉ dùng ở server**, bắt buộc tối thiểu 32 ký tự; tạo khóa thật bằng `openssl rand -base64 48`).
 - `GEMINI_API_KEY`: API key Google Gemini (server-only).
 - `VNP_TMN_CODE`, `VNP_HASH_SECRET`, `VNP_URL`: cấu hình VNPay.
 - `NEXT_PUBLIC_BASE_URL`: `http://localhost:3000`.

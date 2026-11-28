@@ -62,13 +62,9 @@ import {
   FacilityBooking
 } from '@/lib/facilityStore';
 
-interface SmartFacilityPassProps {
-  currentUser: User;
-  onNavigateModule?: (moduleId: string) => void;
-}
+import type { FacilityContext } from './smartFacilityTypes';
 
-
-export default function SmartFacilityLogsAndModals({ ctx }: { ctx: any }) {
+export default function SmartFacilityLogsAndModals({ ctx }: { ctx: FacilityContext }) {
   const { t, isEn, currentUser, onNavigateModule, aptCode, missingApartment, isOwner, userName, activeTab, setActiveTab, filterCategory, setFilterCategory, logFilter, setLogFilter, showSmartCardModal, setShowSmartCardModal, turnstileModalFac, setTurnstileModalFac, turnstileMethod, setTurnstileMethod, isTurnstileScanning, setIsTurnstileScanning, turnstileSuccessMsg, setTurnstileSuccessMsg, accessLogs, setAccessLogs, bookings, setBookings, quota, setQuota, bookingFacilityId, setBookingFacilityId, bookingDate, setBookingDate, bookingTimeSlot, setBookingTimeSlot, bookingGuestCount, setBookingGuestCount, bookingDurationHours, setBookingDurationHours, bookingPaymentMethod, setBookingPaymentMethod, bookingNotes, setBookingNotes, bookingSuccessMsg, setBookingSuccessMsg, bookingErrorMsg, setBookingErrorMsg, refundModalBooking, setRefundModalBooking, refundReason, setRefundReason, isProcessingRefund, setIsProcessingRefund, refundResultAlert, setRefundResultAlert, amenitiesList, todayStr, facilityTimeSlots, currentSlotStatus, currentLimitRule, handleExecuteTurnstileCheckin, handleCheckinTicket, handleCreateBooking, handleOpenRefundModal, handleConfirmRefund, filteredAmenities, filteredLogs } = ctx;
   return (
     <>

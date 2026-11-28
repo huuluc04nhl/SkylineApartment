@@ -8,10 +8,12 @@
 
 | Lệnh kiểm tra | Phạm vi | Kết quả | Ghi chú |
 |---|---|---|---|
+| `npm run check:encoding` | Kiểm tra UTF-8 không BOM, không U+FFFD, không mojibake | **PASS** (exit 0) | `node scripts/check-encoding.mjs` |
+| `npm run lint` | ESLint (`next/core-web-vitals`, `react-hooks/rules-of-hooks: error`) | **PASS** (exit 0) | 0 errors |
 | `npx tsc --noEmit` | Toàn bộ TypeScript (`app/`, `components/`, `lib/`, `tests/`) | **PASS** (exit 0) | Không có lỗi kiểu dữ liệu |
-| `npm test` (`vitest run`) | 15 file test (43 test cases): unit, integration API & Supabase RLS | **PASS** (43/43) | Bao gồm `tests/rls/rls_isolation.test.ts` |
-| `npm run build` | Next.js 14 production build (33 static pages + dynamic API routes) | **PASS** (exit 0) | Build hoàn chỉnh với `NEXT_PUBLIC_DEMO_MODE=false` |
-| `npm run test:e2e` | Playwright E2E (`tests/e2e/skyline-flows.spec.ts`) với Supabase local | **Chưa chạy tại local** (đã cấu hình job `e2e` trên CI) | Máy local thiếu Docker/Podman nên `npx supabase start` không chạy được; CI `.github/workflows/ci.yml` chạy `supabase start` -> `supabase db reset` -> `migrate-auth-users.ts` -> `playwright test`. |
+| `npm test` (`vitest run`) | 18 file test (51 test cases): unit, integration API & Supabase RLS | **PASS** (51/51) | Bao gồm `tests/rls/rls_isolation.test.ts`, `visitor-qr-fixes.test.ts`, `access-and-facility-verify.test.ts`, `getClientIp.test.ts` |
+| `npm run build` | Next.js 14.2.35 production build (36 static pages + dynamic API routes) | **PASS** (exit 0) | Build hoàn chỉnh với `NEXT_PUBLIC_DEMO_MODE=false` |
+| `npm run test:e2e` | Playwright E2E (`tests/e2e/skyline-flows.spec.ts`) với Supabase local | **Chưa chạy tại local** (đã cấu hình job `e2e` trên CI) | Máy local chưa cài Docker/Podman (`docker: command not found`) nên không khởi động được Supabase local và chưa thể chụp ảnh vào `docs/screenshots/`. |
 
 ---
 
