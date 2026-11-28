@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import QrImage from '@/components/ui/QrImage';
 import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
 import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
@@ -719,10 +720,12 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                 >
                   {/* Image & Badges */}
                   <div className="relative h-44 overflow-hidden">
-                    <img
+                    <Image
                       src={fac.image}
                       alt={fac.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#121820] via-[#121820]/30 to-transparent" />
 

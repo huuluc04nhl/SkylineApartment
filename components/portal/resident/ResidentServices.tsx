@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
 import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { 
@@ -317,10 +318,12 @@ export default function ResidentServices({ currentUser, onNavigateModule }: Resi
                 <div>
                   {/* Service Header Image & Badges */}
                   <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-[#0A0E14]">
-                    <img 
-                      src={service.imageUrl} 
+                    <Image
+                      src={service.imageUrl}
                       alt={service.name}
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" 
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#121820] via-[#121820]/40 to-transparent" />
 

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { SKYLINE_FACILITIES, Facility, User } from '@/lib/dataStore';
 import { CalendarCheck, Clock, Users, CheckCircle2, Star, ShieldCheck, QrCode } from 'lucide-react';
 import { 
@@ -115,7 +116,7 @@ export default function FacilityBook({ currentUser }: FacilityBookProps) {
               }`}
             >
               <div className="relative h-28 overflow-hidden bg-black">
-                <img src={f.hero_image_url} alt={f.name} className="w-full h-full object-cover" />
+                <Image src={f.hero_image_url} alt={f.name} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
                 <div className="absolute top-2 right-2 bg-black/80 px-2 py-0.5 text-[10px] text-[#C5A880] flex items-center gap-1">
                   <Star className="w-3 h-3 fill-[#C5A880]" /> {f.rating_score}
                 </div>
