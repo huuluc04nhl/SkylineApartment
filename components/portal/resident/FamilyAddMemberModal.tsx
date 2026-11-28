@@ -95,10 +95,10 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                 </div>
                 <div>
                   <h3 className="text-sm sm:text-base font-serif font-bold text-white">
-                    ThÃªm CÆ° DÃ¢n â€¢ CÄƒn {aptCode}
+                    Thêm Cư Dân • Căn {aptCode}
                   </h3>
                   <p className="text-[11px] text-gray-400">
-                    ThÃªm thÃ nh viÃªn vÃ o danh sÃ¡ch cÄƒn há»™
+                    Thêm thành viên vào danh sách căn hộ
                   </p>
                 </div>
               </div>
@@ -135,7 +135,7 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                 }`}
               >
                 <ShieldCheck className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">{t('CÃ³ Sáºµn', 'Pre-registered')} ({bqlAccounts.length})</span>
+                <span className="truncate">{t('Có Sẵn', 'Pre-registered')} ({bqlAccounts.length})</span>
               </button>
 
               <button
@@ -152,7 +152,7 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                 }`}
               >
                 <Search className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">{t('Tra Cá»©u', 'Search')}</span>
+                <span className="truncate">{t('Tra Cứu', 'Search')}</span>
               </button>
 
               <button
@@ -169,13 +169,13 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                 }`}
               >
                 <UserPlus className="w-3 h-3 flex-shrink-0" />
-                <span className="truncate">{t('Nháº­p Má»›i', 'Add New')}</span>
+                <span className="truncate">{t('Nhập Mới', 'Add New')}</span>
               </button>
             </div>
 
             {/* ------------------------------------------------------------- */}
             {/* ------------------------------------------------------------- */}
-            {/* MODE 1: CHá»ŒN Tá»ª DANH SÃCH TÃ€I KHOáº¢N KHáº¢ Dá»¤NG                   */}
+            {/* MODE 1: CHỌN TỪ DANH SÁCH TÀI KHOẢN KHẢ DỤNG                   */}
             {/* ------------------------------------------------------------- */}
             {modalMode === 'PRE_APPROVED' && (() => {
               const filteredBqlAccounts = bqlAccounts.filter((acc: any) => {
@@ -193,9 +193,9 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
               return (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between text-[11px] text-gray-400">
-                    <span>{t('TÃ i khoáº£n ngÆ°á»i nhÃ  Ä‘Ã£ Ä‘Äƒng kÃ½ trong há»‡ thá»‘ng:', 'Registered family accounts in system:')}</span>
+                    <span>{t('Tài khoản người nhà đã đăng ký trong hệ thống:', 'Registered family accounts in system:')}</span>
                     <span className="text-[#C5A880] font-mono font-bold">
-                      {filteredBqlAccounts.length} / {bqlAccounts.length} tÃ i khoáº£n
+                      {filteredBqlAccounts.length} / {bqlAccounts.length} tài khoản
                     </span>
                   </div>
 
@@ -206,7 +206,7 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                       type="text"
                       value={preApprovedFilter}
                       onChange={(e) => setPreApprovedFilter(e.target.value)}
-                      placeholder={isEn ? 'Filter by name, phone or ID...' : 'Lá»c nhanh theo há» tÃªn, SÄT hoáº·c CCCD...'}
+                      placeholder={isEn ? 'Filter by name, phone or ID...' : 'Lọc nhanh theo họ tên, SĐT hoặc CCCD...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] pl-9 pr-8 py-2 text-white text-xs font-mono rounded-none focus:border-[#C5A880] outline-none"
                     />
                     {preApprovedFilter && (
@@ -222,13 +222,13 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
 
                   {filteredBqlAccounts.length === 0 ? (
                     <div className="p-5 bg-[#161D26] border border-[#222B35] rounded-none text-center text-xs text-gray-400 space-y-1.5">
-                      <p>{t('KhÃ´ng tÃ¬m tháº¥y tÃ i khoáº£n phÃ¹ há»£p vá»›i tá»« khÃ³a', 'No accounts found matching keyword')} "{preApprovedFilter}".</p>
+                      <p>{t('Không tìm thấy tài khoản phù hợp với từ khóa', 'No accounts found matching keyword')} "{preApprovedFilter}".</p>
                       <button
                         type="button"
                         onClick={() => setPreApprovedFilter('')}
                         className="text-[#C5A880] hover:underline text-xs"
                       >
-                        Hiá»ƒn thá»‹ láº¡i táº¥t cáº£ tÃ i khoáº£n
+                        Hiển thị lại tất cả tài khoản
                       </button>
                     </div>
                   ) : (
@@ -267,34 +267,34 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                                   <span className="truncate">{acc.fullName}</span>
                                   {isAlreadyInUnit ? (
                                     <span className="text-[9px] px-1 py-0.5 bg-gray-800 text-gray-400 rounded-none flex-shrink-0">
-                                      Äang á»Ÿ cÄƒn nÃ y
+                                      Đang ở căn này
                                     </span>
                                   ) : (
                                     <span className="text-[9px] px-1 py-0.5 bg-[#C5A880]/15 border border-[#C5A880]/30 text-[#C5A880] rounded-none flex-shrink-0 font-mono">
-                                      NgÆ°á»i NhÃ 
+                                      Người Nhà
                                     </span>
                                   )}
                                 </div>
                                 <div className="text-[11px] text-gray-400 flex items-center gap-2 font-mono flex-wrap">
-                                  <span className="text-gray-300">{t('SÄT:', 'Phone:')} {acc.phone}</span>
-                                  {acc.idCard && <span>â€¢ CCCD: {acc.idCard}</span>}
+                                  <span className="text-gray-300">{t('SĐT:', 'Phone:')} {acc.phone}</span>
+                                  {acc.idCard && <span>• CCCD: {acc.idCard}</span>}
                                 </div>
                               </div>
                             </div>
 
                             <div className="flex-shrink-0">
                               {isAlreadyInUnit ? (
-                                <span className="text-[10px] text-gray-500 italic">{t('ÄÃ£ cÃ³', 'Added')}</span>
+                                <span className="text-[10px] text-gray-500 italic">{t('Đã có', 'Added')}</span>
                               ) : isSelected ? (
                                 <span className="px-2.5 py-1 bg-[#C5A880] text-[#0D1117] text-[10px] font-bold rounded-none flex items-center gap-1">
-                                  <Check className="w-3 h-3 stroke-[3]" /> ÄÃ£ chá»n
+                                  <Check className="w-3 h-3 stroke-[3]" /> Đã chọn
                                 </span>
                               ) : (
                                 <button
                                   type="button"
                                   className="px-2.5 py-1 bg-[#141B24] hover:bg-[#C5A880] text-gray-300 hover:text-[#0D1117] border border-[#2D3748] hover:border-[#C5A880] text-[10px] font-semibold rounded-none transition-colors"
                                 >
-                                  Chá»n
+                                  Chọn
                                 </button>
                               )}
                             </div>
@@ -308,7 +308,7 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
             })()}
 
             {/* ------------------------------------------------------------- */}
-            {/* MODE 2: TRA Cá»¨U TÃ€I KHOáº¢N QUA API Báº°NG SÄT / CCCD             */}
+            {/* MODE 2: TRA CỨU TÀI KHOẢN QUA API BẰNG SĐT / CCCD             */}
             {/* ------------------------------------------------------------- */}
             {modalMode === 'SEARCH_API' && (
               <div className="space-y-3">
@@ -317,7 +317,7 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={isEn ? 'Enter phone, ID or member name...' : 'Nháº­p SÄT, CCCD hoáº·c há» tÃªn ngÆ°á»i nhÃ ...'}
+                    placeholder={isEn ? 'Enter phone, ID or member name...' : 'Nhập SĐT, CCCD hoặc họ tên người nhà...'}
                     className="flex-1 bg-[#161B22] border border-[#2D3748] p-2 text-white text-xs font-mono rounded-none focus:border-[#C5A880] outline-none"
                   />
                   <button
@@ -330,19 +330,19 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                     ) : (
                       <Search className="w-3.5 h-3.5" />
                     )}
-                    Tra Cá»©u
+                    Tra Cứu
                   </button>
                 </form>
 
                 {/* Quick Suggestion Pills */}
                 <div className="space-y-1">
-                  <div className="text-[10px] text-gray-400 font-mono">{t('TÃ i khoáº£n máº«u cÃ³ sáºµn trong há»‡ thá»‘ng:', 'Available sample accounts in system:')}</div>
+                  <div className="text-[10px] text-gray-400 font-mono">{t('Tài khoản mẫu có sẵn trong hệ thống:', 'Available sample accounts in system:')}</div>
                   <div className="flex flex-wrap gap-1.5">
                     {[
-                      { name: 'Nguyá»…n Há»¯u Nhá»±t', q: '0917795211' },
-                      { name: 'Nguyá»…n VÄƒn CÆ°á»ng', q: '0325524482' },
-                      { name: 'LÃª Äá»©c Háº£i', q: '0977758215' },
-                      { name: 'VÅ© CÃ¡t Thá»‹nh', q: '0909262626' },
+                      { name: 'Nguyễn Hữu Nhựt', q: '0917795211' },
+                      { name: 'Nguyễn Văn Cường', q: '0325524482' },
+                      { name: 'Lê Đức Hải', q: '0977758215' },
+                      { name: 'Vũ Cát Thịnh', q: '0909262626' },
                     ].map((hint) => (
                       <button
                         key={hint.q}
@@ -368,7 +368,7 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                 {searchResults.length > 0 && (
                   <div className="space-y-2 animate-fadeIn">
                     <div className="text-xs text-emerald-400 font-bold flex items-center gap-1 border-b border-[#222B35] pb-1">
-                      <CheckCircle className="w-3.5 h-3.5" /> Káº¿t Quáº£ TÃ¬m Tháº¥y ({searchResults.length}):
+                      <CheckCircle className="w-3.5 h-3.5" /> Kết Quả Tìm Thấy ({searchResults.length}):
                     </div>
 
                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
@@ -406,30 +406,30 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                                   <span className="truncate">{acc.fullName}</span>
                                   {isAlreadyInUnit && (
                                     <span className="text-[9px] px-1 py-0.5 bg-gray-800 text-gray-400 rounded-none flex-shrink-0">
-                                      Äang á»Ÿ cÄƒn nÃ y
+                                      Đang ở căn này
                                     </span>
                                   )}
                                 </div>
                                 <div className="text-[11px] text-gray-400 flex items-center gap-2 font-mono flex-wrap">
-                                  <span>{t('SÄT:', 'Phone:')} {acc.phone}</span>
-                                  {acc.idCard && <span>â€¢ CCCD: {acc.idCard}</span>}
+                                  <span>{t('SĐT:', 'Phone:')} {acc.phone}</span>
+                                  {acc.idCard && <span>• CCCD: {acc.idCard}</span>}
                                 </div>
                               </div>
                             </div>
 
                             <div className="flex-shrink-0">
                               {isAlreadyInUnit ? (
-                                <span className="text-[10px] text-gray-500 italic">{t('ÄÃ£ cÃ³', 'Added')}</span>
+                                <span className="text-[10px] text-gray-500 italic">{t('Đã có', 'Added')}</span>
                               ) : isSelected ? (
                                 <span className="px-2.5 py-1 bg-[#C5A880] text-[#0D1117] text-[10px] font-bold rounded-none flex items-center gap-1">
-                                  <Check className="w-3 h-3 stroke-[3]" /> ÄÃ£ chá»n
+                                  <Check className="w-3 h-3 stroke-[3]" /> Đã chọn
                                 </span>
                               ) : (
                                 <button
                                   type="button"
                                   className="px-2.5 py-1 bg-[#C5A880] text-[#0D1117] font-bold text-[10px] rounded-none hover:bg-white transition-colors"
                                 >
-                                  + Chá»n
+                                  + Chọn
                                 </button>
                               )}
                             </div>
@@ -443,28 +443,28 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
             )}
 
             {/* ------------------------------------------------------------- */}
-            {/* MODE 3: NHáº¬P TRá»°C TIáº¾P THÃ”NG TIN NGÆ¯á»œI THÃ‚N                     */}
+            {/* MODE 3: NHẬP TRỰC TIẾP THÔNG TIN NGƯỜI THÂN                     */}
             {/* ------------------------------------------------------------- */}
             {modalMode === 'DIRECT_INPUT' && (
               <form onSubmit={handleDirectAddMember} className="space-y-3 text-xs">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
                     <label className="text-gray-300 font-medium block mb-1">
-                      Há» vÃ  TÃªn <span className="text-rose-400">*</span>
+                      Họ và Tên <span className="text-rose-400">*</span>
                     </label>
                     <input
                       type="text"
                       required
                       value={directFullName}
                       onChange={(e) => setDirectFullName(e.target.value)}
-                      placeholder={isEn ? 'Enter full name...' : 'Nháº­p há» vÃ  tÃªn...'}
+                      placeholder={isEn ? 'Enter full name...' : 'Nhập họ và tên...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     />
                   </div>
 
                   <div>
                     <label className="text-gray-300 font-medium block mb-1">
-                      Sá»‘ Äiá»‡n Thoáº¡i (10 sá»‘) <span className="text-rose-400">*</span>
+                      Số Điện Thoại (10 số) <span className="text-rose-400">*</span>
                     </label>
                     <input
                       type="tel"
@@ -472,7 +472,7 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                       maxLength={10}
                       value={directPhone}
                       onChange={(e) => setDirectPhone(cleanPhoneNumber(e.target.value))}
-                      placeholder={isEn ? 'Enter 10-digit phone number...' : 'Nháº­p 10 sá»‘ Ä‘iá»‡n thoáº¡i...'}
+                      placeholder={isEn ? 'Enter 10-digit phone number...' : 'Nhập 10 số điện thoại...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white font-mono rounded-none focus:border-[#C5A880] outline-none"
                     />
                     {directPhone && !isValidPhoneNumber(directPhone) && (
@@ -484,36 +484,36 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
 
                   <div>
                     <label className="text-gray-300 font-medium block mb-1">
-                      Má»‘i Quan Há»‡ Vá»›i Chá»§ Há»™ <span className="text-rose-400">*</span>
+                      Mối Quan Hệ Với Chủ Hộ <span className="text-rose-400">*</span>
                     </label>
                     <select
                       value={directRelationship}
                       onChange={(e) => setDirectRelationship(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="{t('Vá»£ / Chá»“ng', 'Spouse')}">{t('Vá»£ / Chá»“ng', 'Spouse')}</option>
-                      <option value="{t('Con ruá»™t', 'Biological child')}">{t('Con ruá»™t', 'Biological child')}</option>
-                      <option value="{t('Con nuÃ´i', 'Adopted child')}">{t('Con nuÃ´i', 'Adopted child')}</option>
-                      <option value="{t('Bá»‘ / Máº¹', 'Parents')} ruá»™t">{t('Bá»‘ / Máº¹', 'Parents')} ruá»™t</option>
-                      <option value="{t('Bá»‘ / Máº¹', 'Parents')} vá»£ / chá»“ng">{t('Bá»‘ / Máº¹', 'Parents')} vá»£ / chá»“ng</option>
-                      <option value="{t('Anh / Chá»‹ / Em', 'Siblings')} ruá»™t">{t('Anh / Chá»‹ / Em', 'Siblings')} ruá»™t</option>
-                      <option value="{t('ChÃ¡u ruá»™t', 'Niece / Nephew')}">{t('ChÃ¡u ruá»™t', 'Niece / Nephew')}</option>
-                      <option value="{t('NgÆ°á»i thÃ¢n khÃ¡c', 'Other relative')}">{t('NgÆ°á»i thÃ¢n khÃ¡c', 'Other relative')}</option>
-                      <option value="{t('NgÆ°á»i giÃºp viá»‡c / Báº£o máº«u', 'Housekeeper / Nanny')}">{t('NgÆ°á»i giÃºp viá»‡c / Báº£o máº«u', 'Housekeeper / Nanny')}</option>
-                      <option value="{t('LÃ¡i xe riÃªng', 'Private driver')}">{t('LÃ¡i xe riÃªng', 'Private driver')}</option>
+                      <option value="{t('Vợ / Chồng', 'Spouse')}">{t('Vợ / Chồng', 'Spouse')}</option>
+                      <option value="{t('Con ruột', 'Biological child')}">{t('Con ruột', 'Biological child')}</option>
+                      <option value="{t('Con nuôi', 'Adopted child')}">{t('Con nuôi', 'Adopted child')}</option>
+                      <option value="{t('Bố / Mẹ', 'Parents')} ruột">{t('Bố / Mẹ', 'Parents')} ruột</option>
+                      <option value="{t('Bố / Mẹ', 'Parents')} vợ / chồng">{t('Bố / Mẹ', 'Parents')} vợ / chồng</option>
+                      <option value="{t('Anh / Chị / Em', 'Siblings')} ruột">{t('Anh / Chị / Em', 'Siblings')} ruột</option>
+                      <option value="{t('Cháu ruột', 'Niece / Nephew')}">{t('Cháu ruột', 'Niece / Nephew')}</option>
+                      <option value="{t('Người thân khác', 'Other relative')}">{t('Người thân khác', 'Other relative')}</option>
+                      <option value="{t('Người giúp việc / Bảo mẫu', 'Housekeeper / Nanny')}">{t('Người giúp việc / Bảo mẫu', 'Housekeeper / Nanny')}</option>
+                      <option value="{t('Lái xe riêng', 'Private driver')}">{t('Lái xe riêng', 'Private driver')}</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="text-gray-300 font-medium block mb-1">
-                      Sá»‘ CCCD / Äá»‹nh Danh (12 sá»‘)
+                      Số CCCD / Định Danh (12 số)
                     </label>
                     <input
                       type="text"
                       maxLength={12}
                       value={directIdCard}
                       onChange={(e) => setDirectIdCard(cleanCccdNumber(e.target.value))}
-                      placeholder={isEn ? 'Enter 12-digit ID card number...' : 'Nháº­p 12 sá»‘ CCCD...'}
+                      placeholder={isEn ? 'Enter 12-digit ID card number...' : 'Nhập 12 số CCCD...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white font-mono rounded-none focus:border-[#C5A880] outline-none"
                     />
                     {directIdCard && !isValidCccdNumber(directIdCard) && (
@@ -524,35 +524,35 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">{t('HÃ¬nh Thá»©c CÆ° TrÃº:', 'Residency Status:')}</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Hình Thức Cư Trú:', 'Residency Status:')}</label>
                     <select
                       value={directResidenceType}
                       onChange={(e) => setDirectResidenceType(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="{t('ThÆ°á»ng trÃº cÃ¹ng chá»§ há»™', 'Permanent resident with owner')}">{t('ThÆ°á»ng trÃº cÃ¹ng chá»§ há»™', 'Permanent resident with owner')}</option>
-                      <option value="{t('Táº¡m trÃº dÃ i háº¡n', 'Long-term temporary resident')}">{t('Táº¡m trÃº dÃ i háº¡n', 'Long-term temporary resident')}</option>
-                      <option value="{t('LÆ°u trÃº cÃ³ thá»i háº¡n', 'Fixed-term stay')}">{t('LÆ°u trÃº cÃ³ thá»i háº¡n', 'Fixed-term stay')}</option>
+                      <option value="{t('Thường trú cùng chủ hộ', 'Permanent resident with owner')}">{t('Thường trú cùng chủ hộ', 'Permanent resident with owner')}</option>
+                      <option value="{t('Tạm trú dài hạn', 'Long-term temporary resident')}">{t('Tạm trú dài hạn', 'Long-term temporary resident')}</option>
+                      <option value="{t('Lưu trú có thời hạn', 'Fixed-term stay')}">{t('Lưu trú có thời hạn', 'Fixed-term stay')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">{t('CÄƒn Cá»© Báº£o LÃ£nh / Chá»©ng Minh:', 'Proof of Relationship:')}</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Căn Cứ Bảo Lãnh / Chứng Minh:', 'Proof of Relationship:')}</label>
                     <select
                       value={directRelationshipProof}
                       onChange={(e) => setDirectRelationshipProof(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="{t('Sá»• Há»™ Kháº©u / XÃ¡c nháº­n CT07', 'Household Registry / CT07')}">{t('Sá»• Há»™ Kháº©u / XÃ¡c nháº­n CT07', 'Household Registry / CT07')}</option>
-                      <option value="{t('Giáº¥y chá»©ng nháº­n káº¿t hÃ´n', 'Marriage Certificate')}">{t('Giáº¥y chá»©ng nháº­n káº¿t hÃ´n', 'Marriage Certificate')}</option>
-                      <option value="{t('Giáº¥y khai sinh', 'Birth Certificate')}">{t('Giáº¥y khai sinh', 'Birth Certificate')}</option>
-                      <option value="{t('Há»£p Ä‘á»“ng lao Ä‘á»™ng báº£o máº«u / lÃ¡i xe', 'Labor Contract for Nanny / Driver')}">{t('Há»£p Ä‘á»“ng lao Ä‘á»™ng báº£o máº«u / lÃ¡i xe', 'Labor Contract for Nanny / Driver')}</option>
-                      <option value="{t('VÄƒn báº£n báº£o lÃ£nh cá»§a chá»§ há»™', 'Owner Sponsorship Letter')}">{t('VÄƒn báº£n báº£o lÃ£nh cá»§a chá»§ há»™', 'Owner Sponsorship Letter')}</option>
+                      <option value="{t('Sổ Hộ Khẩu / Xác nhận CT07', 'Household Registry / CT07')}">{t('Sổ Hộ Khẩu / Xác nhận CT07', 'Household Registry / CT07')}</option>
+                      <option value="{t('Giấy chứng nhận kết hôn', 'Marriage Certificate')}">{t('Giấy chứng nhận kết hôn', 'Marriage Certificate')}</option>
+                      <option value="{t('Giấy khai sinh', 'Birth Certificate')}">{t('Giấy khai sinh', 'Birth Certificate')}</option>
+                      <option value="{t('Hợp đồng lao động bảo mẫu / lái xe', 'Labor Contract for Nanny / Driver')}">{t('Hợp đồng lao động bảo mẫu / lái xe', 'Labor Contract for Nanny / Driver')}</option>
+                      <option value="{t('Văn bản bảo lãnh của chủ hộ', 'Owner Sponsorship Letter')}">{t('Văn bản bảo lãnh của chủ hộ', 'Owner Sponsorship Letter')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">{t('NgÃ y Sinh (DOB):', 'Date of Birth (DOB):')}</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Ngày Sinh (DOB):', 'Date of Birth (DOB):')}</label>
                     <input
                       type="date"
                       value={directDob}
@@ -562,31 +562,31 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">{t('Giá»›i TÃ­nh:', 'Gender:')}</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Giới Tính:', 'Gender:')}</label>
                     <select
                       value={directGender}
                       onChange={(e) => setDirectGender(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
                       <option value="Nam">{t('Nam', 'Male')}</option>
-                      <option value="Ná»¯">{t('Ná»¯', 'Female')}</option>
+                      <option value="Nữ">{t('Nữ', 'Female')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">{t('NÆ¡i Sinh / QuÃª QuÃ¡n:', 'Place of Birth / Origin:')}</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Nơi Sinh / Quê Quán:', 'Place of Birth / Origin:')}</label>
                     <input
                       type="text"
                       value={directPob}
                       onChange={(e) => setDirectPob(e.target.value)}
-                      placeholder={isEn ? 'Enter place of birth / hometown...' : 'Nháº­p nÆ¡i sinh / quÃª quÃ¡n...'}
+                      placeholder={isEn ? 'Enter place of birth / hometown...' : 'Nhập nơi sinh / quê quán...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-gray-300 font-medium block mb-1">{t('Biá»ƒn Sá»‘ Xe:', 'License Plate:')}</label>
+                      <label className="text-gray-300 font-medium block mb-1">{t('Biển Số Xe:', 'License Plate:')}</label>
                       <input
                         type="text"
                         value={directLicensePlate}
@@ -596,15 +596,15 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                       />
                     </div>
                     <div>
-                      <label className="text-gray-300 font-medium block mb-1">{t('Loáº¡i PhÆ°Æ¡ng Tiá»‡n:', 'Vehicle Type:')}</label>
+                      <label className="text-gray-300 font-medium block mb-1">{t('Loại Phương Tiện:', 'Vehicle Type:')}</label>
                       <select
                         value={directVehicleType}
                         onChange={(e) => setDirectVehicleType(e.target.value)}
                         className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                       >
-                        <option value="Xe mÃ¡y">{t('Xe mÃ¡y', 'Motorcycle')}</option>
-                        <option value="Ã” tÃ´">{t('Ã” tÃ´', 'Car')}</option>
-                        <option value="Xe Ä‘áº¡p Ä‘iá»‡n">{t('Xe Ä‘áº¡p Ä‘iá»‡n', 'Electric bike')}</option>
+                        <option value="Xe máy">{t('Xe máy', 'Motorcycle')}</option>
+                        <option value="Ô tô">{t('Ô tô', 'Car')}</option>
+                        <option value="Xe đạp điện">{t('Xe đạp điện', 'Electric bike')}</option>
                       </select>
                     </div>
                   </div>
@@ -612,7 +612,7 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
 
                 <div className="p-2.5 bg-[#161D26] border border-[#C5A880]/30 text-[11px] text-[#C5A880] flex items-center gap-2">
                   <Crown className="w-4 h-4 flex-shrink-0 text-[#C5A880]" />
-                  <span>{t('Chá»§ Há»™ Báº£o LÃ£nh:', 'Sponsoring Owner:')} <strong>{ownerName}</strong> (CÄƒn {aptCode} - The Tropical BS-07)</span>
+                  <span>{t('Chủ Hộ Bảo Lãnh:', 'Sponsoring Owner:')} <strong>{ownerName}</strong> (Căn {aptCode} - The Tropical BS-07)</span>
                 </div>
 
                 <div className="pt-3 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 sm:gap-3 border-t border-[#222B35]">
@@ -621,7 +621,7 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                     onClick={() => setShowAddModal(false)}
                     className="w-full sm:w-auto px-4 py-2.5 bg-transparent hover:bg-gray-800 text-gray-300 text-xs font-semibold rounded-none cursor-pointer text-center"
                   >
-                    Há»§y
+                    Hủy
                   </button>
                   <button
                     type="submit"
@@ -630,11 +630,11 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                   >
                     {isSubmitting ? (
                       <>
-                        <RefreshCw className="w-4 h-4 animate-spin" /> Äang ThÃªm...
+                        <RefreshCw className="w-4 h-4 animate-spin" /> Đang Thêm...
                       </>
                     ) : (
                       <>
-                        <Check className="w-4 h-4" /> ThÃªm ThÃ nh ViÃªn
+                        <Check className="w-4 h-4" /> Thêm Thành Viên
                       </>
                     )}
                   </button>
@@ -654,61 +654,61 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                     <span className="text-gray-400 font-mono text-xs">({selectedAccount.phone})</span>
                   </div>
                   <span className="text-[11px] text-[#C5A880] font-medium">
-                    {t('ÄÄƒng kÃ½ vÃ o cÄƒn', 'Registering to')} {aptCode}
+                    {t('Đăng ký vào căn', 'Registering to')} {aptCode}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">{t('Má»‘i Quan Há»‡ Vá»›i Chá»§ Há»™:', 'Relationship to Owner:')}</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Mối Quan Hệ Với Chủ Hộ:', 'Relationship to Owner:')}</label>
                     <select
                       value={newRelationship}
                       onChange={(e) => setNewRelationship(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="{t('Vá»£ / Chá»“ng', 'Spouse')}">{t('Vá»£ / Chá»“ng', 'Spouse')}</option>
-                      <option value="{t('Con ruá»™t', 'Biological child')}">{t('Con ruá»™t', 'Biological child')}</option>
-                      <option value="{t('Con nuÃ´i', 'Adopted child')}">{t('Con nuÃ´i', 'Adopted child')}</option>
-                      <option value="{t('Bá»‘ / Máº¹', 'Parents')} ruá»™t">{t('Bá»‘ / Máº¹', 'Parents')} ruá»™t</option>
-                      <option value="{t('Bá»‘ / Máº¹', 'Parents')} vá»£ / chá»“ng">{t('Bá»‘ / Máº¹', 'Parents')} vá»£ / chá»“ng</option>
-                      <option value="{t('Anh / Chá»‹ / Em', 'Siblings')} ruá»™t">{t('Anh / Chá»‹ / Em', 'Siblings')} ruá»™t</option>
-                      <option value="{t('ChÃ¡u ruá»™t', 'Niece / Nephew')}">{t('ChÃ¡u ruá»™t', 'Niece / Nephew')}</option>
-                      <option value="{t('NgÆ°á»i thÃ¢n khÃ¡c', 'Other relative')}">{t('NgÆ°á»i thÃ¢n khÃ¡c', 'Other relative')}</option>
-                      <option value="{t('NgÆ°á»i giÃºp viá»‡c / Báº£o máº«u', 'Housekeeper / Nanny')}">{t('NgÆ°á»i giÃºp viá»‡c / Báº£o máº«u', 'Housekeeper / Nanny')}</option>
-                      <option value="{t('LÃ¡i xe riÃªng', 'Private driver')}">{t('LÃ¡i xe riÃªng', 'Private driver')}</option>
+                      <option value="{t('Vợ / Chồng', 'Spouse')}">{t('Vợ / Chồng', 'Spouse')}</option>
+                      <option value="{t('Con ruột', 'Biological child')}">{t('Con ruột', 'Biological child')}</option>
+                      <option value="{t('Con nuôi', 'Adopted child')}">{t('Con nuôi', 'Adopted child')}</option>
+                      <option value="{t('Bố / Mẹ', 'Parents')} ruột">{t('Bố / Mẹ', 'Parents')} ruột</option>
+                      <option value="{t('Bố / Mẹ', 'Parents')} vợ / chồng">{t('Bố / Mẹ', 'Parents')} vợ / chồng</option>
+                      <option value="{t('Anh / Chị / Em', 'Siblings')} ruột">{t('Anh / Chị / Em', 'Siblings')} ruột</option>
+                      <option value="{t('Cháu ruột', 'Niece / Nephew')}">{t('Cháu ruột', 'Niece / Nephew')}</option>
+                      <option value="{t('Người thân khác', 'Other relative')}">{t('Người thân khác', 'Other relative')}</option>
+                      <option value="{t('Người giúp việc / Bảo mẫu', 'Housekeeper / Nanny')}">{t('Người giúp việc / Bảo mẫu', 'Housekeeper / Nanny')}</option>
+                      <option value="{t('Lái xe riêng', 'Private driver')}">{t('Lái xe riêng', 'Private driver')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">{t('HÃ¬nh Thá»©c CÆ° TrÃº:', 'Residency Status:')}</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Hình Thức Cư Trú:', 'Residency Status:')}</label>
                     <select
                       value={newResidenceType}
                       onChange={(e) => setNewResidenceType(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="{t('ThÆ°á»ng trÃº cÃ¹ng chá»§ há»™', 'Permanent resident with owner')}">{t('ThÆ°á»ng trÃº cÃ¹ng chá»§ há»™', 'Permanent resident with owner')}</option>
-                      <option value="{t('Táº¡m trÃº dÃ i háº¡n', 'Long-term temporary resident')}">{t('Táº¡m trÃº dÃ i háº¡n', 'Long-term temporary resident')}</option>
-                      <option value="{t('LÆ°u trÃº cÃ³ thá»i háº¡n', 'Fixed-term stay')}">{t('LÆ°u trÃº cÃ³ thá»i háº¡n', 'Fixed-term stay')}</option>
+                      <option value="{t('Thường trú cùng chủ hộ', 'Permanent resident with owner')}">{t('Thường trú cùng chủ hộ', 'Permanent resident with owner')}</option>
+                      <option value="{t('Tạm trú dài hạn', 'Long-term temporary resident')}">{t('Tạm trú dài hạn', 'Long-term temporary resident')}</option>
+                      <option value="{t('Lưu trú có thời hạn', 'Fixed-term stay')}">{t('Lưu trú có thời hạn', 'Fixed-term stay')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">{t('CÄƒn Cá»© Báº£o LÃ£nh:', 'Proof of Relationship:')}</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Căn Cứ Bảo Lãnh:', 'Proof of Relationship:')}</label>
                     <select
                       value={newRelationshipProof}
                       onChange={(e) => setNewRelationshipProof(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="{t('Sá»• Há»™ Kháº©u / XÃ¡c nháº­n CT07', 'Household Registry / CT07')}">{t('Sá»• Há»™ Kháº©u / XÃ¡c nháº­n CT07', 'Household Registry / CT07')}</option>
-                      <option value="{t('Giáº¥y chá»©ng nháº­n káº¿t hÃ´n', 'Marriage Certificate')}">{t('Giáº¥y chá»©ng nháº­n káº¿t hÃ´n', 'Marriage Certificate')}</option>
-                      <option value="{t('Giáº¥y khai sinh', 'Birth Certificate')}">{t('Giáº¥y khai sinh', 'Birth Certificate')}</option>
-                      <option value="{t('Há»£p Ä‘á»“ng lao Ä‘á»™ng báº£o máº«u / lÃ¡i xe', 'Labor Contract for Nanny / Driver')}">{t('Há»£p Ä‘á»“ng lao Ä‘á»™ng báº£o máº«u / lÃ¡i xe', 'Labor Contract for Nanny / Driver')}</option>
-                      <option value="{t('VÄƒn báº£n báº£o lÃ£nh cá»§a chá»§ há»™', 'Owner Sponsorship Letter')}">{t('VÄƒn báº£n báº£o lÃ£nh cá»§a chá»§ há»™', 'Owner Sponsorship Letter')}</option>
+                      <option value="{t('Sổ Hộ Khẩu / Xác nhận CT07', 'Household Registry / CT07')}">{t('Sổ Hộ Khẩu / Xác nhận CT07', 'Household Registry / CT07')}</option>
+                      <option value="{t('Giấy chứng nhận kết hôn', 'Marriage Certificate')}">{t('Giấy chứng nhận kết hôn', 'Marriage Certificate')}</option>
+                      <option value="{t('Giấy khai sinh', 'Birth Certificate')}">{t('Giấy khai sinh', 'Birth Certificate')}</option>
+                      <option value="{t('Hợp đồng lao động bảo mẫu / lái xe', 'Labor Contract for Nanny / Driver')}">{t('Hợp đồng lao động bảo mẫu / lái xe', 'Labor Contract for Nanny / Driver')}</option>
+                      <option value="{t('Văn bản bảo lãnh của chủ hộ', 'Owner Sponsorship Letter')}">{t('Văn bản bảo lãnh của chủ hộ', 'Owner Sponsorship Letter')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-gray-300 font-medium block mb-1">{t('Biá»ƒn Sá»‘ Xe (tÃ¹y chá»n):', 'License Plate (optional):')}</label>
+                    <label className="text-gray-300 font-medium block mb-1">{t('Biển Số Xe (tùy chọn):', 'License Plate (optional):')}</label>
                     <input
                       type="text"
                       value={newLicensePlate}
@@ -725,7 +725,7 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                     onClick={() => setShowAddModal(false)}
                     className="w-full sm:w-auto px-4 py-2.5 bg-transparent hover:bg-[#161D26] text-gray-400 hover:text-white rounded-none transition-colors cursor-pointer text-center text-xs"
                   >
-                    Há»§y
+                    Hủy
                   </button>
                   <button
                     type="submit"
@@ -734,11 +734,11 @@ export default function FamilyAddMemberModal({ ctx }: { ctx: any }) {
                   >
                     {isSubmitting ? (
                       <>
-                        <RefreshCw className="w-4 h-4 animate-spin" /> Äang Xá»­ LÃ½...
+                        <RefreshCw className="w-4 h-4 animate-spin" /> Đang Xử Lý...
                       </>
                     ) : (
                       <>
-                        <Check className="w-4 h-4" /> ThÃªm ThÃ nh ViÃªn
+                        <Check className="w-4 h-4" /> Thêm Thành Viên
                       </>
                     )}
                   </button>

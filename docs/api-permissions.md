@@ -15,6 +15,9 @@
 | `POST /api/user/face-login` | Cho phép (rate limit IP, chỉ khớp `APPROVED`) | Cho phép | Cho phép | Cho phép | Cho phép |
 | `GET/POST /api/user/logout` | Cho phép | Cho phép | Cho phép | Cho phép | Cho phép |
 | `GET/POST /api/user` | `401` | Hồ sơ của mình | Hồ sơ của mình | Hồ sơ của mình | Hồ sơ của mình |
+| `GET /api/user/card-token` | `401` | Token thẻ HMAC của mình (60s) | Token thẻ của mình | Token thẻ của mình | Token thẻ của mình |
+| `POST /api/access/verify-card` | `401` | `403` | `403` | **Cho phép** (Quét thẻ cư dân) | **Cho phép** |
+| `POST /api/facilities/verify` | `401` | `403` | `403` | **Cho phép** (Quét vé tiện ích) | **Cho phép** |
 | `POST /api/user/updatePass` | `401` | Đổi MK của mình | Đổi MK của mình | Đổi MK của mình | Đổi MK của mình |
 | `POST /api/user/updateInfo`, `updateAvatar`, `updateCccd` | `401` | Chỉ sửa của mình | Chỉ sửa của mình | Chỉ sửa của mình | Chỉ sửa của mình |
 | `GET/POST /api/user/face-enroll` | `401` | Chỉ hồ sơ của mình (OWNER duyệt người nhà) | Chỉ hồ sơ của mình | Chỉ hồ sơ của mình | Toàn bộ |

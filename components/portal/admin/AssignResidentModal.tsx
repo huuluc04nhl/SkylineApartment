@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 import { getInitialsAvatar } from '@/lib/avatarHelper';
 
@@ -69,16 +69,16 @@ export default function AssignResidentModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Section 1: ThÃ´ng tin chá»§ há»™
+  // Section 1: Thông tin chủ hộ
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [cccd, setCccd] = useState('');
   const [dob, setDob] = useState('15/06/1992');
-  const [pob, setPob] = useState('TP. Há»“ ChÃ­ Minh');
+  const [pob, setPob] = useState('TP. Hồ Chí Minh');
   const [avatar, setAvatar] = useState(getInitialsAvatar('Skyline Resident'));
 
-  // Section 2: BiÃªn báº£n bÃ n giao ká»¹ thuáº­t & chá»‰ sá»‘
+  // Section 2: Biên bản bàn giao kỹ thuật & chỉ số
   const todayStr = new Date().toLocaleDateString('vi-VN');
   const [handoverDate, setHandoverDate] = useState(todayStr);
   const [handoverOfficer, setHandoverOfficer] = useState('VinHomes Manager');
@@ -87,14 +87,14 @@ export default function AssignResidentModal({
   const [initialElectricMeter, setInitialElectricMeter] = useState<number>(15.0);
   const [initialWaterMeter, setInitialWaterMeter] = useState<number>(1.5);
   const [handoverNotes, setHandoverNotes] = useState(
-    'ÄÃ£ kiá»ƒm tra há»‡ thá»‘ng Ä‘iá»u hÃ²a, thiáº¿t bá»‹ vá»‡ sinh, Ä‘iá»‡n nÆ°á»›c, khÃ³a cá»­a vÃ  PCCC hoáº¡t Ä‘á»™ng tá»‘t.'
+    'Đã kiểm tra hệ thống điều hòa, thiết bị vệ sinh, điện nước, khóa cửa và PCCC hoạt động tốt.'
   );
 
   const [createdProtocol, setCreatedProtocol] = useState<ApartmentHandoverProtocol | null>(null);
   const [provisionedAccount, setProvisionedAccount] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Äá»“ng bá»™ vÃ  Ä‘iá»n trÆ°á»›c thÃ´ng tin thá»±c táº¿ khi má»Ÿ modal
+  // Đồng bộ và điền trước thông tin thực tế khi mở modal
   useEffect(() => {
     if (!unit || !isOpen) return;
 
@@ -107,7 +107,7 @@ export default function AssignResidentModal({
     const defaultEmail = unit.owner?.email || (defaultPhone ? `${defaultPhone}@gmail.com` : '');
     const defaultCccd = unit.owner?.cccd || '';
     const defaultDob = unit.owner?.dob || '15/06/1992';
-    const defaultPob = unit.owner?.pob || 'TP. Há»“ ChÃ­ Minh';
+    const defaultPob = unit.owner?.pob || 'TP. Hồ Chí Minh';
     const defaultAvatar = unit.owner?.avatar || getInitialsAvatar('Skyline Resident');
 
     setName(defaultName);
@@ -126,7 +126,7 @@ export default function AssignResidentModal({
       setCardsCount(protocol.cardsCount || 2);
       setInitialElectricMeter(protocol.initialElectricMeter || 15.0);
       setInitialWaterMeter(protocol.initialWaterMeter || 1.5);
-      setHandoverNotes(protocol.notes || 'ÄÃ£ kiá»ƒm tra há»‡ thá»‘ng Ä‘iá»u hÃ²a, thiáº¿t bá»‹ vá»‡ sinh, Ä‘iá»‡n nÆ°á»›c, khÃ³a cá»­a vÃ  PCCC hoáº¡t Ä‘á»™ng tá»‘t.');
+      setHandoverNotes(protocol.notes || 'Đã kiểm tra hệ thống điều hòa, thiết bị vệ sinh, điện nước, khóa cửa và PCCC hoạt động tốt.');
     } else {
       setHandoverDate(todayStr);
       setHandoverOfficer('VinHomes Manager');
@@ -134,7 +134,7 @@ export default function AssignResidentModal({
       setCardsCount(2);
       setInitialElectricMeter(15.0);
       setInitialWaterMeter(1.5);
-      setHandoverNotes('ÄÃ£ kiá»ƒm tra há»‡ thá»‘ng Ä‘iá»u hÃ²a, thiáº¿t bá»‹ vá»‡ sinh, Ä‘iá»‡n nÆ°á»›c, khÃ³a cá»­a vÃ  PCCC hoáº¡t Ä‘á»™ng tá»‘t.');
+      setHandoverNotes('Đã kiểm tra hệ thống điều hòa, thiết bị vệ sinh, điện nước, khóa cửa và PCCC hoạt động tốt.');
     }
   }, [unit, isOpen]);
 
@@ -148,7 +148,7 @@ export default function AssignResidentModal({
     setError(null);
 
     if (!name.trim()) {
-      setError('Vui lÃ²ng nháº­p há» tÃªn chá»§ há»™.');
+      setError('Vui lòng nhập họ tên chủ hộ.');
       setActiveFormTab('RESIDENT');
       return;
     }
@@ -178,7 +178,7 @@ export default function AssignResidentModal({
 
     setIsSubmitting(true);
     try {
-      // 1. Gá»ŒI API Cáº¤P TÃ€I KHOáº¢N CÆ¯ DÃ‚N & LÆ¯U THÃ”NG TIN
+      // 1. GỌI API CẤP TÀI KHOẢN CƯ DÂN & LƯU THÔNG TIN
       const apiRes = await skylineHandoverProvisionAccount({
         apartmentCode: unit.code,
         fullName: name.trim(),
@@ -211,8 +211,8 @@ export default function AssignResidentModal({
       setCurrentStep('CERTIFICATE');
       onSuccess();
     } catch (err: any) {
-      console.warn('API tá»« xa gáº·p sá»± cá»‘, tá»± Ä‘á»™ng lÆ°u há»“ sÆ¡ vÃ o bá»™ nhá»› há»‡ thá»‘ng:', err);
-      // Fallback lÆ°u dá»¯ liá»‡u ná»™i bá»™
+      console.warn('API từ xa gặp sự cố, tự động lưu hồ sơ vào bộ nhớ hệ thống:', err);
+      // Fallback lưu dữ liệu nội bộ
       const blockCodeMatch = unit.towerName?.match(/BS-\d+/)?.[0] || 'BS-07';
       const newOwner: ApartmentResidentOwner = {
         name: name.trim(),
@@ -232,7 +232,7 @@ export default function AssignResidentModal({
         setCurrentStep('CERTIFICATE');
         onSuccess();
       } else {
-        setError(err?.message || 'KhÃ´ng thá»ƒ lÆ°u thÃ´ng tin. Vui lÃ²ng thá»­ láº¡i sau.');
+        setError(err?.message || 'Không thể lưu thông tin. Vui lòng thử lại sau.');
       }
     } finally {
       setIsSubmitting(false);
@@ -246,7 +246,7 @@ export default function AssignResidentModal({
   };
 
   const handleCopyCredentials = () => {
-    const accText = `THÃ”NG TIN TÃ€I KHOáº¢N CÆ¯ DÃ‚N SKYLINE RESIDENCE\nCÄƒn há»™: ${unit.code} (${unit.towerName})\nChá»§ há»™: ${name}\nSá»‘ Ä‘iá»‡n thoáº¡i Ä‘Äƒng nháº­p: ${phone}\nSá»‘ CCCD: ${cccd}\nMáº­t kháº©u: Do Supabase Auth cáº¥p qua email kÃ­ch hoáº¡t / QuÃªn máº­t kháº©u\nCá»•ng cÆ° dÃ¢n: https://skyline.residence.vn/portal`;
+    const accText = `THÔNG TIN TÀI KHOẢN CƯ DÂN SKYLINE RESIDENCE\nCăn hộ: ${unit.code} (${unit.towerName})\nChủ hộ: ${name}\nSố điện thoại đăng nhập: ${phone}\nSố CCCD: ${cccd}\nMật khẩu: Do Supabase Auth cấp qua email kích hoạt / Quên mật khẩu\nCổng cư dân: https://skyline.residence.vn/portal`;
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(accText);
       setCopied(true);
@@ -259,44 +259,44 @@ export default function AssignResidentModal({
       <div className="relative w-full max-w-2xl bg-[#0D1117] border border-[#C5A880]/80 shadow-2xl p-5 sm:p-6 text-white rounded-none space-y-4 max-h-[92vh] overflow-y-auto">
         
         {/* ========================================================= */}
-        {/* STEP 1: FORM THÃ”NG TIN CÆ¯ DÃ‚N / BÃ€N GIAO                  */}
+        {/* STEP 1: FORM THÔNG TIN CƯ DÂN / BÀN GIAO                  */}
         {/* ========================================================= */}
         {currentStep === 'FORM' && (
           <>
-            {/* Header ThÃ¢n Thiá»‡n */}
+            {/* Header Thân Thiện */}
             <div className="flex items-start justify-between border-b border-[#222B35] pb-3.5">
               <div>
                 <div className="text-[10px] uppercase tracking-widest text-[#C5A880] font-mono font-semibold flex items-center gap-1.5">
                   {isOccupied ? (
                     <>
-                      <Users className="w-3.5 h-3.5" /> {t('Quáº£n LÃ½ CÆ° DÃ¢n â€¢ CÄƒn Há»™ Äang Sinh Sá»‘ng', 'Resident Management â€¢ Occupied Unit')}
+                      <Users className="w-3.5 h-3.5" /> {t('Quản Lý Cư Dân • Căn Hộ Đang Sinh Sống', 'Resident Management • Occupied Unit')}
                     </>
                   ) : (
                     <>
-                      <Key className="w-3.5 h-3.5" /> {t('BÃ n Giao CÄƒn Há»™ â€¢ ÄÃ³n CÆ° DÃ¢n Má»›i', 'Apartment Handover â€¢ Welcoming New Resident')}
+                      <Key className="w-3.5 h-3.5" /> {t('Bàn Giao Căn Hộ • Đón Cư Dân Mới', 'Apartment Handover • Welcoming New Resident')}
                     </>
                   )}
                 </div>
                 <h3 className="font-serif text-xl sm:text-2xl font-bold text-white mt-1">
                   {isOccupied 
-                    ? `${t('ThÃ´ng Tin CÆ° DÃ¢n CÄƒn Há»™', 'Resident Profile for Unit')} ${unit.code}` 
-                    : `${t('BÃ n Giao CÄƒn Há»™', 'Handover Apartment')} ${unit.code}`}
+                    ? `${t('Thông Tin Cư Dân Căn Hộ', 'Resident Profile for Unit')} ${unit.code}` 
+                    : `${t('Bàn Giao Căn Hộ', 'Handover Apartment')} ${unit.code}`}
                 </h3>
                 <div className="text-xs text-gray-400 mt-0.5 flex flex-wrap items-center gap-2">
                   <span className="text-[#C5A880] font-medium">{unit.towerName}</span>
-                  <span>â€¢</span>
-                  <span>{t('Táº§ng', 'Floor')} {unit.floor}</span>
-                  <span>â€¢</span>
-                  <span>{unit.typeLabel} ({unit.area} mÂ²)</span>
-                  <span>â€¢</span>
-                  <span className="font-mono text-gray-300">{t('GiÃ¡:', 'Price:')} {unit.priceBillion} {t('tá»· VNÄ', 'Billion VND')}</span>
+                  <span>•</span>
+                  <span>{t('Tầng', 'Floor')} {unit.floor}</span>
+                  <span>•</span>
+                  <span>{unit.typeLabel} ({unit.area} m²)</span>
+                  <span>•</span>
+                  <span className="font-mono text-gray-300">{t('Giá:', 'Price:')} {unit.priceBillion} {t('tỷ VNĐ', 'Billion VND')}</span>
                 </div>
               </div>
               <button 
                 type="button" 
                 onClick={onClose} 
                 className="text-gray-400 hover:text-white p-1 hover:bg-[#161B22] transition-colors"
-                title={t('ÄÃ³ng cá»­a sá»•', 'Close window')}
+                title={t('Đóng cửa sổ', 'Close window')}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -309,7 +309,7 @@ export default function AssignResidentModal({
               </div>
             )}
 
-            {/* Tab switchers thÃ¢n thiá»‡n */}
+            {/* Tab switchers thân thiện */}
             <div className="flex border-b border-[#222B35] text-xs">
               <button
                 type="button"
@@ -321,7 +321,7 @@ export default function AssignResidentModal({
                 }`}
               >
                 <UserCheck className="w-3.5 h-3.5" /> 
-                <span>{isOccupied ? t('1. ThÃ´ng Tin Chá»§ Há»™ & CÆ° DÃ¢n', '1. Owner & Resident Info') : t('1. ThÃ´ng Tin Chá»§ Há»™ Nháº­n NhÃ ', '1. New Owner Handover Info')}</span>
+                <span>{isOccupied ? t('1. Thông Tin Chủ Hộ & Cư Dân', '1. Owner & Resident Info') : t('1. Thông Tin Chủ Hộ Nhận Nhà', '1. New Owner Handover Info')}</span>
               </button>
 
               <button
@@ -334,23 +334,23 @@ export default function AssignResidentModal({
                 }`}
               >
                 <ClipboardList className="w-3.5 h-3.5" /> 
-                <span>{t('2. BÃ n Giao ChÃ¬a KhÃ³a & Äiá»‡n NÆ°á»›c', '2. Keys & Utilities Handover')}</span>
+                <span>{t('2. Bàn Giao Chìa Khóa & Điện Nước', '2. Keys & Utilities Handover')}</span>
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              {/* TAB 1: THÃ”NG TIN CÆ¯ DÃ‚N */}
+              {/* TAB 1: THÔNG TIN CƯ DÂN */}
               {activeFormTab === 'RESIDENT' && (
                 <div className="space-y-3.5 animate-fadeIn">
                   <div>
                     <label className="block text-gray-300 font-semibold mb-1">
-                      {t('Há» vÃ  tÃªn chá»§ há»™', 'Owner Full Name')} <span className="text-rose-400">*</span>
+                      {t('Họ và tên chủ hộ', 'Owner Full Name')} <span className="text-rose-400">*</span>
                     </label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder={isEn ? 'e.g. John Doe, David Smith...' : 'VD: Tráº§n Há»¯u Lá»±c, Nguyá»…n VÄƒn Nam...'}
+                      placeholder={isEn ? 'e.g. John Doe, David Smith...' : 'VD: Trần Hữu Lực, Nguyễn Văn Nam...'}
                       className="w-full bg-[#161B22] border border-[#2D3748] px-3 py-2.5 text-white font-medium rounded-none focus:outline-none focus:border-[#C5A880]"
                       required
                     />
@@ -359,7 +359,7 @@ export default function AssignResidentModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-gray-300 font-semibold mb-1">
-                        {t('Sá»‘ Ä‘iá»‡n thoáº¡i liÃªn há»‡ (10 sá»‘)', 'Contact Phone Number (10 digits)')} <span className="text-rose-400">*</span>
+                        {t('Số điện thoại liên hệ (10 số)', 'Contact Phone Number (10 digits)')} <span className="text-rose-400">*</span>
                       </label>
                       <input
                         type="tel"
@@ -376,14 +376,14 @@ export default function AssignResidentModal({
                         </span>
                       ) : (
                         <span className="text-[10.5px] text-gray-400 mt-0.5 block">
-                          {t('DÃ¹ng lÃ m tÃ i khoáº£n Ä‘Äƒng nháº­p Cá»•ng CÆ° DÃ¢n', 'Used as Resident Portal login account')}
+                          {t('Dùng làm tài khoản đăng nhập Cổng Cư Dân', 'Used as Resident Portal login account')}
                         </span>
                       )}
                     </div>
 
                     <div>
                       <label className="block text-gray-300 font-semibold mb-1">
-                        {t('Sá»‘ CCCD (12 sá»‘)', 'Citizen ID No (12 digits)')} <span className="text-rose-400">*</span>
+                        {t('Số CCCD (12 số)', 'Citizen ID No (12 digits)')} <span className="text-rose-400">*</span>
                       </label>
                       <input
                         type="text"
@@ -400,7 +400,7 @@ export default function AssignResidentModal({
                         </span>
                       ) : (
                         <span className="text-[10.5px] text-gray-400 mt-0.5 block">
-                          {t('DÃ¹ng Ä‘á»ƒ xÃ¡c thá»±c danh tÃ­nh cÆ° dÃ¢n', 'Used for resident identity verification')}
+                          {t('Dùng để xác thực danh tính cư dân', 'Used for resident identity verification')}
                         </span>
                       )}
                     </div>
@@ -409,7 +409,7 @@ export default function AssignResidentModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-gray-300 font-semibold mb-1">
-                        {t('Email nháº­n thÃ´ng bÃ¡o & hÃ³a Ä‘Æ¡n', 'Notification & Invoice Email')}
+                        {t('Email nhận thông báo & hóa đơn', 'Notification & Invoice Email')}
                       </label>
                       <input
                         type="email"
@@ -421,7 +421,7 @@ export default function AssignResidentModal({
                     </div>
 
                     <div>
-                      <label className="block text-gray-300 font-semibold mb-1">{t('NgÃ y sinh', 'Date of Birth')}</label>
+                      <label className="block text-gray-300 font-semibold mb-1">{t('Ngày sinh', 'Date of Birth')}</label>
                       <input
                         type="text"
                         value={dob}
@@ -434,21 +434,21 @@ export default function AssignResidentModal({
 
                   <div>
                     <label className="block text-gray-300 font-semibold mb-1">
-                      {t('Äá»‹a chá»‰ thÆ°á»ng trÃº / QuÃª quÃ¡n', 'Permanent Residence / Place of Origin')}
+                      {t('Địa chỉ thường trú / Quê quán', 'Permanent Residence / Place of Origin')}
                     </label>
                     <input
                       type="text"
                       value={pob}
                       onChange={(e) => setPob(e.target.value)}
-                      placeholder={isEn ? 'e.g. Long Thanh My Ward, Thu Duc City, HCMC' : 'VD: PhÆ°á»ng Long Tháº¡nh Má»¹, TP. Thá»§ Äá»©c, TP. Há»“ ChÃ­ Minh'}
+                      placeholder={isEn ? 'e.g. Long Thanh My Ward, Thu Duc City, HCMC' : 'VD: Phường Long Thạnh Mỹ, TP. Thủ Đức, TP. Hồ Chí Minh'}
                       className="w-full bg-[#161B22] border border-[#2D3748] px-3 py-2 text-white rounded-none focus:outline-none focus:border-[#C5A880]"
                     />
                   </div>
 
                   <div className="p-3 bg-[#121820] border border-[#222B35] flex items-center justify-between">
                     <div>
-                      <div className="font-semibold text-white">{t('áº¢nh Ä‘áº¡i diá»‡n cÆ° dÃ¢n', 'Resident Avatar Photo')}</div>
-                      <div className="text-[10.5px] text-gray-400">{t('HÃ¬nh áº£nh nháº­n diá»‡n trÃªn á»©ng dá»¥ng vÃ  há»‡ thá»‘ng an ninh', 'Identification portrait on app and security system')}</div>
+                      <div className="font-semibold text-white">{t('Ảnh đại diện cư dân', 'Resident Avatar Photo')}</div>
+                      <div className="text-[10.5px] text-gray-400">{t('Hình ảnh nhận diện trên ứng dụng và hệ thống an ninh', 'Identification portrait on app and security system')}</div>
                     </div>
                     <img 
                       src={avatar} 
@@ -459,23 +459,23 @@ export default function AssignResidentModal({
                 </div>
               )}
 
-              {/* TAB 2: BIÃŠN Báº¢N BÃ€N GIAO CHÃŒA KHÃ“A & CHá»ˆ Sá» */}
+              {/* TAB 2: BIÊN BẢN BÀN GIAO CHÌA KHÓA & CHỈ SỐ */}
               {activeFormTab === 'PROTOCOL' && (
                 <div className="space-y-3.5 animate-fadeIn">
                   <div className="p-2.5 bg-[#161B22] border border-[#C5A880]/40 flex items-center justify-between text-xs">
                     <div>
-                      <span className="text-gray-400">{t('MÃ£ biÃªn báº£n:', 'Protocol code:')}</span>{' '}
+                      <span className="text-gray-400">{t('Mã biên bản:', 'Protocol code:')}</span>{' '}
                       <strong className="text-[#C5A880] font-mono">{generatedProtocolCode}</strong>
                     </div>
                     <span className="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-500 font-mono text-[10px]">
-                      {t('BAN QUáº¢N LÃ LÆ¯U TRá»®', 'MANAGEMENT ARCHIVE')}
+                      {t('BAN QUẢN LÝ LƯU TRỮ', 'MANAGEMENT ARCHIVE')}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-gray-300 font-semibold mb-1">
-                        {t('NgÃ y bÃ n giao', 'Handover Date')} <span className="text-rose-400">*</span>
+                        {t('Ngày bàn giao', 'Handover Date')} <span className="text-rose-400">*</span>
                       </label>
                       <input
                         type="text"
@@ -488,7 +488,7 @@ export default function AssignResidentModal({
 
                     <div>
                       <label className="block text-gray-300 font-semibold mb-1">
-                        {t('NhÃ¢n viÃªn BQL phá»¥ trÃ¡ch bÃ n giao', 'Handover Officer')} <span className="text-rose-400">*</span>
+                        {t('Nhân viên BQL phụ trách bàn giao', 'Handover Officer')} <span className="text-rose-400">*</span>
                       </label>
                       <input
                         type="text"
@@ -500,11 +500,11 @@ export default function AssignResidentModal({
                     </div>
                   </div>
 
-                  {/* BÃ n giao chÃ¬a khÃ³a & tháº» tá»« */}
+                  {/* Bàn giao chìa khóa & thẻ từ */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-[#121820] border border-[#222B35]">
                     <div>
                       <label className="block text-gray-300 font-semibold mb-1 flex items-center gap-1">
-                        <Key className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Sá»‘ lÆ°á»£ng chÃ¬a khÃ³a', 'Physical Keys Count')}
+                        <Key className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Số lượng chìa khóa', 'Physical Keys Count')}
                       </label>
                       <input
                         type="number"
@@ -515,13 +515,13 @@ export default function AssignResidentModal({
                         className="w-full bg-[#161B22] border border-[#2D3748] px-3 py-2 text-white font-mono rounded-none focus:outline-none focus:border-[#C5A880]"
                       />
                       <span className="text-[10px] text-gray-400 mt-0.5 block">
-                        {t('KhÃ³a cá»­a chÃ­nh, khÃ³a phÃ²ng, khÃ³a hÃ²m thÆ°', 'Main door key, room keys, mailbox key')}
+                        {t('Khóa cửa chính, khóa phòng, khóa hòm thư', 'Main door key, room keys, mailbox key')}
                       </span>
                     </div>
 
                     <div>
                       <label className="block text-gray-300 font-semibold mb-1 flex items-center gap-1">
-                        <CreditCard className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Sá»‘ tháº» thang mÃ¡y / tháº» tá»«', 'Elevator & Access Cards Count')}
+                        <CreditCard className="w-3.5 h-3.5 text-[#C5A880]" /> {t('Số thẻ thang máy / thẻ từ', 'Elevator & Access Cards Count')}
                       </label>
                       <input
                         type="number"
@@ -532,16 +532,16 @@ export default function AssignResidentModal({
                         className="w-full bg-[#161B22] border border-[#2D3748] px-3 py-2 text-white font-mono rounded-none focus:outline-none focus:border-[#C5A880]"
                       />
                       <span className="text-[10px] text-gray-400 mt-0.5 block">
-                        {t('Tháº» sá»­ dá»¥ng thang mÃ¡y vÃ  cÃ¡c tiá»‡n Ã­ch tÃ²a nhÃ ', 'Cards for elevator and building amenities access')}
+                        {t('Thẻ sử dụng thang máy và các tiện ích tòa nhà', 'Cards for elevator and building amenities access')}
                       </span>
                     </div>
                   </div>
 
-                  {/* Chá»‰ sá»‘ cÃ´ng tÆ¡ Ä‘iá»‡n nÆ°á»›c lÃºc bÃ n giao */}
+                  {/* Chỉ số công tơ điện nước lúc bàn giao */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-[#121820] border border-[#222B35]">
                     <div>
                       <label className="block text-gray-300 font-semibold mb-1 flex items-center gap-1">
-                        <Zap className="w-3.5 h-3.5 text-amber-400" /> {t('Sá»‘ Ä‘iá»‡n ban Ä‘áº§u (kWh)', 'Initial Electric Meter (kWh)')}
+                        <Zap className="w-3.5 h-3.5 text-amber-400" /> {t('Số điện ban đầu (kWh)', 'Initial Electric Meter (kWh)')}
                       </label>
                       <input
                         type="number"
@@ -552,13 +552,13 @@ export default function AssignResidentModal({
                         className="w-full bg-[#161B22] border border-[#2D3748] px-3 py-2 text-white font-mono rounded-none focus:outline-none focus:border-[#C5A880]"
                       />
                       <span className="text-[10px] text-gray-400 mt-0.5 block">
-                        {t('Má»‘c báº¯t Ä‘áº§u tÃ­nh tiá»n Ä‘iá»‡n thÃ¡ng Ä‘áº§u tiÃªn', 'Baseline for first month electricity bill')}
+                        {t('Mốc bắt đầu tính tiền điện tháng đầu tiên', 'Baseline for first month electricity bill')}
                       </span>
                     </div>
 
                     <div>
                       <label className="block text-gray-300 font-semibold mb-1 flex items-center gap-1">
-                        <Droplets className="w-3.5 h-3.5 text-cyan-400" /> {t('Sá»‘ nÆ°á»›c ban Ä‘áº§u (mÂ³)', 'Initial Water Meter (mÂ³)')}
+                        <Droplets className="w-3.5 h-3.5 text-cyan-400" /> {t('Số nước ban đầu (m³)', 'Initial Water Meter (m³)')}
                       </label>
                       <input
                         type="number"
@@ -569,14 +569,14 @@ export default function AssignResidentModal({
                         className="w-full bg-[#161B22] border border-[#2D3748] px-3 py-2 text-white font-mono rounded-none focus:outline-none focus:border-[#C5A880]"
                       />
                       <span className="text-[10px] text-gray-400 mt-0.5 block">
-                        {t('Má»‘c báº¯t Ä‘áº§u tÃ­nh tiá»n nÆ°á»›c sinh hoáº¡t', 'Baseline for first month water consumption bill')}
+                        {t('Mốc bắt đầu tính tiền nước sinh hoạt', 'Baseline for first month water consumption bill')}
                       </span>
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-gray-300 font-semibold mb-1">
-                      {t('Ghi chÃº & tÃ¬nh tráº¡ng cÄƒn há»™ khi bÃ n giao', 'Handover Notes & Apartment Condition')}
+                      {t('Ghi chú & tình trạng căn hộ khi bàn giao', 'Handover Notes & Apartment Condition')}
                     </label>
                     <textarea
                       rows={2}
@@ -588,25 +588,25 @@ export default function AssignResidentModal({
                 </div>
               )}
 
-              {/* ThÃ´ng tin xÃ¡c nháº­n thÃ¢n thiá»‡n */}
+              {/* Thông tin xác nhận thân thiện */}
               <div className="p-3 bg-[#121820] border border-[#222B35] text-[11px] text-gray-300 space-y-1">
                 <div className="text-emerald-400 font-bold flex items-center gap-1.5">
-                  <Check className="w-4 h-4" /> {t('KÃ­ch hoáº¡t tÃ i khoáº£n Cá»•ng CÆ° DÃ¢n tá»± Ä‘á»™ng', 'Automatic Resident Portal Account Activation')}
+                  <Check className="w-4 h-4" /> {t('Kích hoạt tài khoản Cổng Cư Dân tự động', 'Automatic Resident Portal Account Activation')}
                 </div>
                 <div>
                   {isOccupied ? (
                     <>
-                      {t('Há»‡ thá»‘ng sáº½ cáº­p nháº­t thÃ´ng tin chá»§ há»™ vÃ o há»“ sÆ¡ cÄƒn há»™', 'System will update owner info into profile of unit')} <strong className="text-white">{unit.code}</strong>. {t('CÆ° dÃ¢n sá»­ dá»¥ng sá»‘ Ä‘iá»‡n thoáº¡i', 'Resident will use phone number')} <strong className="text-[#C5A880]">{phone || '...'}</strong> {t('Ä‘á»ƒ Ä‘Äƒng nháº­p.', 'to log in.')}
+                      {t('Hệ thống sẽ cập nhật thông tin chủ hộ vào hồ sơ căn hộ', 'System will update owner info into profile of unit')} <strong className="text-white">{unit.code}</strong>. {t('Cư dân sử dụng số điện thoại', 'Resident will use phone number')} <strong className="text-[#C5A880]">{phone || '...'}</strong> {t('để đăng nhập.', 'to log in.')}
                     </>
                   ) : (
                     <>
-                      {t('Sau khi hoÃ n táº¥t, cÄƒn há»™', 'Upon completion, unit')} <strong className="text-white">{unit.code}</strong> {t('sáº½ chuyá»ƒn sang tráº¡ng thÃ¡i', 'will change status to')} <strong>{t('ÄÃƒ CÃ“ NGÆ¯á»œI á»ž', 'OCCUPIED')}</strong>. {t('CÆ° dÃ¢n cÃ³ thá»ƒ Ä‘Äƒng nháº­p ngay báº±ng sá»‘ Ä‘iá»‡n thoáº¡i', 'Resident can log in immediately using phone number')} <strong className="text-[#C5A880]">{phone || '...'}</strong>.
+                      {t('Sau khi hoàn tất, căn hộ', 'Upon completion, unit')} <strong className="text-white">{unit.code}</strong> {t('sẽ chuyển sang trạng thái', 'will change status to')} <strong>{t('ĐÃ CÓ NGƯỜI Ở', 'OCCUPIED')}</strong>. {t('Cư dân có thể đăng nhập ngay bằng số điện thoại', 'Resident can log in immediately using phone number')} <strong className="text-[#C5A880]">{phone || '...'}</strong>.
                     </>
                   )}
                 </div>
               </div>
 
-              {/* NÃºt hÃ nh Ä‘á»™ng */}
+              {/* Nút hành động */}
               <div className="flex items-center justify-between pt-3 border-t border-[#222B35]">
                 {activeFormTab === 'RESIDENT' ? (
                   <button
@@ -614,7 +614,7 @@ export default function AssignResidentModal({
                     onClick={() => setActiveFormTab('PROTOCOL')}
                     className="px-4 py-2 bg-[#161B22] hover:bg-[#202936] text-gray-200 hover:text-white border border-[#2D3748] font-semibold transition-colors flex items-center gap-1.5"
                   >
-                    {t('Tiáº¿p: ChÃ¬a KhÃ³a & Äiá»‡n NÆ°á»›c â†’', 'Next: Keys & Utilities â†’')}
+                    {t('Tiếp: Chìa Khóa & Điện Nước →', 'Next: Keys & Utilities →')}
                   </button>
                 ) : (
                   <button
@@ -622,7 +622,7 @@ export default function AssignResidentModal({
                     onClick={() => setActiveFormTab('RESIDENT')}
                     className="px-4 py-2 bg-[#161B22] hover:bg-[#202936] text-gray-200 hover:text-white border border-[#2D3748] font-semibold transition-colors flex items-center gap-1.5"
                   >
-                    {t('â† Quay Láº¡i ThÃ´ng Tin CÆ° DÃ¢n', 'â† Back to Resident Profile')}
+                    {t('← Quay Lại Thông Tin Cư Dân', '← Back to Resident Profile')}
                   </button>
                 )}
 
@@ -632,7 +632,7 @@ export default function AssignResidentModal({
                     onClick={onClose}
                     className="px-4 py-2 bg-[#161B22] hover:bg-[#202936] text-gray-300 hover:text-white border border-[#2D3748] font-semibold transition-colors"
                   >
-                    {t('Há»§y', 'Cancel')}
+                    {t('Hủy', 'Cancel')}
                   </button>
                   <button
                     type="submit"
@@ -641,15 +641,15 @@ export default function AssignResidentModal({
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> {t('Äang lÆ°u thÃ´ng tin...', 'Saving details...')}
+                        <Loader2 className="w-4 h-4 animate-spin" /> {t('Đang lưu thông tin...', 'Saving details...')}
                       </>
                     ) : isOccupied ? (
                       <>
-                        <UserCheck className="w-4 h-4" /> {t('LÆ°u ThÃ´ng Tin CÆ° DÃ¢n', 'Save Resident Profile')}
+                        <UserCheck className="w-4 h-4" /> {t('Lưu Thông Tin Cư Dân', 'Save Resident Profile')}
                       </>
                     ) : (
                       <>
-                        <FileCheck2 className="w-4 h-4" /> {t('HoÃ n Táº¥t BÃ n Giao & Cáº¥p Quyá»n', 'Complete Handover & Grant Access')}
+                        <FileCheck2 className="w-4 h-4" /> {t('Hoàn Tất Bàn Giao & Cấp Quyền', 'Complete Handover & Grant Access')}
                       </>
                     )}
                   </button>
@@ -660,11 +660,11 @@ export default function AssignResidentModal({
         )}
 
         {/* ========================================================= */}
-        {/* STEP 2: XÃC NHáº¬N THÃ€NH CÃ”NG                                */}
+        {/* STEP 2: XÁC NHẬN THÀNH CÔNG                                */}
         {/* ========================================================= */}
         {currentStep === 'CERTIFICATE' && createdProtocol && (
           <div className="space-y-4 animate-fadeIn">
-            {/* Header xÃ¡c nháº­n */}
+            {/* Header xác nhận */}
             <div className="p-6 bg-gradient-to-b from-[#1C2533] to-[#121820] border-2 border-[#C5A880] text-center space-y-3 relative">
               <div className="w-12 h-12 bg-[#C5A880]/15 border border-[#C5A880] flex items-center justify-center mx-auto text-[#C5A880]">
                 <ShieldCheck className="w-7 h-7" />
@@ -672,84 +672,84 @@ export default function AssignResidentModal({
 
               <div>
                 <div className="text-[10px] uppercase tracking-[0.25em] text-[#C5A880] font-mono font-bold">
-                  {t('SKYLINE SMART RESIDENCE â€¢ BAN QUáº¢N LÃ', 'SKYLINE SMART RESIDENCE â€¢ MANAGEMENT')}
+                  {t('SKYLINE SMART RESIDENCE • BAN QUẢN LÝ', 'SKYLINE SMART RESIDENCE • MANAGEMENT')}
                 </div>
                 <h2 className="font-serif text-2xl text-white font-bold mt-1">
-                  {isOccupied ? t('Cáº¬P NHáº¬T Há»’ SÆ  CÆ¯ DÃ‚N THÃ€NH CÃ”NG', 'RESIDENT PROFILE UPDATED SUCCESSFULLY') : t('BÃ€N GIAO CÄ‚N Há»˜ THÃ€NH CÃ”NG', 'APARTMENT HANDOVER COMPLETED')}
+                  {isOccupied ? t('CẬP NHẬT HỒ SƠ CƯ DÂN THÀNH CÔNG', 'RESIDENT PROFILE UPDATED SUCCESSFULLY') : t('BÀN GIAO CĂN HỘ THÀNH CÔNG', 'APARTMENT HANDOVER COMPLETED')}
                 </h2>
                 <div className="text-xs text-gray-300 font-mono mt-0.5">
-                  {t('MÃ£ BiÃªn Báº£n:', 'Protocol Code:')} <strong className="text-[#C5A880]">{createdProtocol.protocolCode}</strong>
+                  {t('Mã Biên Bản:', 'Protocol Code:')} <strong className="text-[#C5A880]">{createdProtocol.protocolCode}</strong>
                 </div>
               </div>
 
-              {/* Huy hiá»‡u xÃ¡c nháº­n */}
+              {/* Huy hiệu xác nhận */}
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <span className="p-2 bg-emerald-950/80 border border-emerald-500 text-emerald-300 text-[11px] font-mono font-bold">
-                  âœ“ {isOccupied ? t('ÄÃƒ Cáº¬P NHáº¬T THÃ”NG TIN CHá»¦ Há»˜', 'OWNER INFO UPDATED') : t('ÄÃƒ HOÃ€N Táº¤T THá»¦ Tá»¤C BÃ€N GIAO', 'HANDOVER PROCEDURE COMPLETED')}
+                  ✓ {isOccupied ? t('ĐÃ CẬP NHẬT THÔNG TIN CHỦ HỘ', 'OWNER INFO UPDATED') : t('ĐÃ HOÀN TẤT THỦ TỤC BÀN GIAO', 'HANDOVER PROCEDURE COMPLETED')}
                 </span>
                 <span className="p-2 bg-blue-950/80 border border-blue-500 text-blue-300 text-[11px] font-mono font-bold flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5" /> {t('ÄÃƒ KÃCH HOáº T TÃ€I KHOáº¢N CÆ¯ DÃ‚N', 'RESIDENT ACCOUNT ACTIVATED')}
+                  <Check className="w-3.5 h-3.5" /> {t('ĐÃ KÍCH HOẠT TÀI KHOẢN CƯ DÂN', 'RESIDENT ACCOUNT ACTIVATED')}
                 </span>
               </div>
 
-              {/* TÃ³m táº¯t */}
+              {/* Tóm tắt */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 border-t border-[#2D3748] text-left text-xs font-mono">
                 <div className="p-2.5 bg-[#0D1117] border border-[#222B35]">
-                  <div className="text-gray-400 text-[10.5px]">{t('CÄ‚N Há»˜ & Vá»Š TRÃ:', 'APARTMENT & LOCATION:')}</div>
-                  <div className="text-white font-bold text-sm">{t('CÄ‚N', 'UNIT')} {unit.code}</div>
-                  <div className="text-gray-300 text-[11px]">{unit.towerName} â€¢ {t('Táº§ng', 'Floor')} {unit.floor} â€¢ {unit.typeLabel}</div>
+                  <div className="text-gray-400 text-[10.5px]">{t('CĂN HỘ & VỊ TRÍ:', 'APARTMENT & LOCATION:')}</div>
+                  <div className="text-white font-bold text-sm">{t('CĂN', 'UNIT')} {unit.code}</div>
+                  <div className="text-gray-300 text-[11px]">{unit.towerName} • {t('Tầng', 'Floor')} {unit.floor} • {unit.typeLabel}</div>
                 </div>
 
                 <div className="p-2.5 bg-[#0D1117] border border-[#222B35]">
-                  <div className="text-gray-400 text-[10.5px]">{t('CHá»¦ Há»˜:', 'OWNER:')}</div>
+                  <div className="text-gray-400 text-[10.5px]">{t('CHỦ HỘ:', 'OWNER:')}</div>
                   <div className="text-white font-bold text-sm">{name}</div>
-                  <div className="text-gray-300 text-[11px]">{t('SÄT:', 'Tel:')} {phone} â€¢ {t('CCCD:', 'ID:')} {cccd}</div>
+                  <div className="text-gray-300 text-[11px]">{t('SĐT:', 'Tel:')} {phone} • {t('CCCD:', 'ID:')} {cccd}</div>
                 </div>
 
                 <div className="p-2.5 bg-[#0D1117] border border-[#222B35]">
-                  <div className="text-gray-400 text-[10.5px]">{t('CHÃŒA KHÃ“A & THáºº Tá»ª:', 'KEYS & RFID CARDS:')}</div>
+                  <div className="text-gray-400 text-[10.5px]">{t('CHÌA KHÓA & THẺ TỪ:', 'KEYS & RFID CARDS:')}</div>
                   <div className="text-emerald-400 font-bold">
-                    {createdProtocol.keysCount} {t('ChÃ¬a khÃ³a', 'Keys')} â€¢ {createdProtocol.cardsCount} {t('Tháº» thang mÃ¡y', 'Elevator Cards')}
+                    {createdProtocol.keysCount} {t('Chìa khóa', 'Keys')} • {createdProtocol.cardsCount} {t('Thẻ thang máy', 'Elevator Cards')}
                   </div>
-                  <div className="text-gray-400 text-[10px]">{t('ÄÃ£ bÃ n giao Ä‘áº§y Ä‘á»§', 'Fully handed over')}</div>
+                  <div className="text-gray-400 text-[10px]">{t('Đã bàn giao đầy đủ', 'Fully handed over')}</div>
                 </div>
 
                 <div className="p-2.5 bg-[#0D1117] border border-[#222B35]">
-                  <div className="text-gray-400 text-[10.5px]">{t('CHá»ˆ Sá» BAN Äáº¦U:', 'INITIAL METERS:')}</div>
+                  <div className="text-gray-400 text-[10.5px]">{t('CHỈ SỐ BAN ĐẦU:', 'INITIAL METERS:')}</div>
                   <div className="text-amber-400 font-bold">
-                    {t('Äiá»‡n:', 'Elec:')} {createdProtocol.initialElectricMeter} kWh â€¢ {t('NÆ°á»›c:', 'Water:')} {createdProtocol.initialWaterMeter} mÂ³
+                    {t('Điện:', 'Elec:')} {createdProtocol.initialElectricMeter} kWh • {t('Nước:', 'Water:')} {createdProtocol.initialWaterMeter} m³
                   </div>
-                  <div className="text-gray-400 text-[10px]">{t('Phá»¥ trÃ¡ch:', 'Officer:')} {createdProtocol.handoverOfficer}</div>
+                  <div className="text-gray-400 text-[10px]">{t('Phụ trách:', 'Officer:')} {createdProtocol.handoverOfficer}</div>
                 </div>
               </div>
 
-              {/* ThÃ´ng tin tÃ i khoáº£n Ä‘Äƒng nháº­p */}
+              {/* Thông tin tài khoản đăng nhập */}
               <div className="p-3.5 bg-emerald-950/40 border border-emerald-600/60 text-left text-xs text-gray-300 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="text-emerald-400 font-bold flex items-center gap-1.5">
-                    <Check className="w-4 h-4" /> {t('TÃ i Khoáº£n ÄÄƒng Nháº­p Cá»•ng CÆ° DÃ¢n Sáºµn SÃ ng', 'Resident Portal Login Account Ready')}
+                    <Check className="w-4 h-4" /> {t('Tài Khoản Đăng Nhập Cổng Cư Dân Sẵn Sàng', 'Resident Portal Login Account Ready')}
                   </div>
                   <span className="text-[10px] font-mono text-emerald-300 px-2 py-0.5 bg-emerald-900/60 border border-emerald-500/50">
-                    {t('VAI TRÃ’: CHá»¦ Há»˜', 'ROLE: OWNER')}
+                    {t('VAI TRÒ: CHỦ HỘ', 'ROLE: OWNER')}
                   </span>
                 </div>
 
                 <p className="text-gray-300 text-[11.5px]">
-                  {t('Chá»§ há»™', 'Owner')} <strong>{name}</strong> {t('cÃ³ thá»ƒ sá»­ dá»¥ng ngay thÃ´ng tin sau Ä‘á»ƒ Ä‘Äƒng nháº­p vÃ o Cá»•ng CÆ° DÃ¢n:', 'can immediately use the following credentials to sign in to the Resident Portal:')}
+                  {t('Chủ hộ', 'Owner')} <strong>{name}</strong> {t('có thể sử dụng ngay thông tin sau để đăng nhập vào Cổng Cư Dân:', 'can immediately use the following credentials to sign in to the Resident Portal:')}
                 </p>
 
                 <div className="font-mono text-white bg-black/60 p-3 border border-[#222B35] space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">{t('TÃªn Ä‘Äƒng nháº­p (Sá»‘ Ä‘iá»‡n thoáº¡i):', 'Username (Phone Number):')}</span>
+                    <span className="text-gray-400">{t('Tên đăng nhập (Số điện thoại):', 'Username (Phone Number):')}</span>
                     <strong className="text-emerald-400 text-sm">{phone}</strong>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">{t('Sá»‘ CCCD Ä‘á»‹nh danh:', 'National ID Number:')}</span>
+                    <span className="text-gray-400">{t('Số CCCD định danh:', 'National ID Number:')}</span>
                     <strong className="text-white">{cccd}</strong>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-400">{t('Thiáº¿t láº­p máº­t kháº©u:', 'Password Setup:')}</span>
-                    <strong className="text-amber-300">{t('Qua email kÃ­ch hoáº¡t / QuÃªn máº­t kháº©u', 'Via activation email / Reset')}</strong>
+                    <span className="text-gray-400">{t('Thiết lập mật khẩu:', 'Password Setup:')}</span>
+                    <strong className="text-amber-300">{t('Qua email kích hoạt / Quên mật khẩu', 'Via activation email / Reset')}</strong>
                   </div>
                 </div>
 
@@ -759,7 +759,7 @@ export default function AssignResidentModal({
                   className="px-3 py-1.5 bg-[#161B22] hover:bg-[#202936] text-gray-200 hover:text-white border border-[#2D3748] text-xs font-semibold transition-all flex items-center gap-1.5"
                 >
                   <Copy className="w-3.5 h-3.5 text-[#C5A880]" />
-                  {copied ? t('âœ“ ÄÃ£ Sao ChÃ©p ThÃ´ng Tin!', 'âœ“ Credentials Copied!') : t('Sao ChÃ©p ThÃ´ng Tin Äá»ƒ Gá»­i CÆ° DÃ¢n', 'Copy Credentials to Send to Resident')}
+                  {copied ? t('✓ Đã Sao Chép Thông Tin!', '✓ Credentials Copied!') : t('Sao Chép Thông Tin Để Gửi Cư Dân', 'Copy Credentials to Send to Resident')}
                 </button>
               </div>
             </div>
@@ -771,7 +771,7 @@ export default function AssignResidentModal({
                 onClick={handlePrint}
                 className="px-4 py-2.5 bg-[#161B22] hover:bg-[#202936] text-gray-200 hover:text-white border border-[#2D3748] text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2"
               >
-                <Printer className="w-4 h-4 text-[#C5A880]" /> {t('In BiÃªn Báº£n (PDF)', 'Print Protocol (PDF)')}
+                <Printer className="w-4 h-4 text-[#C5A880]" /> {t('In Biên Bản (PDF)', 'Print Protocol (PDF)')}
               </button>
 
               <button
@@ -779,7 +779,7 @@ export default function AssignResidentModal({
                 onClick={onClose}
                 className="px-6 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] font-bold text-xs uppercase tracking-wider transition-colors shadow-lg flex items-center gap-1.5"
               >
-                <Check className="w-4 h-4" /> {t('HoÃ n Táº¥t', 'Finish')}
+                <Check className="w-4 h-4" /> {t('Hoàn Tất', 'Finish')}
               </button>
             </div>
           </div>

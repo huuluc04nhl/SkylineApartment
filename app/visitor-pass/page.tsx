@@ -26,8 +26,11 @@ import {
   Home
 } from 'lucide-react';
 import { GeneratedVisitorPass } from '@/lib/visitorStore';
+import { useAuth } from '@/lib/authContext';
 
 function VisitorPassViewer() {
+  const { currentUser } = useAuth();
+  const canStaffCheckIn = currentUser?.role === 'ADMIN' || currentUser?.role === 'RECEPTIONIST';
   const searchParams = useSearchParams();
   const passIdParam = searchParams.get('id') || searchParams.get('passId') || '';
   const pinParam = searchParams.get('pin') || '';
@@ -53,10 +56,13 @@ function VisitorPassViewer() {
       setLoading(true);
       setErrorMsg(null);
 
-      // Default sample fallback if no query param
-      const queryId = passIdParam || (pinParam ? '' : 'SKY-PASS-8492');
-      const url = `/api/visitor?${queryId ? `id=${encodeURIComponent(queryId)}` : `pin=${encodeURIComponent(pinParam)}`}`;
+      if (!passIdParam || !pinParam) {
+        setErrorMsg('Liên kết thẻ khách thiếu mã thẻ (id) hoặc mã PIN xác thực.');
+        setPass(null);
+        return;
+      }
 
+      const url = `/api/visitor/public?id=${encodeURIComponent(passIdParam)}&pin=${encodeURIComponent(pinParam)}`;
       const res = await fetch(url);
       const data = await res.json();
 
@@ -116,6 +122,7 @@ function VisitorPassViewer() {
       const res = await fetch('/api/visitor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ action: 'CHECK_IN', passId: pass.id }),
       });
       const data = await res.json();
@@ -357,7 +364,7 @@ function VisitorPassViewer() {
                 <span>Hotline Lễ Tân: 1900 8888</span>
               </a>
 
-              {!isCheckedIn && !isExpired ? (
+              {canStaffCheckIn && !isCheckedIn && !isExpired ? (
                 <button
                   type="button"
                   onClick={handleConfirmCheckIn}
@@ -371,11 +378,11 @@ function VisitorPassViewer() {
                   )}
                   <span>Xác Nhận Check-In (Lễ Tân)</span>
                 </button>
-              ) : (
+              ) : isCheckedIn ? (
                 <div className="py-3 px-3 bg-[#161D26] border border-emerald-500/40 text-emerald-400 text-xs font-semibold flex items-center justify-center gap-1.5 font-mono">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Đã Vào Tòa Nhà
                 </div>
-              )}
+              ) : null}
             </div>
 
           </div>

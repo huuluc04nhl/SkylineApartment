@@ -49,6 +49,11 @@ export default function FloorPlanDeepDiveModal({
   onOpenDetailModal,
 }: FloorPlanDeepDiveModalProps) {
   const { t, isEn } = useLanguage();
+  const [floorPlanViewMode, setFloorPlanViewMode] = React.useState<'CAD_VECTOR' | 'BLUEPRINT_IMAGE'>('CAD_VECTOR');
+  const [floorPlanFilterWing, setFloorPlanFilterWing] = React.useState<'ALL' | 'NORTH' | 'SOUTH' | 'WEST'>('ALL');
+  const [floorPlanCadZoom, setFloorPlanCadZoom] = React.useState<number>(1);
+  const [detailTab, setDetailTab] = React.useState<'OVERVIEW' | 'FINANCIAL' | 'TECHNICAL'>('OVERVIEW');
+
   if (!isOpen) return null;
 
   // Danh sách 21 căn của tầng đang chọn theo bản vẽ CAD kiến trúc Chung Cư BS-09 & The Tropical
@@ -95,11 +100,6 @@ export default function FloorPlanDeepDiveModal({
   const totalExpElectric = floorExpandedUnits.reduce((sum, u) => sum + (getApartmentFinancialMetrics(u)?.electricKwh || 0), 0);
   const totalExpWater = floorExpandedUnits.reduce((sum, u) => sum + (getApartmentFinancialMetrics(u)?.waterM3 || 0), 0);
   const occupiedExpCount = floorExpandedUnits.filter(u => u.status === 'OCCUPIED').length;
-
-  const [floorPlanViewMode, setFloorPlanViewMode] = React.useState<'CAD_VECTOR' | 'BLUEPRINT_IMAGE'>('CAD_VECTOR');
-  const [floorPlanFilterWing, setFloorPlanFilterWing] = React.useState<'ALL' | 'NORTH' | 'SOUTH' | 'WEST'>('ALL');
-  const [floorPlanCadZoom, setFloorPlanCadZoom] = React.useState<number>(1);
-  const [detailTab, setDetailTab] = React.useState<'OVERVIEW' | 'FINANCIAL' | 'TECHNICAL'>('OVERVIEW');
 
   const handleSelectFloor = (fl: number) => {};
   const activeUnit = currentExpandedUnit;

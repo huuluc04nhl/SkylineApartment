@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { getInitialsAvatar } from '@/lib/avatarHelper';
 import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
 import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
@@ -99,7 +99,7 @@ export interface FamilyMemberItem {
   faceStatus?: string;
   addedDate?: string;
 
-  // TrÆ°á»ng thÃ´ng tin Ä‘á»“ng bá»™ vá»›i Chá»§ há»™:
+  // Trường thông tin đồng bộ với Chủ hộ:
   sponsorName?: string;
   sponsorPhone?: string;
   apartmentCode?: string;
@@ -138,7 +138,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
   const { t, isEn } = useLanguage();
   const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const isOwner = currentUser.role === 'OWNER';
-  const ownerName = currentUser.full_name || (currentUser as any)?.fullname || 'Tráº§n Há»¯u Lá»±c';
+  const ownerName = currentUser.full_name || (currentUser as any)?.fullname || 'Trần Hữu Lực';
 
   const [members, setMembers] = useState<FamilyMemberItem[]>([]);
   const [bqlAccounts, setBqlAccounts] = useState<BqlEligibleAccount[]>([]);
@@ -163,12 +163,12 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
   const [directFullName, setDirectFullName] = useState<string>('');
   const [directPhone, setDirectPhone] = useState<string>('');
   const [directIdCard, setDirectIdCard] = useState<string>('');
-  const [directRelationship, setDirectRelationship] = useState<string>('Vá»£ / Chá»“ng');
+  const [directRelationship, setDirectRelationship] = useState<string>('Vợ / Chồng');
   const [directLicensePlate, setDirectLicensePlate] = useState<string>('');
 
   // Selected Account from API
   const [selectedAccount, setSelectedAccount] = useState<BqlEligibleAccount | null>(null);
-  const [newRelationship, setNewRelationship] = useState<string>('Vá»£ / Chá»“ng');
+  const [newRelationship, setNewRelationship] = useState<string>('Vợ / Chồng');
   const [newLicensePlate, setNewLicensePlate] = useState<string>('');
 
   // Live API Search State
@@ -180,16 +180,16 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
   const [preApprovedFilter, setPreApprovedFilter] = useState<string>('');
 
   // New fields suitable for owner-family relationship
-  const [newResidenceType, setNewResidenceType] = useState<string>('ThÆ°á»ng trÃº cÃ¹ng chá»§ há»™');
-  const [newRelationshipProof, setNewRelationshipProof] = useState<string>('Sá»• Há»™ Kháº©u / XÃ¡c nháº­n CT07');
-  const [newTemporaryResidenceStatus, setNewTemporaryResidenceStatus] = useState<string>('Äang LÃ m Thá»§ Tá»¥c');
+  const [newResidenceType, setNewResidenceType] = useState<string>('Thường trú cùng chủ hộ');
+  const [newRelationshipProof, setNewRelationshipProof] = useState<string>('Sổ Hộ Khẩu / Xác nhận CT07');
+  const [newTemporaryResidenceStatus, setNewTemporaryResidenceStatus] = useState<string>('Đang Làm Thủ Tục');
   const [directDob, setDirectDob] = useState<string>('');
   const [directGender, setDirectGender] = useState<string>('Nam');
   const [directPob, setDirectPob] = useState<string>('');
-  const [directResidenceType, setDirectResidenceType] = useState<string>('ThÆ°á»ng trÃº cÃ¹ng chá»§ há»™');
-  const [directRelationshipProof, setDirectRelationshipProof] = useState<string>('Sá»• Há»™ Kháº©u / XÃ¡c nháº­n CT07');
-  const [directTemporaryResidenceStatus, setDirectTemporaryResidenceStatus] = useState<string>('Äang LÃ m Thá»§ Tá»¥c');
-  const [directVehicleType, setDirectVehicleType] = useState<string>('Xe mÃ¡y');
+  const [directResidenceType, setDirectResidenceType] = useState<string>('Thường trú cùng chủ hộ');
+  const [directRelationshipProof, setDirectRelationshipProof] = useState<string>('Sổ Hộ Khẩu / Xác nhận CT07');
+  const [directTemporaryResidenceStatus, setDirectTemporaryResidenceStatus] = useState<string>('Đang Làm Thủ Tục');
+  const [directVehicleType, setDirectVehicleType] = useState<string>('Xe máy');
 
   // Custom Remove Member Confirmation State
   const [removeTargetMember, setRemoveTargetMember] = useState<FamilyMemberItem | null>(null);
@@ -207,7 +207,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
       await fetch(`/api/user/family?aptCode=${encodeURIComponent(aptCode)}&action=CLEAR_LOCAL`);
       clearApartmentMembers(aptCode);
       await fetchMembers();
-      setActionSuccess(isEn ? 'âœ“ Cleared local cache and synchronized with API.' : 'âœ“ ÄÃ£ dá»n dáº¹p dá»¯ liá»‡u lÆ°u táº¡m á»Ÿ local vÃ  Ä‘á»“ng bá»™ láº¡i tá»« API thÃ nh cÃ´ng.');
+      setActionSuccess(isEn ? '✓ Cleared local cache and synchronized with API.' : '✓ Đã dọn dẹp dữ liệu lưu tạm ở local và đồng bộ lại từ API thành công.');
       setTimeout(() => setActionSuccess(null), 3500);
     } catch (e) {
       console.warn('Clear local data error', e);
@@ -220,12 +220,12 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
   const [selectedAnglePreview, setSelectedAnglePreview] = useState<{ title: string; src: string } | null>(null);
 
   // =========================================================================
-  // OWNER PROXY e-KYC MODAL STATE (Chá»§ há»™ kÃª khai há»“ sÆ¡ cho ngÆ°á»i nhÃ )
+  // OWNER PROXY e-KYC MODAL STATE (Chủ hộ kê khai hồ sơ cho người nhà)
   // =========================================================================
   const [showEkycModal, setShowEkycModal] = useState<boolean>(false);
   const [ekycTargetMember, setEkycTargetMember] = useState<FamilyMemberItem | null>(null);
   const [ekycFullName, setEkycFullName] = useState<string>('');
-  const [ekycRelationship, setEkycRelationship] = useState<string>('Vá»£ / Chá»“ng');
+  const [ekycRelationship, setEkycRelationship] = useState<string>('Vợ / Chồng');
   const [ekycPhone, setEkycPhone] = useState<string>('');
   const [ekycIdCard, setEkycIdCard] = useState<string>('');
   const [ekycDob, setEkycDob] = useState<string>('');
@@ -246,7 +246,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     const stdDob = formatToDateInput(ocrData.dob || '');
     const stdPob = (ocrData.pob || '').trim();
     const stdIdDate = formatToDateInput(ocrData.idDate || '');
-    const stdIdPlace = (ocrData.idPlace || 'Cá»¥c Cáº£nh sÃ¡t QLHC vá» TTXH').trim();
+    const stdIdPlace = (ocrData.idPlace || 'Cục Cảnh sát QLHC về TTXH').trim();
 
     if (stdFullName) setEkycFullName(stdFullName);
     if (stdIdNumber) setEkycIdCard(stdIdNumber);
@@ -260,8 +260,8 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     setEkycModalError(null);
     setActionSuccess(
       isEn
-        ? `âœ¨ Successfully read Citizen ID for "${stdFullName || 'member'}"! All details verified and populated into the form.`
-        : `âœ¨ ÄÃ£ Ä‘á»c thÃ´ng tin CCCD thÃ nh cÃ´ng cho "${stdFullName || 'thÃ nh viÃªn'}"! ToÃ n bá»™ thÃ´ng tin Ä‘Ã£ Ä‘Æ°á»£c chuáº©n hÃ³a vÃ  tá»± Ä‘á»™ng Ä‘iá»n vÃ o há»“ sÆ¡.`
+        ? `✨ Successfully read Citizen ID for "${stdFullName || 'member'}"! All details verified and populated into the form.`
+        : `✨ Đã đọc thông tin CCCD thành công cho "${stdFullName || 'thành viên'}"! Toàn bộ thông tin đã được chuẩn hóa và tự động điền vào hồ sơ.`
     );
     setTimeout(() => setActionSuccess(null), 5000);
   };
@@ -287,16 +287,16 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
   // Helper to normalize unified e-KYC status
   const getMemberStatus = (m: FamilyMemberItem): 'APPROVED' | 'PENDING' | 'REJECTED' | 'NOT_SUBMITTED' | 'PENDING_OWNER' => {
     const profile = getEnrolledFaceProfile(m.phone || m.id || m.username || '');
-    if (m.faceStatus?.includes('Chá» Chá»§ Há»™') || m.faceStatus?.includes('Chá» chá»§ há»™') || profile?.status === 'PENDING_OWNER') {
+    if (m.faceStatus?.includes('Chờ Chủ Hộ') || m.faceStatus?.includes('Chờ chủ hộ') || profile?.status === 'PENDING_OWNER') {
       return 'PENDING_OWNER';
     }
     const ekyc = getMemberEkyc(m);
     if (ekyc?.status === 'APPROVED' || ekyc?.status === 'VERIFIED') return 'APPROVED';
     if (ekyc?.status === 'PENDING') return 'PENDING';
     if (ekyc?.status === 'REJECTED') return 'REJECTED';
-    if (m.faceStatus?.includes('Chá»')) return 'PENDING';
-    if (m.faceStatus?.includes('KÃ­ch Hoáº¡t') || m.faceStatus?.includes('ÄÃ£ kÃ­ch hoáº¡t')) return 'APPROVED';
-    if (m.faceStatus?.includes('Tá»« Chá»‘i') || m.faceStatus?.includes('Chá»¥p Láº¡i')) return 'REJECTED';
+    if (m.faceStatus?.includes('Chờ')) return 'PENDING';
+    if (m.faceStatus?.includes('Kích Hoạt') || m.faceStatus?.includes('Đã kích hoạt')) return 'APPROVED';
+    if (m.faceStatus?.includes('Từ Chối') || m.faceStatus?.includes('Chụp Lại')) return 'REJECTED';
     return 'NOT_SUBMITTED';
   };
 
@@ -370,9 +370,9 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
       streamRef.current = stream;
       setIsCameraActive(true);
     } catch (err) {
-      console.warn('KhÃ´ng thá»ƒ má»Ÿ camera:', err);
+      console.warn('Không thể mở camera:', err);
       setIsCameraActive(false);
-      toast.error('KhÃ´ng thá»ƒ kÃ­ch hoáº¡t Camera trÃªn thiáº¿t bá»‹ nÃ y. Báº¡n cÃ³ thá»ƒ chá»n táº£i áº£nh chÃ¢n dung trá»±c tiáº¿p tá»« tá»‡p tin.');
+      toast.error('Không thể kích hoạt Camera trên thiết bị này. Bạn có thể chọn tải ảnh chân dung trực tiếp từ tệp tin.');
     }
   };
 
@@ -406,7 +406,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setEkycModalError('Tá»‡p táº£i lÃªn khÃ´ng pháº£i lÃ  áº£nh há»£p lá»‡ (cháº¥p nháº­n JPEG, PNG, WEBP).');
+      setEkycModalError('Tệp tải lên không phải là ảnh hợp lệ (chấp nhận JPEG, PNG, WEBP).');
       return;
     }
 
@@ -429,12 +429,12 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setEkycModalError('Tá»‡p táº£i lÃªn khÃ´ng pháº£i lÃ  áº£nh há»£p lá»‡ (cháº¥p nháº­n JPEG, PNG, WEBP).');
+      setEkycModalError('Tệp tải lên không phải là ảnh hợp lệ (chấp nhận JPEG, PNG, WEBP).');
       return;
     }
 
     if (file.size < 15000) {
-      setEkycModalError('áº¢nh chá»¥p tháº» CCCD quÃ¡ má» hoáº·c dung lÆ°á»£ng quÃ¡ nhá» (dÆ°á»›i 15KB). Vui lÃ²ng táº£i áº£nh rÃµ nÃ©t.');
+      setEkycModalError('Ảnh chụp thẻ CCCD quá mờ hoặc dung lượng quá nhỏ (dưới 15KB). Vui lòng tải ảnh rõ nét.');
       return;
     }
 
@@ -446,15 +446,15 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         img.onload = () => {
           const ratio = img.width / img.height;
           if (ratio < 1.22) {
-            setEkycModalError(`áº¢nh táº£i lÃªn lÃ  áº£nh dá»c (tá»· lá»‡ ${ratio.toFixed(2)}:1). Tháº» CÄƒn cÆ°á»›c cÃ´ng dÃ¢n pháº£i lÃ  áº£nh chá»¥p ngang bao gá»“m Ä‘á»§ 4 gÃ³c tháº» (tá»· lá»‡ chuáº©n ~1.58:1). KhÃ´ng Ä‘Æ°á»£c sá»­ dá»¥ng áº£nh selfie dá»c!`);
+            setEkycModalError(`Ảnh tải lên là ảnh dọc (tỷ lệ ${ratio.toFixed(2)}:1). Thẻ Căn cước công dân phải là ảnh chụp ngang bao gồm đủ 4 góc thẻ (tỷ lệ chuẩn ~1.58:1). Không được sử dụng ảnh selfie dọc!`);
             return;
           }
           if (ratio > 2.05) {
-            setEkycModalError(`áº¢nh bá»‹ cáº¯t xÃ©n quÃ¡ dÃ i (tá»· lá»‡ ${ratio.toFixed(2)}:1). Vui lÃ²ng chá»¥p trá»n váº¹n 4 gÃ³c tháº» CCCD.`);
+            setEkycModalError(`Ảnh bị cắt xén quá dài (tỷ lệ ${ratio.toFixed(2)}:1). Vui lòng chụp trọn vẹn 4 góc thẻ CCCD.`);
             return;
           }
           if (img.width < 380 || img.height < 240) {
-            setEkycModalError(`Äá»™ phÃ¢n giáº£i áº£nh quÃ¡ tháº¥p (${img.width}x${img.height}px). YÃªu cáº§u tá»‘i thiá»ƒu 400x250px.`);
+            setEkycModalError(`Độ phân giải ảnh quá thấp (${img.width}x${img.height}px). Yêu cầu tối thiểu 400x250px.`);
             return;
           }
 
@@ -475,7 +475,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     const profile = getEnrolledFaceProfile(member.phone || member.id || member.username || '');
     setEkycTargetMember(member);
     setEkycFullName(existing?.fullName || member.fullName || '');
-    setEkycRelationship(member.relationship || 'Vá»£ / Chá»“ng');
+    setEkycRelationship(member.relationship || 'Vợ / Chồng');
     setEkycPhone(existing?.phone || member.phone || '');
     setEkycIdCard(existing?.idCardNo || member.idCard || '');
     setEkycDob(existing?.dob || member.dob || '');
@@ -484,7 +484,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     setEkycIdPlace(existing?.idPlace || member.idPlace || '');
     setEkycLicensePlate(member.licensePlate || '');
 
-    // Æ¯u tiÃªn hiá»ƒn thá»‹ chÃ¢n dung chuáº©n cá»§a ngÆ°á»i nhÃ  (tuyá»‡t Ä‘á»‘i khÃ´ng láº¥y áº£nh máº«u FaceID ghi Ä‘Ã¨ chÃ¢n dung)
+    // Ưu tiên hiển thị chân dung chuẩn của người nhà (tuyệt đối không lấy ảnh mẫu FaceID ghi đè chân dung)
     let resolvedAvatar = '';
     if (existing?.avatarUrl && !existing.avatarUrl.includes('default.png') && !existing.avatarUrl.startsWith('data:image/')) {
       resolvedAvatar = existing.avatarUrl;
@@ -518,7 +518,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     if (!ekycTargetMember) return;
 
     if (!ekycFullName.trim()) {
-      setEkycModalError('Vui lÃ²ng nháº­p Ä‘áº§y Ä‘á»§ há» vÃ  tÃªn ngÆ°á»i nhÃ .');
+      setEkycModalError('Vui lòng nhập đầy đủ họ và tên người nhà.');
       return;
     }
     const phoneErr = getPhoneValidationError(ekycPhone);
@@ -532,25 +532,25 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
       return;
     }
 
-    // 1. Kiá»ƒm tra áº£nh {t('CCCD Máº·t TrÆ°á»›c', 'National ID Front')}
+    // 1. Kiểm tra ảnh {t('CCCD Mặt Trước', 'National ID Front')}
     if (ekycFrontImage) {
       const frontCheck = validateCccdCard(ekycFrontImage, 'FRONT');
       if (!frontCheck.valid) {
-        setEkycModalError(frontCheck.error || (isEn ? 'National ID Front photo is invalid.' : 'áº¢nh CCCD Máº·t TrÆ°á»›c khÃ´ng Ä‘Ãºng tiÃªu chuáº©n.'));
+        setEkycModalError(frontCheck.error || (isEn ? 'National ID Front photo is invalid.' : 'Ảnh CCCD Mặt Trước không đúng tiêu chuẩn.'));
         return;
       }
     }
 
-    // 2. Kiá»ƒm tra áº£nh {t('CCCD Máº·t Sau', 'National ID Back')}
+    // 2. Kiểm tra ảnh {t('CCCD Mặt Sau', 'National ID Back')}
     if (ekycBackImage) {
       const backCheck = validateCccdCard(ekycBackImage, 'BACK');
       if (!backCheck.valid) {
-        setEkycModalError(backCheck.error || (isEn ? 'National ID Back photo is invalid.' : 'áº¢nh CCCD Máº·t Sau khÃ´ng Ä‘Ãºng tiÃªu chuáº©n.'));
+        setEkycModalError(backCheck.error || (isEn ? 'National ID Back photo is invalid.' : 'Ảnh CCCD Mặt Sau không đúng tiêu chuẩn.'));
         return;
       }
     }
 
-    // 3. Äá»‘i chiáº¿u sinh tráº¯c há»c: áº¢nh ChÃ¢n Dung vs áº¢nh Tháº» CCCD (Thuáº­t toÃ¡n tháº­t)
+    // 3. Đối chiếu sinh trắc học: Ảnh Chân Dung vs Ảnh Thẻ CCCD (Thuật toán thật)
     let calculatedFaceScore = 0;
     let isSimulatedBio = false;
     let bioAlgorithm = 'PERCEPTUAL_COSINE_SIMILARITY';
@@ -569,7 +569,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
     setEkycModalError(null);
 
     try {
-      const roleLabel = `NgÆ°á»i NhÃ  (CÄƒn ${aptCode}) - Báº£o lÃ£nh bá»Ÿi Chá»§ Há»™: ${ownerName}`;
+      const roleLabel = `Người Nhà (Căn ${aptCode}) - Bảo lãnh bởi Chủ Hộ: ${ownerName}`;
 
       const payload = {
         userId: ekycTargetMember.id || ekycTargetMember.phone,
@@ -619,7 +619,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
               idCard: ekycIdCard.trim(),
               avatarUrl: ekycAvatarUrl,
               licensePlate: ekycLicensePlate.trim() || m.licensePlate,
-              faceStatus: 'Äang Chá» BQL PhÃª Duyá»‡t',
+              faceStatus: 'Đang Chờ BQL Phê Duyệt',
             };
           }
           return m;
@@ -629,15 +629,15 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
       // 4. Feedback
       setActionSuccess(
         isEn
-          ? `âœ“ Identity & face photo records for family member "${ekycFullName}" successfully submitted to Management Office! Pending review.`
-          : `âœ“ ÄÃ£ gá»­i thÃ´ng tin cÄƒn cÆ°á»›c & khuÃ´n máº·t cá»§a ngÆ°á»i nhÃ  "${ekycFullName}" lÃªn Ban Quáº£n LÃ½ thÃ nh cÃ´ng! Há»“ sÆ¡ Ä‘ang chá» Ban Quáº£n LÃ½ phÃª duyá»‡t.`
+          ? `✓ Identity & face photo records for family member "${ekycFullName}" successfully submitted to Management Office! Pending review.`
+          : `✓ Đã gửi thông tin căn cước & khuôn mặt của người nhà "${ekycFullName}" lên Ban Quản Lý thành công! Hồ sơ đang chờ Ban Quản Lý phê duyệt.`
       );
       setTimeout(() => setActionSuccess(null), 5000);
 
       handleCloseEkycModal();
       fetchMembers();
     } catch (err: any) {
-      setEkycModalError(err.message || (isEn ? 'Error submitting data to Management Office.' : 'Lá»—i khi gá»­i thÃ´ng tin lÃªn Ban Quáº£n LÃ½.'));
+      setEkycModalError(err.message || (isEn ? 'Error submitting data to Management Office.' : 'Lỗi khi gửi thông tin lên Ban Quản Lý.'));
     } finally {
       setIsSubmittingEkyc(false);
     }
@@ -646,7 +646,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
   // Select account from pre-verified list
   const handleSelectPreApproved = (acc: BqlEligibleAccount) => {
     setSelectedAccount(acc);
-    setNewRelationship(acc.relationship || 'Vá»£ / Chá»“ng');
+    setNewRelationship(acc.relationship || 'Vợ / Chồng');
     setNewLicensePlate(acc.licensePlate || '');
     setActionError(null);
   };
@@ -673,10 +673,10 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
           setSearchResults(list);
           setSearchResult(list[0]);
           setSelectedAccount(list[0]);
-          setNewRelationship(list[0].relationship || 'Vá»£ / Chá»“ng');
+          setNewRelationship(list[0].relationship || 'Vợ / Chồng');
           setNewLicensePlate(list[0].licensePlate || '');
         } else {
-          setSearchNotFound(isEn ? `No registered family account matching "${query}".` : `KhÃ´ng tÃ¬m tháº¥y tÃ i khoáº£n ngÆ°á»i nhÃ  nÃ o khá»›p vá»›i "${query}".`);
+          setSearchNotFound(isEn ? `No registered family account matching "${query}".` : `Không tìm thấy tài khoản người nhà nào khớp với "${query}".`);
         }
       } else {
         setSearchResults([]);
@@ -685,11 +685,11 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         setSearchNotFound(
           res.message || (isEn 
             ? `No registered family account matching "${query}" on the system.` 
-            : `KhÃ´ng tÃ¬m tháº¥y tÃ i khoáº£n ngÆ°á»i thÃ¢n nÃ o khá»›p vá»›i "${query}" trÃªn há»‡ thá»‘ng.`)
+            : `Không tìm thấy tài khoản người thân nào khớp với "${query}" trên hệ thống.`)
         );
       }
     } catch (err) {
-      setSearchNotFound(isEn ? 'Connection error while searching for account.' : 'Lá»—i káº¿t ná»‘i khi tra cá»©u ngÆ°á»i dÃ¹ng.');
+      setSearchNotFound(isEn ? 'Connection error while searching for account.' : 'Lỗi kết nối khi tra cứu người dùng.');
     } finally {
       setIsSearchingApi(false);
     }
@@ -699,7 +699,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAccount) {
-      setActionError(isEn ? 'Please select or search a valid account from the API system.' : 'Vui lÃ²ng chá»n hoáº·c tra cá»©u má»™t tÃ i khoáº£n há»£p lá»‡ tá»« há»‡ thá»‘ng API.');
+      setActionError(isEn ? 'Please select or search a valid account from the API system.' : 'Vui lòng chọn hoặc tra cứu một tài khoản hợp lệ từ hệ thống API.');
       return;
     }
 
@@ -729,8 +729,8 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         setShowAddModal(false);
         setActionSuccess(
           isEn
-            ? `âœ“ Added family member "${selectedAccount.fullName}" to Unit ${aptCode} via API profile successfully!`
-            : `âœ“ ÄÃ£ thÃªm thÃ nh viÃªn "${selectedAccount.fullName}" vÃ o CÄƒn há»™ ${aptCode} theo há»“ sÆ¡ API thÃ nh cÃ´ng!`
+            ? `✓ Added family member "${selectedAccount.fullName}" to Unit ${aptCode} via API profile successfully!`
+            : `✓ Đã thêm thành viên "${selectedAccount.fullName}" vào Căn hộ ${aptCode} theo hồ sơ API thành công!`
         );
         setTimeout(() => setActionSuccess(null), 4000);
 
@@ -738,14 +738,14 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         setSelectedAccount(null);
         setSearchResult(null);
         setSearchQuery('');
-        setNewRelationship('Vá»£ / Chá»“ng');
+        setNewRelationship('Vợ / Chồng');
         setNewLicensePlate('');
         fetchMembers();
       } else {
-        setActionError(res.message || (isEn ? 'Failed to add member. Please try again.' : 'KhÃ´ng thá»ƒ thÃªm thÃ nh viÃªn. Vui lÃ²ng thá»­ láº¡i.'));
+        setActionError(res.message || (isEn ? 'Failed to add member. Please try again.' : 'Không thể thêm thành viên. Vui lòng thử lại.'));
       }
     } catch (err: any) {
-      setActionError(err.message || (isEn ? 'API connection error when adding member.' : 'Lá»—i káº¿t ná»‘i API khi thÃªm thÃ nh viÃªn.'));
+      setActionError(err.message || (isEn ? 'API connection error when adding member.' : 'Lỗi kết nối API khi thêm thành viên.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -766,17 +766,17 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         setMembers((prev) => prev.filter((m) => m.id !== removeTargetMember.id));
         setActionSuccess(
           isEn
-            ? `âœ“ Revoked residency authorization & FaceID access for member "${removeTargetMember.fullName}".`
-            : `âœ“ ÄÃ£ há»§y phÃ¢n quyá»n cÆ° trÃº & thu há»“i quyá»n FaceID cá»§a thÃ nh viÃªn "${removeTargetMember.fullName}".`
+            ? `✓ Revoked residency authorization & FaceID access for member "${removeTargetMember.fullName}".`
+            : `✓ Đã hủy phân quyền cư trú & thu hồi quyền FaceID của thành viên "${removeTargetMember.fullName}".`
         );
         setTimeout(() => setActionSuccess(null), 4000);
         setRemoveTargetMember(null);
         fetchMembers();
       } else {
-        setActionError(res.message || (isEn ? 'Could not remove member.' : 'KhÃ´ng thá»ƒ xÃ³a thÃ nh viÃªn.'));
+        setActionError(res.message || (isEn ? 'Could not remove member.' : 'Không thể xóa thành viên.'));
       }
     } catch (err) {
-      setActionError(isEn ? 'Connection error while removing member.' : 'Lá»—i káº¿t ná»‘i khi xÃ³a thÃ nh viÃªn.');
+      setActionError(isEn ? 'Connection error while removing member.' : 'Lỗi kết nối khi xóa thành viên.');
     } finally {
       setIsRemoving(false);
     }
@@ -786,7 +786,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
   const handleDirectAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!directFullName.trim()) {
-      setActionError(isEn ? 'Please enter member full name.' : 'Vui lÃ²ng nháº­p Ä‘áº§y Ä‘á»§ há» vÃ  tÃªn ngÆ°á»i thÃ¢n.');
+      setActionError(isEn ? 'Please enter member full name.' : 'Vui lòng nhập đầy đủ họ và tên người thân.');
       return;
     }
     const phoneErr = getPhoneValidationError(directPhone, isEn);
@@ -827,8 +827,8 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         setShowAddModal(false);
         setActionSuccess(
           isEn
-            ? `âœ“ Added member "${directFullName}" to Unit ${aptCode}! You can now enroll FaceID and scan Citizen ID.`
-            : `âœ“ ÄÃ£ thÃªm thÃ nh viÃªn "${directFullName}" vÃ o CÄƒn há»™ ${aptCode}! Báº¡n cÃ³ thá»ƒ tiáº¿n hÃ nh quÃ©t FaceID vÃ  chá»¥p CCCD ngay.`
+            ? `✓ Added member "${directFullName}" to Unit ${aptCode}! You can now enroll FaceID and scan Citizen ID.`
+            : `✓ Đã thêm thành viên "${directFullName}" vào Căn hộ ${aptCode}! Bạn có thể tiến hành quét FaceID và chụp CCCD ngay.`
         );
         setTimeout(() => setActionSuccess(null), 5000);
 
@@ -836,14 +836,14 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         setDirectFullName('');
         setDirectPhone('');
         setDirectIdCard('');
-        setDirectRelationship('Vá»£ / Chá»“ng');
+        setDirectRelationship('Vợ / Chồng');
         setDirectLicensePlate('');
         fetchMembers();
       } else {
-        setActionError(res.message || (isEn ? 'Failed to add member. Please try again.' : 'KhÃ´ng thá»ƒ thÃªm thÃ nh viÃªn. Vui lÃ²ng thá»­ láº¡i.'));
+        setActionError(res.message || (isEn ? 'Failed to add member. Please try again.' : 'Không thể thêm thành viên. Vui lòng thử lại.'));
       }
     } catch (err: any) {
-      setActionError(err.message || (isEn ? 'API connection error when adding member.' : 'Lá»—i káº¿t ná»‘i API khi thÃªm thÃ nh viÃªn.'));
+      setActionError(err.message || (isEn ? 'API connection error when adding member.' : 'Lỗi kết nối API khi thêm thành viên.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -885,7 +885,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
 
   const familyResource = useAsyncResource(async () => {
     const res = await fetch('/api/user/family', { credentials: 'include' });
-    if (!res.ok) throw new Error(`KhÃ´ng thá»ƒ táº£i danh sÃ¡ch nhÃ¢n kháº©u (HTTP ${res.status})`);
+    if (!res.ok) throw new Error(`Không thể tải danh sách nhân khẩu (HTTP ${res.status})`);
     const json = await res.json();
     return Array.isArray(json?.members) ? json.members : [];
   }, []);
@@ -894,24 +894,24 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
   if (missingApartment) return <MissingApartmentNotice />;
   return (
     <div className="space-y-6 w-full animate-fadeIn">
-      {familyResource.loading && <ResourceSkeleton label="Äang táº£i danh sÃ¡ch nhÃ¢n kháº©u..." />}
+      {familyResource.loading && <ResourceSkeleton label="Đang tải danh sách nhân khẩu..." />}
       {!familyResource.loading && familyResource.error && (
         <ResourceError message={familyResource.error} onRetry={familyResource.retry} />
       )}
       {!familyResource.loading && !familyResource.error && members.length === 0 && (
-        <ResourceEmpty message="ChÆ°a cÃ³ thÃ nh viÃªn nÃ o Ä‘Æ°á»£c Ä‘Äƒng kÃ½ trong cÄƒn há»™." />
+        <ResourceEmpty message="Chưa có thành viên nào được đăng ký trong căn hộ." />
       )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#222B35] pb-4">
         <div>
           <div className="text-[10px] uppercase tracking-[0.2em] text-[#C5A880] font-semibold flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5" /> {t('Quáº£n Trá»‹ CÄƒn Há»™')}
+            <Users className="w-3.5 h-3.5" /> {t('Quản Trị Căn Hộ')}
           </div>
           <h2 className="font-serif text-2xl text-white font-bold mt-1">
-            {t('NhÃ¢n Kháº©u')} â€¢ {t('CÄƒn')} {aptCode}
+            {t('Nhân Khẩu')} • {t('Căn')} {aptCode}
           </h2>
           <p className="text-xs text-gray-400 mt-0.5">
-            {t('Chá»§ há»™:')} <strong className="text-[#C5A880]">{ownerName}</strong> â€¢ {t('CÄƒn')} <strong className="text-white font-mono">{aptCode}</strong>
+            {t('Chủ hộ:')} <strong className="text-[#C5A880]">{ownerName}</strong> • {t('Căn')} <strong className="text-white font-mono">{aptCode}</strong>
           </p>
         </div>
 
@@ -922,18 +922,18 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
               onClick={() => {
                 setfaceEnrollTarget({
                   id: currentUser.id || 'usr-120',
-                  fullName: currentUser.full_name || 'Tráº§n Há»¯u Lá»±c',
+                  fullName: currentUser.full_name || 'Trần Hữu Lực',
                   phone: currentUser.phone || '',
                   email: currentUser.email || 'huuluc04@gmail.com',
                   role: 'Family',
-                  relationship: 'Chá»§ Há»™ (Chá»§ Sá»Ÿ Há»¯u)',
+                  relationship: 'Chủ Hộ (Chủ Sở Hữu)',
                 });
               }}
               className="px-3 py-2 bg-[#161D26] hover:bg-[#1E2631] border border-[#C5A880] text-[#C5A880] hover:text-white text-xs font-bold rounded-none flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95"
-              title={isEn ? 'Rescan Primary Resident FaceID' : 'QuÃ©t láº¡i FaceID Chá»§ Há»™'}
+              title={isEn ? 'Rescan Primary Resident FaceID' : 'Quét lại FaceID Chủ Hộ'}
             >
               <Camera className="w-3.5 h-3.5 text-[#C5A880]" />
-              <span>{t('QuÃ©t FaceID')}</span>
+              <span>{t('Quét FaceID')}</span>
             </button>
             <button
               type="button"
@@ -945,7 +945,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
               }}
               className="px-4 py-2 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 rounded-none shadow flex-shrink-0 cursor-pointer active:scale-95"
             >
-              <UserPlus className="w-4 h-4" /> {t('ThÃªm ThÃ nh ViÃªn')}
+              <UserPlus className="w-4 h-4" /> {t('Thêm Thành Viên')}
             </button>
           </div>
         )}
@@ -963,22 +963,22 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="p-3.5 bg-[#121820] border border-[#222B35] rounded-none">
           <div className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold flex items-center justify-between">
-            <span>{t('NhÃ¢n Kháº©u', 'Total Residents')}</span>
+            <span>{t('Nhân Khẩu', 'Total Residents')}</span>
             <Users className="w-3.5 h-3.5 text-gray-500" />
           </div>
           <div className="text-2xl font-bold font-serif text-white mt-1 flex items-baseline gap-1.5">
             <span>{totalResidents}</span>
-            <span className="text-xs text-gray-400 font-normal">{t('ngÆ°á»i', 'residents')}</span>
+            <span className="text-xs text-gray-400 font-normal">{t('người', 'residents')}</span>
           </div>
         </div>
 
         <div className="p-3.5 bg-[#121820] border border-[#222B35] rounded-none">
           <div className="text-[10px] uppercase tracking-wider text-emerald-300 font-semibold flex items-center justify-between">
-            <span>{t('ÄÃ£ FaceID', 'FaceID Enrolled')}</span>
+            <span>{t('Đã FaceID', 'FaceID Enrolled')}</span>
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
           </div>
           <div className="text-2xl font-bold font-serif text-emerald-400 mt-1">
-            {1 + totalApproved} <span className="text-xs font-sans text-gray-400 font-normal">{t('ngÆ°á»i', 'residents')}</span>
+            {1 + totalApproved} <span className="text-xs font-sans text-gray-400 font-normal">{t('người', 'residents')}</span>
           </div>
         </div>
 
@@ -989,15 +989,15 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
             : 'bg-[#121820] border border-[#222B35]'
         }`}>
           <div className="text-[10px] uppercase tracking-wider text-amber-300 font-bold flex items-center justify-between">
-            <span>{t('Chá» Duyá»‡t', 'Pending Review')}</span>
+            <span>{t('Chờ Duyệt', 'Pending Review')}</span>
             <Clock className="w-3.5 h-3.5 text-amber-400" />
           </div>
           <div className="text-2xl font-bold font-serif text-amber-400 mt-1 flex items-baseline gap-1.5">
             <span>{totalPendingOwner}</span>
-            <span className="text-xs font-sans text-gray-400 font-normal">{t('há»“ sÆ¡', 'profiles')}</span>
+            <span className="text-xs font-sans text-gray-400 font-normal">{t('hồ sơ', 'profiles')}</span>
             {totalPendingOwner > 0 && (
               <span className="text-[9px] px-1.5 py-0.5 bg-amber-500 text-[#0D1117] font-bold uppercase">
-                {t('Cáº§n duyá»‡t', 'Action needed')}
+                {t('Cần duyệt', 'Action needed')}
               </span>
             )}
           </div>
@@ -1005,17 +1005,17 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
 
         <div className="p-3.5 bg-[#121820] border border-[#222B35] rounded-none">
           <div className="text-[10px] uppercase tracking-wider text-cyan-300 font-semibold flex items-center justify-between">
-            <span>{t('Chá» BQL', 'Pending Mgmt')}</span>
+            <span>{t('Chờ BQL', 'Pending Mgmt')}</span>
             <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
           </div>
           <div className="text-2xl font-bold font-serif text-cyan-400 mt-1">
-            {totalPendingBql} <span className="text-xs font-sans text-gray-400 font-normal">{t('há»“ sÆ¡', 'profiles')}</span>
+            {totalPendingBql} <span className="text-xs font-sans text-gray-400 font-normal">{t('hồ sơ', 'profiles')}</span>
           </div>
         </div>
 
         <div className="p-3.5 bg-[#121820] border border-[#222B35] rounded-none col-span-2 sm:col-span-1">
           <div className="text-[10px] uppercase tracking-wider text-purple-300 font-semibold flex items-center justify-between">
-            <span>{t('PhÆ°Æ¡ng Tiá»‡n', 'Vehicles')}</span>
+            <span>{t('Phương Tiện', 'Vehicles')}</span>
             <Car className="w-3.5 h-3.5 text-purple-400" />
           </div>
           <div className="text-2xl font-bold font-serif text-purple-400 mt-1">
@@ -1033,10 +1033,10 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
             </div>
             <div>
               <div className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> {t('Cáº§n duyá»‡t FaceID ngÆ°á»i nhÃ ', 'Pending Family FaceID Review')} ({totalPendingOwner})
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> {t('Cần duyệt FaceID người nhà', 'Pending Family FaceID Review')} ({totalPendingOwner})
               </div>
               <p className="text-xs text-gray-300 mt-0.5">
-                ThÃ nh viÃªn Ä‘Ã£ quÃ©t Ä‘á»§ 4 máº«u FaceID. Vui lÃ²ng kiá»ƒm tra vÃ  duyá»‡t Ä‘á»ƒ BQL kÃ­ch hoáº¡t.
+                Thành viên đã quét đủ 4 mẫu FaceID. Vui lòng kiểm tra và duyệt để BQL kích hoạt.
               </p>
             </div>
           </div>
@@ -1049,7 +1049,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                   onClick={() => setConfirmTargetMember(pendingMember)}
                   className="w-full md:w-auto px-4 py-2 bg-gradient-to-r from-amber-500 to-[#C5A880] hover:brightness-110 text-[#0D1117] font-bold text-xs uppercase tracking-wider rounded-none flex items-center justify-center gap-1.5 shadow transition-all active:scale-95 cursor-pointer"
                 >
-                  <ShieldCheck className="w-4 h-4" /> Duyá»‡t Ngay ({pendingMember.fullName})
+                  <ShieldCheck className="w-4 h-4" /> Duyệt Ngay ({pendingMember.fullName})
                 </button>
               ) : null;
             })()}
@@ -1059,12 +1059,12 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
 
       <FamilyMemberList ctx={modalCtx} />
       {/* =================================================================== */}
-      {/* MODAL: CHá»¦ Há»˜ KHAI BÃO & Cáº¬P NHáº¬T E-KYC CHO NGÆ¯á»œI NHÃ€ Gá»¬I BQL        */}
+      {/* MODAL: CHỦ HỘ KHAI BÁO & CẬP NHẬT E-KYC CHO NGƯỜI NHÀ GỬI BQL        */}
       {/* =================================================================== */}
       <FamilyEkycModal ctx={modalCtx} />
 
       {/* =================================================================== */}
-      {/* MODAL: THÃŠM THÃ€NH VIÃŠN                                               */}
+      {/* MODAL: THÊM THÀNH VIÊN                                               */}
       {/* =================================================================== */}
       <FamilyAddMemberModal ctx={modalCtx} />
 
@@ -1095,7 +1095,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
                 if (m.id === faceEnrollTarget.id || m.phone === faceEnrollTarget.phone) {
                   return {
                     ...m,
-                    faceStatus: !isOwner ? 'Chá» Chá»§ Há»™ XÃ¡c Nháº­n' : 'Äang Chá» BQL PhÃª Duyá»‡t',
+                    faceStatus: !isOwner ? 'Chờ Chủ Hộ Xác Nhận' : 'Đang Chờ BQL Phê Duyệt',
                   };
                 }
                 return m;
@@ -1104,8 +1104,8 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
             fetchMembers();
             setActionSuccess(
               !isOwner
-                ? `âœ“ ÄÃ£ chá»¥p Ä‘á»§ 4 gÃ³c khuÃ´n máº·t cho ${faceEnrollTarget.fullName}! Há»“ sÆ¡ Ä‘ang chá» Chá»§ Há»™ xÃ¡c nháº­n.`
-                : `âœ“ ÄÃ£ chá»¥p Ä‘á»§ 4 gÃ³c khuÃ´n máº·t thÃ nh cÃ´ng cho ${faceEnrollTarget.fullName}!`
+                ? `✓ Đã chụp đủ 4 góc khuôn mặt cho ${faceEnrollTarget.fullName}! Hồ sơ đang chờ Chủ Hộ xác nhận.`
+                : `✓ Đã chụp đủ 4 góc khuôn mặt thành công cho ${faceEnrollTarget.fullName}!`
             );
             setTimeout(() => setActionSuccess(null), 5000);
             setfaceEnrollTarget(null);
@@ -1113,10 +1113,10 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         />
       )}
 
-      {/* MODAL: CHá»¦ Há»˜ KIá»‚M TRA 4 MáºªU FACEID Cá»¦A NGÆ¯á»œI NHÃ€ VÃ€ XÃC NHáº¬N Gá»¬I BQL */}
+      {/* MODAL: CHỦ HỘ KIỂM TRA 4 MẪU FACEID CỦA NGƯỜI NHÀ VÀ XÁC NHẬN GỬI BQL */}
       <FamilyFaceReviewModal ctx={modalCtx} />
       {/* =================================================================== */}
-      {/* MODAL: QUÃ‰T CCCD Tá»° Äá»˜NG CHO NGÆ¯á»œI NHÃ€ (TESSERACT OCR)              */}
+      {/* MODAL: QUÉT CCCD TỰ ĐỘNG CHO NGƯỜI NHÀ (TESSERACT OCR)              */}
       {/* =================================================================== */}
       <CccdOcrScannerModal
         isOpen={isMemberOcrModalOpen}
@@ -1127,7 +1127,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
       />
 
       {/* =================================================================== */}
-      {/* MODAL: SINH TRáº®C Há»ŒC FACEID 4 BÆ¯á»šC CHO THÃ€NH VIÃŠN                   */}
+      {/* MODAL: SINH TRẮC HỌC FACEID 4 BƯỚC CHO THÀNH VIÊN                   */}
       {/* =================================================================== */}
       {faceEnrollTarget && (
         <FaceEnrollModal
@@ -1141,7 +1141,7 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
           isFamilyMemberSelfEnroll={faceEnrollTarget.id !== currentUser.id && faceEnrollTarget.phone !== currentUser.phone}
           submittedByRole={currentUser.role}
           onEnrollSuccess={(profile) => {
-            setActionSuccess(`âœ“ ÄÃ£ thu tháº­p vÃ  lÆ°u thÃ nh cÃ´ng 4 máº«u FaceID cho "${faceEnrollTarget.fullName}"!`);
+            setActionSuccess(`✓ Đã thu thập và lưu thành công 4 mẫu FaceID cho "${faceEnrollTarget.fullName}"!`);
             setTimeout(() => setActionSuccess(null), 5000);
             setfaceEnrollTarget(null);
             fetchMembers();
@@ -1154,14 +1154,14 @@ export default function FamilyMembers({ currentUser }: FamilyMembersProps) {
         isOpen={isClearDataConfirmOpen}
         onClose={() => setIsClearDataConfirmOpen(false)}
         onConfirm={executeClearLocalData}
-        title={isEn ? 'Clear Cache & Sync Family' : 'Äá»“ng Bá»™ & Dá»n Dáº¹p Bá»™ Nhá»› Táº¡m'}
+        title={isEn ? 'Clear Cache & Sync Family' : 'Đồng Bộ & Dọn Dẹp Bộ Nhớ Tạm'}
         message={isEn 
           ? 'Clear temporary client memory and synchronize family member profiles fresh from the server store?' 
-          : 'XÃ¡c nháº­n dá»n dáº¹p bá»™ nhá»› táº¡m vÃ  Ä‘á»“ng bá»™ láº¡i danh sÃ¡ch há»“ sÆ¡ thÃ nh viÃªn gia Ä‘Ã¬nh trá»±c tiáº¿p tá»« mÃ¡y chá»§?'
+          : 'Xác nhận dọn dẹp bộ nhớ tạm và đồng bộ lại danh sách hồ sơ thành viên gia đình trực tiếp từ máy chủ?'
         }
         itemCode={aptCode}
-        itemName={isEn ? 'Unit Family Cache' : 'Bá»™ nhá»› táº¡m há»“ sÆ¡ cÄƒn há»™'}
-        confirmText={isEn ? 'Sync Fresh' : 'Äá»“ng Bá»™ Láº¡i'}
+        itemName={isEn ? 'Unit Family Cache' : 'Bộ nhớ tạm hồ sơ căn hộ'}
+        confirmText={isEn ? 'Sync Fresh' : 'Đồng Bộ Lại'}
         isDanger={false}
       />
     </div>

@@ -37,6 +37,12 @@ jobs:
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
           echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
 
+      - name: Check file encoding (UTF-8 without BOM, no mojibake)
+        run: npm run check:encoding
+
+      - name: Lint (including react-hooks/rules-of-hooks)
+        run: npm run lint
+
       - name: TypeScript typecheck
         run: npx tsc --noEmit
 

@@ -71,36 +71,36 @@ const STEPS: StepConfig[] = [
   {
     key: 'FRONT',
     stepNumber: 1,
-    title: 'BÆ¯á»šC 1: NHÃŒN THáº²NG VÃ€O CAMERA',
-    subtitle: 'GÃ³c chÃ­nh diá»‡n â€¢ Giá»¯ Ä‘áº§u tháº³ng',
-    guideText: 'Vui lÃ²ng nhÃ¬n tháº³ng vÃ o mÃ n hÃ¬nh, giá»¯ khuÃ´n máº·t náº±m trong khung trÃ²n.',
+    title: 'BƯỚC 1: NHÌN THẲNG VÀO CAMERA',
+    subtitle: 'Góc chính diện • Giữ đầu thẳng',
+    guideText: 'Vui lòng nhìn thẳng vào màn hình, giữ khuôn mặt nằm trong khung tròn.',
     icon: '',
     progressPercent: 25,
   },
   {
     key: 'LEFT',
     stepNumber: 2,
-    title: 'BÆ¯á»šC 2: NGHIÃŠNG NHáº¸ SANG TRÃI',
-    subtitle: 'NghiÃªng nháº¹ máº·t sang bÃªn trÃ¡i',
-    guideText: 'Tá»« tá»« quay nháº¹ máº·t sang bÃªn trÃ¡i Ä‘á»ƒ há»‡ thá»‘ng ghi nháº­n gÃ³c nghiÃªng.',
+    title: 'BƯỚC 2: NGHIÊNG NHẸ SANG TRÁI',
+    subtitle: 'Nghiêng nhẹ mặt sang bên trái',
+    guideText: 'Từ từ quay nhẹ mặt sang bên trái để hệ thống ghi nhận góc nghiêng.',
     icon: '',
     progressPercent: 50,
   },
   {
     key: 'RIGHT',
     stepNumber: 3,
-    title: 'BÆ¯á»šC 3: NGHIÃŠNG NHáº¸ SANG PHáº¢I',
-    subtitle: 'NghiÃªng nháº¹ máº·t sang bÃªn pháº£i',
-    guideText: 'Tá»« tá»« quay nháº¹ máº·t sang bÃªn pháº£i Ä‘á»ƒ há»‡ thá»‘ng ghi nháº­n gÃ³c nghiÃªng.',
+    title: 'BƯỚC 3: NGHIÊNG NHẸ SANG PHẢI',
+    subtitle: 'Nghiêng nhẹ mặt sang bên phải',
+    guideText: 'Từ từ quay nhẹ mặt sang bên phải để hệ thống ghi nhận góc nghiêng.',
     icon: '',
     progressPercent: 75,
   },
   {
     key: 'CLOSER',
     stepNumber: 4,
-    title: 'BÆ¯á»šC 4: TIáº¾N Láº I Gáº¦N Má»˜T CHÃšT',
-    subtitle: 'Khoáº£ng cÃ¡ch gáº§n hÆ¡n â€¢ XÃ¡c nháº­n ngÆ°á»i tháº­t',
-    guideText: 'Tá»« tá»« Ä‘Æ°a máº·t láº¡i gáº§n camera hÆ¡n má»™t chÃºt Ä‘á»ƒ hoÃ n táº¥t nháº­n diá»‡n.',
+    title: 'BƯỚC 4: TIẾN LẠI GẦN MỘT CHÚT',
+    subtitle: 'Khoảng cách gần hơn • Xác nhận người thật',
+    guideText: 'Từ từ đưa mặt lại gần camera hơn một chút để hoàn tất nhận diện.',
     icon: '',
     progressPercent: 100,
   },
@@ -177,7 +177,7 @@ export default function FaceEnrollModal({
 
   const currentStep = STEPS[currentStepIndex] || STEPS[0];
 
-  // Náº¡p mÃ´ hÃ¬nh máº¡ng nÆ¡-ron há»c sÃ¢u khi má»Ÿ Modal
+  // Nạp mô hình mạng nơ-ron học sâu khi mở Modal
   useEffect(() => {
     if (isOpen) {
       loadFaceVisionModels().then((ready) => {
@@ -188,7 +188,7 @@ export default function FaceEnrollModal({
     }
   }, [isOpen]);
 
-  // 1. Initialize High-Definition Realtime Webcam Stream (Tá»‘i Æ°u Ä‘á»™ trá»… tháº¥p 640x480)
+  // 1. Initialize High-Definition Realtime Webcam Stream (Tối ưu độ trễ thấp 640x480)
   const startCamera = useCallback(async () => {
     try {
       setCameraError(null);
@@ -221,15 +221,15 @@ export default function FaceEnrollModal({
           }
         }
       } else {
-        throw new Error('TrÃ¬nh duyá»‡t khÃ´ng há»— trá»£ káº¿t ná»‘i thiáº¿t bá»‹ MediaDevices.');
+        throw new Error('Trình duyệt không hỗ trợ kết nối thiết bị MediaDevices.');
       }
     } catch (err: any) {
       console.error('Camera connection error:', err);
-      let msg = 'KhÃ´ng thá»ƒ truy cáº­p camera. Vui lÃ²ng cáº¥p quyá»n truy cáº­p webcam trong cÃ i Ä‘áº·t trÃ¬nh duyá»‡t.';
+      let msg = 'Không thể truy cập camera. Vui lòng cấp quyền truy cập webcam trong cài đặt trình duyệt.';
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        msg = 'Báº¡n Ä‘Ã£ tá»« chá»‘i quyá»n camera. Vui lÃ²ng báº¥m vÃ o biá»ƒu tÆ°á»£ng khÃ³a trÃªn thanh Ä‘á»‹a chá»‰ Ä‘á»ƒ cáº¥p quyá»n.';
+        msg = 'Bạn đã từ chối quyền camera. Vui lòng bấm vào biểu tượng khóa trên thanh địa chỉ để cấp quyền.';
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        msg = 'KhÃ´ng tÃ¬m tháº¥y thiáº¿t bá»‹ camera trÃªn mÃ¡y tÃ­nh cá»§a báº¡n.';
+        msg = 'Không tìm thấy thiết bị camera trên máy tính của bạn.';
       }
       setCameraError(msg);
       setIsCameraActive(false);
@@ -301,7 +301,7 @@ export default function FaceEnrollModal({
     const stepIdx = typeof stepIdxToCapture === 'number' ? stepIdxToCapture : currentStepIndexRef.current;
     const photo = captureFrame();
     if (!photo) {
-      setErrorMessage('Camera Ä‘ang khá»Ÿi Ä‘á»™ng hoáº·c chÆ°a á»•n Ä‘á»‹nh khung hÃ¬nh. Báº¡n vui lÃ²ng giá»¯ yÃªn khuÃ´n máº·t vÃ  thá»­ láº¡i nhÃ©.');
+      setErrorMessage('Camera đang khởi động hoặc chưa ổn định khung hình. Bạn vui lòng giữ yên khuôn mặt và thử lại nhé.');
       return;
     }
 
@@ -312,7 +312,7 @@ export default function FaceEnrollModal({
     autoProgressRef.current = 100;
     setAutoProgress(100);
 
-    // Ã‚m thanh sinh tráº¯c há»c chuáº©n
+    // Âm thanh sinh trắc học chuẩn
     playBiometricChime(stepIdx === 3 ? 'success' : 'step');
 
     // Shutter flash effect
@@ -335,7 +335,7 @@ export default function FaceEnrollModal({
     samplesRef.current = newSamples;
     setSamples(newSamples);
 
-    // Dá»«ng 550ms hiá»ƒn thá»‹ tráº¡ng thÃ¡i Ä‘Ã£ khÃ³a gÃ³c trÆ°á»›c khi sang bÆ°á»›c tiáº¿p theo
+    // Dừng 550ms hiển thị trạng thái đã khóa góc trước khi sang bước tiếp theo
     setTimeout(async () => {
       isProcessingRef.current = false;
       setIsProcessing(false);
@@ -351,15 +351,15 @@ export default function FaceEnrollModal({
         consecutiveMatchesRef.current = 0;
         autoProgressRef.current = 0;
         setAutoProgress(0);
-        // Khoáº£ng Ä‘á»‡m chuyá»ƒn bÆ°á»›c: BÆ°á»›c 4 (Láº¡i gáº§n) cho 1.4s Ä‘á»ƒ ngÆ°á»i dÃ¹ng ká»‹p Ä‘á»c hÆ°á»›ng dáº«n vÃ  chuáº©n bá»‹ tiáº¿n láº¡i gáº§n
+        // Khoảng đệm chuyển bước: Bước 4 (Lại gần) cho 1.4s để người dùng kịp đọc hướng dẫn và chuẩn bị tiến lại gần
         stepGracePeriodUntilRef.current = Date.now() + (nextIdx === 3 ? 1400 : 700);
       } else {
-        // ÄÃ£ Ä‘á»§ 4 gÃ³c -> Tháº©m Ä‘á»‹nh chuyÃªn sÃ¢u báº±ng Deep Computer Vision
+        // Đã đủ 4 góc -> Thẩm định chuyên sâu bằng Deep Computer Vision
         if (newSamples.front && newSamples.left && newSamples.right && newSamples.smile) {
           try {
             const deepRes = await verifyAndAnalyzeBiometricSamples(newSamples as any);
             if (!deepRes.valid) {
-              setErrorMessage(deepRes.error || 'áº¢nh chá»¥p chÆ°a rÃµ. Báº¡n vui lÃ²ng thá»±c hiá»‡n láº¡i cÃ¡c bÆ°á»›c nhÃ©.');
+              setErrorMessage(deepRes.error || 'Ảnh chụp chưa rõ. Bạn vui lòng thực hiện lại các bước nhé.');
               stepLockedRef.current = false;
               setStepLocked(false);
               return;
@@ -381,7 +381,7 @@ export default function FaceEnrollModal({
     triggerStepCapture(currentStepIndex);
   };
 
-  // 3.1 VÃ²ng láº·p nháº­n diá»‡n khuÃ´n máº·t vÃ  tÆ° tháº¿ tá»± Ä‘á»™ng báº±ng Deep Computer Vision (Hands-Free Deep Vision Auto-Scanning)
+  // 3.1 Vòng lặp nhận diện khuôn mặt và tư thế tự động bằng Deep Computer Vision (Hands-Free Deep Vision Auto-Scanning)
   useEffect(() => {
     if (!isOpen || isReviewMode || !isCameraActive || !isAutoMode) {
       autoProgressRef.current = 0;
@@ -402,15 +402,15 @@ export default function FaceEnrollModal({
         const stepIdx = currentStepIndexRef.current;
         const stepKey = STEPS[stepIdx]?.key;
 
-        // 1. Khoáº£ng Ä‘á»‡m thá»i gian chuáº©n bá»‹ chuyá»ƒn bÆ°á»›c (Grace Period) Ä‘á»ƒ cÆ° dÃ¢n ká»‹p Ä‘á»c hÆ°á»›ng dáº«n, khÃ´ng bá»‹ chá»¥p giáº­t mÃ¬nh
+        // 1. Khoảng đệm thời gian chuẩn bị chuyển bước (Grace Period) để cư dân kịp đọc hướng dẫn, không bị chụp giật mình
         const now = Date.now();
         if (now < stepGracePeriodUntilRef.current) {
           if (stepKey === 'CLOSER') {
-            setAutoFeedback(t('BÆ°á»›c 4: Chuáº©n bá»‹ tiáº¿n láº¡i gáº§n camera...'));
+            setAutoFeedback(t('Bước 4: Chuẩn bị tiến lại gần camera...'));
           } else if (stepKey === 'LEFT') {
-            setAutoFeedback(t('BÆ°á»›c 2: Chuáº©n bá»‹ quay nháº¹ sang TRÃI...'));
+            setAutoFeedback(t('Bước 2: Chuẩn bị quay nhẹ sang TRÁI...'));
           } else if (stepKey === 'RIGHT') {
-            setAutoFeedback(t('BÆ°á»›c 3: Chuáº©n bá»‹ quay nháº¹ sang PHáº¢I...'));
+            setAutoFeedback(t('Bước 3: Chuẩn bị quay nhẹ sang PHẢI...'));
           }
           autoProgressRef.current = 0;
           setAutoProgress(0);
@@ -419,7 +419,7 @@ export default function FaceEnrollModal({
         }
 
         if (!result.hasFace) {
-          setAutoFeedback(t('Vui lÃ²ng Ä‘Æ°a máº·t vÃ o giá»¯a khung hÃ¬nh'));
+          setAutoFeedback(t('Vui lòng đưa mặt vào giữa khung hình'));
           consecutiveMatchesRef.current = 0;
           autoProgressRef.current = Math.max(0, autoProgressRef.current - 12);
           setAutoProgress(autoProgressRef.current);
@@ -432,65 +432,65 @@ export default function FaceEnrollModal({
         let isMatch = false;
         let promptText = '';
 
-        // PhÃ¢n tÃ­ch cá»± ly khoáº£ng cÃ¡ch: quÃ¡ xa hoáº·c quÃ¡ gáº§n
+        // Phân tích cự ly khoảng cách: quá xa hoặc quá gần
         if (coverage < 24) {
-          promptText = t('Báº¡n Ä‘ang hÆ¡i xa, hÃ£y tiáº¿n láº¡i gáº§n hÆ¡n');
+          promptText = t('Bạn đang hơi xa, hãy tiến lại gần hơn');
           isMatch = false;
         } else if (stepKey !== 'CLOSER' && coverage > 65) {
-          promptText = t('Báº¡n Ä‘ang quÃ¡ gáº§n, hÃ£y lÃ¹i ra xa má»™t chÃºt');
+          promptText = t('Bạn đang quá gần, hãy lùi ra xa một chút');
           isMatch = false;
         } else if (stepKey === 'FRONT') {
-          // BÆ°á»›c 1: NhÃ¬n tháº³ng chÃ­nh diá»‡n
+          // Bước 1: Nhìn thẳng chính diện
           const isFacingStraight = Math.abs(yaw) <= 8 && Math.abs(pitch) <= 18;
           if (isFacingStraight) {
             isMatch = true;
-            promptText = t('Äang giá»¯ tháº³ng máº·t, xin giá»¯ yÃªn...');
+            promptText = t('Đang giữ thẳng mặt, xin giữ yên...');
           } else if (yaw > 8) {
-            promptText = t('Máº·t Ä‘ang lá»‡ch sang trÃ¡i, hÃ£y nhÃ¬n tháº³ng vÃ o camera');
+            promptText = t('Mặt đang lệch sang trái, hãy nhìn thẳng vào camera');
           } else if (yaw < -8) {
-            promptText = t('Máº·t Ä‘ang lá»‡ch sang pháº£i, hÃ£y nhÃ¬n tháº³ng vÃ o camera');
+            promptText = t('Mặt đang lệch sang phải, hãy nhìn thẳng vào camera');
           } else if (pitch > 18) {
-            promptText = t('Máº·t Ä‘ang ngÆ°á»›c lÃªn, hÃ£y nhÃ¬n tháº³ng vÃ o camera');
+            promptText = t('Mặt đang ngước lên, hãy nhìn thẳng vào camera');
           } else if (pitch < -18) {
-            promptText = t('Máº·t Ä‘ang cÃºi xuá»‘ng, hÃ£y nhÃ¬n tháº³ng vÃ o camera');
+            promptText = t('Mặt đang cúi xuống, hãy nhìn thẳng vào camera');
           } else {
-            promptText = t('Vui lÃ²ng nhÃ¬n tháº³ng vÃ o camera');
+            promptText = t('Vui lòng nhìn thẳng vào camera');
           }
         } else if (stepKey === 'LEFT') {
-          // BÆ°á»›c 2: Quay nháº¹ sang TRÃI
+          // Bước 2: Quay nhẹ sang TRÁI
           if (yaw >= 7) {
             isMatch = true;
-            promptText = t('GÃ³c nghiÃªng trÃ¡i ráº¥t tá»‘t, giá»¯ yÃªn...');
+            promptText = t('Góc nghiêng trái rất tốt, giữ yên...');
           } else {
-            promptText = t('Tá»« tá»« quay nháº¹ máº·t sang TRÃI');
+            promptText = t('Từ từ quay nhẹ mặt sang TRÁI');
           }
         } else if (stepKey === 'RIGHT') {
-          // BÆ°á»›c 3: Quay nháº¹ sang PHáº¢I
+          // Bước 3: Quay nhẹ sang PHẢI
           if (yaw <= -7) {
             isMatch = true;
-            promptText = t('GÃ³c nghiÃªng pháº£i ráº¥t tá»‘t, giá»¯ yÃªn...');
+            promptText = t('Góc nghiêng phải rất tốt, giữ yên...');
           } else {
-            promptText = t('Tá»« tá»« quay nháº¹ máº·t sang PHáº¢I');
+            promptText = t('Từ từ quay nhẹ mặt sang PHẢI');
           }
         } else if (stepKey === 'CLOSER') {
-          // BÆ°á»›c 4: Cá»± ly gáº§n (Tiáº¿n tá»›i gáº§n hÆ¡n so vá»›i BÆ°á»›c 1)
+          // Bước 4: Cự ly gần (Tiến tới gần hơn so với Bước 1)
           const base = Math.max(28, Math.min(50, baselineCoverageRef.current || 38));
-          // Pháº£i thá»±c sá»± di chuyá»ƒn Ä‘áº§u láº¡i gáº§n (+12% diá»‡n tÃ­ch vÃ  Ä‘áº¡t Ã­t nháº¥t 52%)
+          // Phải thực sự di chuyển đầu lại gần (+12% diện tích và đạt ít nhất 52%)
           const targetCloser = Math.min(72, Math.max(52, base + 12));
 
           if (coverage > 78) {
-            promptText = t('QuÃ¡ gáº§n! Vui lÃ²ng lÃ¹i ra má»™t chÃºt');
+            promptText = t('Quá gần! Vui lòng lùi ra một chút');
             isMatch = false;
           } else if (coverage < targetCloser) {
-            promptText = t('Tá»« tá»« Ä‘Æ°a máº·t láº¡i gáº§n camera hÆ¡n...');
+            promptText = t('Từ từ đưa mặt lại gần camera hơn...');
             isMatch = false;
           } else {
             if (Math.abs(yaw) > 15 || Math.abs(pitch) > 20) {
-              promptText = t('Vui lÃ²ng nhÃ¬n tháº³ng vÃ o camera khi láº¡i gáº§n');
+              promptText = t('Vui lòng nhìn thẳng vào camera khi lại gần');
               isMatch = false;
             } else {
               isMatch = true;
-              promptText = t('Khoáº£ng cÃ¡ch ráº¥t tá»‘t, xin giá»¯ yÃªn...');
+              promptText = t('Khoảng cách rất tốt, xin giữ yên...');
             }
           }
         }
@@ -499,14 +499,14 @@ export default function FaceEnrollModal({
 
         if (isMatch) {
           consecutiveMatchesRef.current += 1;
-          // Vá»›i bÆ°á»›c láº¡i gáº§n (CLOSER), tÄƒng cháº­m rÃ£i (+12 má»—i 90ms â‰ˆ 800ms) Ä‘á»ƒ ngÆ°á»i dÃ¹ng cÃ³ thá»i gian giá»¯ yÃªn
-          // giÃºp camera láº¥y nÃ©t rÃµ, chá»‘ng rung nhÃ²e vÃ  khÃ´ng cÃ³ cáº£m giÃ¡c bá»‹ chá»¥p giáº­t mÃ¬nh
+          // Với bước lại gần (CLOSER), tăng chậm rãi (+12 mỗi 90ms ≈ 800ms) để người dùng có thời gian giữ yên
+          // giúp camera lấy nét rõ, chống rung nhòe và không có cảm giác bị chụp giật mình
           const progIncrement = stepKey === 'CLOSER' ? 12 : 28;
           const nextProg = Math.min(100, autoProgressRef.current + progIncrement);
           autoProgressRef.current = nextProg;
           setAutoProgress(nextProg);
 
-          // Khi Ä‘á»§ 100% -> Tá»± Ä‘á»™ng chá»›p chá»¥p
+          // Khi đủ 100% -> Tự động chớp chụp
           if (nextProg >= 100) {
             autoProgressRef.current = 0;
             triggerStepCapture(stepIdx);
@@ -577,7 +577,7 @@ export default function FaceEnrollModal({
   // 6. Submit 4 Biometric Samples Officially
   const handleFinalSubmit = async () => {
     if (!samples.front || !samples.left || !samples.right || !samples.smile) {
-      setErrorMessage('Vui lÃ²ng chá»¥p Ä‘á»§ cáº£ 4 gÃ³c khuÃ´n máº·t trÆ°á»›c khi xÃ¡c nháº­n.');
+      setErrorMessage('Vui lòng chụp đủ cả 4 góc khuôn mặt trước khi xác nhận.');
       return;
     }
 
@@ -587,7 +587,7 @@ export default function FaceEnrollModal({
     try {
       const normalizedSamples = await normalizeBiometricSamplesToBase64(samples);
 
-      // Tháº©m Ä‘á»‹nh báº±ng máº¡ng há»c sÃ¢u Computer Vision thá»±c thá»¥ (Kiá»ƒm tra tá»«ng gÃ³c, Ä‘á»™ sÃ¢u, danh tÃ­nh)
+      // Thẩm định bằng mạng học sâu Computer Vision thực thụ (Kiểm tra từng góc, độ sâu, danh tính)
       let finalAnalysis: any = null;
       try {
         finalAnalysis = await verifyAndAnalyzeBiometricSamples(normalizedSamples as any);
@@ -596,7 +596,7 @@ export default function FaceEnrollModal({
       }
 
       if (finalAnalysis && !finalAnalysis.valid) {
-        setErrorMessage(finalAnalysis.error || 'HÃ¬nh áº£nh chÆ°a Ä‘áº¡t yÃªu cáº§u. Báº¡n vui lÃ²ng chá»¥p láº¡i nhÃ©.');
+        setErrorMessage(finalAnalysis.error || 'Hình ảnh chưa đạt yêu cầu. Bạn vui lòng chụp lại nhé.');
         setIsSubmitting(false);
         return;
       }
@@ -607,7 +607,7 @@ export default function FaceEnrollModal({
 
       const verifiedScore = finalAnalysis?.faceScore || 92.5;
 
-      // Gá»i API chÃ­nh thá»©c backend
+      // Gọi API chính thức backend
       const res = await skylineEnrollFaceId({
         userId,
         fullName,
@@ -627,7 +627,7 @@ export default function FaceEnrollModal({
 
       const fullProfile: EnrolledFaceProfile = {
         userId,
-        fullName: fullName || 'CÆ° DÃ¢n Skyline',
+        fullName: fullName || 'Cư Dân Skyline',
         apartmentCode,
         phone: phone || '',
         avatarUrl: '',
@@ -654,7 +654,7 @@ export default function FaceEnrollModal({
       }, 1900);
     } catch (err: any) {
       console.error('Enroll error:', err);
-      setErrorMessage(err?.message || 'Lá»—i khi gá»­i dá»¯ liá»‡u FaceID. Vui lÃ²ng thá»­ láº¡i.');
+      setErrorMessage(err?.message || 'Lỗi khi gửi dữ liệu FaceID. Vui lòng thử lại.');
     } finally {
       setIsSubmitting(false);
     }
@@ -693,14 +693,14 @@ export default function FaceEnrollModal({
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-widest text-[#C5A880] font-bold">
-                {t('Nháº­n Diá»‡n CÆ° DÃ¢n Skyline â€¢ An ToÃ n & Báº£o Máº­t')}
+                {t('Nhận Diện Cư Dân Skyline • An Toàn & Bảo Mật')}
               </div>
               <h3 className="text-sm font-serif font-bold text-white tracking-wide flex items-center gap-2">
-                <span>{t('ÄÄƒng KÃ½ KhuÃ´n Máº·t (4 BÆ°á»›c):')}</span>
+                <span>{t('Đăng Ký Khuôn Mặt (4 Bước):')}</span>
                 <span className="text-[#C5A880] underline underline-offset-2">{fullName}</span>
                 {isFamilyMemberSelfEnroll && (
                   <span className="text-[10px] bg-[#1C2533] border border-[#2D3748] text-gray-300 px-1.5 py-0.5">
-                    {t('NgÆ°á»i NhÃ  Tá»± Cáº­p Nháº­t')}
+                    {t('Người Nhà Tự Cập Nhật')}
                   </span>
                 )}
               </h3>
@@ -766,7 +766,7 @@ export default function FaceEnrollModal({
                 )}
                 {lighting && !lighting.isOptimal && (
                   <span className={`text-[10px] font-semibold ${lighting.status === 'TOO_DARK' ? 'text-rose-400' : 'text-amber-400'}`}>
-                    {lighting.status === 'TOO_DARK' ? t('Thiáº¿u sÃ¡ng') : t('QuÃ¡ sÃ¡ng')}
+                    {lighting.status === 'TOO_DARK' ? t('Thiếu sáng') : t('Quá sáng')}
                   </span>
                 )}
               </div>
@@ -781,16 +781,16 @@ export default function FaceEnrollModal({
               <div className="absolute top-2 inset-x-2 flex items-center justify-between pointer-events-none z-20">
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-black/85 border border-[#222B35] text-[10px]">
                   <span className={`w-1.5 h-1.5 rounded-full ${isAiReady ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-                  <span className="text-gray-300 font-semibold">{t('Tá»± Ä‘á»™ng nháº­n diá»‡n')}</span>
+                  <span className="text-gray-300 font-semibold">{t('Tự động nhận diện')}</span>
                 </div>
                 {poseData && poseData.hasFace && (
                   <div className="flex items-center gap-2 px-2 py-1 bg-black/85 border border-[#222B35] text-[10px]">
                     <span className="text-[#C5A880]">
-                      {currentStep.key === 'FRONT' ? t('HÆ°á»›ng tháº³ng') :
-                       currentStep.key === 'LEFT' ? t('GÃ³c trÃ¡i') :
-                       currentStep.key === 'RIGHT' ? t('GÃ³c pháº£i') : t('Tiáº¿n gáº§n')}
+                      {currentStep.key === 'FRONT' ? t('Hướng thẳng') :
+                       currentStep.key === 'LEFT' ? t('Góc trái') :
+                       currentStep.key === 'RIGHT' ? t('Góc phải') : t('Tiến gần')}
                     </span>
-                    <span className="text-emerald-400 font-medium">âœ“ {t('Äang quÃ©t')}</span>
+                    <span className="text-emerald-400 font-medium">✓ {t('Đang quét')}</span>
                   </div>
                 )}
               </div>
@@ -800,19 +800,19 @@ export default function FaceEnrollModal({
                 <div className="absolute top-9 inset-x-0 flex justify-center pointer-events-none z-20">
                   {poseData.faceCoverage < 24 ? (
                     <span className="px-2.5 py-0.5 bg-amber-500 text-[#0D1117] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow animate-pulse">
-                      âš ï¸ {t('HÆ¡i xa â€¢ Láº¡i gáº§n hÆ¡n')}
+                      ⚠️ {t('Hơi xa • Lại gần hơn')}
                     </span>
                   ) : ((currentStep.key !== 'CLOSER' && poseData.faceCoverage > 65) || (currentStep.key === 'CLOSER' && poseData.faceCoverage > 78)) ? (
                     <span className="px-2.5 py-0.5 bg-amber-500 text-[#0D1117] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow animate-pulse">
-                      âš ï¸ {t('QuÃ¡ gáº§n â€¢ LÃ¹i ra xa')}
+                      ⚠️ {t('Quá gần • Lùi ra xa')}
                     </span>
                   ) : currentStep.key === 'CLOSER' && poseData.faceCoverage < Math.min(72, Math.max(52, (baselineCoverageRef.current || 38) + 12)) ? (
                     <span className="px-2.5 py-0.5 bg-sky-500 text-[#0D1117] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow">
-                      ðŸ” {t('Tiáº¿n gáº§n camera hÆ¡n')}
+                      🔍 {t('Tiến gần camera hơn')}
                     </span>
                   ) : (
                     <span className="px-2.5 py-0.5 bg-black/85 border border-emerald-500/70 text-emerald-300 text-[10px] font-semibold flex items-center gap-1">
-                      âœ“ {t('Cá»± ly chuáº©n')}
+                      ✓ {t('Cự ly chuẩn')}
                     </span>
                   )}
                 </div>
@@ -838,14 +838,14 @@ export default function FaceEnrollModal({
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 space-y-3 bg-[#0D1117] text-gray-400 z-10">
                   <Camera className="w-8 h-8 text-[#C5A880]" />
                   <div className="text-xs max-w-xs text-gray-300">
-                    {cameraError || t('Äang káº¿t ná»‘i camera...')}
+                    {cameraError || t('Đang kết nối camera...')}
                   </div>
                   <button
                     type="button"
                     onClick={() => startCamera()}
                     className="px-3 py-1.5 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-colors"
                   >
-                    {t('Thá»­ Láº¡i Káº¿t Ná»‘i')}
+                    {t('Thử Lại Kết Nối')}
                   </button>
                 </div>
               )}
@@ -893,19 +893,19 @@ export default function FaceEnrollModal({
                   {/* Pose Indicators Positioned Safely INSIDE the Oval */}
                   {currentStep.key === 'LEFT' && !stepLocked && (
                     <div className="absolute left-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-amber-500 text-[#0D1117] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow">
-                      <ArrowLeft className="w-3 h-3" /> {t('Quay TrÃ¡i')}
+                      <ArrowLeft className="w-3 h-3" /> {t('Quay Trái')}
                     </div>
                   )}
 
                   {currentStep.key === 'RIGHT' && !stepLocked && (
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-amber-500 text-[#0D1117] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow">
-                      {t('Quay Pháº£i')} <ArrowRight className="w-3 h-3" />
+                      {t('Quay Phải')} <ArrowRight className="w-3 h-3" />
                     </div>
                   )}
 
                   {currentStep.key === 'CLOSER' && !stepLocked && (
                     <div className="absolute bottom-5 px-2.5 py-1 bg-emerald-500 text-[#0D1117] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow">
-                      <ZoomIn className="w-3.5 h-3.5" /> {t('Láº¡i Gáº§n')}
+                      <ZoomIn className="w-3.5 h-3.5" /> {t('Lại Gần')}
                     </div>
                   )}
 
@@ -914,9 +914,9 @@ export default function FaceEnrollModal({
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
                       <CheckCircle2 className="w-14 h-14 text-emerald-400" />
                       <span className="mt-1.5 text-[10px] font-bold text-emerald-300 uppercase tracking-widest bg-black/90 px-2.5 py-0.5 border border-emerald-500/60">
-                        {currentStep.key === 'FRONT' ? t('ÄÃƒ LÆ¯U: NHÃŒN THáº²NG âœ“') :
-                         currentStep.key === 'LEFT' ? t('ÄÃƒ LÆ¯U: NGHIÃŠNG TRÃI âœ“') :
-                         currentStep.key === 'RIGHT' ? t('ÄÃƒ LÆ¯U: NGHIÃŠNG PHáº¢I âœ“') : t('ÄÃƒ LÆ¯U: TIáº¾N Gáº¦N âœ“')}
+                        {currentStep.key === 'FRONT' ? t('ĐÃ LƯU: NHÌN THẲNG ✓') :
+                         currentStep.key === 'LEFT' ? t('ĐÃ LƯU: NGHIÊNG TRÁI ✓') :
+                         currentStep.key === 'RIGHT' ? t('ĐÃ LƯU: NGHIÊNG PHẢI ✓') : t('ĐÃ LƯU: TIẾN GẦN ✓')}
                       </span>
                     </div>
                   )}
@@ -932,7 +932,7 @@ export default function FaceEnrollModal({
               {/* Bottom Target Label */}
               <div className="absolute bottom-2 inset-x-0 flex justify-center pointer-events-none">
                 <span className="px-2.5 py-0.5 bg-black/80 text-[10px] text-gray-300 border border-[#222B35]">
-                  {fullName} â€¢ {apartmentCode}
+                  {fullName} • {apartmentCode}
                 </span>
               </div>
             </div>
@@ -959,12 +959,12 @@ export default function FaceEnrollModal({
                 {isAutoMode ? (
                   <>
                     <Zap className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{t('Tá»± Äá»™ng: Báº¬T')}</span>
+                    <span>{t('Tự Động: BẬT')}</span>
                   </>
                 ) : (
                   <>
                     <Pause className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{t('Tá»± Äá»™ng: Táº®T')}</span>
+                    <span>{t('Tự Động: TẮT')}</span>
                   </>
                 )}
               </button>
@@ -977,7 +977,7 @@ export default function FaceEnrollModal({
                 className="w-1/2 py-2 px-3 bg-[#C5A880] hover:bg-white text-[#0D1117] text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 rounded-none disabled:opacity-50"
               >
                 <Camera className="w-3.5 h-3.5" />
-                <span>{t('Chá»¥p áº¢nh Ngay')}</span>
+                <span>{t('Chụp Ảnh Ngay')}</span>
               </button>
             </div>
 
@@ -989,7 +989,7 @@ export default function FaceEnrollModal({
                 {STEPS.map((s, idx) => {
                   const sampleImg = idx === 0 ? samples.front : idx === 1 ? samples.left : idx === 2 ? samples.right : samples.smile;
                   const isActive = currentStepIndex === idx;
-                  const stepLabel = idx === 0 ? t('1. Tháº³ng') : idx === 1 ? t('2. TrÃ¡i') : idx === 2 ? t('3. Pháº£i') : t('4. Láº¡i gáº§n');
+                  const stepLabel = idx === 0 ? t('1. Thẳng') : idx === 1 ? t('2. Trái') : idx === 2 ? t('3. Phải') : t('4. Lại gần');
                   return (
                     <div
                       key={s.key}
@@ -1008,7 +1008,7 @@ export default function FaceEnrollModal({
                           <img src={sampleImg} alt={s.key} className="w-full h-full object-cover" />
                         ) : (
                           <span className="text-[10px] text-gray-500">
-                            {isActive ? t('Äang chá»', 'Waiting') : t('Trá»‘ng', 'Empty')}
+                            {isActive ? t('Đang chờ', 'Waiting') : t('Trống', 'Empty')}
                           </span>
                         )}
                       </div>
@@ -1028,18 +1028,18 @@ export default function FaceEnrollModal({
             <div className="p-4 bg-[#121820] border border-[#C5A880] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" /> {t('HoÃ n Táº¥t Chá»¥p 4 GÃ³c KhuÃ´n Máº·t')}
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" /> {t('Hoàn Tất Chụp 4 Góc Khuôn Mặt')}
                 </div>
                 <div className="text-sm font-serif font-bold text-white">
-                  {t('Äá»™ rÃµ nÃ©t & chÃ­nh xÃ¡c:')} {biometricAnalysis ? `${biometricAnalysis.faceScore}%` : '100%'} ({t('Äáº¡t TiÃªu Chuáº©n Má»Ÿ Cá»­a')})
+                  {t('Độ rõ nét & chính xác:')} {biometricAnalysis ? `${biometricAnalysis.faceScore}%` : '100%'} ({t('Đạt Tiêu Chuẩn Mở Cửa')})
                 </div>
                 <div className="text-xs text-gray-400">
-                  {t('Kiá»ƒm tra ngÆ°á»i tháº­t:')} {t('Äáº¡t chuáº©n')} â€¢ {t('ÄÃ£ lÆ°u Ä‘á»§ 4 gÃ³c khuÃ´n máº·t')}
+                  {t('Kiểm tra người thật:')} {t('Đạt chuẩn')} • {t('Đã lưu đủ 4 góc khuôn mặt')}
                 </div>
               </div>
 
               <span className="px-3 py-1 bg-emerald-950/90 border border-emerald-500 text-emerald-300 text-xs font-bold flex items-center gap-1">
-                <Check className="w-3.5 h-3.5 text-emerald-400" /> {t('KhuÃ´n máº·t: Há»£p lá»‡')}
+                <Check className="w-3.5 h-3.5 text-emerald-400" /> {t('Khuôn mặt: Hợp lệ')}
               </span>
             </div>
 
@@ -1048,7 +1048,7 @@ export default function FaceEnrollModal({
               {/* Sample 1: Front */}
               <div className="p-2.5 bg-[#161B22] border border-[#2D3748] space-y-2 text-center">
                 <div className="text-[10px] font-bold text-[#C5A880] uppercase">
-                  1. {t('NhÃ¬n Tháº³ng')}
+                  1. {t('Nhìn Thẳng')}
                 </div>
                 <div className="w-full h-32 bg-black border border-gray-700 overflow-hidden relative group">
                   {samples.front && (
@@ -1059,16 +1059,16 @@ export default function FaceEnrollModal({
                     onClick={() => handleRetakeStep(0)}
                     className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-white font-bold"
                   >
-                    {t('Chá»¥p Láº¡i')}
+                    {t('Chụp Lại')}
                   </button>
                 </div>
-                <div className="text-[9.5px] text-emerald-400">{t('Äá»™ rÃµ nÃ©t:')} 100%</div>
+                <div className="text-[9.5px] text-emerald-400">{t('Độ rõ nét:')} 100%</div>
               </div>
 
               {/* Sample 2: Left */}
               <div className="p-2.5 bg-[#161B22] border border-[#2D3748] space-y-2 text-center">
                 <div className="text-[10px] font-bold text-[#C5A880] uppercase">
-                  2. {t('NghiÃªng TrÃ¡i')}
+                  2. {t('Nghiêng Trái')}
                 </div>
                 <div className="w-full h-32 bg-black border border-gray-700 overflow-hidden relative group">
                   {samples.left && (
@@ -1079,18 +1079,18 @@ export default function FaceEnrollModal({
                     onClick={() => handleRetakeStep(1)}
                     className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-white font-bold"
                   >
-                    {t('Chá»¥p Láº¡i')}
+                    {t('Chụp Lại')}
                   </button>
                 </div>
                 <div className="text-[9.5px] text-emerald-400">
-                  {t('Äá»™ tÆ°Æ¡ng Ä‘á»“ng:')} {biometricAnalysis?.details?.frontLeftSim ? `${biometricAnalysis.details.frontLeftSim}%` : t('Äang xá»­ lÃ½', 'Processing')}
+                  {t('Độ tương đồng:')} {biometricAnalysis?.details?.frontLeftSim ? `${biometricAnalysis.details.frontLeftSim}%` : t('Đang xử lý', 'Processing')}
                 </div>
               </div>
 
               {/* Sample 3: Right */}
               <div className="p-2.5 bg-[#161B22] border border-[#2D3748] space-y-2 text-center">
                 <div className="text-[10px] font-bold text-[#C5A880] uppercase">
-                  3. {t('NghiÃªng Pháº£i')}
+                  3. {t('Nghiêng Phải')}
                 </div>
                 <div className="w-full h-32 bg-black border border-gray-700 overflow-hidden relative group">
                   {samples.right && (
@@ -1101,18 +1101,18 @@ export default function FaceEnrollModal({
                     onClick={() => handleRetakeStep(2)}
                     className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-white font-bold"
                   >
-                    {t('Chá»¥p Láº¡i')}
+                    {t('Chụp Lại')}
                   </button>
                 </div>
                 <div className="text-[9.5px] text-emerald-400">
-                  {t('Äá»™ tÆ°Æ¡ng Ä‘á»“ng:')} {biometricAnalysis?.details?.frontRightSim ? `${biometricAnalysis.details.frontRightSim}%` : t('Äang xá»­ lÃ½', 'Processing')}
+                  {t('Độ tương đồng:')} {biometricAnalysis?.details?.frontRightSim ? `${biometricAnalysis.details.frontRightSim}%` : t('Đang xử lý', 'Processing')}
                 </div>
               </div>
 
               {/* Sample 4: Closer / 3D Depth */}
               <div className="p-2.5 bg-[#161B22] border border-[#2D3748] space-y-2 text-center">
                 <div className="text-[10px] font-bold text-[#C5A880] uppercase">
-                  4. {t('Tiáº¿n Láº¡i Gáº§n')}
+                  4. {t('Tiến Lại Gần')}
                 </div>
                 <div className="w-full h-32 bg-black border border-gray-700 overflow-hidden relative group">
                   {samples.smile && (
@@ -1123,11 +1123,11 @@ export default function FaceEnrollModal({
                     onClick={() => handleRetakeStep(3)}
                     className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-white font-bold"
                   >
-                    {t('Chá»¥p Láº¡i')}
+                    {t('Chụp Lại')}
                   </button>
                 </div>
                 <div className="text-[9.5px] text-emerald-400">
-                  {t('Äá»™ chi tiáº¿t:')} {(biometricAnalysis?.details as any)?.frontCloserSim || biometricAnalysis?.details?.frontSmileSim || biometricAnalysis?.faceScore || t('Äáº¡t chuáº©n', 'Standard Passed')}
+                  {t('Độ chi tiết:')} {(biometricAnalysis?.details as any)?.frontCloserSim || biometricAnalysis?.details?.frontSmileSim || biometricAnalysis?.faceScore || t('Đạt chuẩn', 'Standard Passed')}
                   {typeof (biometricAnalysis?.details as any)?.frontCloserSim === 'number' || typeof biometricAnalysis?.details?.frontSmileSim === 'number' ? '%' : ''}
                 </div>
               </div>
@@ -1136,12 +1136,12 @@ export default function FaceEnrollModal({
             {/* Privacy & System Sync Note */}
             <div className="p-4 bg-[#121820] border border-[#222B35] space-y-2 text-xs text-gray-300">
               <div className="flex items-center gap-2 font-bold text-[#C5A880]">
-                <Lock className="w-3.5 h-3.5" /> {t('Tiá»‡n Ã­ch sau khi kÃ­ch hoáº¡t:')}
+                <Lock className="w-3.5 h-3.5" /> {t('Tiện ích sau khi kích hoạt:')}
               </div>
               <ul className="space-y-1 text-gray-400 pl-4 list-disc text-[11px]">
-                <li>{t('ÄÄƒng nháº­p nhanh trÃªn trang chá»§ báº±ng khuÃ´n máº·t, khÃ´ng cáº§n máº­t kháº©u.')}</li>
-                <li>{t('Tá»± Ä‘á»™ng má»Ÿ cá»­a sáº£nh Ä‘Ã³n vÃ  thang mÃ¡y khi báº¡n bÆ°á»›c vÃ o tÃ²a nhÃ .')}</li>
-                <li>{t('HÃ¬nh áº£nh Ä‘Æ°á»£c báº£o máº­t an toÃ n, chá»‰ dÃ¹ng cho tiá»‡n Ã­ch ná»™i bá»™ chung cÆ°.')}</li>
+                <li>{t('Đăng nhập nhanh trên trang chủ bằng khuôn mặt, không cần mật khẩu.')}</li>
+                <li>{t('Tự động mở cửa sảnh đón và thang máy khi bạn bước vào tòa nhà.')}</li>
+                <li>{t('Hình ảnh được bảo mật an toàn, chỉ dùng cho tiện ích nội bộ chung cư.')}</li>
               </ul>
             </div>
 
@@ -1154,7 +1154,7 @@ export default function FaceEnrollModal({
                 className="w-full sm:w-auto px-5 py-2.5 bg-[#161B22] hover:bg-[#202936] text-gray-300 hover:text-white border border-[#2D3748] text-xs font-semibold transition-colors flex items-center justify-center gap-2"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>{t('Chá»¥p Láº¡i Tá»« Äáº§u')}</span>
+                <span>{t('Chụp Lại Từ Đầu')}</span>
               </button>
 
               <button
@@ -1165,21 +1165,21 @@ export default function FaceEnrollModal({
               >
                 {isSubmitting ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin" /> {t('Äang LÆ°u & Gá»­i Há»“ SÆ¡...')}
+                    <RefreshCw className="w-4 h-4 animate-spin" /> {t('Đang Lưu & Gửi Hồ Sơ...')}
                   </>
                 ) : submitSuccess ? (
                   <>
                     <Check className="w-4 h-4 text-emerald-950" />
                     {isFamilyMemberSelfEnroll
-                      ? t('ÄÃ£ Gá»­i Cho Chá»§ Há»™ XÃ¡c Nháº­n!')
-                      : t('ÄÃ£ Gá»­i Cho VinHomes Manager PhÃª Duyá»‡t!')}
+                      ? t('Đã Gửi Cho Chủ Hộ Xác Nhận!')
+                      : t('Đã Gửi Cho VinHomes Manager Phê Duyệt!')}
                   </>
                 ) : (
                   <>
                     <ShieldCheck className="w-4 h-4" />
                     {isFamilyMemberSelfEnroll
-                      ? t('LÆ°u & Gá»­i Chá»§ Há»™ XÃ¡c Nháº­n')
-                      : t('Gá»­i VinHomes Manager PhÃª Duyá»‡t')}
+                      ? t('Lưu & Gửi Chủ Hộ Xác Nhận')
+                      : t('Gửi VinHomes Manager Phê Duyệt')}
                   </>
                 )}
               </button>

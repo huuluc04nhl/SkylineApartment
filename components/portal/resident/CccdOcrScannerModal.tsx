@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -92,12 +92,12 @@ export default function CccdOcrScannerModal({
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setErrorMessage('Tá»‡p táº£i lÃªn chÆ°a Ä‘Ãºng Ä‘á»‹nh dáº¡ng. QuÃ½ cÆ° dÃ¢n vui lÃ²ng chá»n tá»‡p hÃ¬nh áº£nh (JPG, PNG).');
+      setErrorMessage('Tệp tải lên chưa đúng định dạng. Quý cư dân vui lòng chọn tệp hình ảnh (JPG, PNG).');
       return;
     }
 
     if (file.size < 5000) {
-      setErrorMessage('áº¢nh chá»¥p chÆ°a Ä‘á»§ rÃµ nÃ©t. QuÃ½ cÆ° dÃ¢n vui lÃ²ng táº£i áº£nh chá»¥p rÃµ cÃ¡c gÃ³c cá»§a tháº».');
+      setErrorMessage('Ảnh chụp chưa đủ rõ nét. Quý cư dân vui lòng tải ảnh chụp rõ các góc của thẻ.');
       return;
     }
 
@@ -133,12 +133,12 @@ export default function CccdOcrScannerModal({
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setErrorMessage('Tá»‡p táº£i lÃªn chÆ°a Ä‘Ãºng Ä‘á»‹nh dáº¡ng. QuÃ½ cÆ° dÃ¢n vui lÃ²ng chá»n tá»‡p hÃ¬nh áº£nh (JPG, PNG).');
+      setErrorMessage('Tệp tải lên chưa đúng định dạng. Quý cư dân vui lòng chọn tệp hình ảnh (JPG, PNG).');
       return;
     }
 
     if (file.size < 5000) {
-      setErrorMessage('áº¢nh chá»¥p chÆ°a Ä‘á»§ rÃµ nÃ©t. QuÃ½ cÆ° dÃ¢n vui lÃ²ng táº£i áº£nh chá»¥p rÃµ cÃ¡c gÃ³c cá»§a tháº».');
+      setErrorMessage('Ảnh chụp chưa đủ rõ nét. Quý cư dân vui lòng tải ảnh chụp rõ các góc của thẻ.');
       return;
     }
 
@@ -172,7 +172,7 @@ export default function CccdOcrScannerModal({
    */
   const handleStartAutoFlipOcr = async () => {
     if (!frontImage || !backImage) {
-      setErrorMessage('Vui lÃ²ng táº£i lÃªn Ä‘áº§y Ä‘á»§ cáº£ Máº·t TrÆ°á»›c vÃ  Máº·t Sau cá»§a CCCD trÆ°á»›c khi quÃ©t.');
+      setErrorMessage('Vui lòng tải lên đầy đủ cả Mặt Trước và Mặt Sau của CCCD trước khi quét.');
       return;
     }
 
@@ -184,12 +184,12 @@ export default function CccdOcrScannerModal({
       // 1. Force flip to FRONT SIDE
       setIsFlipped(false);
       setScanStage('SCANNING_FRONT');
-      setScanStatusText('Äang kiá»ƒm tra thÃ´ng tin máº·t trÆ°á»›c cá»§a tháº»...');
+      setScanStatusText('Đang kiểm tra thông tin mặt trước của thẻ...');
       setScanProgress(25);
 
       let ocrSucceeded = false;
 
-      // 1. Æ¯U TIÃŠN: QuÃ©t mÃ£ QR báº£o máº­t trá»±c tiáº¿p trÃªn áº£nh máº·t trÆ°á»›c hoáº·c máº·t sau
+      // 1. ƯU TIÊN: Quét mã QR bảo mật trực tiếp trên ảnh mặt trước hoặc mặt sau
       try {
         let clientQrResult = await extractCccdFromClientQr(frontImage);
         if (!clientQrResult && backImage) {
@@ -198,12 +198,12 @@ export default function CccdOcrScannerModal({
 
         if (clientQrResult && clientQrResult.idNumber) {
           setScanProgress(60);
-          setScanStatusText('âœ¨ ÄÃ£ tÃ¬m tháº¥y thÃ´ng tin trÃªn tháº»! Äang kiá»ƒm tra máº·t sau...');
+          setScanStatusText('✨ Đã tìm thấy thông tin trên thẻ! Đang kiểm tra mặt sau...');
           setIsFlipped(true);
           await new Promise((r) => setTimeout(r, 400));
 
           setScanProgress(100);
-          setScanStatusText('âœ¨ HoÃ n táº¥t nháº­n diá»‡n! Äang tá»± Ä‘á»™ng Ä‘iá»n vÃ o há»“ sÆ¡...');
+          setScanStatusText('✨ Hoàn tất nhận diện! Đang tự động điền vào hồ sơ...');
           setScanStage('COMPLETE');
 
           const finalResult: OcrCccdResult = {
@@ -213,15 +213,15 @@ export default function CccdOcrScannerModal({
             dob: formatToDateInput(clientQrResult.dob),
             gender: clientQrResult.gender,
             pob: clientQrResult.pob,
-            province: clientQrResult.province || 'TP. Há»“ ChÃ­ Minh',
+            province: clientQrResult.province || 'TP. Hồ Chí Minh',
             idDate: formatToDateInput(clientQrResult.idDate),
-            idPlace: clientQrResult.idPlace || 'Cá»¥c Cáº£nh sÃ¡t QLHC vá» TTXH',
+            idPlace: clientQrResult.idPlace || 'Cục Cảnh sát QLHC về TTXH',
           };
 
           setOcrResult(finalResult);
           ocrSucceeded = true;
 
-          // Tá»± Ä‘á»™ng Ä‘iá»n tháº³ng thÃ´ng tin vÃ o há»“ sÆ¡ vÃ  Ä‘Ã³ng modal
+          // Tự động điền thẳng thông tin vào hồ sơ và đóng modal
           onApplyOcrData(finalResult, frontImage, backImage);
           setTimeout(() => {
             onClose();
@@ -232,9 +232,9 @@ export default function CccdOcrScannerModal({
         console.warn('Client QR scan attempt:', qrErr);
       }
 
-      // 2. Náº¿u QR khÃ´ng cÃ³ hoáº·c bá»‹ má», gá»­i áº£nh lÃªn há»‡ thá»‘ng Ä‘á»ƒ Ä‘á»c chá»¯ vÃ  Ä‘á»‘i chiáº¿u
+      // 2. Nếu QR không có hoặc bị mờ, gửi ảnh lên hệ thống để đọc chữ và đối chiếu
       if (!ocrSucceeded) {
-        setScanStatusText('Äang Ä‘á»‘i chiáº¿u thÃ´ng tin tá»« hÃ¬nh áº£nh tháº»...');
+        setScanStatusText('Đang đối chiếu thông tin từ hình ảnh thẻ...');
         setScanProgress(40);
 
         const [compFront, compBack] = await Promise.all([
@@ -257,12 +257,12 @@ export default function CccdOcrScannerModal({
           const aiData = await aiRes.json();
           if (aiRes.ok && aiData.success && (aiData.data?.idNumber || aiData.data?.fullName)) {
             setScanProgress(60);
-            setScanStatusText('âœ¨ ÄÃ£ nháº­n diá»‡n thÃ´ng tin máº·t trÆ°á»›c! Äang kiá»ƒm tra máº·t sau...');
+            setScanStatusText('✨ Đã nhận diện thông tin mặt trước! Đang kiểm tra mặt sau...');
             setIsFlipped(true);
             await new Promise((r) => setTimeout(r, 400));
 
             setScanProgress(100);
-            setScanStatusText('âœ¨ HoÃ n táº¥t nháº­n diá»‡n! Äang tá»± Ä‘á»™ng Ä‘iá»n vÃ o há»“ sÆ¡...');
+            setScanStatusText('✨ Hoàn tất nhận diện! Đang tự động điền vào hồ sơ...');
             setScanStage('COMPLETE');
 
             const d = aiData.data;
@@ -273,43 +273,43 @@ export default function CccdOcrScannerModal({
               gender: (d.gender === '0' || d.gender === 0 ? '0' : '1') as '1' | '0',
               pob: d.pob || '',
               residence: d.residence || d.pob || '',
-              province: d.province || 'TP. Há»“ ChÃ­ Minh',
+              province: d.province || 'TP. Hồ Chí Minh',
               idDate: formatToDateInput(d.idDate || ''),
-              idPlace: d.idPlace || 'Cá»¥c Cáº£nh sÃ¡t QLHC vá» TTXH',
+              idPlace: d.idPlace || 'Cục Cảnh sát QLHC về TTXH',
               confidence: d.confidence || 98,
-              rawText: `[THÃ”NG TIN THáºº CÄ‚N CÆ¯á»šC]:\nSá»‘ CCCD: ${d.idNumber}\nHá» tÃªn: ${d.fullName}`,
+              rawText: `[THÔNG TIN THẺ CĂN CƯỚC]:\nSố CCCD: ${d.idNumber}\nHọ tên: ${d.fullName}`,
             };
 
             setOcrResult(finalResult);
             ocrSucceeded = true;
 
-            // Tá»± Ä‘á»™ng Ä‘iá»n tháº³ng thÃ´ng tin vÃ o há»“ sÆ¡ vÃ  Ä‘Ã³ng modal
+            // Tự động điền thẳng thông tin vào hồ sơ và đóng modal
             onApplyOcrData(finalResult, frontImage, backImage);
             setTimeout(() => {
               onClose();
             }, 500);
             return;
           } else {
-            // Khi áº£nh chá»¥p bá»‹ má»/lÃ³a khÃ´ng nháº­n dáº¡ng Ä‘Æ°á»£c chá»¯: LÆ°u láº¡i áº£nh chá»¥p vÃ o há»“ sÆ¡ vÃ  má»Ÿ báº£ng nháº­p nhanh
+            // Khi ảnh chụp bị mờ/lóa không nhận dạng được chữ: Lưu lại ảnh chụp vào hồ sơ và mở bảng nhập nhanh
             setScanProgress(100);
-            setScanStatusText('âœ¨ ÄÃ£ lÆ°u áº£nh chá»¥p 2 máº·t! QuÃ½ cÆ° dÃ¢n vui lÃ²ng há»— trá»£ Ä‘iá»n nhanh thÃ´ng tin:');
+            setScanStatusText('✨ Đã lưu ảnh chụp 2 mặt! Quý cư dân vui lòng hỗ trợ điền nhanh thông tin:');
             setScanStage('COMPLETE');
             setIsFlipped(false);
-            setErrorMessage('áº¢nh chá»¥p cÃ³ thá»ƒ bá»‹ lÃ³a sÃ¡ng hoáº·c nghiÃªng gÃ³c. Há»‡ thá»‘ng Ä‘Ã£ lÆ°u áº£nh 2 máº·t, QuÃ½ cÆ° dÃ¢n vui lÃ²ng há»— trá»£ Ä‘iá»n nhanh cÃ¡c Ã´ bÃªn dÆ°á»›i.');
+            setErrorMessage('Ảnh chụp có thể bị lóa sáng hoặc nghiêng góc. Hệ thống đã lưu ảnh 2 mặt, Quý cư dân vui lòng hỗ trợ điền nhanh các ô bên dưới.');
             ocrSucceeded = true;
           }
         } catch (fetchErr: any) {
           setScanProgress(100);
-          setScanStatusText('âœ¨ ÄÃ£ lÆ°u áº£nh chá»¥p 2 máº·t! QuÃ½ cÆ° dÃ¢n vui lÃ²ng há»— trá»£ Ä‘iá»n nhanh thÃ´ng tin:');
+          setScanStatusText('✨ Đã lưu ảnh chụp 2 mặt! Quý cư dân vui lòng hỗ trợ điền nhanh thông tin:');
           setScanStage('COMPLETE');
           setIsFlipped(false);
-          setErrorMessage('Há»‡ thá»‘ng Ä‘Ã£ nháº­n 2 máº·t áº£nh chá»¥p. QuÃ½ cÆ° dÃ¢n vui lÃ²ng há»— trá»£ Ä‘iá»n nhanh thÃ´ng tin vÃ o cÃ¡c Ã´ bÃªn dÆ°á»›i.');
+          setErrorMessage('Hệ thống đã nhận 2 mặt ảnh chụp. Quý cư dân vui lòng hỗ trợ điền nhanh thông tin vào các ô bên dưới.');
           ocrSucceeded = true;
         }
       }
     } catch (err: any) {
       console.error('Scan Error:', err);
-      setErrorMessage('QuÃ½ cÆ° dÃ¢n vui lÃ²ng kiá»ƒm tra láº¡i áº£nh chá»¥p hoáº·c tá»± Ä‘iá»n thÃ´ng tin vÃ o cÃ¡c Ã´ bÃªn dÆ°á»›i.');
+      setErrorMessage('Quý cư dân vui lòng kiểm tra lại ảnh chụp hoặc tự điền thông tin vào các ô bên dưới.');
     } finally {
       setIsScanning(false);
     }
@@ -332,12 +332,12 @@ export default function CccdOcrScannerModal({
       dob: formatToDateInput(editDob),
       gender: editGender,
       pob: editPob.trim(),
-      province: editPob.trim().includes('Há»“ ChÃ­ Minh') ? 'TP. Há»“ ChÃ­ Minh' : editPob.trim().includes('HÃ  Ná»™i') ? 'HÃ  Ná»™i' : (ocrResult.province || 'TP. Há»“ ChÃ­ Minh'),
+      province: editPob.trim().includes('Hồ Chí Minh') ? 'TP. Hồ Chí Minh' : editPob.trim().includes('Hà Nội') ? 'Hà Nội' : (ocrResult.province || 'TP. Hồ Chí Minh'),
       idDate: formatToDateInput(editIdDate),
       idPlace: editIdPlace.trim(),
     };
 
-    // Tá»± Ä‘á»™ng Ä‘á»“ng bá»™ ngay lÃªn API
+    // Tự động đồng bộ ngay lên API
     try {
       await skylineUpdateCccd({
         number: finalResult.idNumber,
@@ -370,19 +370,19 @@ export default function CccdOcrScannerModal({
           <div className="space-y-1 min-w-0 pr-2">
             <div className="text-[10px] uppercase tracking-[0.2em] text-[#C5A880] font-bold flex items-center gap-1.5 font-mono">
               <Sparkles className="w-3.5 h-3.5 flex-shrink-0" /> 
-              <span>{t('ThÃ´ng Tin CÆ° DÃ¢n')}</span>
+              <span>{t('Thông Tin Cư Dân')}</span>
             </div>
             <h3 className="font-serif text-base sm:text-2xl font-bold text-white flex items-center gap-2 truncate">
-              <Scan className="w-4 h-4 sm:w-5 sm:h-5 text-[#C5A880] flex-shrink-0" /> <span>{t('Äá»c ThÃ´ng Tin Tháº» CÄƒn CÆ°á»›c (2 Máº·t)')}</span>
+              <Scan className="w-4 h-4 sm:w-5 sm:h-5 text-[#C5A880] flex-shrink-0" /> <span>{t('Đọc Thông Tin Thẻ Căn Cước (2 Mặt)')}</span>
             </h3>
             <p className="text-xs text-gray-400 hidden sm:block">
-              {t('QuÃ©t thÃ´ng tin tá»« 2 máº·t tháº» CÄƒn cÆ°á»›c cÃ´ng dÃ¢n Ä‘á»ƒ cáº­p nháº­t há»“ sÆ¡.')}
+              {t('Quét thông tin từ 2 mặt thẻ Căn cước công dân để cập nhật hồ sơ.')}
             </p>
           </div>
 
           <button
             onClick={onClose}
-            aria-label="ÄÃ³ng mÃ¡y quÃ©t CCCD"
+            aria-label="Đóng máy quét CCCD"
             className="p-2 text-gray-400 hover:text-white hover:bg-[#161B22] rounded-none transition-colors flex-shrink-0"
           >
             <X className="w-5 h-5" />
@@ -404,13 +404,13 @@ export default function CccdOcrScannerModal({
           {/* Card Face Status Switcher Bar */}
           <div className="flex items-center justify-between bg-[#121820] p-2.5 px-3 sm:px-4 border border-[#222B35] rounded-none">
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-gray-400 hidden sm:inline">{t('Äang hiá»ƒn thá»‹:')}</span>
+              <span className="text-gray-400 hidden sm:inline">{t('Đang hiển thị:')}</span>
               <span className={`font-bold uppercase tracking-wider px-2 py-0.5 rounded-none text-[11px] font-mono ${
                 !isFlipped 
                   ? 'bg-amber-950/80 text-[#C5A880] border border-[#C5A880]' 
                   : 'bg-cyan-950/80 text-cyan-400 border border-cyan-500'
               }`}>
-                {!isFlipped ? t('Máº¶T TRÆ¯á»šC') : t('Máº¶T SAU')}
+                {!isFlipped ? t('MẶT TRƯỚC') : t('MẶT SAU')}
               </span>
             </div>
 
@@ -422,7 +422,7 @@ export default function CccdOcrScannerModal({
               className="px-3 py-1.5 bg-[#1C2533] hover:bg-[#C5A880] hover:text-[#0D1117] text-[#C5A880] border border-[#C5A880] text-xs font-bold uppercase tracking-wider rounded-none transition-all flex items-center gap-1.5 shadow"
             >
               <RotateCw className={`w-3.5 h-3.5 transition-transform duration-500 ${isFlipped ? 'rotate-180' : ''}`} />
-              <span>{isFlipped ? t('Xem Máº·t TrÆ°á»›c') : t('Xem Máº·t Sau')}</span>
+              <span>{isFlipped ? t('Xem Mặt Trước') : t('Xem Mặt Sau')}</span>
             </button>
           </div>
 
@@ -434,7 +434,7 @@ export default function CccdOcrScannerModal({
               }`}
             >
               {/* ========================================================= */}
-              {/* FACE 1: FRONT SIDE (Máº¶T TRÆ¯á»šC)                            */}
+              {/* FACE 1: FRONT SIDE (MẶT TRƯỚC)                            */}
               {/* ========================================================= */}
               <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [-webkit-backface-visibility:hidden] rounded-none overflow-hidden border-2 border-[#C5A880]/80 bg-gradient-to-br from-[#1A232E] via-[#121820] to-[#0A0E14] shadow-2xl p-2.5 sm:p-4 flex flex-col justify-between">
                 {/* Decorative chip header */}
@@ -442,12 +442,12 @@ export default function CccdOcrScannerModal({
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#C5A880]" />
                     <span className="text-[#C5A880] font-bold uppercase tracking-wider text-[10px] sm:text-[11px]">
-                      {t('Máº·t TrÆ°á»›c â€¢ CÄƒn CÆ°á»›c CÃ´ng DÃ¢n')}
+                      {t('Mặt Trước • Căn Cước Công Dân')}
                     </span>
                   </div>
                   {frontImage && (
                     <span className="text-emerald-400 font-mono text-[10px] flex items-center gap-1">
-                      <Check className="w-3 h-3" /> {t('ÄÃ£ Táº£i LÃªn')}
+                      <Check className="w-3 h-3" /> {t('Đã Tải Lên')}
                     </span>
                   )}
                 </div>
@@ -469,14 +469,14 @@ export default function CccdOcrScannerModal({
                         <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#C5A880] to-transparent shadow-[0_0_20px_#C5A880] animate-bounce top-1/2 pointer-events-none" />
                       )}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-xs font-bold text-white transition-opacity">
-                        <Upload className="w-4 h-4 mr-1" /> {t('Chá»n Láº¡i áº¢nh Máº·t TrÆ°á»›c')}
+                        <Upload className="w-4 h-4 mr-1" /> {t('Chọn Lại Ảnh Mặt Trước')}
                       </div>
                     </>
                   ) : (
                     <div className="text-center space-y-1.5 text-gray-400 p-2 sm:p-4">
                       <Camera className="w-7 h-7 sm:w-10 sm:h-10 mx-auto text-gray-500 group-hover:text-[#C5A880] transition-colors" />
-                      <div className="text-[11px] sm:text-xs font-semibold text-white">{t('Báº¥m Ä‘á»ƒ táº£i lÃªn Máº·t TrÆ°á»›c CCCD')}</div>
-                      <div className="text-[9px] sm:text-[10px] text-gray-500">{t('Chá»©a áº£nh chÃ¢n dung, 12 sá»‘ CCCD, Há» tÃªn, NgÃ y sinh')}</div>
+                      <div className="text-[11px] sm:text-xs font-semibold text-white">{t('Bấm để tải lên Mặt Trước CCCD')}</div>
+                      <div className="text-[9px] sm:text-[10px] text-gray-500">{t('Chứa ảnh chân dung, 12 số CCCD, Họ tên, Ngày sinh')}</div>
                     </div>
                   )}
                 </div>
@@ -488,7 +488,7 @@ export default function CccdOcrScannerModal({
                     onClick={() => frontInputRef.current?.click()}
                     className="text-gray-400 hover:text-white flex items-center gap-1 font-mono hover:underline"
                   >
-                    <Upload className="w-3 h-3" /> {frontImage ? t('Äá»•i áº¢nh Máº·t TrÆ°á»›c') : t('Chá»n Tá»‡p áº¢nh')}
+                    <Upload className="w-3 h-3" /> {frontImage ? t('Đổi Ảnh Mặt Trước') : t('Chọn Tệp Ảnh')}
                   </button>
 
                   <button
@@ -496,14 +496,14 @@ export default function CccdOcrScannerModal({
                     onClick={() => setIsFlipped(true)}
                     className="text-[#C5A880] hover:text-white font-bold flex items-center gap-1"
                   >
-                    <span>{t('Láº­t Sang Máº·t Sau')}</span>
+                    <span>{t('Lật Sang Mặt Sau')}</span>
                     <ArrowRight className="w-3 h-3" />
                   </button>
                 </div>
               </div>
 
               {/* ========================================================= */}
-              {/* FACE 2: BACK SIDE (Máº¶T SAU)                              */}
+              {/* FACE 2: BACK SIDE (MẶT SAU)                              */}
               {/* ========================================================= */}
               <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(180deg)] rounded-none overflow-hidden border-2 border-cyan-500/80 bg-gradient-to-br from-[#121E2A] via-[#101820] to-[#091018] shadow-2xl p-2.5 sm:p-4 flex flex-col justify-between">
                 {/* Decorative chip header */}
@@ -511,12 +511,12 @@ export default function CccdOcrScannerModal({
                   <div className="flex items-center gap-1.5 sm:gap-2">
                     <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" />
                     <span className="text-cyan-400 font-bold uppercase tracking-wider text-[10px] sm:text-[11px]">
-                      {t('Máº·t Sau â€¢ NgÃ y Cáº¥p & NÆ¡i Cáº¥p')}
+                      {t('Mặt Sau • Ngày Cấp & Nơi Cấp')}
                     </span>
                   </div>
                   {backImage && (
                     <span className="text-cyan-400 font-mono text-[10px] flex items-center gap-1">
-                      <Check className="w-3 h-3" /> {t('ÄÃ£ Táº£i LÃªn')}
+                      <Check className="w-3 h-3" /> {t('Đã Tải Lên')}
                     </span>
                   )}
                 </div>
@@ -538,14 +538,14 @@ export default function CccdOcrScannerModal({
                         <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_20px_#38BDF8] animate-bounce top-1/2 pointer-events-none" />
                       )}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-xs font-bold text-white transition-opacity">
-                        <Upload className="w-4 h-4 mr-1" /> {t('Chá»n Láº¡i áº¢nh Máº·t Sau')}
+                        <Upload className="w-4 h-4 mr-1" /> {t('Chọn Lại Ảnh Mặt Sau')}
                       </div>
                     </>
                   ) : (
                     <div className="text-center space-y-1.5 text-gray-400 p-2 sm:p-4">
                       <Camera className="w-7 h-7 sm:w-10 sm:h-10 mx-auto text-gray-500 group-hover:text-cyan-400 transition-colors" />
-                      <div className="text-[11px] sm:text-xs font-semibold text-white">{t('Báº¥m Ä‘á»ƒ táº£i lÃªn Máº·t Sau CCCD')}</div>
-                      <div className="text-[9px] sm:text-[10px] text-gray-500">{t('Bao gá»“m NgÃ y cáº¥p vÃ  NÆ¡i cáº¥p tháº»')}</div>
+                      <div className="text-[11px] sm:text-xs font-semibold text-white">{t('Bấm để tải lên Mặt Sau CCCD')}</div>
+                      <div className="text-[9px] sm:text-[10px] text-gray-500">{t('Bao gồm Ngày cấp và Nơi cấp thẻ')}</div>
                     </div>
                   )}
                 </div>
@@ -557,7 +557,7 @@ export default function CccdOcrScannerModal({
                     onClick={() => backInputRef.current?.click()}
                     className="text-gray-400 hover:text-white flex items-center gap-1 font-mono hover:underline"
                   >
-                    <Upload className="w-3 h-3" /> {backImage ? t('Äá»•i áº¢nh Máº·t Sau') : t('Chá»n Tá»‡p áº¢nh')}
+                    <Upload className="w-3 h-3" /> {backImage ? t('Đổi Ảnh Mặt Sau') : t('Chọn Tệp Ảnh')}
                   </button>
 
                   <button
@@ -566,7 +566,7 @@ export default function CccdOcrScannerModal({
                     className="text-cyan-400 hover:text-white font-bold flex items-center gap-1"
                   >
                     <ArrowRight className="w-3 h-3 rotate-180" />
-                    <span>{t('Xem Máº·t TrÆ°á»›c')}</span>
+                    <span>{t('Xem Mặt Trước')}</span>
                   </button>
                 </div>
               </div>
@@ -597,11 +597,11 @@ export default function CccdOcrScannerModal({
             <div className="text-xs text-gray-300">
               {hasBothImages ? (
                 <span className="text-emerald-400 font-bold font-mono flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" /> {t('ÄÃ£ Táº£i Äá»§ 2 Máº·t â€” Sáºµn sÃ ng nháº­n diá»‡n thÃ´ng tin tháº»')}
+                  <CheckCircle2 className="w-4 h-4" /> {t('Đã Tải Đủ 2 Mặt — Sẵn sàng nhận diện thông tin thẻ')}
                 </span>
               ) : (
                 <span className="text-amber-400 font-bold font-mono">
-                  âš ï¸ {t('HÃ£y táº£i lÃªn Ä‘á»§ cáº£ Máº·t TrÆ°á»›c vÃ  Máº·t Sau trÆ°á»›c khi quÃ©t!')}
+                  ⚠️ {t('Hãy tải lên đủ cả Mặt Trước và Mặt Sau trước khi quét!')}
                 </span>
               )}
             </div>
@@ -621,7 +621,7 @@ export default function CccdOcrScannerModal({
               ) : (
                 <Zap className="w-4 h-4 text-[#0D1117]" />
               )}
-              {isScanning ? t('Äang Nháº­n Diá»‡n ThÃ´ng Tin...') : t('Tá»± Äá»™ng Nháº­n Diá»‡n ThÃ´ng Tin Tháº»')}
+              {isScanning ? t('Đang Nhận Diện Thông Tin...') : t('Tự Động Nhận Diện Thông Tin Thẻ')}
             </button>
           </div>
 
@@ -649,36 +649,36 @@ export default function CccdOcrScannerModal({
           <div className="p-4 sm:p-5 bg-gradient-to-r from-[#121820] to-[#161D26] border border-emerald-500/80 space-y-4 rounded-none animate-fadeIn shadow-2xl">
             <div className="border-b border-emerald-500/30 pb-3">
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                <CheckCircle2 className="w-4 h-4" /> {t('ThÃ´ng Tin Tháº» CÄƒn CÆ°á»›c')}
+                <CheckCircle2 className="w-4 h-4" /> {t('Thông Tin Thẻ Căn Cước')}
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('1. Sá»‘ CÄƒn cÆ°á»›c cÃ´ng dÃ¢n:')}</label>
+                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('1. Số Căn cước công dân:')}</label>
                 <input
                   type="text"
                   maxLength={12}
                   value={editIdNumber}
                   onChange={(e) => setEditIdNumber(cleanCccdNumber(e.target.value))}
                   className="w-full bg-[#0D1117] border border-gray-700 p-2 text-[#C5A880] font-mono font-bold rounded-none focus:border-[#C5A880] outline-none"
-                  placeholder={isEn ? '12-digit ID number...' : '12 sá»‘ Ä‘á»‹nh danh...'}
+                  placeholder={isEn ? '12-digit ID number...' : '12 số định danh...'}
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('2. Há» vÃ  TÃªn:')}</label>
+                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('2. Họ và Tên:')}</label>
                 <input
                   type="text"
                   value={editFullName}
                   onChange={(e) => setEditFullName(e.target.value)}
                   className="w-full bg-[#0D1117] border border-gray-700 p-2 text-white font-bold rounded-none focus:border-[#C5A880] outline-none uppercase"
-                  placeholder={isEn ? 'Full name...' : 'Há» vÃ  tÃªn...'}
+                  placeholder={isEn ? 'Full name...' : 'Họ và tên...'}
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('3. NgÃ y sinh:')}</label>
+                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('3. Ngày sinh:')}</label>
                 <input
                   type="date"
                   value={formatToApiDate(editDob)}
@@ -688,30 +688,30 @@ export default function CccdOcrScannerModal({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('4. Giá»›i TÃ­nh:')}</label>
+                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('4. Giới Tính:')}</label>
                 <select
                   value={editGender}
                   onChange={(e) => setEditGender(e.target.value as '1' | '0')}
                   className="w-full bg-[#0D1117] border border-gray-700 p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
                 >
                   <option value="1">{t('Nam')}</option>
-                  <option value="0">{t('Ná»¯')}</option>
+                  <option value="0">{t('Nữ')}</option>
                 </select>
               </div>
 
               <div className="space-y-1 sm:col-span-2">
-                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('5. QuÃª quÃ¡n / NÆ¡i sinh:')}</label>
+                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('5. Quê quán / Nơi sinh:')}</label>
                 <input
                   type="text"
                   value={editPob}
                   onChange={(e) => setEditPob(e.target.value)}
                   className="w-full bg-[#0D1117] border border-gray-700 p-2 text-white rounded-none focus:border-[#C5A880] outline-none"
-                  placeholder={isEn ? 'Ward, District, City/Province...' : 'XÃ£/PhÆ°á»ng, Quáº­n/Huyá»‡n, Tá»‰nh/ThÃ nh phá»‘...'}
+                  placeholder={isEn ? 'Ward, District, City/Province...' : 'Xã/Phường, Quận/Huyện, Tỉnh/Thành phố...'}
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('6. NgÃ y Cáº¥p (Máº·t Sau):')}</label>
+                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('6. Ngày Cấp (Mặt Sau):')}</label>
                 <input
                   type="date"
                   value={formatToApiDate(editIdDate)}
@@ -721,13 +721,13 @@ export default function CccdOcrScannerModal({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('7. NÆ¡i Cáº¥p (Máº·t Sau):')}</label>
+                <label className="text-[10px] text-gray-400 font-mono font-semibold">{t('7. Nơi Cấp (Mặt Sau):')}</label>
                 <input
                   type="text"
                   value={editIdPlace}
                   onChange={(e) => setEditIdPlace(e.target.value)}
                   className="w-full bg-[#0D1117] border border-gray-700 p-2 text-cyan-400 rounded-none focus:border-[#C5A880] outline-none"
-                  placeholder={isEn ? 'Police Dept of Administrative Management...' : 'Cá»¥c Cáº£nh sÃ¡t QLHC vá» TTXH...'}
+                  placeholder={isEn ? 'Police Dept of Administrative Management...' : 'Cục Cảnh sát QLHC về TTXH...'}
                 />
               </div>
             </div>
@@ -747,12 +747,12 @@ export default function CccdOcrScannerModal({
                 {isSyncingApi ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin text-[#0D1117]" />
-                    <span>{t('Äang LÆ°u ThÃ´ng Tin...')}</span>
+                    <span>{t('Đang Lưu Thông Tin...')}</span>
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>{t('XÃ¡c Nháº­n & LÆ°u VÃ o Há»“ SÆ¡')}</span>
+                    <span>{t('Xác Nhận & Lưu Vào Hồ Sơ')}</span>
                   </>
                 )}
               </button>

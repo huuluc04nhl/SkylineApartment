@@ -63,15 +63,31 @@ async function insertGateLogDb(params: {
   }
 }
 
-export async function findVisitorPassByIdOrPinDb(idOrPin: string): Promise<GeneratedVisitorPass | null> {
+const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+export function generateVisitorPassId(): string {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  let suffix = '';
+  for (let i = 0; i < 8; i++) {
+    suffix += BASE32_ALPHABET[bytes[i] % 32];
+  }
+  return `SKY-PASS-${suffix}`;
+}
+
+export async function findVisitorPassByIdOrPinDb(
+  idOrPin: string,
+  allowPinLookup = true
+): Promise<GeneratedVisitorPass | null> {
   const clean = extractPassLookupKey(idOrPin);
   if (!clean) return null;
-  const { data, error } = await supabaseAdmin
-    .from('visitor_passes')
-    .select('*')
-    .or(`id.eq.${clean},pin_code.eq.${clean}`)
-    .limit(1)
-    .maybeSingle();
+  let query = supabaseAdmin.from('visitor_passes').select('*');
+  if (allowPinLookup) {
+    query = query.or(`id.eq.${clean},pin_code.eq.${clean}`);
+  } else {
+    query = query.eq('id', clean);
+  }
+  const { data, error } = await query.limit(1).maybeSingle();
   if (error) throw new Error(`Supabase visitor_passes select error: ${error.message}`);
   return data ? rowToVisitorPass(data) : null;
 }
@@ -91,43 +107,56 @@ export async function createVisitorPassDb(params: {
   const now = new Date();
   const validHours = params.validHours || 4;
   const validUntil = new Date(now.getTime() + validHours * 3600 * 1000);
-  const randBytes = new Uint32Array(2);
-  crypto.getRandomValues(randBytes);
-  const pinCode = String(100000 + (randBytes[0] % 900000));
-  const id = `SKY-PASS-${1000 + (randBytes[1] % 9000)}`;
-  const qrData = JSON.stringify({
-    passId: id,
-    aptCode: params.apartmentCode,
-    visitor: params.visitorName,
-    pin: pinCode,
-    exp: validUntil.toISOString(),
-  });
+  const randBytes = new Uint32Array(1);
 
-  const { data, error } = await supabaseAdmin
-    .from('visitor_passes')
-    .insert({
-      id,
-      apartment_code: params.apartmentCode,
-      host_name: params.hostName || 'Chủ Hộ',
-      host_phone: params.hostPhone || '',
-      tower_name: params.towerName ?? null,
-      visitor_name: params.visitorName,
-      visitor_phone: params.phoneNumber ?? null,
-      license_plate: params.licensePlate ?? null,
-      entry_type: params.entryType,
-      valid_hours: validHours,
-      qr_data: qrData,
-      pin_code: pinCode,
-      status: 'ACTIVE',
-      valid_until: validUntil.toISOString(),
-      created_at: now.toISOString(),
-      note: params.note ?? null,
-    })
-    .select('*')
-    .single();
+  for (let attempt = 0; attempt < 5; attempt++) {
+    crypto.getRandomValues(randBytes);
+    const pinCode = String(100000 + (randBytes[0] % 900000));
+    const id = generateVisitorPassId();
+    const qrData = JSON.stringify({
+      passId: id,
+      aptCode: params.apartmentCode,
+      visitor: params.visitorName,
+      pin: pinCode,
+      exp: validUntil.toISOString(),
+    });
 
-  if (error) throw new Error(`Supabase visitor_passes insert error: ${error.message}`);
-  return rowToVisitorPass(data);
+    const { data, error } = await supabaseAdmin
+      .from('visitor_passes')
+      .insert({
+        id,
+        apartment_code: params.apartmentCode,
+        host_name: params.hostName || 'Chủ Hộ',
+        host_phone: params.hostPhone || '',
+        tower_name: params.towerName ?? null,
+        visitor_name: params.visitorName,
+        visitor_phone: params.phoneNumber ?? null,
+        license_plate: params.licensePlate ?? null,
+        entry_type: params.entryType,
+        valid_hours: validHours,
+        qr_data: qrData,
+        pin_code: pinCode,
+        status: 'ACTIVE',
+        valid_until: validUntil.toISOString(),
+        created_at: now.toISOString(),
+        note: params.note ?? null,
+      })
+      .select('*')
+      .single();
+
+    if (!error) {
+      return rowToVisitorPass(data);
+    }
+
+    const isUniqueViolation =
+      (error as { code?: string }).code === '23505' ||
+      /duplicate key|unique constraint/i.test(error.message || '');
+    if (!isUniqueViolation || attempt === 4) {
+      throw new Error(`Supabase visitor_passes insert error: ${error.message}`);
+    }
+  }
+
+  throw new Error('Không thể sinh mã thẻ khách thăm duy nhất sau 5 lần thử.');
 }
 
 export async function verifyVisitorQrDb(

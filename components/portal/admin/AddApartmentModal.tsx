@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState, useMemo } from 'react';
@@ -48,10 +48,10 @@ export default function AddApartmentModal({
 }: AddApartmentModalProps) {
   useEscapeKey(isOpen, onClose);
   const { t, isEn } = useLanguage();
-  // Tab Ä‘iá»u hÆ°á»›ng form
+  // Tab điều hướng form
   const [activeTab, setActiveTab] = useState<TabType>('ARCHITECTURE');
 
-  // 1. Kiáº¿n trÃºc & Vá»‹ trÃ­
+  // 1. Kiến trúc & Vị trí
   const [floor, setFloor] = useState<number>(12);
   const [unitSlot, setUnitSlot] = useState<string>('06');
   const [code, setCode] = useState<string>('12-CH-06');
@@ -61,11 +61,11 @@ export default function AddApartmentModal({
   const [wallArea, setWallArea] = useState<number>(83.2);
   const [bedrooms, setBedrooms] = useState<number>(2);
   const [bathrooms, setBathrooms] = useState<number>(2);
-  const [direction, setDirection] = useState('ÄÃ´ng Nam');
-  const [mainDoorDirection, setMainDoorDirection] = useState('TÃ¢y Báº¯c');
-  const [viewDescription, setViewDescription] = useState('View SÃ´ng SÃ i GÃ²n & Há»“ BÆ¡i Ná»™i Khu');
+  const [direction, setDirection] = useState('Đông Nam');
+  const [mainDoorDirection, setMainDoorDirection] = useState('Tây Bắc');
+  const [viewDescription, setViewDescription] = useState('View Sông Sài Gòn & Hồ Bơi Nội Khu');
 
-  // 2. Háº¡ táº§ng IoT & Ká»¹ thuáº­t PCCC
+  // 2. Hạ tầng IoT & Kỹ thuật PCCC
   const [electricMeterId, setElectricMeterId] = useState('EM-12A06-IoT');
   const [waterMeterId, setWaterMeterId] = useState('WM-12A06-SKY');
   const [initialElectric, setInitialElectric] = useState<number>(12.5);
@@ -74,24 +74,24 @@ export default function AddApartmentModal({
   const [hasSmokeSensor, setHasSmokeSensor] = useState<boolean>(true);
   const [hasIntercom, setHasIntercom] = useState<boolean>(true);
 
-  // 3. TÃ i chÃ­nh, PhÃ¡p lÃ½ & BÃ n giao
+  // 3. Tài chính, Pháp lý & Bàn giao
   const [priceBillion, setPriceBillion] = useState<number>(4.85);
   const [estimatedRentPrice, setEstimatedRentPrice] = useState<number>(19500000);
   const [managementUnitPrice, setManagementUnitPrice] = useState<number>(18000);
-  const [legalStatus, setLegalStatus] = useState<'Sá»• há»“ng lÃ¢u dÃ i' | 'Há»£p Ä‘á»“ng mua bÃ¡n SPA'>('Sá»• há»“ng lÃ¢u dÃ i');
-  const [finishingStandard, setFinishingStandard] = useState('HoÃ n thiá»‡n cao cáº¥p Full ná»™i tháº¥t 5 sao');
+  const [legalStatus, setLegalStatus] = useState<'Sổ hồng lâu dài' | 'Hợp đồng mua bán SPA'>('Sổ hồng lâu dài');
+  const [finishingStandard, setFinishingStandard] = useState('Hoàn thiện cao cấp Full nội thất 5 sao');
   const [keysCount, setKeysCount] = useState<number>(3);
   const [cardsCount, setCardsCount] = useState<number>(2);
   const [status, setStatus] = useState<ApartmentStatus>('VACANT');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Tá»± Ä‘á»™ng tÃ­nh phÃ­ quáº£n lÃ½
+  // Tự động tính phí quản lý
   const calculatedMonthlyFee = useMemo(() => {
     return Math.round(area * managementUnitPrice);
   }, [area, managementUnitPrice]);
 
-  // Tá»· suáº¥t sinh lá»i cho thuÃª Æ°á»›c tÃ­nh (%/nÄƒm)
+  // Tỷ suất sinh lời cho thuê ước tính (%/năm)
   const calculatedRentalYield = useMemo(() => {
     if (!priceBillion || priceBillion <= 0) return 0;
     return (((estimatedRentPrice * 12) / (priceBillion * 1000000000)) * 100).toFixed(1);
@@ -99,7 +99,7 @@ export default function AddApartmentModal({
 
   if (!isOpen) return null;
 
-  // Khi thay Ä‘á»•i Táº§ng hoáº·c Sá»‘ cÄƒn -> Tá»± gá»£i Ã½ mÃ£ cÄƒn & mÃ£ Ä‘á»“ng há»“ IoT
+  // Khi thay đổi Tầng hoặc Số căn -> Tự gợi ý mã căn & mã đồng hồ IoT
   const handleFloorChange = (newFloor: number, newSlot?: string) => {
     setFloor(newFloor);
     const slot = newSlot !== undefined ? newSlot : unitSlot;
@@ -115,7 +115,7 @@ export default function AddApartmentModal({
     handleFloorChange(floor, newSlot);
   };
 
-  // Khi chá»n loáº¡i cÄƒn há»™ -> Tá»± Ä‘á»™ng Ä‘iá»n cÃ¡c thÃ´ng sá»‘ ká»¹ thuáº­t & Ä‘á»‹nh giÃ¡ chuáº©n
+  // Khi chọn loại căn hộ -> Tự động điền các thông số kỹ thuật & định giá chuẩn
   const handleTypeChange = (selectedType: ApartmentType) => {
     setType(selectedType);
     if (selectedType === '1PN') {
@@ -155,20 +155,20 @@ export default function AddApartmentModal({
 
     const cleanCode = code.trim().toUpperCase();
     if (!cleanCode) {
-      setError('Vui lÃ²ng nháº­p mÃ£ cÄƒn há»™ há»£p lá»‡.');
+      setError('Vui lòng nhập mã căn hộ hợp lệ.');
       setActiveTab('ARCHITECTURE');
       return;
     }
 
-    let typeLabel = '2 PhÃ²ng Ngá»§ - 2WC';
-    if (type === '1PN') typeLabel = '1 PhÃ²ng Ngá»§ - 1WC';
-    if (type === '3PN') typeLabel = '3 PhÃ²ng Ngá»§ - 3WC';
+    let typeLabel = '2 Phòng Ngủ - 2WC';
+    if (type === '1PN') typeLabel = '1 Phòng Ngủ - 1WC';
+    if (type === '3PN') typeLabel = '3 Phòng Ngủ - 3WC';
     if (type === 'DUPLEX_PENTHOUSE') typeLabel = 'Duplex Penthouse';
 
-    let statusLabel = 'CÄƒn Há»™ Trá»‘ng';
-    if (status === 'OCCUPIED') statusLabel = 'Äang Sinh Sá»‘ng';
-    if (status === 'MAINTENANCE') statusLabel = 'Äang Nghiá»‡m Thu Ká»¹ Thuáº­t';
-    if (status === 'HANDOVER_PENDING') statusLabel = 'Chá» BÃ n Giao CÆ° DÃ¢n';
+    let statusLabel = 'Căn Hộ Trống';
+    if (status === 'OCCUPIED') statusLabel = 'Đang Sinh Sống';
+    if (status === 'MAINTENANCE') statusLabel = 'Đang Nghiệm Thu Kỹ Thuật';
+    if (status === 'HANDOVER_PENDING') statusLabel = 'Chờ Bàn Giao Cư Dân';
 
     const newUnit: ApartmentUnit = {
       code: cleanCode,
@@ -194,7 +194,7 @@ export default function AddApartmentModal({
         serviceFee: 0,
         totalAmount: calculatedMonthlyFee,
         status: 'PAID',
-        period: 'ThÃ¡ng 09/2026',
+        period: 'Tháng 09/2026',
         dueDate: '30/09/2026'
       },
       handoverProtocol: {
@@ -205,16 +205,16 @@ export default function AddApartmentModal({
         cardsCount: Number(cardsCount),
         initialElectricMeter: Number(initialElectric),
         initialWaterMeter: Number(initialWater),
-        notes: `Nghiá»‡m thu cÄƒn há»™ ${cleanCode}: ${finishingStandard}. PhÃ¡p lÃ½: ${legalStatus}. PCCC: Äáº¡t chuáº©n QCVN 06.`
+        notes: `Nghiệm thu căn hộ ${cleanCode}: ${finishingStandard}. Pháp lý: ${legalStatus}. PCCC: Đạt chuẩn QCVN 06.`
       },
-      description: description.trim() || `CÄƒn há»™ ${cleanCode} (${typeLabel} â€¢ ${area}mÂ²) táº§m view ${viewDescription} táº¡i Chung CÆ° Skyline.`,
+      description: description.trim() || `Căn hộ ${cleanCode} (${typeLabel} • ${area}m²) tầm view ${viewDescription} tại Chung Cư Skyline.`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
     const success = addApartmentUnit(newUnit);
     if (!success) {
-      setError(`MÃ£ cÄƒn há»™ "${cleanCode}" Ä‘Ã£ tá»“n táº¡i trong há»‡ thá»‘ng. Vui lÃ²ng chá»n mÃ£ khÃ¡c.`);
+      setError(`Mã căn hộ "${cleanCode}" đã tồn tại trong hệ thống. Vui lòng chọn mã khác.`);
       setActiveTab('ARCHITECTURE');
       return;
     }
@@ -237,10 +237,10 @@ export default function AddApartmentModal({
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-widest text-[#C5A880] font-mono font-semibold flex items-center gap-1.5">
-                <Building className="w-3 h-3" /> KHá»žI Táº O KHÃ”NG GIAN BQL â€¢ CHUNG CÆ¯ SKYLINE
+                <Building className="w-3 h-3" /> KHỞI TẠO KHÔNG GIAN BQL • CHUNG CƯ SKYLINE
               </div>
               <h2 className="font-serif text-lg sm:text-xl font-bold text-white mt-0.5">
-                ThÃªm CÄƒn Há»™ Má»›i VÃ o CÆ¡ Sá»Ÿ Dá»¯ Liá»‡u
+                Thêm Căn Hộ Mới Vào Cơ Sở Dữ Liệu
               </h2>
             </div>
           </div>
@@ -255,7 +255,7 @@ export default function AddApartmentModal({
         </div>
 
         {/* ============================================================= */}
-        {/* 2. THANH TAB CHUYá»‚N PHÃ‚N ÄOáº N FORM                           */}
+        {/* 2. THANH TAB CHUYỂN PHÂN ĐOẠN FORM                           */}
         {/* ============================================================= */}
         <div className="flex border-b border-[#222B35] bg-[#0C121B] text-xs font-mono">
           <button
@@ -268,7 +268,7 @@ export default function AddApartmentModal({
             }`}
           >
             <Home className="w-3.5 h-3.5" />
-            <span>{t('1. Kiáº¿n TrÃºc & Vá»‹ TrÃ­')}</span>
+            <span>{t('1. Kiến Trúc & Vị Trí')}</span>
           </button>
 
           <button
@@ -281,7 +281,7 @@ export default function AddApartmentModal({
             }`}
           >
             <Zap className="w-3.5 h-3.5 text-amber-400" />
-            <span>{t('2. Háº¡ Táº§ng IoT & PCCC')}</span>
+            <span>{t('2. Hạ Tầng IoT & PCCC')}</span>
           </button>
 
           <button
@@ -294,11 +294,11 @@ export default function AddApartmentModal({
             }`}
           >
             <Coins className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{t('3. TÃ i ChÃ­nh & PhÃ¡p LÃ½')}</span>
+            <span>{t('3. Tài Chính & Pháp Lý')}</span>
           </button>
         </div>
 
-        {/* ThÃ´ng bÃ¡o lá»—i náº¿u cÃ³ */}
+        {/* Thông báo lỗi nếu có */}
         {error && (
           <div className="mx-5 mt-3 p-3 bg-rose-950/80 border border-rose-600 text-rose-200 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
@@ -307,26 +307,26 @@ export default function AddApartmentModal({
         )}
 
         {/* ============================================================= */}
-        {/* 3. Ná»˜I DUNG FORM CHÃNH                                        */}
+        {/* 3. NỘI DUNG FORM CHÍNH                                        */}
         {/* ============================================================= */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs font-mono">
           
           {/* ----------------------------------------------------------- */}
-          {/* PHáº¦N 1: KIáº¾N TRÃšC & Vá»Š TRÃ                                 */}
+          {/* PHẦN 1: KIẾN TRÚC & VỊ TRÍ                                 */}
           {/* ----------------------------------------------------------- */}
           {activeTab === 'ARCHITECTURE' && (
             <div className="space-y-4">
-              {/* Chung cÆ° & Táº§ng & Sá»‘ cÄƒn */}
+              {/* Chung cư & Tầng & Số căn */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-3 bg-[#121822] border border-[#222B35]">
                 <div>
-                  <label className="block text-gray-400 mb-1">{isEn ? 'Building:' : 'Chung CÆ°:'}</label>
+                  <label className="block text-gray-400 mb-1">{isEn ? 'Building:' : 'Chung Cư:'}</label>
                   <div className="px-3 py-2 bg-[#161F2C] border border-[#2B394E] text-[#C5A880] font-bold text-xs">
-                    Chung CÆ° Skyline (25 Táº§ng)
+                    Chung Cư Skyline (25 Tầng)
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Select Floor (1-25):' : 'Chá»n Táº§ng (1-25):'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Select Floor (1-25):' : 'Chọn Tầng (1-25):'}</label>
                   <select
                     value={floor}
                     onChange={(e) => handleFloorChange(Number(e.target.value))}
@@ -334,28 +334,28 @@ export default function AddApartmentModal({
                   >
                     {[25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(f => (
                       <option key={f} value={f}>
-                        Táº§ng {f} {f === 25 ? '(Penthouse)' : ''}
+                        Tầng {f} {f === 25 ? '(Penthouse)' : ''}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Unit Slot on Floor:' : 'Vá»‹ TrÃ­ CÄƒn TrÃªn SÃ n:'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Unit Slot on Floor:' : 'Vị Trí Căn Trên Sàn:'}</label>
                   <select
                     value={unitSlot}
                     onChange={(e) => handleSlotChange(e.target.value)}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   >
                     {['01', '02', '03', '04', '05', '06', '07', '08'].map(s => (
-                      <option key={s} value={s}>{isEn ? `Unit #${s}` : `CÄƒn sá»‘ ${s}`}</option>
+                      <option key={s} value={s}>{isEn ? `Unit #${s}` : `Căn số ${s}`}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-gray-300 font-semibold mb-1">
-                    MÃ£ CÄƒn Há»™ <span className="text-rose-400">*</span>:
+                    Mã Căn Hộ <span className="text-rose-400">*</span>:
                   </label>
                   <input
                     type="text"
@@ -373,15 +373,15 @@ export default function AddApartmentModal({
                 </div>
               </div>
 
-              {/* Loáº¡i hÃ¬nh cÄƒn há»™ (4 nÃºt chá»n nhanh) */}
+              {/* Loại hình căn hộ (4 nút chọn nhanh) */}
               <div className="space-y-1.5">
-                <label className="block text-gray-300 font-semibold">{isEn ? 'Standard Layout Type:' : 'Loáº¡i HÃ¬nh CÄƒn Há»™ Chuáº©n:'}</label>
+                <label className="block text-gray-300 font-semibold">{isEn ? 'Standard Layout Type:' : 'Loại Hình Căn Hộ Chuẩn:'}</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
-                    { id: '1PN', label: '1PN - 1WC', area: '52 mÂ²', price: '3.20 tá»·' },
-                    { id: '2PN', label: '2PN - 2WC', area: '78.5 mÂ²', price: '4.85 tá»·' },
-                    { id: '3PN', label: '3PN - 3WC', area: '112 mÂ²', price: '7.60 tá»·' },
-                    { id: 'DUPLEX_PENTHOUSE', label: 'Penthouse', area: '215 mÂ²', price: '18.50 tá»·' }
+                    { id: '1PN', label: '1PN - 1WC', area: '52 m²', price: '3.20 tỷ' },
+                    { id: '2PN', label: '2PN - 2WC', area: '78.5 m²', price: '4.85 tỷ' },
+                    { id: '3PN', label: '3PN - 3WC', area: '112 m²', price: '7.60 tỷ' },
+                    { id: 'DUPLEX_PENTHOUSE', label: 'Penthouse', area: '215 m²', price: '18.50 tỷ' }
                   ].map(t => (
                     <button
                       key={t.id}
@@ -394,16 +394,16 @@ export default function AddApartmentModal({
                       }`}
                     >
                       <div className="font-bold text-white text-xs">{t.label}</div>
-                      <div className="text-[10px] text-gray-400 mt-0.5">{t.area} â€¢ {t.price}</div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">{t.area} • {t.price}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Diá»‡n tÃ­ch & CÆ¡ cáº¥u phÃ²ng */}
+              {/* Diện tích & Cơ cấu phòng */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Carpet Area (mÂ²):' : 'Diá»‡n TÃ­ch ThÃ´ng Thá»§y (mÂ²):'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Carpet Area (m²):' : 'Diện Tích Thông Thủy (m²):'}</label>
                   <input
                     type="number"
                     step="0.1"
@@ -415,7 +415,7 @@ export default function AddApartmentModal({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Built-up Area (mÂ²):' : 'Diá»‡n TÃ­ch Tim TÆ°á»ng (mÂ²):'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Built-up Area (m²):' : 'Diện Tích Tim Tường (m²):'}</label>
                   <input
                     type="number"
                     step="0.1"
@@ -427,7 +427,7 @@ export default function AddApartmentModal({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Bedrooms:' : 'Sá»‘ PhÃ²ng Ngá»§:'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Bedrooms:' : 'Số Phòng Ngủ:'}</label>
                   <input
                     type="number"
                     min="1"
@@ -439,7 +439,7 @@ export default function AddApartmentModal({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Bathrooms:' : 'Sá»‘ PhÃ²ng Vá»‡ Sinh:'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Bathrooms:' : 'Số Phòng Vệ Sinh:'}</label>
                   <input
                     type="number"
                     min="1"
@@ -451,47 +451,47 @@ export default function AddApartmentModal({
                 </div>
               </div>
 
-              {/* HÆ°á»›ng & Táº§m nhÃ¬n */}
+              {/* Hướng & Tầm nhìn */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Main Balcony Orientation:' : 'HÆ°á»›ng Ban CÃ´ng ChÃ­nh:'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Main Balcony Orientation:' : 'Hướng Ban Công Chính:'}</label>
                   <select
                     value={direction}
                     onChange={(e) => setDirection(e.target.value)}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   >
-                    <option value="ÄÃ´ng Nam">{isEn ? 'Southeast (Cool breeze, river view)' : 'ÄÃ´ng Nam (ÄÃ³n giÃ³ mÃ¡t, view sÃ´ng)'}</option>
-                    <option value="ÄÃ´ng Báº¯c">{isEn ? 'Northeast (Gentle morning sun)' : 'ÄÃ´ng Báº¯c (Náº¯ng sá»›m dá»‹u mÃ¡t)'}</option>
-                    <option value="TÃ¢y Nam">{isEn ? 'Southwest (Warm sun, city view)' : 'TÃ¢y Nam (áº¤m Ã¡p, view thÃ nh phá»‘)'}</option>
-                    <option value="TÃ¢y Báº¯c">{isEn ? 'Northwest (Internal park view)' : 'TÃ¢y Báº¯c (View cÃ´ng viÃªn ná»™i khu)'}</option>
-                    <option value="ChÃ­nh Nam">{isEn ? 'South' : 'ChÃ­nh Nam'}</option>
-                    <option value="ChÃ­nh Báº¯c">{isEn ? 'North' : 'ChÃ­nh Báº¯c'}</option>
+                    <option value="Đông Nam">{isEn ? 'Southeast (Cool breeze, river view)' : 'Đông Nam (Đón gió mát, view sông)'}</option>
+                    <option value="Đông Bắc">{isEn ? 'Northeast (Gentle morning sun)' : 'Đông Bắc (Nắng sớm dịu mát)'}</option>
+                    <option value="Tây Nam">{isEn ? 'Southwest (Warm sun, city view)' : 'Tây Nam (Ấm áp, view thành phố)'}</option>
+                    <option value="Tây Bắc">{isEn ? 'Northwest (Internal park view)' : 'Tây Bắc (View công viên nội khu)'}</option>
+                    <option value="Chính Nam">{isEn ? 'South' : 'Chính Nam'}</option>
+                    <option value="Chính Bắc">{isEn ? 'North' : 'Chính Bắc'}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Main Door Orientation (Feng Shui):' : 'HÆ°á»›ng Cá»­a ChÃ­nh (Phong Thá»§y):'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Main Door Orientation (Feng Shui):' : 'Hướng Cửa Chính (Phong Thủy):'}</label>
                   <select
                     value={mainDoorDirection}
                     onChange={(e) => setMainDoorDirection(e.target.value)}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   >
-                    <option value="TÃ¢y Báº¯c">{isEn ? 'Northwest' : 'TÃ¢y Báº¯c'}</option>
-                    <option value="TÃ¢y Nam">{isEn ? 'Southwest' : 'TÃ¢y Nam'}</option>
-                    <option value="ÄÃ´ng Báº¯c">{isEn ? 'Northeast' : 'ÄÃ´ng Báº¯c'}</option>
-                    <option value="ÄÃ´ng Nam">{isEn ? 'Southeast' : 'ÄÃ´ng Nam'}</option>
-                    <option value="ChÃ­nh Nam">{isEn ? 'South' : 'ChÃ­nh Nam'}</option>
-                    <option value="ChÃ­nh Báº¯c">{isEn ? 'North' : 'ChÃ­nh Báº¯c'}</option>
+                    <option value="Tây Bắc">{isEn ? 'Northwest' : 'Tây Bắc'}</option>
+                    <option value="Tây Nam">{isEn ? 'Southwest' : 'Tây Nam'}</option>
+                    <option value="Đông Bắc">{isEn ? 'Northeast' : 'Đông Bắc'}</option>
+                    <option value="Đông Nam">{isEn ? 'Southeast' : 'Đông Nam'}</option>
+                    <option value="Chính Nam">{isEn ? 'South' : 'Chính Nam'}</option>
+                    <option value="Chính Bắc">{isEn ? 'North' : 'Chính Bắc'}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Landscape View:' : 'Táº§m NhÃ¬n (View):'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Landscape View:' : 'Tầm Nhìn (View):'}</label>
                   <input
                     type="text"
                     value={viewDescription}
                     onChange={(e) => setViewDescription(e.target.value)}
-                    placeholder={isEn ? 'e.g. Saigon River View, City Skyline...' : 'VD: View SÃ´ng SÃ i GÃ²n, Landmark 81...'}
+                    placeholder={isEn ? 'e.g. Saigon River View, City Skyline...' : 'VD: View Sông Sài Gòn, Landmark 81...'}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   />
                 </div>
@@ -500,28 +500,28 @@ export default function AddApartmentModal({
           )}
 
           {/* ----------------------------------------------------------- */}
-          {/* PHáº¦N 2: Háº  Táº¦NG IOT ÄO LÆ¯á»œNG & AN TOÃ€N PCCC                */}
+          {/* PHẦN 2: HẠ TẦNG IOT ĐO LƯỜNG & AN TOÀN PCCC                */}
           {/* ----------------------------------------------------------- */}
           {activeTab === 'IOT_TECHNICAL' && (
             <div className="space-y-4">
               <div className="p-3 bg-gradient-to-r from-[#141F2D] to-[#0E1622] border border-[#2B394E] space-y-1">
                 <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                  <Zap className="w-4 h-4 text-amber-400" /> Há»† THá»NG ÄO LÆ¯á»œNG ÄIá»†N & NÆ¯á»šC THÃ”NG MINH IOT
+                  <Zap className="w-4 h-4 text-amber-400" /> HỆ THỐNG ĐO LƯỜNG ĐIỆN & NƯỚC THÔNG MINH IOT
                 </div>
                 <div className="text-[11px] text-gray-400">
-                  Má»—i cÄƒn há»™ táº¡i Chung CÆ° Skyline Ä‘Æ°á»£c tÃ­ch há»£p Ä‘á»“ng há»“ Ä‘iá»‡n tá»­ vÃ  cÃ´ng tÆ¡ nÆ°á»›c thÃ´ng minh tá»± Ä‘á»™ng truyá»n sá»‘ liá»‡u vá» BQL.
+                  Mỗi căn hộ tại Chung Cư Skyline được tích hợp đồng hồ điện tử và công tơ nước thông minh tự động truyền số liệu về BQL.
                 </div>
               </div>
 
-              {/* Äá»“ng há»“ Ä‘iá»‡n & nÆ°á»›c */}
+              {/* Đồng hồ điện & nước */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Äiá»‡n IoT */}
+                {/* Điện IoT */}
                 <div className="p-3 bg-[#121822] border border-[#222B35] space-y-2">
                   <div className="text-amber-300 font-bold flex items-center gap-1.5 text-xs">
-                    <Zap className="w-3.5 h-3.5 text-amber-400" /> Äá»“ng Há»“ Äiá»‡n Tá»­ ThÃ´ng Minh
+                    <Zap className="w-3.5 h-3.5 text-amber-400" /> Đồng Hồ Điện Tử Thông Minh
                   </div>
                   <div>
-                    <label className="block text-gray-400 text-[10.5px] mb-1">{isEn ? 'Electric Meter ID (IoT):' : 'MÃ£ Thiáº¿t Bá»‹ IoT (Electric Meter ID):'}</label>
+                    <label className="block text-gray-400 text-[10.5px] mb-1">{isEn ? 'Electric Meter ID (IoT):' : 'Mã Thiết Bị IoT (Electric Meter ID):'}</label>
                     <input
                       type="text"
                       value={electricMeterId}
@@ -530,7 +530,7 @@ export default function AddApartmentModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-400 text-[10.5px] mb-1">{isEn ? 'Initial Electric Meter Reading (kWh):' : 'Chá»‰ Sá»‘ Khá»Ÿi Äiá»ƒm Nghiá»‡m Thu (kWh):'}</label>
+                    <label className="block text-gray-400 text-[10.5px] mb-1">{isEn ? 'Initial Electric Meter Reading (kWh):' : 'Chỉ Số Khởi Điểm Nghiệm Thu (kWh):'}</label>
                     <input
                       type="number"
                       step="0.1"
@@ -541,13 +541,13 @@ export default function AddApartmentModal({
                   </div>
                 </div>
 
-                {/* NÆ°á»›c IoT */}
+                {/* Nước IoT */}
                 <div className="p-3 bg-[#121822] border border-[#222B35] space-y-2">
                   <div className="text-cyan-300 font-bold flex items-center gap-1.5 text-xs">
-                    <Droplets className="w-3.5 h-3.5 text-cyan-400" /> Äá»“ng Há»“ NÆ°á»›c Sinh Hoáº¡t IoT
+                    <Droplets className="w-3.5 h-3.5 text-cyan-400" /> Đồng Hồ Nước Sinh Hoạt IoT
                   </div>
                   <div>
-                    <label className="block text-gray-400 text-[10.5px] mb-1">{isEn ? 'Water Meter ID (IoT):' : 'MÃ£ Thiáº¿t Bá»‹ IoT (Water Meter ID):'}</label>
+                    <label className="block text-gray-400 text-[10.5px] mb-1">{isEn ? 'Water Meter ID (IoT):' : 'Mã Thiết Bị IoT (Water Meter ID):'}</label>
                     <input
                       type="text"
                       value={waterMeterId}
@@ -556,7 +556,7 @@ export default function AddApartmentModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-400 text-[10.5px] mb-1">{isEn ? 'Initial Water Meter Reading (mÂ³):' : 'Chá»‰ Sá»‘ NÆ°á»›c Khá»Ÿi Äiá»ƒm (mÂ³):'}</label>
+                    <label className="block text-gray-400 text-[10.5px] mb-1">{isEn ? 'Initial Water Meter Reading (m³):' : 'Chỉ Số Nước Khởi Điểm (m³):'}</label>
                     <input
                       type="number"
                       step="0.1"
@@ -568,10 +568,10 @@ export default function AddApartmentModal({
                 </div>
               </div>
 
-              {/* An toÃ n PCCC & Smart Living */}
+              {/* An toàn PCCC & Smart Living */}
               <div className="p-3 bg-[#121822] border border-[#222B35] space-y-2">
                 <div className="text-[#C5A880] font-bold flex items-center gap-1.5 text-xs">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> TIÃŠU CHUáº¨N AN TOÃ€N PCCC & THIáº¾T Bá»Š BÃ€N GIAO
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> TIÊU CHUẨN AN TOÀN PCCC & THIẾT BỊ BÀN GIAO
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
@@ -582,7 +582,7 @@ export default function AddApartmentModal({
                       onChange={(e) => setHasSprinkler(e.target.checked)}
                       className="accent-[#C5A880]"
                     />
-                    <span className="text-gray-200">{isEn ? 'Auto Fire Sprinklers' : 'Äáº§u Phun Sprinkler Tá»± Äá»™ng'}</span>
+                    <span className="text-gray-200">{isEn ? 'Auto Fire Sprinklers' : 'Đầu Phun Sprinkler Tự Động'}</span>
                   </label>
 
                   <label className="p-2 bg-[#161F2C] border border-[#26354A] flex items-center gap-2 cursor-pointer">
@@ -592,7 +592,7 @@ export default function AddApartmentModal({
                       onChange={(e) => setHasSmokeSensor(e.target.checked)}
                       className="accent-[#C5A880]"
                     />
-                    <span className="text-gray-200">{isEn ? 'Smart Smoke Sensor' : 'Cáº£m Biáº¿n KhÃ³i ThÃ´ng Minh'}</span>
+                    <span className="text-gray-200">{isEn ? 'Smart Smoke Sensor' : 'Cảm Biến Khói Thông Minh'}</span>
                   </label>
 
                   <label className="p-2 bg-[#161F2C] border border-[#26354A] flex items-center gap-2 cursor-pointer">
@@ -602,7 +602,7 @@ export default function AddApartmentModal({
                       onChange={(e) => setHasIntercom(e.target.checked)}
                       className="accent-[#C5A880]"
                     />
-                    <span className="text-gray-200">{isEn ? 'Smart Video Intercom' : 'ChuÃ´ng HÃ¬nh Video Intercom'}</span>
+                    <span className="text-gray-200">{isEn ? 'Smart Video Intercom' : 'Chuông Hình Video Intercom'}</span>
                   </label>
                 </div>
               </div>
@@ -610,14 +610,14 @@ export default function AddApartmentModal({
           )}
 
           {/* ----------------------------------------------------------- */}
-          {/* PHáº¦N 3: TÃ€I CHÃNH, PHÃP LÃ & BÃ€N GIAO                       */}
+          {/* PHẦN 3: TÀI CHÍNH, PHÁP LÝ & BÀN GIAO                       */}
           {/* ----------------------------------------------------------- */}
           {activeTab === 'FINANCE_LEGAL' && (
             <div className="space-y-4">
-              {/* Äá»‹nh giÃ¡ bÃ¡n & Cho thuÃª */}
+              {/* Định giá bán & Cho thuê */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-[#121822] border border-[#222B35]">
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Developer Listing Price (Billion VND):' : 'GiÃ¡ BÃ¡n CÄT (Tá»· VNÄ):'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Developer Listing Price (Billion VND):' : 'Giá Bán CĐT (Tỷ VNĐ):'}</label>
                   <input
                     type="number"
                     step="0.05"
@@ -629,7 +629,7 @@ export default function AddApartmentModal({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Reference Rental Price (VND/month):' : 'GiÃ¡ Cho ThuÃª Tham Chiáº¿u (VNÄ/thÃ¡ng):'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Reference Rental Price (VND/month):' : 'Giá Cho Thuê Tham Chiếu (VNĐ/tháng):'}</label>
                   <input
                     type="number"
                     step="500000"
@@ -638,35 +638,35 @@ export default function AddApartmentModal({
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-emerald-400 font-bold outline-none focus:border-emerald-400"
                   />
                   <div className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
-                    <TrendingUp className="w-2.5 h-2.5 text-emerald-400" /> Yield: ~{calculatedRentalYield}%/nÄƒm
+                    <TrendingUp className="w-2.5 h-2.5 text-emerald-400" /> Yield: ~{calculatedRentalYield}%/năm
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Estimated Management Fee:' : 'PhÃ­ Quáº£n LÃ½ Chung CÆ° (Dá»± kiáº¿n):'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Estimated Management Fee:' : 'Phí Quản Lý Chung Cư (Dự kiến):'}</label>
                   <div className="px-3 py-2 bg-[#161F2C] border border-[#2B394E] text-amber-300 font-bold text-xs">
-                    {new Intl.NumberFormat('vi-VN').format(calculatedMonthlyFee)} Ä‘/thÃ¡ng
+                    {new Intl.NumberFormat('vi-VN').format(calculatedMonthlyFee)} đ/tháng
                   </div>
-                  <div className="text-[9.5px] text-gray-400 mt-1">{isEn ? 'Unit rate: 18,000 VND/mÂ² carpet area' : 'ÄÆ¡n giÃ¡: 18.000 Ä‘/mÂ² thÃ´ng thá»§y'}</div>
+                  <div className="text-[9.5px] text-gray-400 mt-1">{isEn ? 'Unit rate: 18,000 VND/m² carpet area' : 'Đơn giá: 18.000 đ/m² thông thủy'}</div>
                 </div>
               </div>
 
-              {/* PhÃ¡p lÃ½ & BÃ n giao chÃ¬a khÃ³a */}
+              {/* Pháp lý & Bàn giao chìa khóa */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Ownership Title:' : 'PhÃ¡p LÃ½ Sá»Ÿ Há»¯u:'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Ownership Title:' : 'Pháp Lý Sở Hữu:'}</label>
                   <select
                     value={legalStatus}
                     onChange={(e) => setLegalStatus(e.target.value as any)}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   >
-                    <option value="Sá»• há»“ng lÃ¢u dÃ i">{isEn ? 'Long-term Pink Book Ownership' : 'Sá»• há»“ng lÃ¢u dÃ i (VÄ©nh viá»…n)'}</option>
-                    <option value="Há»£p Ä‘á»“ng mua bÃ¡n SPA">{isEn ? 'Sales & Purchase Agreement (SPA)' : 'Há»£p Ä‘á»“ng mua bÃ¡n SPA'}</option>
+                    <option value="Sổ hồng lâu dài">{isEn ? 'Long-term Pink Book Ownership' : 'Sổ hồng lâu dài (Vĩnh viễn)'}</option>
+                    <option value="Hợp đồng mua bán SPA">{isEn ? 'Sales & Purchase Agreement (SPA)' : 'Hợp đồng mua bán SPA'}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Physical Keys Count:' : 'Sá»‘ ChÃ¬a KhÃ³a CÆ¡:'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Physical Keys Count:' : 'Số Chìa Khóa Cơ:'}</label>
                   <input
                     type="number"
                     min="1"
@@ -678,7 +678,7 @@ export default function AddApartmentModal({
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Elevator Keycards:' : 'Sá»‘ Tháº» Thang MÃ¡y PhÃ¢n Táº§ng:'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Elevator Keycards:' : 'Số Thẻ Thang Máy Phân Tầng:'}</label>
                   <input
                     type="number"
                     min="1"
@@ -690,43 +690,43 @@ export default function AddApartmentModal({
                 </div>
               </div>
 
-              {/* TiÃªu chuáº©n hoÃ n thiá»‡n & Tráº¡ng thÃ¡i khá»Ÿi táº¡o */}
+              {/* Tiêu chuẩn hoàn thiện & Trạng thái khởi tạo */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Finishing Standard:' : 'TiÃªu Chuáº©n HoÃ n Thiá»‡n:'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Finishing Standard:' : 'Tiêu Chuẩn Hoàn Thiện:'}</label>
                   <select
                     value={finishingStandard}
                     onChange={(e) => setFinishingStandard(e.target.value)}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   >
-                    <option value="HoÃ n thiá»‡n cao cáº¥p Full ná»™i tháº¥t 5 sao">{isEn ? 'Luxury 5-Star Fully Furnished' : 'HoÃ n thiá»‡n cao cáº¥p Full ná»™i tháº¥t 5 sao'}</option>
-                    <option value="HoÃ n thiá»‡n liá»n tÆ°á»ng cao cáº¥p (Báº¿p & WC)">{isEn ? 'Semi-furnished (Kitchen & Bath)' : 'HoÃ n thiá»‡n liá»n tÆ°á»ng cao cáº¥p (Báº¿p & WC)'}</option>
-                    <option value="BÃ n giao thÃ´ (Tá»± do thiáº¿t káº¿)">{isEn ? 'Bare Shell (Custom Interior)' : 'BÃ n giao thÃ´ (Tá»± do thiáº¿t káº¿)'}</option>
+                    <option value="Hoàn thiện cao cấp Full nội thất 5 sao">{isEn ? 'Luxury 5-Star Fully Furnished' : 'Hoàn thiện cao cấp Full nội thất 5 sao'}</option>
+                    <option value="Hoàn thiện liền tường cao cấp (Bếp & WC)">{isEn ? 'Semi-furnished (Kitchen & Bath)' : 'Hoàn thiện liền tường cao cấp (Bếp & WC)'}</option>
+                    <option value="Bàn giao thô (Tự do thiết kế)">{isEn ? 'Bare Shell (Custom Interior)' : 'Bàn giao thô (Tự do thiết kế)'}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Initial Unit Status:' : 'Tráº¡ng ThÃ¡i Khá»Ÿi Táº¡o:'}</label>
+                  <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Initial Unit Status:' : 'Trạng Thái Khởi Tạo:'}</label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as any)}
                     className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                   >
-                    <option value="VACANT">{isEn ? 'Vacant (Ready for Handover)' : 'CÄƒn Há»™ Trá»‘ng (Sáºµn sÃ ng bÃ n giao)'}</option>
-                    <option value="MAINTENANCE">{isEn ? 'Under Technical Review / Maintenance' : 'Äang Nghiá»‡m Thu Ká»¹ Thuáº­t / Báº£o TrÃ¬'}</option>
-                    <option value="HANDOVER_PENDING">{isEn ? 'Pending Resident Handover' : 'Chá» BÃ n Giao CÆ° DÃ¢n'}</option>
+                    <option value="VACANT">{isEn ? 'Vacant (Ready for Handover)' : 'Căn Hộ Trống (Sẵn sàng bàn giao)'}</option>
+                    <option value="MAINTENANCE">{isEn ? 'Under Technical Review / Maintenance' : 'Đang Nghiệm Thu Kỹ Thuật / Bảo Trì'}</option>
+                    <option value="HANDOVER_PENDING">{isEn ? 'Pending Resident Handover' : 'Chờ Bàn Giao Cư Dân'}</option>
                   </select>
                 </div>
               </div>
 
-              {/* Ghi chÃº mÃ´ táº£ */}
+              {/* Ghi chú mô tả */}
               <div>
-                <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Technical Notes / Unit Description:' : 'Ghi ChÃº Ká»¹ Thuáº­t / MÃ´ Táº£ CÄƒn Há»™:'}</label>
+                <label className="block text-gray-300 font-semibold mb-1">{isEn ? 'Technical Notes / Unit Description:' : 'Ghi Chú Kỹ Thuật / Mô Tả Căn Hộ:'}</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
-                  placeholder={isEn ? 'Detailed notes on appliances, view, or maintenance guidelines...' : 'Ghi chÃº chi tiáº¿t vá» trang thiáº¿t bá»‹ ná»™i tháº¥t, táº§m view hoáº·c cÃ¡c lÆ°u Ã½ báº£o dÆ°á»¡ng...'}
+                  placeholder={isEn ? 'Detailed notes on appliances, view, or maintenance guidelines...' : 'Ghi chú chi tiết về trang thiết bị nội thất, tầm view hoặc các lưu ý bảo dưỡng...'}
                   className="w-full bg-[#161F2C] border border-[#2D3748] px-3 py-2 text-white outline-none focus:border-[#C5A880]"
                 />
               </div>
@@ -734,12 +734,12 @@ export default function AddApartmentModal({
           )}
 
           {/* ============================================================= */}
-          {/* 4. CHÃ‚N FORM & NÃšT LÆ¯U                                       */}
+          {/* 4. CHÂN FORM & NÚT LƯU                                       */}
           {/* ============================================================= */}
           <div className="pt-3 border-t border-[#222B35] flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3">
             <div className="text-gray-400 text-[11px] text-center sm:text-left">
-              Äang xem má»¥c: <span className="text-[#C5A880] font-bold">
-                {activeTab === 'ARCHITECTURE' ? '1. Kiáº¿n TrÃºc & Vá»‹ TrÃ­' : activeTab === 'IOT_TECHNICAL' ? '2. Háº¡ Táº§ng IoT & PCCC' : '3. TÃ i ChÃ­nh & PhÃ¡p LÃ½'}
+              Đang xem mục: <span className="text-[#C5A880] font-bold">
+                {activeTab === 'ARCHITECTURE' ? '1. Kiến Trúc & Vị Trí' : activeTab === 'IOT_TECHNICAL' ? '2. Hạ Tầng IoT & PCCC' : '3. Tài Chính & Pháp Lý'}
               </span>
             </div>
 
@@ -749,7 +749,7 @@ export default function AddApartmentModal({
                 onClick={onClose}
                 className="w-full sm:w-auto px-4 py-2.5 bg-[#161F2C] hover:bg-[#222E3E] text-gray-300 hover:text-white border border-[#2D3748] font-semibold transition-colors text-center"
               >
-                Há»§y Bá»
+                Hủy Bỏ
               </button>
 
               <button
@@ -757,7 +757,7 @@ export default function AddApartmentModal({
                 className="w-full sm:w-auto px-6 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-lg"
               >
                 <Plus className="w-4 h-4" />
-                <span>{isEn ? 'Save New Apartment' : 'LÆ°u CÄƒn Há»™ Má»›i'}</span>
+                <span>{isEn ? 'Save New Apartment' : 'Lưu Căn Hộ Mới'}</span>
               </button>
             </div>
           </div>

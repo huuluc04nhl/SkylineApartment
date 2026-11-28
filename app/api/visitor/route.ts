@@ -25,7 +25,14 @@ export async function GET(request: Request) {
   const pin = searchParams.get('pin');
 
   if (id || pin) {
-    const pass = await findVisitorPassByIdOrPinDb((id || pin)!);
+    const isStaff = guard.session.role === 'ADMIN' || guard.session.role === 'RECEPTIONIST';
+    if (pin && !id && !isStaff) {
+      return NextResponse.json(
+        { success: false, message: 'Tra cứu bằng mã PIN riêng lẻ chỉ dành cho nhân viên.' },
+        { status: 403 }
+      );
+    }
+    const pass = await findVisitorPassByIdOrPinDb((id || pin)!, isStaff);
 
     if (pass) {
       if (

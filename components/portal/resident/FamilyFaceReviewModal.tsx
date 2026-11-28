@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { getInitialsAvatar } from '@/lib/avatarHelper';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -85,14 +85,14 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
         const handleConfirmAndSendToBql = async () => {
           setIsConfirmingFace(true);
           try {
-            // 1. XÃ¡c nháº­n FaceID trong há»“ sÆ¡ sinh tráº¯c há»c
+            // 1. Xác nhận FaceID trong hồ sơ sinh trắc học
             await skylineConfirmFamilyFaceIdByOwner(
               confirmTargetMember.id || confirmTargetMember.phone || '', 
               aptCode,
               confirmTargetMember.phone
             );
 
-            // 2. Äá»“ng bá»™ tráº¡ng thÃ¡i e-KYC sang PENDING trÃªn mÃ¡y chá»§ Ä‘á»ƒ BQL nháº­n há»“ sÆ¡ tháº©m duyá»‡t ngay
+            // 2. Đồng bộ trạng thái e-KYC sang PENDING trên máy chủ để BQL nhận hồ sơ thẩm duyệt ngay
             try {
               await fetch('/api/ekyc', {
                 method: 'POST',
@@ -107,12 +107,12 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
               console.warn('Sync confirm to ekyc api error:', ekycSyncErr);
             }
 
-            setActionSuccess(`âœ“ ÄÃ£ xÃ¡c nháº­n báº£o lÃ£nh há»“ sÆ¡ FaceID cho thÃ nh viÃªn "${confirmTargetMember.fullName}" vÃ  gá»­i Ban Quáº£n LÃ½ phÃª duyá»‡t thÃ nh cÃ´ng!`);
+            setActionSuccess(`✓ Đã xác nhận bảo lãnh hồ sơ FaceID cho thành viên "${confirmTargetMember.fullName}" và gửi Ban Quản Lý phê duyệt thành công!`);
             setTimeout(() => setActionSuccess(null), 5000);
             setConfirmTargetMember(null);
             fetchMembers();
           } catch (err: any) {
-            setActionError(err?.message || 'Lá»—i khi xÃ¡c nháº­n há»“ sÆ¡ FaceID.');
+            setActionError(err?.message || 'Lỗi khi xác nhận hồ sơ FaceID.');
             setTimeout(() => setActionError(null), 5000);
           } finally {
             setIsConfirmingFace(false);
@@ -135,10 +135,10 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
                   </div>
                   <div>
                     <div className="text-[10px] font-mono uppercase tracking-widest text-[#C5A880] font-bold">
-                      Quyá»n PhÃª Duyá»‡t Chá»§ Há»™ â€¢ CÄƒn Há»™ {aptCode}
+                      Quyền Phê Duyệt Chủ Hộ • Căn Hộ {aptCode}
                     </div>
                     <h3 className="text-base font-serif font-bold text-white">
-                      XÃ¡c Nháº­n 4 Máº«u FaceID Cá»§a NgÆ°á»i NhÃ : {confirmTargetMember.fullName}
+                      Xác Nhận 4 Mẫu FaceID Của Người Nhà: {confirmTargetMember.fullName}
                     </h3>
                   </div>
                 </div>
@@ -155,20 +155,20 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
               {/* Member Brief Info */}
               <div className="p-3 bg-[#161B22] border border-[#222B35] text-xs grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div>
-                  <span className="text-gray-400 block text-[11px]">{t('ThÃ nh viÃªn:', 'Member:')}</span>
+                  <span className="text-gray-400 block text-[11px]">{t('Thành viên:', 'Member:')}</span>
                   <strong className="text-white">{confirmTargetMember.fullName}</strong>
                 </div>
                 <div>
-                  <span className="text-gray-400 block text-[11px]">{t('Quan há»‡:', 'Relationship:')}</span>
+                  <span className="text-gray-400 block text-[11px]">{t('Quan hệ:', 'Relationship:')}</span>
                   <span className="text-[#C5A880] font-semibold">{confirmTargetMember.relationship}</span>
                 </div>
                 <div>
-                  <span className="text-gray-400 block text-[11px]">{t('SÄT:', 'Phone:')}</span>
+                  <span className="text-gray-400 block text-[11px]">{t('SĐT:', 'Phone:')}</span>
                   <span className="font-mono text-gray-200">{confirmTargetMember.phone}</span>
                 </div>
                 <div>
                   <span className="text-gray-400 block text-[11px]">CCCD:</span>
-                  <span className="font-mono text-gray-200">{confirmTargetMember.idCard || t('Äang cáº­p nháº­t', 'Updating')}</span>
+                  <span className="font-mono text-gray-200">{confirmTargetMember.idCard || t('Đang cập nhật', 'Updating')}</span>
                 </div>
               </div>
 
@@ -176,22 +176,22 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
               <div className="space-y-2">
                 <div className="text-xs font-semibold text-gray-300 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
-                    <Camera className="w-4 h-4 text-[#C5A880]" /> 4 GÃ³c KhuÃ´n Máº·t:
+                    <Camera className="w-4 h-4 text-[#C5A880]" /> 4 Góc Khuôn Mặt:
                   </span>
                   <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
                     <CheckCircle className="w-3 h-3 text-emerald-400" />
-                    Äá»™ khá»›p: {enrolled?.faceScore ? `${enrolled.faceScore}%` : 'ChÆ°a quÃ©t'}
+                    Độ khớp: {enrolled?.faceScore ? `${enrolled.faceScore}%` : 'Chưa quét'}
                   </span>
                 </div>
 
                 {samples ? (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div 
-                      onClick={() => setSelectedAnglePreview({ title: isEn ? '1. Front View' : '1. ChÃ­nh Diá»‡n', src: samples.front })}
+                      onClick={() => setSelectedAnglePreview({ title: isEn ? '1. Front View' : '1. Chính Diện', src: samples.front })}
                       className="p-1.5 bg-[#121820] border border-gray-700 hover:border-[#C5A880] text-center space-y-1 group cursor-pointer transition-all relative"
                     >
                       <div className="text-[10px] font-mono text-[#C5A880] flex items-center justify-between">
-                        <span>{t('1. ChÃ­nh Diá»‡n', '1. Front View')}</span>
+                        <span>{t('1. Chính Diện', '1. Front View')}</span>
                         <ZoomIn className="w-3 h-3 text-gray-500 group-hover:text-[#C5A880]" />
                       </div>
                       <div className="aspect-square bg-black border border-gray-800 overflow-hidden relative">
@@ -200,11 +200,11 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
                     </div>
 
                     <div 
-                      onClick={() => setSelectedAnglePreview({ title: isEn ? '2. Turn Left' : '2. Quay TrÃ¡i', src: samples.left })}
+                      onClick={() => setSelectedAnglePreview({ title: isEn ? '2. Turn Left' : '2. Quay Trái', src: samples.left })}
                       className="p-1.5 bg-[#121820] border border-gray-700 hover:border-[#C5A880] text-center space-y-1 group cursor-pointer transition-all relative"
                     >
                       <div className="text-[10px] font-mono text-[#C5A880] flex items-center justify-between">
-                        <span>{t('2. Quay TrÃ¡i', '2. Turn Left')}</span>
+                        <span>{t('2. Quay Trái', '2. Turn Left')}</span>
                         <ZoomIn className="w-3 h-3 text-gray-500 group-hover:text-[#C5A880]" />
                       </div>
                       <div className="aspect-square bg-black border border-gray-800 overflow-hidden relative">
@@ -213,11 +213,11 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
                     </div>
 
                     <div 
-                      onClick={() => setSelectedAnglePreview({ title: isEn ? '3. Turn Right' : '3. Quay Pháº£i', src: samples.right })}
+                      onClick={() => setSelectedAnglePreview({ title: isEn ? '3. Turn Right' : '3. Quay Phải', src: samples.right })}
                       className="p-1.5 bg-[#121820] border border-gray-700 hover:border-[#C5A880] text-center space-y-1 group cursor-pointer transition-all relative"
                     >
                       <div className="text-[10px] font-mono text-[#C5A880] flex items-center justify-between">
-                        <span>{t('3. Quay Pháº£i', '3. Turn Right')}</span>
+                        <span>{t('3. Quay Phải', '3. Turn Right')}</span>
                         <ZoomIn className="w-3 h-3 text-gray-500 group-hover:text-[#C5A880]" />
                       </div>
                       <div className="aspect-square bg-black border border-gray-800 overflow-hidden relative">
@@ -226,11 +226,11 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
                     </div>
 
                     <div 
-                      onClick={() => setSelectedAnglePreview({ title: isEn ? '4. Smile' : '4. Má»‰m CÆ°á»i', src: samples.smile })}
+                      onClick={() => setSelectedAnglePreview({ title: isEn ? '4. Smile' : '4. Mỉm Cười', src: samples.smile })}
                       className="p-1.5 bg-[#121820] border border-gray-700 hover:border-[#C5A880] text-center space-y-1 group cursor-pointer transition-all relative"
                     >
                       <div className="text-[10px] font-mono text-[#C5A880] flex items-center justify-between">
-                        <span>{t('4. Má»‰m CÆ°á»i', '4. Smile')}</span>
+                        <span>{t('4. Mỉm Cười', '4. Smile')}</span>
                         <ZoomIn className="w-3 h-3 text-gray-500 group-hover:text-[#C5A880]" />
                       </div>
                       <div className="aspect-square bg-black border border-gray-800 overflow-hidden relative">
@@ -240,7 +240,7 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
                   </div>
                 ) : (
                   <div className="p-5 bg-[#161B22] border border-gray-800 text-center text-xs text-gray-400">
-                    ChÆ°a cÃ³ máº«u áº£nh quÃ©t cá»§a thÃ nh viÃªn nÃ y.
+                    Chưa có mẫu ảnh quét của thành viên này.
                   </div>
                 )}
               </div>
@@ -248,7 +248,7 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
               {/* Owner Legal Responsibility Notice */}
               <div className="p-2.5 bg-[#121820] border border-[#C5A880]/50 rounded-none text-xs text-gray-300 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-[#C5A880] flex-shrink-0" />
-                <span>{t('XÃ¡c nháº­n thÃ nh viÃªn', 'Confirm Member')} <strong>{confirmTargetMember.fullName}</strong> thuá»™c cÄƒn <strong>{aptCode}</strong> Ä‘á»ƒ gá»­i BQL kÃ­ch hoáº¡t FaceID.</span>
+                <span>{t('Xác nhận thành viên', 'Confirm Member')} <strong>{confirmTargetMember.fullName}</strong> thuộc căn <strong>{aptCode}</strong> để gửi BQL kích hoạt FaceID.</span>
               </div>
 
               {/* Action Buttons */}
@@ -261,7 +261,7 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
                   }}
                   className="w-full sm:w-auto px-3.5 py-2 bg-[#161B22] hover:bg-[#202936] text-gray-300 hover:text-white border border-[#2D3748] text-xs font-semibold rounded-none transition-colors cursor-pointer"
                 >
-                  QuÃ©t Láº¡i
+                  Quét Lại
                 </button>
 
                 <button
@@ -272,11 +272,11 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
                 >
                   {isConfirmingFace ? (
                     <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Äang Gá»­i...
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Đang Gửi...
                     </>
                   ) : (
                     <>
-                      <ShieldCheck className="w-3.5 h-3.5" /> XÃ¡c Nháº­n & Gá»­i BQL
+                      <ShieldCheck className="w-3.5 h-3.5" /> Xác Nhận & Gửi BQL
                     </>
                   )}
                 </button>
@@ -289,7 +289,7 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
 
 
       {/* =================================================================== */}
-      {/* MODAL: XÃC NHáº¬N Há»¦Y PHÃ‚N QUYá»€N CÆ¯ DÃ‚N CAO Cáº¤P                       */}
+      {/* MODAL: XÁC NHẬN HỦY PHÂN QUYỀN CƯ DÂN CAO CẤP                       */}
       {/* =================================================================== */}
       {removeTargetMember && (
         <div 
@@ -305,10 +305,10 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
               </div>
               <div>
                 <h3 className="text-sm sm:text-base font-serif font-bold text-white">
-                  {t('XÃ¡c Nháº­n XÃ³a ThÃ nh ViÃªn', 'Confirm Remove Member')}
+                  {t('Xác Nhận Xóa Thành Viên', 'Confirm Remove Member')}
                 </h3>
                 <p className="text-[11px] text-gray-400">
-                  {t('CÄƒn há»™', 'Apartment')} {aptCode} â€¢ {t('Chá»§ há»™', 'Owner')} {ownerName}
+                  {t('Căn hộ', 'Apartment')} {aptCode} • {t('Chủ hộ', 'Owner')} {ownerName}
                 </p>
               </div>
             </div>
@@ -317,13 +317,13 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
             <div className="p-3 bg-rose-950/40 border border-rose-900/80 text-rose-200 text-xs space-y-1">
               <p>
                 {t(
-                  `Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a thÃ nh viÃªn ${removeTargetMember.fullName} khá»i danh sÃ¡ch cÄƒn há»™ ${aptCode}?`,
+                  `Bạn có chắc chắn muốn xóa thành viên ${removeTargetMember.fullName} khỏi danh sách căn hộ ${aptCode}?`,
                   `Are you sure you want to remove ${removeTargetMember.fullName} from unit ${aptCode}?`
                 )}
               </p>
               <p className="text-gray-300 text-[11px]">
                 {t(
-                  'Quyá»n ra vÃ o sáº£nh vÃ  thang mÃ¡y cá»§a ngÆ°á»i thÃ¢n sáº½ táº¡m ngá»«ng. Báº¡n cÃ³ thá»ƒ thÃªm láº¡i báº¥t cá»© lÃºc nÃ o.',
+                  'Quyền ra vào sảnh và thang máy của người thân sẽ tạm ngừng. Bạn có thể thêm lại bất cứ lúc nào.',
                   'Access privileges will be revoked. You can add this member back at any time.'
                 )}
               </p>
@@ -340,7 +340,7 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
               </div>
               <div className="space-y-0.5 min-w-0">
                 <div className="font-bold text-white">{removeTargetMember.fullName}</div>
-                <div className="text-gray-400 font-mono text-[11px]">{t('SÄT:', 'Phone:')} {removeTargetMember.phone} â€¢ {removeTargetMember.relationship}</div>
+                <div className="text-gray-400 font-mono text-[11px]">{t('SĐT:', 'Phone:')} {removeTargetMember.phone} • {removeTargetMember.relationship}</div>
               </div>
             </div>
 
@@ -351,7 +351,7 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
                 onClick={() => setRemoveTargetMember(null)}
                 className="px-3.5 py-1.5 bg-transparent hover:bg-[#161D26] text-gray-400 hover:text-white rounded-none transition-colors cursor-pointer text-xs"
               >
-                {t('Giá»¯ Láº¡i', 'Cancel')}
+                {t('Giữ Lại', 'Cancel')}
               </button>
 
               <button
@@ -362,11 +362,11 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
               >
                 {isRemoving ? (
                   <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> {t('Äang XÃ³a...', 'Removing...')}
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> {t('Đang Xóa...', 'Removing...')}
                   </>
                 ) : (
                   <>
-                    <Trash2 className="w-3.5 h-3.5" /> {t('XÃ³a ThÃ nh ViÃªn', 'Remove Member')}
+                    <Trash2 className="w-3.5 h-3.5" /> {t('Xóa Thành Viên', 'Remove Member')}
                   </>
                 )}
               </button>
@@ -376,7 +376,7 @@ export default function FamilyFaceReviewModal({ ctx }: { ctx: any }) {
       )}
 
       {/* =================================================================== */}
-      {/* MODAL: LIGHTBOX PHÃ“NG TO MáºªU áº¢NH FACEID GÃ“C QUÃ‰T                   */}
+      {/* MODAL: LIGHTBOX PHÓNG TO MẪU ẢNH FACEID GÓC QUÉT                   */}
       {/* =================================================================== */}
       {selectedAnglePreview && (
         <div 

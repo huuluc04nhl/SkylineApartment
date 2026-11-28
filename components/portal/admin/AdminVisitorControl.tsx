@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAsyncResource } from '@/lib/hooks/useAsyncResource';
+import { useQrScanner } from '@/lib/hooks/useQrScanner';
 import { ResourceSkeleton, ResourceError, ResourceEmpty } from '@/components/ui/ResourceState';
 import { toast } from '@/components/ui/Toast';
 import jsQR from 'jsqr';
@@ -46,11 +47,12 @@ import {
   Printer,
   X
 } from 'lucide-react';
-import type {
-  VerificationScanResult,
-  GeneratedVisitorPass,
-  GateAuditLog,
-  VisitorPassStatus,
+import {
+  shouldProcessQrScan,
+  type VerificationScanResult,
+  type GeneratedVisitorPass,
+  type GateAuditLog,
+  type VisitorPassStatus,
 } from '@/lib/visitorStore';
 import { getApartmentUnits } from '@/lib/apartmentStore';
 import { cleanPhoneNumber, isValidPhoneNumber, getPhoneValidationError } from '@/lib/validationUtils';
@@ -93,10 +95,6 @@ export default function AdminVisitorControl() {
 
   // Input & Scanner modes: CAMERA | UPLOAD | PIN_SEARCH
   const [scanMode, setScanMode] = useState<'CAMERA' | 'UPLOAD' | 'PIN_SEARCH'>('CAMERA');
-
-  // Camera State
-  const [isCameraActive, setIsCameraActive] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
 
   // Manual PIN / PassID search
@@ -154,11 +152,24 @@ export default function AdminVisitorControl() {
     }
   }, []);
 
-  // Refs
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const animationFrameId = useRef<number | null>(null);
+  const handleVerifyRef = useRef<(rawInput: string) => Promise<void>>(async () => {});
+
+  const {
+    videoRef,
+    canvasRef,
+    animationFrameId,
+    isCameraActive,
+    setIsCameraActive,
+    cameraError,
+    setCameraError,
+    scanVideoFrame,
+    startCamera,
+    stopCamera,
+  } = useQrScanner({
+    onScan: (data) => handleVerifyRef.current(data),
+    cooldownMs: 4000,
+  });
 
   const visitorResource = useAsyncResource<{ passes: GeneratedVisitorPass[]; gateLogs: GateAuditLog[] }>(async () => {
     const res = await fetch('/api/visitor', { credentials: 'include' });
@@ -189,18 +200,82 @@ export default function AdminVisitorControl() {
     setTimeout(() => setActionFeedback(null), 3800);
   };
 
-  // Perform QR / PIN Verification via API
+  // Perform Unified QR / PIN Verification via API (Thẻ cư dân, Vé tiện ích, Thẻ khách thăm)
   const handleVerify = async (rawInput: string) => {
-    if (!rawInput.trim() || isScanning) return;
+    const clean = rawInput.trim();
+    if (!clean || isScanning) return;
     setIsScanning(true);
     try {
+      // 1. Thẻ cư dân động (HMAC token)
+      if (clean.startsWith('SKYLINE_CARD_V1.')) {
+        const res = await fetch('/api/access/verify-card', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ token: clean }),
+        });
+        const json = await res.json().catch(() => ({}));
+        const valid = res.ok && json?.success;
+        setScanResult({
+          scanResult: valid ? 'VALID' : json?.status === 'EXPIRED' ? 'EXPIRED' : 'INVALID',
+          title: valid ? 'THẺ CƯ DÂN HỢP LỆ' : 'THẺ CƯ DÂN KHÔNG HỢP LỆ',
+          message: json?.message || (valid ? 'Xác thực thẻ cư dân thành công.' : 'Thẻ cư dân không hợp lệ.'),
+          canEnter: valid,
+          scannedAt: new Date().toISOString(),
+          checkpoint: selectedCheckpoint,
+          host: json?.resident
+            ? {
+                apartmentCode: json.resident.apartmentCode || 'BQL',
+                hostName: json.resident.fullName,
+                hostPhone: '',
+                towerName: json.resident.role,
+              }
+            : undefined,
+        });
+        setActiveTab('SCANNER');
+        showFeedback(json?.message || (valid ? 'Thẻ cư dân hợp lệ' : 'Thẻ cư dân không hợp lệ'), valid ? 'success' : 'error');
+        return;
+      }
+
+      // 2. Vé tiện ích (FAC-... / SKY-FAC-...)
+      if (/^(SKY-)?FAC-/i.test(clean)) {
+        const res = await fetch('/api/facilities/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ ticketCode: clean }),
+        });
+        const json = await res.json().catch(() => ({}));
+        const valid = res.ok && json?.success;
+        setScanResult({
+          scanResult: valid ? 'VALID' : json?.status === 'EXPIRED' ? 'EXPIRED' : 'INVALID',
+          title: valid ? 'VÉ TIỆN ÍCH HỢP LỆ' : 'VÉ TIỆN ÍCH KHÔNG HỢP LỆ',
+          message: json?.message || (valid ? 'Xác thực vé tiện ích thành công.' : 'Vé tiện ích không hợp lệ.'),
+          canEnter: valid,
+          scannedAt: new Date().toISOString(),
+          checkpoint: selectedCheckpoint,
+          host: json?.booking
+            ? {
+                apartmentCode: json.booking.aptCode,
+                hostName: json.booking.bookerName,
+                hostPhone: '',
+                towerName: json.booking.facilityName,
+              }
+            : undefined,
+        });
+        setActiveTab('SCANNER');
+        showFeedback(json?.message || (valid ? 'Vé tiện ích hợp lệ' : 'Vé tiện ích không hợp lệ'), valid ? 'success' : 'error');
+        return;
+      }
+
+      // 3. Thẻ khách thăm (/api/visitor)
       const res = await fetch('/api/visitor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
           action: 'VERIFY',
-          qrCode: rawInput.trim(),
+          qrCode: clean,
           checkpoint: selectedCheckpoint,
         }),
       });
@@ -227,6 +302,7 @@ export default function AdminVisitorControl() {
       setIsScanning(false);
     }
   };
+  handleVerifyRef.current = handleVerify;
 
   // Check-in Action via API
   const handleCheckIn = async (passId: string) => {
@@ -376,74 +452,11 @@ export default function AdminVisitorControl() {
     });
   };
 
-  // Camera video frame scanner loop
-  const scanVideoFrame = () => {
-    if (!videoRef.current || !canvasRef.current || !isCameraActive) return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-    if (video.readyState === video.HAVE_ENOUGH_DATA && ctx) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert',
-      });
-
-      if (code && code.data && !isScanning) {
-        handleVerify(code.data);
-      }
-    }
-
-    animationFrameId.current = requestAnimationFrame(scanVideoFrame);
-  };
-
-  // Start Camera
-  const startCamera = async () => {
-    setCameraError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-        },
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setIsCameraActive(true);
-        animationFrameId.current = requestAnimationFrame(scanVideoFrame);
-      }
-    } catch (err: any) {
-      console.error('Camera access error:', err);
-      setCameraError('Không thể mở camera. Vui lòng kiểm tra quyền truy cập camera trên trình duyệt hoặc sử dụng chế độ tải ảnh QR / tra cứu mã PIN.');
-      setIsCameraActive(false);
-    }
-  };
-
-  // Stop Camera
-  const stopCamera = () => {
-    if (animationFrameId.current) {
-      cancelAnimationFrame(animationFrameId.current);
-    }
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
-    setIsCameraActive(false);
-  };
-
   useEffect(() => {
-    return () => {
+    if (activeTab !== 'SCANNER') {
       stopCamera();
-    };
-  }, []);
+    }
+  }, [activeTab, stopCamera]);
 
   // Handle Upload Image
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

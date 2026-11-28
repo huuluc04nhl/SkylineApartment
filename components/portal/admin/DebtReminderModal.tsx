@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState, useEffect } from 'react';
@@ -64,7 +64,7 @@ export default function DebtReminderModal({
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'KhÃ´ng thá»ƒ táº¡o báº£n nhÃ¡p');
+        throw new Error(data.message || 'Không thể tạo bản nháp');
       }
 
       setSubject(data.data.draft_subject);
@@ -73,7 +73,7 @@ export default function DebtReminderModal({
       setLevelName(data.data.level_name);
       setOverdueDays(data.data.overdue_days);
     } catch (err: any) {
-      setStatusMsg({ type: 'error', text: err.message || 'Lá»—i káº¿t ná»‘i' });
+      setStatusMsg({ type: 'error', text: err.message || 'Lỗi kết nối' });
     } finally {
       setIsLoading(false);
     }
@@ -99,17 +99,17 @@ export default function DebtReminderModal({
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'KhÃ´ng thá»ƒ gá»­i thÃ´ng bÃ¡o');
+        throw new Error(data.message || 'Không thể gửi thông báo');
       }
 
-      setStatusMsg({ type: 'success', text: data.message || 'ÄÃ£ gá»­i thÃ´ng bÃ¡o thÃ nh cÃ´ng!' });
+      setStatusMsg({ type: 'success', text: data.message || 'Đã gửi thông báo thành công!' });
       if (onSentSuccess) onSentSuccess(activeBillId);
 
       setTimeout(() => {
         onClose();
       }, 1500);
     } catch (err: any) {
-      setStatusMsg({ type: 'error', text: err.message || 'Lá»—i khi gá»­i thÃ´ng bÃ¡o' });
+      setStatusMsg({ type: 'error', text: err.message || 'Lỗi khi gửi thông báo' });
     } finally {
       setIsSending(false);
     }
@@ -127,10 +127,10 @@ export default function DebtReminderModal({
             </div>
             <div>
               <h2 className="text-base font-bold text-white font-serif uppercase tracking-wide">
-                Soáº¡n Nháº¯c Ná»£ CÃ¡ NhÃ¢n HÃ³a (3 Má»©c Giá»ng Äiá»‡u)
+                Soạn Nhắc Nợ Cá Nhân Hóa (3 Mức Giọng Điệu)
               </h2>
               <p className="text-xs text-gray-400">
-                AI cÃ¡ nhÃ¢n hÃ³a theo sá»‘ ngÃ y quÃ¡ háº¡n â€¢ BQL báº¯t buá»™c duyá»‡t & sá»­a trÆ°á»›c khi gá»­i (KHÃ”NG tá»± Ä‘á»™ng gá»­i)
+                AI cá nhân hóa theo số ngày quá hạn • BQL bắt buộc duyệt & sửa trước khi gửi (KHÔNG tự động gửi)
               </p>
             </div>
           </div>
@@ -142,11 +142,11 @@ export default function DebtReminderModal({
           </button>
         </div>
 
-        {/* Form selection: CÄƒn há»™ ná»£ & Cáº¥p Ä‘á»™ giá»ng Ä‘iá»‡u */}
+        {/* Form selection: Căn hộ nợ & Cấp độ giọng điệu */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-[11px] font-mono uppercase text-gray-400 mb-1">
-              Chá»n CÄƒn Há»™ CÃ²n Ná»£
+              Chọn Căn Hộ Còn Nợ
             </label>
             <select
               value={activeBillId}
@@ -158,7 +158,7 @@ export default function DebtReminderModal({
             >
               {unpaidBills.map((b) => (
                 <option key={b.id} value={b.id}>
-                  {b.apt_code} - {b.owner_name} ({b.total_amount.toLocaleString('vi-VN')} Ä‘)
+                  {b.apt_code} - {b.owner_name} ({b.total_amount.toLocaleString('vi-VN')} đ)
                 </option>
               ))}
             </select>
@@ -166,7 +166,7 @@ export default function DebtReminderModal({
 
           <div>
             <label className="block text-[11px] font-mono uppercase text-gray-400 mb-1">
-              Cáº¥p Äá»™ Giá»ng Äiá»‡u (Tone)
+              Cấp Độ Giọng Điệu (Tone)
             </label>
             <div className="grid grid-cols-3 gap-1.5">
               <button
@@ -178,7 +178,7 @@ export default function DebtReminderModal({
                     : 'bg-[#161D26] border-[#2A3441] text-gray-400 hover:text-white'
                 }`}
               >
-                Má»©c 1 (1-5 ngÃ y)
+                Mức 1 (1-5 ngày)
               </button>
               <button
                 type="button"
@@ -189,7 +189,7 @@ export default function DebtReminderModal({
                     : 'bg-[#161D26] border-[#2A3441] text-gray-400 hover:text-white'
                 }`}
               >
-                Má»©c 2 (6-15 ngÃ y)
+                Mức 2 (6-15 ngày)
               </button>
               <button
                 type="button"
@@ -200,7 +200,7 @@ export default function DebtReminderModal({
                     : 'bg-[#161D26] border-[#2A3441] text-gray-400 hover:text-white'
                 }`}
               >
-                Má»©c 3 (&gt;15 ngÃ y)
+                Mức 3 (&gt;15 ngày)
               </button>
             </div>
           </div>
@@ -209,7 +209,7 @@ export default function DebtReminderModal({
         {/* Current Tone Badge Info */}
         <div className="flex items-center justify-between p-2.5 bg-[#141B24] border border-[#253042] text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-gray-400">Tráº¡ng ThÃ¡i:</span>
+            <span className="font-mono text-gray-400">Trạng Thái:</span>
             <span className={`px-2 py-0.5 text-[10px] font-mono font-bold ${
               detectedLevel === 'LEVEL_3_STRICT'
                 ? 'bg-red-950 text-red-400 border border-red-500'
@@ -221,7 +221,7 @@ export default function DebtReminderModal({
             </span>
           </div>
           <div className="text-gray-400 font-mono text-[11px]">
-            QuÃ¡ háº¡n thá»±c táº¿: <strong className="text-white">{overdueDays} ngÃ y</strong>
+            Quá hạn thực tế: <strong className="text-white">{overdueDays} ngày</strong>
           </div>
         </div>
 
@@ -229,13 +229,13 @@ export default function DebtReminderModal({
         {isLoading ? (
           <div className="p-10 text-center bg-[#131922] border border-[#222B35]">
             <RefreshCw className="w-6 h-6 animate-spin text-[#C5A880] mx-auto mb-2" />
-            <p className="text-xs text-gray-400">AI Ä‘ang phÃ¢n tÃ­ch há»£p Ä‘á»“ng & soáº¡n tháº£o ná»™i dung vÄƒn báº£n...</p>
+            <p className="text-xs text-gray-400">AI đang phân tích hợp đồng & soạn thảo nội dung văn bản...</p>
           </div>
         ) : (
           <div className="space-y-3">
             <div>
               <label className="block text-[11px] font-mono uppercase text-gray-400 mb-1">
-                TiÃªu Äá» ThÃ´ng BÃ¡o:
+                Tiêu Đề Thông Báo:
               </label>
               <input
                 type="text"
@@ -247,7 +247,7 @@ export default function DebtReminderModal({
 
             <div>
               <label className="block text-[11px] font-mono uppercase text-gray-400 mb-1">
-                Ná»™i Dung Soáº¡n Tháº£o (Ban Quáº£n LÃ½ cÃ³ thá»ƒ sá»­a trá»±c tiáº¿p):
+                Nội Dung Soạn Thảo (Ban Quản Lý có thể sửa trực tiếp):
               </label>
               <textarea
                 rows={9}
@@ -263,7 +263,7 @@ export default function DebtReminderModal({
         <div className="p-3 bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-2.5">
           <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div className="text-[11px] leading-relaxed text-amber-300/90">
-            <strong>NguyÃªn táº¯c báº£o vá»‡ cÆ° dÃ¢n:</strong> Há»‡ thá»‘ng AI khÃ´ng bao giá» tá»± Ä‘á»™ng gá»­i thÃ´ng bÃ¡o nháº¯c ná»£. Ban Quáº£n LÃ½ cÃ³ toÃ n quyá»n duyá»‡t, tinh chá»‰nh tá»« ngá»¯ vÃ  chá»‹u trÃ¡ch nhiá»‡m trÆ°á»›c khi nháº¥n nÃºt phÃ¡t hÃ nh vÄƒn báº£n.
+            <strong>Nguyên tắc bảo vệ cư dân:</strong> Hệ thống AI không bao giờ tự động gửi thông báo nhắc nợ. Ban Quản Lý có toàn quyền duyệt, tinh chỉnh từ ngữ và chịu trách nhiệm trước khi nhấn nút phát hành văn bản.
           </div>
         </div>
 
@@ -286,7 +286,7 @@ export default function DebtReminderModal({
             onClick={onClose}
             className="px-4 py-2 border border-[#2D3A4D] hover:border-gray-500 text-gray-300 text-xs font-semibold"
           >
-            Há»§y Bá»
+            Hủy Bỏ
           </button>
 
           <button
@@ -298,12 +298,12 @@ export default function DebtReminderModal({
             {isSending ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Äang Gá»­i...</span>
+                <span>Đang Gửi...</span>
               </>
             ) : (
               <>
                 <Send className="w-4 h-4" />
-                <span>Duyá»‡t & Gá»­i Nháº¯c Ná»£</span>
+                <span>Duyệt & Gửi Nhắc Nợ</span>
               </>
             )}
           </button>

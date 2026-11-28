@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import QrImage from '@/components/ui/QrImage';
 import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
 import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { 
@@ -37,6 +38,28 @@ export default function ResidentSmartCard({
   const [isFlipped, setIsFlipped] = useState(false);
   const [isTapping, setIsTapping] = useState(false);
   const [tapMessage, setTapMessage] = useState<string | null>(null);
+  const [cardToken, setCardToken] = useState<string>('');
+
+  const fetchCardToken = useCallback(async () => {
+    try {
+      const res = await fetch('/api/user/card-token', { credentials: 'include' });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (typeof json?.token === 'string' && json.token) {
+        setCardToken(json.token);
+      }
+    } catch {
+      // Giữ trạng thái fallback nếu mất kết nối tạm thời
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchCardToken();
+    const timer = setInterval(() => {
+      void fetchCardToken();
+    }, 45_000);
+    return () => clearInterval(timer);
+  }, [fetchCardToken]);
 
   const isOwner = currentUser.role === 'OWNER';
   const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
@@ -168,8 +191,9 @@ export default function ResidentSmartCard({
               <div className="flex items-center justify-between gap-3 sm:gap-4 pt-1">
                 {/* Dynamic QR Code for Turnstiles */}
                 <div className="p-1.5 bg-white border border-gray-400 flex-shrink-0">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=SKYLINE_CARD_${aptCode}_${currentUser.role}_${cardNumber}`}
+                  <QrImage
+                    value={cardToken}
+                    size={90}
                     alt="Card QR"
                     className="w-16 h-16 sm:w-18 sm:h-18 object-contain"
                   />

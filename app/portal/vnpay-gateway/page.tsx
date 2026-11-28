@@ -38,6 +38,24 @@ function VnpayGatewayInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const [activeChannel, setActiveChannel] = useState<'ATM' | 'QR' | 'INTL'>('ATM');
+  const [selectedBank, setSelectedBank] = useState<string>('NCB');
+  const [cardNumber, setCardNumber] = useState<string>('9704 1985 2619 1432');
+  const [cardHolder, setCardHolder] = useState<string>('NGUYEN VAN A');
+  const [issueDate, setIssueDate] = useState<string>('07/15');
+  const [otpInput, setOtpInput] = useState<string>('');
+  const [isOtpStep, setIsOtpStep] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [timeLeft, setTimeLeft] = useState<number>(900); // 15 phut
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   if (process.env.NODE_ENV === 'production') {
     return (
       <div className="min-h-screen bg-[#0A0E14] text-gray-200 flex items-center justify-center p-6">
@@ -92,23 +110,6 @@ function VnpayGatewayInner() {
     );
   }
 
-  const [activeChannel, setActiveChannel] = useState<'ATM' | 'QR' | 'INTL'>('ATM');
-  const [selectedBank, setSelectedBank] = useState<string>('NCB');
-  const [cardNumber, setCardNumber] = useState<string>('9704 1985 2619 1432');
-  const [cardHolder, setCardHolder] = useState<string>('NGUYEN VAN A');
-  const [issueDate, setIssueDate] = useState<string>('07/15');
-  const [otpInput, setOtpInput] = useState<string>('');
-  const [isOtpStep, setIsOtpStep] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [timeLeft, setTimeLeft] = useState<number>(900); // 15 phut
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -146,8 +147,6 @@ function VnpayGatewayInner() {
       setIsSubmitting(false);
     }
   };
-
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const handleCancelPayment = () => {
     setShowCancelConfirm(true);

@@ -21,7 +21,7 @@ import type { GeneratedVisitorPass, GateAuditLog } from '@/lib/visitorStore';
 import { getBills } from '@/lib/billingStore';
 import { useLanguage } from '@/lib/languageContext';
 
-// Cáº¥u trÃºc dá»¯ liá»‡u phÃ¢n táº§ng an ninh vÃ  cáº£nh bÃ¡o BMS
+// Cấu trúc dữ liệu phân tầng an ninh và cảnh báo BMS
 interface FloorThreatData {
   floor: 'B2' | 'B1' | 'L1' | '20' | '30' | '34';
   floorName: string;
@@ -44,133 +44,133 @@ interface FloorThreatData {
 const FLOOR_THREAT_DATABASE: Record<string, FloorThreatData> = {
   B2: {
     floor: 'B2',
-    floorName: 'Háº§m B2 â€¢ Tráº¡m BÆ¡m & Bá»ƒ PCCC',
+    floorName: 'Hầm B2 • Trạm Bơm & Bể PCCC',
     threatLevel: 'NORMAL',
     activeNodes: 22,
     threats: [
       {
         id: 'T-B2-01',
         type: 'WATER',
-        title: 'Ãp lá»±c nÆ°á»›c PCCC á»•n Ä‘á»‹nh (6.2 bar)',
-        location: 'Tráº¡m bÆ¡m Grundfos Háº§m B2',
+        title: 'Áp lực nước PCCC ổn định (6.2 bar)',
+        location: 'Trạm bơm Grundfos Hầm B2',
         severity: 'LOW',
         confidence: 0.99,
         snapshot: '/masterplan/the-tropical-masterplan.png',
         time: '00:55',
         coords: { x: 28, y: 32 },
-        actionHint: 'Ãp lá»±c 6.2 bar, bá»ƒ nÆ°á»›c Ä‘áº¡t 94% dung tÃ­ch.'
+        actionHint: 'Áp lực 6.2 bar, bể nước đạt 94% dung tích.'
       }
     ]
   },
   B1: {
     floor: 'B1',
-    floorName: 'Háº§m B1 â€¢ BÃ£i Äá»— Xe & Tráº¡m Biáº¿n Ãp',
+    floorName: 'Hầm B1 • Bãi Đỗ Xe & Trạm Biến Áp',
     threatLevel: 'WARNING',
     activeNodes: 32,
     threats: [
       {
         id: 'T-B1-01',
         type: 'FIRE',
-        title: 'Nhiá»‡t Ä‘á»™ tá»§ Ä‘iá»‡n trung tháº¿: 42Â°C',
-        location: 'Tráº¡m biáº¿n Ã¡p Háº§m B1',
+        title: 'Nhiệt độ tủ điện trung thế: 42°C',
+        location: 'Trạm biến áp Hầm B1',
         severity: 'MEDIUM',
         confidence: 0.94,
         snapshot: '/masterplan/the-tropical-masterplan.png',
         time: '00:52',
         coords: { x: 26, y: 72 },
-        actionHint: 'Tá»± Ä‘á»™ng kÃ­ch hoáº¡t quáº¡t táº£n nhiá»‡t.'
+        actionHint: 'Tự động kích hoạt quạt tản nhiệt.'
       },
       {
         id: 'T-B1-02',
         type: 'PARKING',
-        title: 'Xe Ä‘á»— cháº¯n há»ng nÆ°á»›c cá»©u há»a',
-        location: 'HÃ nh lang lá»‘i thoÃ¡t hiá»ƒm (Cá»™t B1-08)',
+        title: 'Xe đỗ chắn họng nước cứu hỏa',
+        location: 'Hành lang lối thoát hiểm (Cột B1-08)',
         severity: 'MEDIUM',
         confidence: 0.91,
         snapshot: '/masterplan/the-tropical-masterplan.png',
         time: '00:45',
         coords: { x: 74, y: 30 },
-        actionHint: 'Báº£o vá»‡ ca trá»±c Ä‘Ã£ tiáº¿p cáº­n xá»­ lÃ½.'
+        actionHint: 'Bảo vệ ca trực đã tiếp cận xử lý.'
       }
     ]
   },
   L1: {
     floor: 'L1',
-    floorName: 'Táº§ng 1 â€¢ Sáº£nh Grand Lobby & Lá»… TÃ¢n',
+    floorName: 'Tầng 1 • Sảnh Grand Lobby & Lễ Tân',
     threatLevel: 'NORMAL',
     activeNodes: 26,
     threats: [
       {
         id: 'T-L1-01',
         type: 'INTRUSION',
-        title: 'Cá»•ng FaceID lá»… tÃ¢n váº­n hÃ nh tá»‘t',
-        location: 'Sáº£nh chÃ­nh Táº§ng 1',
+        title: 'Cổng FaceID lễ tân vận hành tốt',
+        location: 'Sảnh chính Tầng 1',
         severity: 'LOW',
         confidence: 0.98,
         snapshot: '/masterplan/the-tropical-masterplan.png',
         time: '00:58',
         coords: { x: 74, y: 72 },
-        actionHint: 'Nháº­n diá»‡n má»Ÿ cá»­a tá»©c thÃ¬ < 0.2s.'
+        actionHint: 'Nhận diện mở cửa tức thì < 0.2s.'
       }
     ]
   },
   '20': {
     floor: '20',
-    floorName: 'Táº§ng 20 â€¢ Gian LÃ¡nh Náº¡n PCCC',
+    floorName: 'Tầng 20 • Gian Lánh Nạn PCCC',
     threatLevel: 'NORMAL',
     activeNodes: 18,
     threats: [
       {
         id: 'T-20-01',
         type: 'FIRE',
-        title: 'Ãp suáº¥t dÆ°Æ¡ng buá»“ng Ä‘á»‡m an toÃ n',
-        location: 'Gian lÃ¡nh náº¡n Táº§ng 20',
+        title: 'Áp suất dương buồng đệm an toàn',
+        location: 'Gian lánh nạn Tầng 20',
         severity: 'LOW',
         confidence: 0.97,
         snapshot: '/masterplan/the-tropical-masterplan.png',
         time: '00:42',
         coords: { x: 50, y: 50 },
-        actionHint: 'Há»‡ thá»‘ng liÃªn láº¡c kháº©n cáº¥p sáºµn sÃ ng 100%.'
+        actionHint: 'Hệ thống liên lạc khẩn cấp sẵn sàng 100%.'
       }
     ]
   },
   '30': {
     floor: '30',
-    floorName: 'Táº§ng 30 â€¢ HÃ nh Lang CÄƒn Há»™',
+    floorName: 'Tầng 30 • Hành Lang Căn Hộ',
     threatLevel: 'NORMAL',
     activeNodes: 20,
     threats: [
       {
         id: 'T-30-01',
         type: 'WATER',
-        title: 'Cáº£m biáº¿n rÃ² rá»‰ nÆ°á»›c bÃ¬nh thÆ°á»ng',
-        location: 'Há»™p ká»¹ thuáº­t táº§ng 30 (Khu cÄƒn CH-06)',
+        title: 'Cảm biến rò rỉ nước bình thường',
+        location: 'Hộp kỹ thuật tầng 30 (Khu căn CH-06)',
         severity: 'LOW',
         confidence: 0.96,
         snapshot: '/masterplan/the-tropical-masterplan.png',
         time: '00:50',
         coords: { x: 74, y: 30 },
-        actionHint: 'Ãp lá»±c 2.8 bar, khÃ´ng ghi nháº­n rÃ² rá»‰.'
+        actionHint: 'Áp lực 2.8 bar, không ghi nhận rò rỉ.'
       }
     ]
   },
   '34': {
     floor: '34',
-    floorName: 'Táº§ng 34 â€¢ PhÃ²ng MÃ¡y KÃ©o & MÃ¡i',
+    floorName: 'Tầng 34 • Phòng Máy Kéo & Mái',
     threatLevel: 'NORMAL',
     activeNodes: 16,
     threats: [
       {
         id: 'T-34-01',
         type: 'FIRE',
-        title: 'Quáº¡t tÄƒng Ã¡p hÃºt khÃ³i sáºµn sÃ ng',
-        location: 'Trá»¥c ká»¹ thuáº­t táº§ng mÃ¡i BS-07',
+        title: 'Quạt tăng áp hút khói sẵn sàng',
+        location: 'Trục kỹ thuật tầng mái BS-07',
         severity: 'LOW',
         confidence: 0.99,
         snapshot: '/masterplan/the-tropical-masterplan.png',
         time: '00:40',
         coords: { x: 28, y: 32 },
-        actionHint: 'Ãp suáº¥t 50 Pa, van cháº·n lá»­a má»Ÿ sáºµn sÃ ng.'
+        actionHint: 'Áp suất 50 Pa, van chặn lửa mở sẵn sàng.'
       }
     ]
   }
@@ -189,14 +189,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      setCurrentTimeStr(now.toLocaleTimeString(isEn ? 'en-US' : 'vi-VN', { hour12: false }) + ' â€¢ ' + now.toLocaleDateString(isEn ? 'en-US' : 'vi-VN'));
+      setCurrentTimeStr(now.toLocaleTimeString(isEn ? 'en-US' : 'vi-VN', { hour12: false }) + ' • ' + now.toLocaleDateString(isEn ? 'en-US' : 'vi-VN'));
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, [isEn]);
 
-  // Láº¥y dá»¯ liá»‡u tháº­t tá»« apartmentStore & visitorStore
+  // Lấy dữ liệu thật từ apartmentStore & visitorStore
   const apartments = useMemo(() => {
     try {
       return getApartmentUnits();
@@ -242,7 +242,7 @@ export default function AdminDashboard() {
   const maintPct = totalUnits > 0 ? ((maintenanceUnits / totalUnits) * 100).toFixed(1) : '0';
   const vacantPct = totalUnits > 0 ? ((vacantUnits / totalUnits) * 100).toFixed(1) : '0';
 
-  // Láº¥y dá»¯ liá»‡u tháº­t tá»« billingStore
+  // Lấy dữ liệu thật từ billingStore
   const bills = useMemo(() => {
     try {
       return getBills();
@@ -263,7 +263,7 @@ export default function AdminDashboard() {
     return totalExpectedRevenue > 0 ? ((totalPaidRevenue / totalExpectedRevenue) * 100).toFixed(1) : '100';
   }, [totalPaidRevenue, totalExpectedRevenue]);
 
-  // Láº¥y dá»¯ liá»‡u phÆ°Æ¡ng tiá»‡n xe thá»±c táº¿ tá»« apartmentStore
+  // Lấy dữ liệu phương tiện xe thực tế từ apartmentStore
   const registeredCars = useMemo(() => {
     return apartments.reduce((sum, apt) => sum + (apt.vehicles?.filter(v => v.type === 'CAR').length || 0), 0);
   }, [apartments]);
@@ -276,24 +276,24 @@ export default function AdminDashboard() {
   const activeThreat = currentFloorData.threats.find(t => t.id === selectedThreatId) || currentFloorData.threats[0];
 
   const handleDispatchSecurity = () => {
-    setDispatchStatus(isEn ? `Security team dispatched to ${currentFloorData.floorName}.` : `ÄÃ£ Ä‘iá»u Ä‘á»™ng báº£o vá»‡ tá»›i ${currentFloorData.floorName}.`);
+    setDispatchStatus(isEn ? `Security team dispatched to ${currentFloorData.floorName}.` : `Đã điều động bảo vệ tới ${currentFloorData.floorName}.`);
     setTimeout(() => setDispatchStatus(null), 3500);
   };
 
   return (
     <div className="space-y-5 animate-fadeIn select-none text-white">
       
-      {/* 1. HEADER CHá»ˆ HUY TRUNG TÃ‚M Váº¬N HÃ€NH */}
+      {/* 1. HEADER CHỈ HUY TRUNG TÂM VẬN HÀNH */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-gradient-to-r from-[#0C121B] via-[#121A26] to-[#0C121B] border border-[#222B35] shadow-lg">
         <div>
           <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[#C5A880] font-mono font-bold">
             <Radio className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-            <span>{t('TRUNG TÃ‚M Váº¬N HÃ€NH BMS', 'BMS OPERATIONS COMMAND')}</span>
+            <span>{t('TRUNG TÂM VẬN HÀNH BMS', 'BMS OPERATIONS COMMAND')}</span>
           </div>
           <h1 className="font-serif text-xl sm:text-2xl font-bold text-white mt-0.5 tracking-wide flex items-center gap-2.5">
-            <span>{t('GiÃ¡m SÃ¡t Váº­n HÃ nh', 'Operations Monitoring')}</span>
+            <span>{t('Giám Sát Vận Hành', 'Operations Monitoring')}</span>
             <span className="text-[10px] px-2 py-0.5 bg-emerald-950/80 text-emerald-300 border border-emerald-500/80 font-mono font-normal">
-              {t('TRá»°C TUYáº¾N', 'ONLINE')}
+              {t('TRỰC TUYẾN', 'ONLINE')}
             </span>
           </h1>
         </div>
@@ -301,7 +301,7 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2 font-mono text-xs">
           <div className="px-3 py-1.5 bg-[#16202D] border border-[#2B394E] text-gray-300 flex items-center gap-2">
             <Clock className="w-3.5 h-3.5 text-[#C5A880]" />
-            <span>{currentTimeStr || t('Äang cáº­p nháº­t...', 'Updating...')}</span>
+            <span>{currentTimeStr || t('Đang cập nhật...', 'Updating...')}</span>
           </div>
           <button 
             type="button"
@@ -313,96 +313,96 @@ export default function AdminDashboard() {
             }`}
           >
             <Flame className="w-3.5 h-3.5" />
-            <span>{isEmergencyActive ? t('BÃO Äá»˜NG Báº¬T', 'ALARM ACTIVE') : t('DIá»„N Táº¬P PCCC', 'FIRE DRILL')}</span>
+            <span>{isEmergencyActive ? t('BÁO ĐỘNG BẬT', 'ALARM ACTIVE') : t('DIỄN TẬP PCCC', 'FIRE DRILL')}</span>
           </button>
         </div>
       </div>
 
-      {/* 2. 4 THáºº KPI CHá»ˆ Sá» Cá»T LÃ•I */}
+      {/* 2. 4 THẺ KPI CHỈ SỐ CỐT LÕI */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        {/* KPI 1: Doanh thu thá»±c thu */}
+        {/* KPI 1: Doanh thu thực thu */}
         <div className="p-3.5 bg-[#121820] border border-[#222B35] space-y-1.5 hover:border-[#C5A880]/60 transition-all shadow">
           <div className="flex items-center justify-between text-xs text-gray-400">
-            <span className="font-semibold">{t('Doanh Thu ÄÃ£ Thu', 'Collected Revenue')}</span>
+            <span className="font-semibold">{t('Doanh Thu Đã Thu', 'Collected Revenue')}</span>
             <Receipt className="w-4 h-4 text-[#C5A880]" />
           </div>
           <div className="font-serif text-2xl text-white font-bold tracking-wide">
-            {totalPaidRevenue.toLocaleString(isEn ? 'en-US' : 'vi-VN')} <span className="text-xs font-sans text-gray-400 font-normal">{isEn ? 'VND' : 'Ä‘'}</span>
+            {totalPaidRevenue.toLocaleString(isEn ? 'en-US' : 'vi-VN')} <span className="text-xs font-sans text-gray-400 font-normal">{isEn ? 'VND' : 'đ'}</span>
           </div>
           <div className="text-[11px] text-emerald-400 flex items-center justify-between font-mono pt-1 border-t border-[#1C2533]">
-            <span>{t('ÄÃ£ thu', 'Collected')} {bills.filter(b => b.status === 'Paid').length}/{bills.length} {t('cÄƒn', 'units')}</span>
-            <span className="text-gray-400">{t('Äáº¡t', 'Rate')} {collectionRate}%</span>
+            <span>{t('Đã thu', 'Collected')} {bills.filter(b => b.status === 'Paid').length}/{bills.length} {t('căn', 'units')}</span>
+            <span className="text-gray-400">{t('Đạt', 'Rate')} {collectionRate}%</span>
           </div>
         </div>
 
-        {/* KPI 2: Tá»· lá»‡ láº¥p Ä‘áº§y */}
+        {/* KPI 2: Tỷ lệ lấp đầy */}
         <div className="p-3.5 bg-[#121820] border border-[#222B35] space-y-1.5 hover:border-[#C5A880]/60 transition-all shadow">
           <div className="flex items-center justify-between text-xs text-gray-400">
-            <span className="font-semibold">{t('Tá»· Lá»‡ Láº¥p Äáº§y', 'Occupancy Rate')}</span>
+            <span className="font-semibold">{t('Tỷ Lệ Lấp Đầy', 'Occupancy Rate')}</span>
             <Building className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="font-serif text-2xl text-white font-bold tracking-wide flex items-baseline gap-2">
             <span>{occupiedPct}%</span>
-            <span className="text-xs font-sans text-gray-400 font-normal">/ {totalUnits} {t('CÄƒn', 'Units')}</span>
+            <span className="text-xs font-sans text-gray-400 font-normal">/ {totalUnits} {t('Căn', 'Units')}</span>
           </div>
           <div className="w-full bg-[#1C2533] h-1.5 flex overflow-hidden">
-            <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${occupiedPct}%` }} title={`${t('ÄÃ£ á»Ÿ', 'Occupied')}: ${occupiedUnits}`} />
-            <div className="bg-amber-400 h-full transition-all duration-500" style={{ width: `${maintPct}%` }} title={`${t('Nghiá»‡m thu', 'Handover')}: ${maintenanceUnits}`} />
-            <div className="bg-gray-600 h-full transition-all duration-500" style={{ width: `${vacantPct}%` }} title={`${t('Trá»‘ng', 'Vacant')}: ${vacantUnits}`} />
+            <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${occupiedPct}%` }} title={`${t('Đã ở', 'Occupied')}: ${occupiedUnits}`} />
+            <div className="bg-amber-400 h-full transition-all duration-500" style={{ width: `${maintPct}%` }} title={`${t('Nghiệm thu', 'Handover')}: ${maintenanceUnits}`} />
+            <div className="bg-gray-600 h-full transition-all duration-500" style={{ width: `${vacantPct}%` }} title={`${t('Trống', 'Vacant')}: ${vacantUnits}`} />
           </div>
           <div className="text-[10.5px] text-gray-400 flex items-center justify-between font-mono pt-0.5 border-t border-[#1C2533]">
-            <span className="text-emerald-400">â— {occupiedUnits} {t('á»ž', 'Occ')}</span>
-            <span className="text-amber-400">â— {maintenanceUnits} {t('BÃ n Giao', 'Handover')}</span>
-            <span className="text-gray-400">â— {vacantUnits} {t('Trá»‘ng', 'Vacant')}</span>
+            <span className="text-emerald-400">● {occupiedUnits} {t('Ở', 'Occ')}</span>
+            <span className="text-amber-400">● {maintenanceUnits} {t('Bàn Giao', 'Handover')}</span>
+            <span className="text-gray-400">● {vacantUnits} {t('Trống', 'Vacant')}</span>
           </div>
         </div>
 
-        {/* KPI 3: KhÃ¡ch thÄƒm */}
+        {/* KPI 3: Khách thăm */}
         <div className="p-3.5 bg-[#121820] border border-[#222B35] space-y-1.5 hover:border-[#C5A880]/60 transition-all shadow">
           <div className="flex items-center justify-between text-xs text-gray-400">
-            <span className="font-semibold">{t('KhÃ¡ch ThÄƒm Chung CÆ°', 'Building Visitors')}</span>
+            <span className="font-semibold">{t('Khách Thăm Chung Cư', 'Building Visitors')}</span>
             <ShieldCheck className="w-4 h-4 text-cyan-400" />
           </div>
           <div className="font-serif text-2xl text-white font-bold tracking-wide flex items-baseline gap-2">
-            <span>{visitorPasses.length} {t('Tháº»', 'Passes')}</span>
-            <span className="text-xs font-sans text-gray-400 font-normal">â€¢ {auditLogs.length} {t('LÆ°á»£t QuÃ©t', 'Scans')}</span>
+            <span>{visitorPasses.length} {t('Thẻ', 'Passes')}</span>
+            <span className="text-xs font-sans text-gray-400 font-normal">• {auditLogs.length} {t('Lượt Quét', 'Scans')}</span>
           </div>
           <div className="text-[11px] text-cyan-400 flex items-center justify-between font-mono pt-1 border-t border-[#1C2533]">
-            <span>{t('Äang hoáº¡t Ä‘á»™ng', 'Active now')}</span>
-            <span className="text-gray-400">{t('Cá»•ng L1 & B1', 'Gate L1 & B1')}</span>
+            <span>{t('Đang hoạt động', 'Active now')}</span>
+            <span className="text-gray-400">{t('Cổng L1 & B1', 'Gate L1 & B1')}</span>
           </div>
         </div>
 
-        {/* KPI 4: PhÆ°Æ¡ng tiá»‡n */}
+        {/* KPI 4: Phương tiện */}
         <div className="p-3.5 bg-[#121820] border border-[#222B35] space-y-1.5 hover:border-[#C5A880]/60 transition-all shadow">
           <div className="flex items-center justify-between text-xs text-gray-400">
-            <span className="font-semibold">{t('PhÆ°Æ¡ng Tiá»‡n CÆ° DÃ¢n', 'Resident Vehicles')}</span>
+            <span className="font-semibold">{t('Phương Tiện Cư Dân', 'Resident Vehicles')}</span>
             <Car className="w-4 h-4 text-[#C5A880]" />
           </div>
           <div className="font-serif text-2xl text-white font-bold tracking-wide">
-            {registeredCars + registeredMotos} <span className="text-xs font-sans text-gray-400 font-normal">{t('Xe ÄÄƒng KÃ½', 'Vehicles')}</span>
+            {registeredCars + registeredMotos} <span className="text-xs font-sans text-gray-400 font-normal">{t('Xe Đăng Ký', 'Vehicles')}</span>
           </div>
           <div className="text-[11px] text-emerald-400 flex items-center justify-between font-mono pt-1 border-t border-[#1C2533]">
-            <span>â— {registeredCars} {t('Ã” tÃ´', 'Cars')}</span>
-            <span>â— {registeredMotos} {t('Xe mÃ¡y', 'Bikes')}</span>
+            <span>● {registeredCars} {t('Ô tô', 'Cars')}</span>
+            <span>● {registeredMotos} {t('Xe máy', 'Bikes')}</span>
           </div>
         </div>
       </div>
 
-      {/* 3. KHU Vá»°C CHÃNH: Báº¢N Äá»’ & CAMERA AI */}
+      {/* 3. KHU VỰC CHÍNH: BẢN ĐỒ & CAMERA AI */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         
-        {/* Cá»˜T TRÃI (7 COLS): SÆ  Äá»’ Máº¶T Báº°NG Táº¦NG */}
+        {/* CỘT TRÁI (7 COLS): SƠ ĐỒ MẶT BẰNG TẦNG */}
         <div className="lg:col-span-7 bg-[#0E141E] border border-[#222B35] p-4 space-y-3 shadow-xl">
           
-          {/* Thanh chuyá»ƒn táº§ng nhanh */}
+          {/* Thanh chuyển tầng nhanh */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-[#222B35] pb-2.5">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-white">
               <Radio className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-              <span>{t('SÆ  Äá»’ PHÃ‚N Táº¦NG BMS', 'BMS FLOOR MAP')}</span>
+              <span>{t('SƠ ĐỒ PHÂN TẦNG BMS', 'BMS FLOOR MAP')}</span>
             </div>
 
-            {/* Switch táº§ng: B2, B1, L1, 20, 30, 34 */}
+            {/* Switch tầng: B2, B1, L1, 20, 30, 34 */}
             <div className="flex items-center gap-1 bg-[#16202D] border border-[#2B394E] p-1 text-xs font-mono overflow-x-auto no-scrollbar whitespace-nowrap">
               {(['B2', 'B1', 'L1', '20', '30', '34'] as const).map((fl) => {
                 const fData = FLOOR_THREAT_DATABASE[fl];
@@ -426,7 +426,7 @@ export default function AdminDashboard() {
                         : 'bg-transparent text-gray-300 border-transparent hover:bg-[#1E2C3D] hover:text-white'
                     }`}
                   >
-                    <span>{fl === 'L1' ? t('Táº§ng 1', 'Floor 1') : fl === 'B1' ? t('Háº§m B1', 'Basement B1') : fl === 'B2' ? t('Háº§m B2', 'Basement B2') : fl === '34' ? t('Táº§ng 34', 'Floor 34') : `${t('Táº§ng', 'Floor')} ${fl}`}</span>
+                    <span>{fl === 'L1' ? t('Tầng 1', 'Floor 1') : fl === 'B1' ? t('Hầm B1', 'Basement B1') : fl === 'B2' ? t('Hầm B2', 'Basement B2') : fl === '34' ? t('Tầng 34', 'Floor 34') : `${t('Tầng', 'Floor')} ${fl}`}</span>
                     {isCrit && (
                       <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
                     )}
@@ -439,17 +439,17 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Banner táº§ng Ä‘ang chá»n */}
+          {/* Banner tầng đang chọn */}
           <div className="flex items-center justify-between px-3 py-1.5 bg-[#141C28] border border-[#243244] text-xs font-mono">
             <div className="flex items-center gap-2 truncate">
               <Building className="w-3.5 h-3.5 text-[#C5A880] shrink-0" />
               <span className="text-white font-bold truncate">
-                {selectedFloor === 'B2' ? (isEn ? 'Basement B2 â€¢ Pump Station & Fire Tank' : currentFloorData.floorName)
-                  : selectedFloor === 'B1' ? (isEn ? 'Basement B1 â€¢ Parking & Transformer' : currentFloorData.floorName)
-                  : selectedFloor === 'L1' ? (isEn ? 'Floor 1 â€¢ Grand Lobby & Reception' : currentFloorData.floorName)
-                  : selectedFloor === '20' ? (isEn ? 'Floor 20 â€¢ Fire Refuge Area' : currentFloorData.floorName)
-                  : selectedFloor === '30' ? (isEn ? 'Floor 30 â€¢ Residential Corridor' : currentFloorData.floorName)
-                  : (isEn ? 'Floor 34 â€¢ Elevator Motor & Rooftop' : currentFloorData.floorName)}
+                {selectedFloor === 'B2' ? (isEn ? 'Basement B2 • Pump Station & Fire Tank' : currentFloorData.floorName)
+                  : selectedFloor === 'B1' ? (isEn ? 'Basement B1 • Parking & Transformer' : currentFloorData.floorName)
+                  : selectedFloor === 'L1' ? (isEn ? 'Floor 1 • Grand Lobby & Reception' : currentFloorData.floorName)
+                  : selectedFloor === '20' ? (isEn ? 'Floor 20 • Fire Refuge Area' : currentFloorData.floorName)
+                  : selectedFloor === '30' ? (isEn ? 'Floor 30 • Residential Corridor' : currentFloorData.floorName)
+                  : (isEn ? 'Floor 34 • Elevator Motor & Rooftop' : currentFloorData.floorName)}
               </span>
             </div>
             <span className={`px-2 py-0.5 text-[9px] font-bold shrink-0 border ${
@@ -459,11 +459,11 @@ export default function AdminDashboard() {
                 ? 'bg-amber-950 text-amber-300 border-amber-500'
                 : 'bg-emerald-950 text-emerald-300 border-emerald-500'
             }`}>
-              {currentFloorData.threatLevel === 'CRITICAL' ? t('NGUY HIá»‚M', 'CRITICAL') : currentFloorData.threatLevel === 'WARNING' ? t('Cáº¢NH BÃO', 'WARNING') : t('BÃŒNH THÆ¯á»œNG', 'NORMAL')}
+              {currentFloorData.threatLevel === 'CRITICAL' ? t('NGUY HIỂM', 'CRITICAL') : currentFloorData.threatLevel === 'WARNING' ? t('CẢNH BÁO', 'WARNING') : t('BÌNH THƯỜNG', 'NORMAL')}
             </span>
           </div>
 
-          {/* SÆ  Äá»’ Báº¢N Äá»’ Máº¶T Báº°NG */}
+          {/* SƠ ĐỒ BẢN ĐỒ MẶT BẰNG */}
           <div className="relative h-[250px] bg-[#070A0F] border border-[#222B35] flex items-center justify-center overflow-hidden">
             <div 
               className="absolute inset-0 opacity-15 pointer-events-none"
@@ -474,37 +474,37 @@ export default function AdminDashboard() {
             />
 
             <div className="relative z-10 w-[96%] h-[92%] border border-gray-800/80 bg-[#0A0F17]/95 p-2 flex flex-col justify-between shadow-xl">
-              {/* Header sÆ¡ Ä‘á»“ sÃ n */}
+              {/* Header sơ đồ sàn */}
               <div className="flex justify-between items-center text-[9px] font-mono text-gray-400 border-b border-gray-800/60 pb-1">
-                <span className="text-[#C5A880] font-bold">{t('Máº¶T Báº°NG SÃ€N', 'FLOOR BLUEPRINT')} â€¢ {selectedFloor}</span>
-                <span className="text-gray-400">{currentFloorData.activeNodes} {t('Cáº£m Biáº¿n Hoáº¡t Äá»™ng', 'Active Sensors')}</span>
+                <span className="text-[#C5A880] font-bold">{t('MẶT BẰNG SÀN', 'FLOOR BLUEPRINT')} • {selectedFloor}</span>
+                <span className="text-gray-400">{currentFloorData.activeNodes} {t('Cảm Biến Hoạt Động', 'Active Sensors')}</span>
               </div>
 
-              {/* CÃ¡c phÃ¢n khu kiáº¿n trÃºc */}
+              {/* Các phân khu kiến trúc */}
               <div className="relative flex-1 my-1">
                 <div className="absolute top-1 left-2 px-1.5 py-0.5 border border-dashed border-emerald-700/50 bg-[#0E1722]/40 text-[8px] font-mono text-emerald-400/80 pointer-events-none">
-                  {t('THANG Bá»˜ 01', 'STAIRWELL 01')}
+                  {t('THANG BỘ 01', 'STAIRWELL 01')}
                 </div>
 
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 py-1.5 border border-[#2B3B4F] bg-[#111924]/80 text-center shadow pointer-events-none">
                   <div className="font-bold text-gray-200 text-[8.5px] tracking-wide flex items-center justify-center gap-1">
-                    <Sliders className="w-2.5 h-2.5 text-[#C5A880]" /> {t('LÃ•I THANG MÃY', 'ELEVATOR CORE')}
+                    <Sliders className="w-2.5 h-2.5 text-[#C5A880]" /> {t('LÕI THANG MÁY', 'ELEVATOR CORE')}
                   </div>
                 </div>
 
                 <div className="absolute bottom-1 right-2 px-1.5 py-0.5 border border-dashed border-emerald-700/50 bg-[#0E1722]/40 text-[8px] font-mono text-emerald-400/80 pointer-events-none">
-                  {t('THANG Bá»˜ 02', 'STAIRWELL 02')}
+                  {t('THANG BỘ 02', 'STAIRWELL 02')}
                 </div>
 
                 <div className="absolute top-1 right-2 px-1.5 py-0.5 border border-dashed border-gray-700/50 bg-[#0E1722]/40 text-[8px] font-mono text-gray-400/80 pointer-events-none">
-                  {t('Há»ŒNG PCCC', 'FIRE HYDRANT')}
+                  {t('HỌNG PCCC', 'FIRE HYDRANT')}
                 </div>
 
                 <div className="absolute bottom-1 left-2 px-1.5 py-0.5 border border-dashed border-gray-700/50 bg-[#0E1722]/40 text-[8px] font-mono text-gray-400/80 pointer-events-none">
-                  {t('TRá»¤C M&E', 'MEP SHAFT')}
+                  {t('TRỤC M&E', 'MEP SHAFT')}
                 </div>
 
-                {/* CÃ¡c Ä‘iá»ƒm radar cáº£nh bÃ¡o */}
+                {/* Các điểm radar cảnh báo */}
                 {currentFloorData.threats.map((threat, idx) => {
                   const isSelected = activeThreat?.id === threat.id;
                   const isHigh = threat.severity === 'HIGH';
@@ -551,15 +551,15 @@ export default function AdminDashboard() {
 
               {/* Status Footer Legend Bar */}
               <div className="flex justify-between items-center text-[8px] text-gray-400 font-mono pt-1 border-t border-gray-800/60">
-                <span className="text-emerald-400">â— {t('Há»‡ thá»‘ng an toÃ n', 'Safe System')}</span>
-                <span className="text-amber-400">â— {t('Äiá»ƒm cáº£nh bÃ¡o T1/T2', 'Warning Point T1/T2')}</span>
-                <span className="text-cyan-400">â— {t('BMS káº¿t ná»‘i trá»±c tiáº¿p', 'Direct BMS connection')}</span>
+                <span className="text-emerald-400">● {t('Hệ thống an toàn', 'Safe System')}</span>
+                <span className="text-amber-400">● {t('Điểm cảnh báo T1/T2', 'Warning Point T1/T2')}</span>
+                <span className="text-cyan-400">● {t('BMS kết nối trực tiếp', 'Direct BMS connection')}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Cá»˜T PHáº¢I (5 COLS): CAMERA & THÃ”NG BÃO Xá»¬ LÃ */}
+        {/* CỘT PHẢI (5 COLS): CAMERA & THÔNG BÁO XỬ LÝ */}
         <div className="lg:col-span-5 bg-[#0E141E] border border-[#222B35] p-4 space-y-3 flex flex-col justify-between shadow-xl">
           <div className="space-y-2.5">
             {/* Header Camera */}
@@ -582,25 +582,25 @@ export default function AdminDashboard() {
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-1.5 left-1.5 bg-black/80 px-1.5 py-0.5 text-[8.5px] font-mono text-red-400 border border-red-800">
-                CAM-{selectedFloor} â€¢ {activeThreat.id}
+                CAM-{selectedFloor} • {activeThreat.id}
               </div>
               <div className="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[8.5px] font-mono text-gray-300">
                 {activeThreat.time}
               </div>
             </div>
 
-            {/* ThÃ´ng sá»‘ chi tiáº¿t cáº£nh bÃ¡o - Tinh gá»n, rÃµ rÃ ng */}
+            {/* Thông số chi tiết cảnh báo - Tinh gọn, rõ ràng */}
             <div className="space-y-1.5 text-xs text-gray-300 bg-[#131A26] p-2.5 border border-[#222B35] font-mono">
               <div className="flex justify-between items-start gap-2">
-                <span className="text-gray-400 shrink-0">{t('Sá»± viá»‡c:', 'Event:')}</span>
+                <span className="text-gray-400 shrink-0">{t('Sự việc:', 'Event:')}</span>
                 <strong className="text-red-400 font-semibold text-right truncate">{t(activeThreat.title)}</strong>
               </div>
               <div className="flex justify-between items-start gap-2">
-                <span className="text-gray-400 shrink-0">{t('Vá»‹ trÃ­:', 'Location:')}</span>
+                <span className="text-gray-400 shrink-0">{t('Vị trí:', 'Location:')}</span>
                 <span className="text-white text-right truncate">{t(activeThreat.location)}</span>
               </div>
               <div className="flex justify-between items-start gap-2">
-                <span className="text-gray-400 shrink-0">{t('Xá»­ lÃ½:', 'Response:')}</span>
+                <span className="text-gray-400 shrink-0">{t('Xử lý:', 'Response:')}</span>
                 <span className="text-emerald-300 text-right truncate">{t(activeThreat.actionHint)}</span>
               </div>
             </div>
@@ -625,7 +625,7 @@ export default function AdminDashboard() {
               }`}
             >
               <Flame className="w-3.5 h-3.5" />
-              <span>{isEmergencyActive ? t('Táº¯t BÃ¡o Äá»™ng', 'Dismiss Alarm') : t('BÃ¡o Äá»™ng Kháº©n Cáº¥p', 'Emergency Alarm')}</span>
+              <span>{isEmergencyActive ? t('Tắt Báo Động', 'Dismiss Alarm') : t('Báo Động Khẩn Cấp', 'Emergency Alarm')}</span>
             </button>
 
             <button 
@@ -634,48 +634,48 @@ export default function AdminDashboard() {
               className="w-full py-2 bg-[#1C2533] hover:bg-[#C5A880] text-gray-200 hover:text-[#0D1117] border border-gray-700 hover:border-[#C5A880] text-xs uppercase tracking-wider font-bold transition-colors flex items-center justify-center gap-2"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{t('Äiá»u Äá»™ng Báº£o Vá»‡', 'Dispatch Security')}</span>
+              <span>{t('Điều Động Bảo Vệ', 'Dispatch Security')}</span>
             </button>
           </div>
         </div>
 
       </div>
 
-      {/* 4. NHáº¬T KÃ Sá»° KIá»†N Váº¬N HÃ€NH THá»œI GIAN THá»°C */}
+      {/* 4. NHẬT KÝ SỰ KIỆN VẬN HÀNH THỜI GIAN THỰC */}
       <div className="p-3 bg-[#0E141E] border border-[#222B35] space-y-2 shadow font-mono">
         <div className="flex items-center justify-between text-xs text-gray-400 border-b border-[#1E293B] pb-1.5">
           <div className="flex items-center gap-2 font-bold text-white text-xs">
             <Activity className="w-3.5 h-3.5 text-[#C5A880]" />
-            <span>{t('NHáº¬T KÃ Sá»° KIá»†N Váº¬N HÃ€NH', 'OPERATIONS EVENT LOG')}</span>
+            <span>{t('NHẬT KÝ SỰ KIỆN VẬN HÀNH', 'OPERATIONS EVENT LOG')}</span>
           </div>
           <span className="text-[10px] text-emerald-400 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            {t('Trá»±c tiáº¿p', 'Live')}
+            {t('Trực tiếp', 'Live')}
           </span>
         </div>
 
-        {/* 3 DÃ²ng sá»± kiá»‡n ngáº¯n gá»n, Ä‘Ãºng nghiá»‡p vá»¥ */}
+        {/* 3 Dòng sự kiện ngắn gọn, đúng nghiệp vụ */}
         <div className="space-y-1">
           {[
             {
               time: '01:00',
               type: 'FaceID T1',
-              text: t('XÃ¡c thá»±c thÃ nh cÃ´ng - CÆ° dÃ¢n CÄƒn CH-06 má»Ÿ thang mÃ¡y', 'Verification success - Resident Unit CH-06 calls elevator'),
-              badge: t('BÃŒNH THÆ¯á»œNG', 'NORMAL'),
+              text: t('Xác thực thành công - Cư dân Căn CH-06 mở thang máy', 'Verification success - Resident Unit CH-06 calls elevator'),
+              badge: t('BÌNH THƯỜNG', 'NORMAL'),
               badgeColor: 'text-emerald-400 border-emerald-800/80 bg-emerald-950/40'
             },
             {
               time: '00:52',
               type: 'Barrier B1',
-              text: t('Má»Ÿ tá»± Ä‘á»™ng - Xe Ã´ tÃ´ 51K-889.99 vÃ o háº§m', 'Auto gate open - Car 51K-889.99 enters basement'),
-              badge: t('Há»¢P Lá»†', 'VALID'),
+              text: t('Mở tự động - Xe ô tô 51K-889.99 vào hầm', 'Auto gate open - Car 51K-889.99 enters basement'),
+              badge: t('HỢP LỆ', 'VALID'),
               badgeColor: 'text-cyan-400 border-cyan-800/80 bg-cyan-950/40'
             },
             {
               time: '00:45',
-              type: 'Tráº¡m BÆ¡m B2',
-              text: t('Ãp suáº¥t duy trÃ¬ á»•n Ä‘á»‹nh 6.2 bar (Bá»ƒ 94%)', 'Pressure maintained stably at 6.2 bar (Tank 94%)'),
-              badge: t('CHUáº¨N', 'OPTIMAL'),
+              type: 'Trạm Bơm B2',
+              text: t('Áp suất duy trì ổn định 6.2 bar (Bể 94%)', 'Pressure maintained stably at 6.2 bar (Tank 94%)'),
+              badge: t('CHUẨN', 'OPTIMAL'),
               badgeColor: 'text-blue-400 border-blue-800/80 bg-blue-950/40'
             }
           ].map((item, idx) => (

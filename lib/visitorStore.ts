@@ -140,11 +140,28 @@ export function extractPassLookupKey(rawInput: string): string {
     }
   }
 
-  const passMatch = clean.match(/SKY-PASS-[A-Za-z0-9-]+/i);
+  const passMatch = clean.match(/SKY-PASS-[A-Z2-7]{8}\b|SKY-PASS-[A-Za-z0-9-]+/i);
   if (passMatch) return passMatch[0].toUpperCase();
 
   const pinMatch = clean.match(/MÃ PIN LỄ TÂN:\s*(\d{6})/i) || clean.match(/\b(\d{6})\b/);
   if (pinMatch) return pinMatch[1];
 
   return clean;
+}
+
+/**
+ * Chống quét lặp cùng một mã QR trong khoảng thời gian cooldownMs (mặc định 4000ms).
+ */
+export function shouldProcessQrScan(
+  lastScan: { data: string; at: number } | null,
+  qrData: string,
+  now: number,
+  cooldownMs = 4000
+): boolean {
+  const clean = (qrData || '').trim();
+  if (!clean) return false;
+  if (lastScan && lastScan.data === clean && now - lastScan.at < cooldownMs) {
+    return false;
+  }
+  return true;
 }

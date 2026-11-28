@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { getInitialsAvatar } from '@/lib/avatarHelper';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -95,10 +95,10 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                 </div>
                 <div>
                   <h3 className="text-base font-serif font-bold text-white flex items-center gap-2">
-                    ThÃ´ng Tin Tháº» & KhuÃ´n Máº·t NgÆ°á»i ThÃ¢n
+                    Thông Tin Thẻ & Khuôn Mặt Người Thân
                   </h3>
                   <p className="text-xs text-gray-400">
-                    CÄƒn {aptCode} â€¢ Chá»§ há»™ {ownerName}
+                    Căn {aptCode} • Chủ hộ {ownerName}
                   </p>
                 </div>
               </div>
@@ -109,7 +109,7 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                   onClick={() => setIsMemberOcrModalOpen(true)}
                   className="px-3 py-1.5 bg-gradient-to-r from-[#C5A880] to-[#E2C799] hover:brightness-110 text-[#0D1117] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow rounded-none active:scale-95"
                 >
-                  <Scan className="w-3.5 h-3.5 text-[#0D1117]" /> Táº£i áº¢nh CCCD
+                  <Scan className="w-3.5 h-3.5 text-[#0D1117]" /> Tải Ảnh CCCD
                 </button>
                 <button
                   type="button"
@@ -124,7 +124,7 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
             {/* Legal Representation Guarantee Box */}
             <div className="p-2.5 bg-[#121820] border border-[#C5A880]/50 rounded-none text-xs text-gray-300 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-[#C5A880] flex-shrink-0" />
-              <span>{t('Chá»§ há»™', 'Owner')} <strong className="text-white">{ownerName}</strong> {t('báº£o lÃ£nh thÃ´ng tin cho', 'guarantees information for')} <strong className="text-white">{ekycFullName || ekycTargetMember.fullName}</strong> {t('gá»­i BQL duyá»‡t FaceID.', 'to submit for BQL FaceID approval.')}</span>
+              <span>{t('Chủ hộ', 'Owner')} <strong className="text-white">{ownerName}</strong> {t('bảo lãnh thông tin cho', 'guarantees information for')} <strong className="text-white">{ekycFullName || ekycTargetMember.fullName}</strong> {t('gửi BQL duyệt FaceID.', 'to submit for BQL FaceID approval.')}</span>
             </div>
 
             {/* Error Message */}
@@ -138,50 +138,50 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
             {/* Form */}
             <form onSubmit={handleSubmitMemberEkyc} className="space-y-4 text-xs">
               
-              {/* SECTION 1: THÃ”NG TIN PHÃP LÃ NHÃ‚N THÃ‚N */}
+              {/* SECTION 1: THÔNG TIN PHÁP LÝ NHÂN THÂN */}
               <div className="space-y-2.5 p-3.5 bg-[#121820] border border-[#222B35] rounded-none">
                 <div className="flex items-center justify-between border-b border-[#222B35] pb-2">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-[#C5A880] flex items-center gap-2">
-                    <User className="w-4 h-4" /> 1. ThÃ´ng Tin NgÆ°á»i ThÃ¢n
+                    <User className="w-4 h-4" /> 1. Thông Tin Người Thân
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-gray-300 font-semibold block mb-1">
-                      Há» vÃ  TÃªn (Theo CCCD): *
+                      Họ và Tên (Theo CCCD): *
                     </label>
                     <input
                       type="text"
                       required
                       value={ekycFullName}
                       onChange={(e) => setEkycFullName(e.target.value)}
-                      placeholder={isEn ? 'Enter full name as on ID card' : 'Nháº­p há» vÃ  tÃªn theo CCCD'}
+                      placeholder={isEn ? 'Enter full name as on ID card' : 'Nhập họ và tên theo CCCD'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white rounded-none focus:border-[#C5A880] outline-none font-medium"
                     />
                   </div>
 
                   <div>
                     <label className="text-gray-300 font-semibold block mb-1">
-                      {t('Má»‘i Quan Há»‡ Vá»›i Chá»§ Há»™:', 'Relationship to Owner:')} *
+                      {t('Mối Quan Hệ Với Chủ Hộ:', 'Relationship to Owner:')} *
                     </label>
                     <select
                       value={ekycRelationship}
                       onChange={(e) => setEkycRelationship(e.target.value)}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white rounded-none focus:border-[#C5A880] outline-none"
                     >
-                      <option value="{t('Vá»£ / Chá»“ng', 'Spouse')}">{t('Vá»£ / Chá»“ng', 'Spouse')}</option>
-                      <option value="{t('Con CÃ¡i', 'Children')}">{t('Con CÃ¡i', 'Children')}</option>
-                      <option value="{t('Bá»‘ / Máº¹', 'Parents')}">{t('Bá»‘ / Máº¹', 'Parents')}</option>
-                      <option value="{t('Anh / Chá»‹ / Em', 'Siblings')}">{t('Anh / Chá»‹ / Em', 'Siblings')}</option>
-                      <option value="{t('NgÆ°á»i ThÃ¢n CÃ¹ng CÄƒn Há»™', 'Co-resident Relatives')}">{t('NgÆ°á»i ThÃ¢n CÃ¹ng CÄƒn Há»™', 'Co-resident Relatives')}</option>
-                      <option value="{t('NgÆ°á»i NhÃ  / ThÃ nh ViÃªn KhÃ¡c', 'Other Family Members')}">{t('NgÆ°á»i NhÃ  / ThÃ nh ViÃªn KhÃ¡c', 'Other Family Members')}</option>
+                      <option value="{t('Vợ / Chồng', 'Spouse')}">{t('Vợ / Chồng', 'Spouse')}</option>
+                      <option value="{t('Con Cái', 'Children')}">{t('Con Cái', 'Children')}</option>
+                      <option value="{t('Bố / Mẹ', 'Parents')}">{t('Bố / Mẹ', 'Parents')}</option>
+                      <option value="{t('Anh / Chị / Em', 'Siblings')}">{t('Anh / Chị / Em', 'Siblings')}</option>
+                      <option value="{t('Người Thân Cùng Căn Hộ', 'Co-resident Relatives')}">{t('Người Thân Cùng Căn Hộ', 'Co-resident Relatives')}</option>
+                      <option value="{t('Người Nhà / Thành Viên Khác', 'Other Family Members')}">{t('Người Nhà / Thành Viên Khác', 'Other Family Members')}</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="text-gray-300 font-semibold block mb-1">
-                      Sá»‘ Äiá»‡n Thoáº¡i LiÃªn Há»‡ (10 sá»‘): *
+                      Số Điện Thoại Liên Hệ (10 số): *
                     </label>
                     <input
                       type="tel"
@@ -189,7 +189,7 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                       maxLength={10}
                       value={ekycPhone}
                       onChange={(e) => setEkycPhone(cleanPhoneNumber(e.target.value))}
-                      placeholder={isEn ? 'Enter 10-digit phone number' : 'Nháº­p 10 sá»‘ Ä‘iá»‡n thoáº¡i'}
+                      placeholder={isEn ? 'Enter 10-digit phone number' : 'Nhập 10 số điện thoại'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white font-mono rounded-none focus:border-[#C5A880] outline-none"
                     />
                     {ekycPhone && !isValidPhoneNumber(ekycPhone) && (
@@ -201,7 +201,7 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
 
                   <div>
                     <label className="text-gray-300 font-semibold block mb-1">
-                      Sá»‘ CCCD / Äá»‹nh Danh (12 sá»‘): *
+                      Số CCCD / Định Danh (12 số): *
                     </label>
                     <input
                       type="text"
@@ -209,7 +209,7 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                       maxLength={12}
                       value={ekycIdCard}
                       onChange={(e) => setEkycIdCard(cleanCccdNumber(e.target.value))}
-                      placeholder={isEn ? 'Enter 12-digit ID card number' : 'Nháº­p 12 sá»‘ CCCD'}
+                      placeholder={isEn ? 'Enter 12-digit ID card number' : 'Nhập 12 số CCCD'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-[#C5A880] font-mono font-bold rounded-none focus:border-[#C5A880] outline-none"
                     />
                     {ekycIdCard && !isValidCccdNumber(ekycIdCard) && (
@@ -221,7 +221,7 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
 
                   <div>
                     <label className="text-gray-300 font-semibold block mb-1">
-                      NgÃ y Sinh:
+                      Ngày Sinh:
                     </label>
                     <input
                       type="date"
@@ -233,20 +233,20 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
 
                   <div>
                     <label className="text-gray-300 font-semibold block mb-1">
-                      NÆ¡i ThÆ°á»ng TrÃº / QuÃª QuÃ¡n:
+                      Nơi Thường Trú / Quê Quán:
                     </label>
                     <input
                       type="text"
                       value={ekycPob}
                       onChange={(e) => setEkycPob(e.target.value)}
-                      placeholder={isEn ? 'Enter hometown / permanent address' : 'Nháº­p quÃª quÃ¡n / nÆ¡i thÆ°á»ng trÃº'}
+                      placeholder={isEn ? 'Enter hometown / permanent address' : 'Nhập quê quán / nơi thường trú'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-white rounded-none focus:border-[#C5A880] outline-none"
                     />
                   </div>
 
                   <div>
                     <label className="text-gray-300 font-semibold block mb-1">
-                      NgÃ y Cáº¥p CCCD:
+                      Ngày Cấp CCCD:
                     </label>
                     <input
                       type="date"
@@ -258,37 +258,37 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
 
                   <div>
                     <label className="text-gray-300 font-semibold block mb-1">
-                      Biá»ƒn Sá»‘ Xe ÄÄƒng KÃ½ (Náº¿u cÃ³):
+                      Biển Số Xe Đăng Ký (Nếu có):
                     </label>
                     <input
                       type="text"
                       value={ekycLicensePlate}
                       onChange={(e) => setEkycLicensePlate(e.target.value)}
-                      placeholder={isEn ? 'Enter license plate (if any)' : 'Nháº­p biá»ƒn sá»‘ xe (náº¿u cÃ³)'}
+                      placeholder={isEn ? 'Enter license plate (if any)' : 'Nhập biển số xe (nếu có)'}
                       className="w-full bg-[#161B22] border border-[#2D3748] p-2.5 text-cyan-300 font-mono rounded-none focus:border-[#C5A880] outline-none"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* SECTION 2: áº¢NH Äáº I DIá»†N Há»’ SÆ  & CCCD 2 Máº¶T */}
+              {/* SECTION 2: ẢNH ĐẠI DIỆN HỒ SƠ & CCCD 2 MẶT */}
               <div className="space-y-4 p-4 bg-[#121820] border border-[#222B35] rounded-none">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-[#C5A880] flex items-center justify-between border-b border-[#222B35] pb-2.5">
                   <span className="flex items-center gap-2">
-                    <User className="w-4 h-4" /> 2. {t('áº¢nh Äáº¡i Diá»‡n (Avatar)', 'Profile Avatar')} & CCCD 2 Máº·t Gá»­i BQL
+                    <User className="w-4 h-4" /> 2. {t('Ảnh Đại Diện (Avatar)', 'Profile Avatar')} & CCCD 2 Mặt Gửi BQL
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Photo 1: áº¢nh Äáº¡i Diá»‡n Há»“ SÆ¡ */}
+                  {/* Photo 1: Ảnh Đại Diện Hồ Sơ */}
                   <div className="p-3 bg-[#161B22] border border-[#2D3748] rounded-none space-y-2.5 flex flex-col justify-between">
                     <div>
                       <div className="font-bold text-white flex items-center justify-between">
-                        <span>{t('áº¢nh Äáº¡i Diá»‡n (Avatar)', 'Profile Avatar')}</span>
-                        <span className="text-[10px] text-[#C5A880]">{t('Há»“ sÆ¡ cÃ¡ nhÃ¢n', 'Personal Profile')}</span>
+                        <span>{t('Ảnh Đại Diện (Avatar)', 'Profile Avatar')}</span>
+                        <span className="text-[10px] text-[#C5A880]">{t('Hồ sơ cá nhân', 'Personal Profile')}</span>
                       </div>
                       <p className="text-[10.5px] text-gray-400 mt-0.5">
-                        áº¢nh chÃ¢n dung hiá»ƒn thá»‹ trang cÃ¡ nhÃ¢n. Má»Ÿ cá»­a dÃ¹ng tÃ­nh nÄƒng QuÃ©t FaceID 4 máº«u Ä‘á»™c láº­p.
+                        Ảnh chân dung hiển thị trang cá nhân. Mở cửa dùng tính năng Quét FaceID 4 mẫu độc lập.
                       </p>
                     </div>
 
@@ -312,11 +312,11 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                           />
                           <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/75 backdrop-blur rounded-none text-[9.5px] font-mono text-[#C5A880] border border-[#C5A880]/30">
-                            áº¢NH Äáº I DIá»†N â€¢ AVATAR
+                            ẢNH ĐẠI DIỆN • AVATAR
                           </div>
                           {ekycAvatarUrl && !ekycAvatarUrl.includes('default.png') && (
                             <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-emerald-950/90 text-emerald-300 border border-emerald-500 text-[9px] font-mono font-bold rounded-none">
-                              âœ“ ÄÃ£ CÃ³ Avatar
+                              ✓ Đã Có Avatar
                             </div>
                           )}
                         </>
@@ -331,14 +331,14 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                             onClick={captureCamera}
                             className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-none flex items-center justify-center gap-1 cursor-pointer"
                           >
-                            <Camera className="w-3.5 h-3.5" /> Chá»¥p Ngay
+                            <Camera className="w-3.5 h-3.5" /> Chụp Ngay
                           </button>
                           <button
                             type="button"
                             onClick={stopCamera}
                             className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-none cursor-pointer"
                           >
-                            Há»§y
+                            Hủy
                           </button>
                         </div>
                       ) : (
@@ -356,7 +356,7 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                               onClick={() => fileInputAvatarRef.current?.click()}
                               className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold rounded-none flex items-center justify-center gap-1 cursor-pointer"
                             >
-                              <Upload className="w-3.5 h-3.5" /> Chá»n Tá»‡p
+                              <Upload className="w-3.5 h-3.5" /> Chọn Tệp
                             </button>
                             <input
                               ref={fileInputAvatarRef}
@@ -371,15 +371,15 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                     </div>
                   </div>
 
-                  {/* Photo 2: {t('CCCD Máº·t TrÆ°á»›c', 'National ID Front')} */}
+                  {/* Photo 2: {t('CCCD Mặt Trước', 'National ID Front')} */}
                   <div className="p-3 bg-[#161D26] border border-[#2D3748] rounded-none space-y-2.5 flex flex-col justify-between">
                     <div>
                       <div className="font-bold text-white flex items-center justify-between">
-                        <span>{t('CCCD Máº·t TrÆ°á»›c', 'National ID Front')}</span>
-                        <span className="text-[10px] text-cyan-400">{t('Máº·t cÃ³ áº£nh', 'Photo side')}</span>
+                        <span>{t('CCCD Mặt Trước', 'National ID Front')}</span>
+                        <span className="text-[10px] text-cyan-400">{t('Mặt có ảnh', 'Photo side')}</span>
                       </div>
                       <p className="text-[10.5px] text-gray-400 mt-0.5">
-                        Chá»¥p Ä‘á»§ 4 gÃ³c tháº», khÃ´ng lÃ³a sÃ¡ng hoáº·c máº¥t gÃ³c.
+                        Chụp đủ 4 góc thẻ, không lóa sáng hoặc mất góc.
                       </p>
                     </div>
 
@@ -387,22 +387,22 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                       {ekycFrontImage ? (
                         <img
                           src={ekycFrontImage}
-                          alt="{t('CCCD Máº·t TrÆ°á»›c', 'National ID Front')}"
+                          alt="{t('CCCD Mặt Trước', 'National ID Front')}"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />
                       ) : (
                         <div className="flex flex-col items-center justify-center text-center p-3 text-gray-500 space-y-1">
                           <CreditCard className="w-7 h-7 text-cyan-500/60" />
-                          <span className="text-[11px] text-gray-400 font-medium">{t('ChÆ°a cÃ³ áº£nh máº·t trÆ°á»›c tháº» CCCD', 'No ID front photo yet')}</span>
-                          <span className="text-[9.5px] text-gray-600">{t('Báº¥m "Táº£i LÃªn Máº·t TrÆ°á»›c" bÃªn dÆ°á»›i', 'Click "Upload Front Photo" below')}</span>
+                          <span className="text-[11px] text-gray-400 font-medium">{t('Chưa có ảnh mặt trước thẻ CCCD', 'No ID front photo yet')}</span>
+                          <span className="text-[9.5px] text-gray-600">{t('Bấm "Tải Lên Mặt Trước" bên dưới', 'Click "Upload Front Photo" below')}</span>
                         </div>
                       )}
                       <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/75 backdrop-blur rounded-none text-[9.5px] font-mono text-cyan-300 border border-cyan-500/30">
-                        Vá»Š TRÃ 1 â€¢ Máº¶T TRÆ¯á»šC
+                        VỊ TRÍ 1 • MẶT TRƯỚC
                       </div>
                       {ekycFrontImage && (
                         <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-emerald-950/90 text-emerald-300 border border-emerald-500 text-[9px] font-mono font-bold rounded-none">
-                          âœ“ ÄÃ£ Tá»± Äá»™ng Äiá»n
+                          ✓ Đã Tự Động Điền
                         </div>
                       )}
                     </div>
@@ -413,7 +413,7 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                         onClick={() => fileInputFrontRef.current?.click()}
                         className="w-full py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold rounded-none flex items-center justify-center gap-1 cursor-pointer"
                       >
-                        <Upload className="w-3.5 h-3.5" /> Táº£i LÃªn Máº·t TrÆ°á»›c
+                        <Upload className="w-3.5 h-3.5" /> Tải Lên Mặt Trước
                       </button>
                       <input
                         ref={fileInputFrontRef}
@@ -425,15 +425,15 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                     </div>
                   </div>
 
-                  {/* Photo 3: {t('CCCD Máº·t Sau', 'National ID Back')} */}
+                  {/* Photo 3: {t('CCCD Mặt Sau', 'National ID Back')} */}
                   <div className="p-3 bg-[#161D26] border border-[#2D3748] rounded-none space-y-2.5 flex flex-col justify-between">
                     <div>
                       <div className="font-bold text-white flex items-center justify-between">
-                        <span>{t('CCCD Máº·t Sau', 'National ID Back')}</span>
-                        <span className="text-[10px] text-purple-400">{t('Chip & VÃ¢n tay', 'Chip & Fingerprint side')}</span>
+                        <span>{t('CCCD Mặt Sau', 'National ID Back')}</span>
+                        <span className="text-[10px] text-purple-400">{t('Chip & Vân tay', 'Chip & Fingerprint side')}</span>
                       </div>
                       <p className="text-[10.5px] text-gray-400 mt-0.5">
-                        Chá»¥p rÃµ chip Ä‘iá»‡n tá»­, mÃ£ QR vÃ  ngÃ y cáº¥p.
+                        Chụp rõ chip điện tử, mã QR và ngày cấp.
                       </p>
                     </div>
 
@@ -441,22 +441,22 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                       {ekycBackImage ? (
                         <img
                           src={ekycBackImage}
-                          alt="{t('CCCD Máº·t Sau', 'National ID Back')}"
+                          alt="{t('CCCD Mặt Sau', 'National ID Back')}"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />
                       ) : (
                         <div className="flex flex-col items-center justify-center text-center p-3 text-gray-500 space-y-1">
                           <CreditCard className="w-7 h-7 text-purple-500/60" />
-                          <span className="text-[11px] text-gray-400 font-medium">{t('ChÆ°a cÃ³ áº£nh máº·t sau tháº» CCCD (Chip)', 'No ID back photo (Chip) yet')}</span>
-                          <span className="text-[9.5px] text-gray-600">{t('Báº¥m "Táº£i LÃªn Máº·t Sau" bÃªn dÆ°á»›i', 'Click "Upload Back Photo" below')}</span>
+                          <span className="text-[11px] text-gray-400 font-medium">{t('Chưa có ảnh mặt sau thẻ CCCD (Chip)', 'No ID back photo (Chip) yet')}</span>
+                          <span className="text-[9.5px] text-gray-600">{t('Bấm "Tải Lên Mặt Sau" bên dưới', 'Click "Upload Back Photo" below')}</span>
                         </div>
                       )}
                       <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/75 backdrop-blur rounded-none text-[9.5px] font-mono text-purple-300 border border-purple-500/30">
-                        Vá»Š TRÃ 2 â€¢ Máº¶T SAU
+                        VỊ TRÍ 2 • MẶT SAU
                       </div>
                       {ekycBackImage && (
                         <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-emerald-950/90 text-emerald-300 border border-emerald-500 text-[9px] font-mono font-bold rounded-none">
-                          âœ“ ÄÃ£ Tá»± Äá»™ng Äiá»n
+                          ✓ Đã Tự Động Điền
                         </div>
                       )}
                     </div>
@@ -467,7 +467,7 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                         onClick={() => fileInputBackRef.current?.click()}
                         className="w-full py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold rounded-none flex items-center justify-center gap-1 cursor-pointer"
                       >
-                        <Upload className="w-3.5 h-3.5" /> Táº£i LÃªn Máº·t Sau
+                        <Upload className="w-3.5 h-3.5" /> Tải Lên Mặt Sau
                       </button>
                       <input
                         ref={fileInputBackRef}
@@ -484,7 +484,7 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
               {/* Submit Buttons */}
               <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-[#222B35]">
                 <div className="text-[11px] text-gray-400">
-                  Há»“ sÆ¡ sáº½ Ä‘Æ°á»£c chuyá»ƒn tá»›i Ban Quáº£n LÃ½ Ä‘á»ƒ xÃ¡c nháº­n ngay láº­p tá»©c.
+                  Hồ sơ sẽ được chuyển tới Ban Quản Lý để xác nhận ngay lập tức.
                 </div>
 
                 <button
@@ -494,11 +494,11 @@ export default function FamilyEkycModal({ ctx }: { ctx: any }) {
                 >
                   {isSubmittingEkyc ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin" /> Äang Gá»­i...
+                      <RefreshCw className="w-4 h-4 animate-spin" /> Đang Gửi...
                     </>
                   ) : (
                     <>
-                      <Check className="w-4 h-4" /> Gá»­i BQL Duyá»‡t Há»“ SÆ¡
+                      <Check className="w-4 h-4" /> Gửi BQL Duyệt Hồ Sơ
                     </>
                   )}
                 </button>

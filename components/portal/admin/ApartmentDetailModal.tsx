@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEscapeKey } from '@/lib/hooks/useEscapeKey';
 
 import React, { useState } from 'react';
@@ -87,22 +87,22 @@ export default function ApartmentDetailModal({
     return unit ? getApartmentMembers(unit.code) : [];
   });
 
-  // Modal thÃªm ngÆ°á»i nhÃ  tá»« BQL
+  // Modal thêm người nhà từ BQL
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [newMemName, setNewMemName] = useState('');
   const [newMemPhone, setNewMemPhone] = useState('');
   const [newMemCccd, setNewMemCccd] = useState('');
-  const [newMemRel, setNewMemRel] = useState('Vá»£ / Chá»“ng');
+  const [newMemRel, setNewMemRel] = useState('Vợ / Chồng');
   const [newMemPlate, setNewMemPlate] = useState('');
   const [newMemAutoApprove, setNewMemAutoApprove] = useState(true);
   const [addMemberError, setAddMemberError] = useState<string | null>(null);
 
-  // Modal tá»« chá»‘i / yÃªu cáº§u bá»• sung
+  // Modal từ chối / yêu cầu bổ sung
   const [rejectingMember, setRejectingMember] = useState<ApartmentMember | null>(null);
-  const [rejectReasonInput, setRejectReasonInput] = useState('áº¢nh chá»¥p CCCD bá»‹ má»/lÃ³a sÃ¡ng, Ä‘á» nghá»‹ quÃ©t láº¡i rÃµ nÃ©t');
+  const [rejectReasonInput, setRejectReasonInput] = useState('Ảnh chụp CCCD bị mờ/lóa sáng, đề nghị quét lại rõ nét');
   const [deleteMemberTarget, setDeleteMemberTarget] = useState<{ id: string; name: string } | null>(null);
 
-  // Äá»“ng bá»™ danh sÃ¡ch ngÆ°á»i nhÃ  thá»i gian thá»±c
+  // Đồng bộ danh sách người nhà thời gian thực
   const refreshMembers = () => {
     if (!unit) return;
     const currentMems = getApartmentMembers(unit.code);
@@ -135,25 +135,25 @@ export default function ApartmentDetailModal({
     setTimeout(() => setSuccessToast(null), 3500);
   };
 
-  // 1. BQL Duyá»‡t NgÆ°á»i NhÃ 
+  // 1. BQL Duyệt Người Nhà
   const handleApproveMember = (memberId: string, memberName: string) => {
     approveFamilyMemberByBql(unit.code, memberId, 'VinHomes Manager');
     refreshMembers();
     onRefresh();
-    showToast(`âœ“ ÄÃ£ phÃª duyá»‡t vÃ  kÃ­ch hoáº¡t quyá»n FaceID cho "${memberName}" thÃ nh cÃ´ng!`);
+    showToast(`✓ Đã phê duyệt và kích hoạt quyền FaceID cho "${memberName}" thành công!`);
   };
 
-  // 2. BQL YÃªu Cáº§u Chá»¥p Láº¡i / Tá»« Chá»‘i
+  // 2. BQL Yêu Cầu Chụp Lại / Từ Chối
   const handleConfirmRejectMember = () => {
     if (!rejectingMember) return;
     rejectFamilyMemberByBql(unit.code, rejectingMember.id, rejectReasonInput, 'VinHomes Manager');
-    showToast(`âœ“ ÄÃ£ gá»­i yÃªu cáº§u bá»• sung há»“ sÆ¡ tá»›i "${rejectingMember.fullName}".`);
+    showToast(`✓ Đã gửi yêu cầu bổ sung hồ sơ tới "${rejectingMember.fullName}".`);
     setRejectingMember(null);
     refreshMembers();
     onRefresh();
   };
 
-  // 3. BQL Thu há»“i quyá»n cÆ° trÃº / XÃ³a ngÆ°á»i nhÃ 
+  // 3. BQL Thu hồi quyền cư trú / Xóa người nhà
   const handleRemoveMember = (memberId: string, memberName: string) => {
     setDeleteMemberTarget({ id: memberId, name: memberName });
   };
@@ -163,15 +163,15 @@ export default function ApartmentDetailModal({
     removeFamilyMemberByBql(unit.code, deleteMemberTarget.id);
     refreshMembers();
     onRefresh();
-    showToast(`âœ“ ÄÃ£ xÃ³a thÃ nh viÃªn "${deleteMemberTarget.name}" khá»i cÄƒn há»™.`);
+    showToast(`✓ Đã xóa thành viên "${deleteMemberTarget.name}" khỏi căn hộ.`);
     setDeleteMemberTarget(null);
   };
 
-  // 4. BQL ThÃªm NgÆ°á»i NhÃ  Trá»±c Tiáº¿p
+  // 4. BQL Thêm Người Nhà Trực Tiếp
   const handleAddMemberSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMemName.trim()) {
-      setAddMemberError('Vui lÃ²ng nháº­p há» vÃ  tÃªn thÃ nh viÃªn.');
+      setAddMemberError('Vui lòng nhập họ và tên thành viên.');
       return;
     }
     const phoneErr = getPhoneValidationError(newMemPhone);
@@ -197,18 +197,18 @@ export default function ApartmentDetailModal({
       idCard: newMemCccd.trim(),
       licensePlate: newMemPlate.trim(),
       avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(newMemName.trim())}&background=1C2533&color=C5A880`,
-      faceStatus: newMemAutoApprove ? 'ÄÃ£ KÃ­ch Hoáº¡t FaceID' : 'Äang Chá» BQL PhÃª Duyá»‡t',
+      faceStatus: newMemAutoApprove ? 'Đã Kích Hoạt FaceID' : 'Đang Chờ BQL Phê Duyệt',
       addedDate: new Date().toLocaleDateString('vi-VN'),
 
-      // ThÃ´ng tin Ä‘á»“ng bá»™ chuáº©n phÃ¹ há»£p vá»›i Chá»§ Há»™ báº£o lÃ£nh:
+      // Thông tin đồng bộ chuẩn phù hợp với Chủ Hộ bảo lãnh:
       apartmentCode: unit.code,
       tower: unit.tower,
-      sponsorName: unit.owner?.name || 'Chá»§ Há»™',
+      sponsorName: unit.owner?.name || 'Chủ Hộ',
       sponsorPhone: unit.owner?.phone || '',
-      residenceType: 'ThÆ°á»ng trÃº cÃ¹ng chá»§ há»™',
-      temporaryResidenceStatus: newMemAutoApprove ? 'ÄÃ£ ÄÄƒng KÃ½ Táº¡m TrÃº' : 'Äang LÃ m Thá»§ Tá»¥c',
-      relationshipProof: 'VÄƒn báº£n báº£o lÃ£nh chá»§ há»™ tiáº¿p nháº­n táº¡i quáº§y BQL',
-      accessLevel: 'ToÃ n quyá»n (CÄƒn há»™ + Thang mÃ¡y + Tiá»‡n Ã­ch VIP)',
+      residenceType: 'Thường trú cùng chủ hộ',
+      temporaryResidenceStatus: newMemAutoApprove ? 'Đã Đăng Ký Tạm Trú' : 'Đang Làm Thủ Tục',
+      relationshipProof: 'Văn bản bảo lãnh chủ hộ tiếp nhận tại quầy BQL',
+      accessLevel: 'Toàn quyền (Căn hộ + Thang máy + Tiện ích VIP)',
       startDate: new Date().toLocaleDateString('vi-VN'),
     };
 
@@ -217,15 +217,15 @@ export default function ApartmentDetailModal({
     setNewMemName('');
     setNewMemPhone('');
     setNewMemCccd('');
-    setNewMemRel('Vá»£ / Chá»“ng');
+    setNewMemRel('Vợ / Chồng');
     setNewMemPlate('');
     setAddMemberError(null);
     refreshMembers();
     onRefresh();
     showToast(
       newMemAutoApprove 
-        ? `âœ“ ÄÃ£ thÃªm "${newMemberItem.fullName}" & cáº¥p quyá»n FaceID thÃ nh cÃ´ng!`
-        : `âœ“ ÄÃ£ tiáº¿p nháº­n há»“ sÆ¡ "${newMemberItem.fullName}" vÃ o danh sÃ¡ch chá» duyá»‡t.`
+        ? `✓ Đã thêm "${newMemberItem.fullName}" & cấp quyền FaceID thành công!`
+        : `✓ Đã tiếp nhận hồ sơ "${newMemberItem.fullName}" vào danh sách chờ duyệt.`
     );
   };
 
@@ -235,7 +235,7 @@ export default function ApartmentDetailModal({
     const newStatus = unit.billing.status === 'PAID' ? 'UNPAID' : 'PAID';
     updateApartmentBillingStatus(unit.code, newStatus);
     setIsUpdatingBill(false);
-    showToast(newStatus === 'PAID' ? 'âœ“ ÄÃ£ xÃ¡c nháº­n thanh toÃ¡n phÃ­ quáº£n lÃ½ thÃ nh cÃ´ng!' : 'âœ“ ÄÃ£ chuyá»ƒn tráº¡ng thÃ¡i hÃ³a Ä‘Æ¡n vá» ChÆ°a Thanh ToÃ¡n.');
+    showToast(newStatus === 'PAID' ? '✓ Đã xác nhận thanh toán phí quản lý thành công!' : '✓ Đã chuyển trạng thái hóa đơn về Chưa Thanh Toán.');
     onRefresh();
   };
 
@@ -243,7 +243,7 @@ export default function ApartmentDetailModal({
     const blockCodeMatch = unit.towerName?.match(/BS-\d+/)?.[0] || 'BS-07';
     evictApartmentResident(unit.code, blockCodeMatch);
     setIsConfirmingEvict(false);
-    showToast(`âœ“ ÄÃ£ thu há»“i cÄƒn há»™ ${unit.code} vá» tráº¡ng thÃ¡i CÄƒn Trá»‘ng.`);
+    showToast(`✓ Đã thu hồi căn hộ ${unit.code} về trạng thái Căn Trống.`);
     onRefresh();
   };
 
@@ -258,14 +258,14 @@ export default function ApartmentDetailModal({
           <div>
             <div className="flex items-center gap-2 text-[10.5px] uppercase tracking-widest text-[#C5A880] font-mono font-semibold">
               <Building className="w-3.5 h-3.5" />
-              <span>{t('Há»“ SÆ¡ CÄƒn Há»™ â€¢ Chung CÆ° Skyline', 'Apartment Profile â€¢ Skyline Residence')}</span>
-              <span>â€¢</span>
-              <span>{t('Táº§ng', 'Floor')} {unit.floor}</span>
+              <span>{t('Hồ Sơ Căn Hộ • Chung Cư Skyline', 'Apartment Profile • Skyline Residence')}</span>
+              <span>•</span>
+              <span>{t('Tầng', 'Floor')} {unit.floor}</span>
             </div>
             
             <div className="flex flex-wrap items-center gap-3 mt-1">
               <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide">
-                {t('CÄƒn Há»™', 'Apartment')} {unit.code}
+                {t('Căn Hộ', 'Apartment')} {unit.code}
               </h2>
               
               {/* Badges */}
@@ -285,7 +285,7 @@ export default function ApartmentDetailModal({
               </span>
 
               <span className="text-xs text-gray-400">
-                {t('Diá»‡n tÃ­ch:', 'Area:')} <strong className="text-white font-mono">{unit.area} mÂ²</strong> ({t('ThÃ´ng thá»§y', 'Net usable')})
+                {t('Diện tích:', 'Area:')} <strong className="text-white font-mono">{unit.area} m²</strong> ({t('Thông thủy', 'Net usable')})
               </span>
             </div>
           </div>
@@ -298,7 +298,7 @@ export default function ApartmentDetailModal({
                 className="px-3 py-1.5 bg-[#161B22] hover:bg-[#202936] text-gray-200 hover:text-white border border-[#2D3748] text-xs font-semibold rounded-none transition-all flex items-center gap-1.5"
               >
                 <Edit className="w-3.5 h-3.5 text-[#C5A880]" />
-                <span className="hidden sm:inline">{t('Chá»‰nh Sá»­a', 'Edit')}</span>
+                <span className="hidden sm:inline">{t('Chỉnh Sửa', 'Edit')}</span>
               </button>
             )}
 
@@ -317,11 +317,11 @@ export default function ApartmentDetailModal({
         {/* ============================================================= */}
         <div className="flex items-center gap-1 px-4 sm:px-5 bg-[#0F141C] border-b border-[#222B35] overflow-x-auto text-xs font-mono select-none">
           {[
-            { id: 'OVERVIEW_3D', label: t('1. Phá»‘i Cáº£nh & ThÃ´ng Sá»‘', '1. 3D View & Specs'), icon: Maximize2 },
-            { id: 'RESIDENT_MEMBERS', label: `${t('2. CÆ° DÃ¢n & NhÃ¢n Kháº©u', '2. Residents & Occupants')} (${unit.membersCount})`, icon: Users },
-            { id: 'VEHICLES', label: `${t('3. Xe Cá»™ & Tháº» Háº§m', '3. Vehicles & Parking Passes')} (${unit.vehicles?.length || 0})`, icon: Car },
-            { id: 'BILLING', label: t('4. PhÃ­ Quáº£n LÃ½ & HÃ³a ÄÆ¡n', '4. Management Fees & Invoices'), icon: CreditCard },
-            { id: 'MAINTENANCE', label: `${t('5. Lá»‹ch Sá»­ Ká»¹ Thuáº­t', '5. Technical & Maintenance History')} (${unit.maintenanceHistory?.length || 0})`, icon: Wrench }
+            { id: 'OVERVIEW_3D', label: t('1. Phối Cảnh & Thông Số', '1. 3D View & Specs'), icon: Maximize2 },
+            { id: 'RESIDENT_MEMBERS', label: `${t('2. Cư Dân & Nhân Khẩu', '2. Residents & Occupants')} (${unit.membersCount})`, icon: Users },
+            { id: 'VEHICLES', label: `${t('3. Xe Cộ & Thẻ Hầm', '3. Vehicles & Parking Passes')} (${unit.vehicles?.length || 0})`, icon: Car },
+            { id: 'BILLING', label: t('4. Phí Quản Lý & Hóa Đơn', '4. Management Fees & Invoices'), icon: CreditCard },
+            { id: 'MAINTENANCE', label: `${t('5. Lịch Sử Kỹ Thuật', '5. Technical & Maintenance History')} (${unit.maintenanceHistory?.length || 0})`, icon: Wrench }
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -362,19 +362,19 @@ export default function ApartmentDetailModal({
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
 
           {/* ----------------------------------------------------------- */}
-          {/* TAB 1: SÆ  Äá»’ 3D Máº¶T Báº°NG & THÃ”NG Sá» Ká»¸ THUáº¬T               */}
+          {/* TAB 1: SƠ ĐỒ 3D MẶT BẰNG & THÔNG SỐ KỸ THUẬT               */}
           {/* ----------------------------------------------------------- */}
           {activeTab === 'OVERVIEW_3D' && (
             <div className="space-y-6 animate-fadeIn">
               
-              {/* Khá»‘i nhÃºng trá»±c quan 3D Floor Plan Viewer */}
+              {/* Khối nhúng trực quan 3D Floor Plan Viewer */}
               <div className="border border-[#222B35] bg-[#05070A] overflow-hidden">
                 <div className="p-3 bg-[#121820] border-b border-[#222B35] flex items-center justify-between">
                   <span className="text-xs font-mono text-[#C5A880] font-bold flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" /> {t('Phá»‘i Cáº£nh KhÃ´ng Gian Ná»™i Tháº¥t CÄƒn Há»™', '3D Interior Perspective of Apartment')} {unit.code}
+                    <Sparkles className="w-3.5 h-3.5" /> {t('Phối Cảnh Không Gian Nội Thất Căn Hộ', '3D Interior Perspective of Apartment')} {unit.code}
                   </span>
                   <span className="text-[11px] text-gray-400">
-                    {t('Phá»‘i cáº£nh phÃ²ng khÃ¡ch, phÃ²ng ngá»§ Master, báº¿p, ban cÃ´ng', 'Perspective of living room, master bedroom, kitchen, balcony')}
+                    {t('Phối cảnh phòng khách, phòng ngủ Master, bếp, ban công', 'Perspective of living room, master bedroom, kitchen, balcony')}
                   </span>
                 </div>
                 <div className="h-[360px] sm:h-[420px] w-full relative">
@@ -387,40 +387,40 @@ export default function ApartmentDetailModal({
                 </div>
               </div>
 
-              {/* Báº£ng thÃ´ng sá»‘ chi tiáº¿t & tiÃªu chuáº©n ká»¹ thuáº­t */}
+              {/* Bảng thông số chi tiết & tiêu chuẩn kỹ thuật */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="p-3.5 bg-[#121820] border border-[#222B35]">
-                  <div className="text-[10px] text-gray-400 uppercase font-mono">{t('Diá»‡n TÃ­ch ThÃ´ng Thá»§y', 'Net Usable Area')}</div>
-                  <div className="text-xl font-bold font-mono text-white mt-0.5">{unit.area} mÂ²</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">{t('Tim tÆ°á»ng:', 'Gross area:')} {unit.wallArea} mÂ²</div>
+                  <div className="text-[10px] text-gray-400 uppercase font-mono">{t('Diện Tích Thông Thủy', 'Net Usable Area')}</div>
+                  <div className="text-xl font-bold font-mono text-white mt-0.5">{unit.area} m²</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">{t('Tim tường:', 'Gross area:')} {unit.wallArea} m²</div>
                 </div>
 
                 <div className="p-3.5 bg-[#121820] border border-[#222B35]">
-                  <div className="text-[10px] text-gray-400 uppercase font-mono">{t('Cáº¥u TrÃºc PhÃ²ng', 'Room Configuration')}</div>
-                  <div className="text-xl font-bold font-mono text-white mt-0.5">{unit.bedrooms} {t('PN', 'Beds')} â€¢ {unit.bathrooms} {t('WC', 'Baths')}</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">{t('Báº¿p má»Ÿ + Ban cÃ´ng riÃªng', 'Open kitchen + Private balcony')}</div>
+                  <div className="text-[10px] text-gray-400 uppercase font-mono">{t('Cấu Trúc Phòng', 'Room Configuration')}</div>
+                  <div className="text-xl font-bold font-mono text-white mt-0.5">{unit.bedrooms} {t('PN', 'Beds')} • {unit.bathrooms} {t('WC', 'Baths')}</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">{t('Bếp mở + Ban công riêng', 'Open kitchen + Private balcony')}</div>
                 </div>
 
                 <div className="p-3.5 bg-[#121820] border border-[#222B35]">
-                  <div className="text-[10px] text-gray-400 uppercase font-mono">{t('HÆ°á»›ng Ban CÃ´ng / Cá»­a', 'Balcony / Door Orientation')}</div>
+                  <div className="text-[10px] text-gray-400 uppercase font-mono">{t('Hướng Ban Công / Cửa', 'Balcony / Door Orientation')}</div>
                   <div className="text-xl font-bold font-mono text-[#C5A880] mt-0.5">{t(unit.direction)}</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">{t('Cá»­a chÃ­nh:', 'Main entrance:')} {t(unit.mainDoorDirection || 'TÃ¢y Báº¯c')}</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">{t('Cửa chính:', 'Main entrance:')} {t(unit.mainDoorDirection || 'Tây Bắc')}</div>
                 </div>
 
                 <div className="p-3.5 bg-[#121820] border border-[#222B35]">
-                  <div className="text-[10px] text-gray-400 uppercase font-mono">{t('Äá»‹nh GiÃ¡ Báº¥t Äá»™ng Sáº£n', 'Real Estate Valuation')}</div>
-                  <div className="text-xl font-bold font-mono text-[#C5A880] mt-0.5">{unit.priceBillion} {t('Tá»· VNÄ', 'Billion VND')}</div>
-                  <div className="text-[11px] text-emerald-400 mt-0.5">{t('PhÃ¡p lÃ½:', 'Legal:')} {t('Sá»• há»“ng lÃ¢u dÃ i', 'Long-term Pink Book Ownership')}</div>
+                  <div className="text-[10px] text-gray-400 uppercase font-mono">{t('Định Giá Bất Động Sản', 'Real Estate Valuation')}</div>
+                  <div className="text-xl font-bold font-mono text-[#C5A880] mt-0.5">{unit.priceBillion} {t('Tỷ VNĐ', 'Billion VND')}</div>
+                  <div className="text-[11px] text-emerald-400 mt-0.5">{t('Pháp lý:', 'Legal:')} {t('Sổ hồng lâu dài', 'Long-term Pink Book Ownership')}</div>
                 </div>
               </div>
 
-              {/* MÃ´ táº£ cÄƒn há»™ & ghi chÃº ká»¹ thuáº­t */}
+              {/* Mô tả căn hộ & ghi chú kỹ thuật */}
               <div className="p-4 bg-[#121820] border border-[#222B35] space-y-2">
                 <div className="text-xs uppercase tracking-wider text-gray-300 font-bold font-mono">
-                  {t('MÃ´ Táº£ Tiá»‡n Ãch BÃ n Giao', 'Handover Amenities & Specifications')}
+                  {t('Mô Tả Tiện Ích Bàn Giao', 'Handover Amenities & Specifications')}
                 </div>
                 <p className="text-xs text-gray-300 leading-relaxed">
-                  {unit.description || t('CÄƒn há»™ trang bá»‹ Smart Home Hub, khÃ³a FaceID, chuÃ´ng hÃ¬nh cáº£m á»©ng vÃ  kÃ­nh cÃ¡ch Ã¢m.', 'Apartment equipped with Smart Home Hub, FaceID door lock, video intercom, and soundproof glass.')}
+                  {unit.description || t('Căn hộ trang bị Smart Home Hub, khóa FaceID, chuông hình cảm ứng và kính cách âm.', 'Apartment equipped with Smart Home Hub, FaceID door lock, video intercom, and soundproof glass.')}
                 </p>
               </div>
 
@@ -428,24 +428,24 @@ export default function ApartmentDetailModal({
           )}
 
           {/* ----------------------------------------------------------- */}
-          {/* TAB 2: CÆ¯ DÃ‚N & NHÃ‚N KHáº¨U                                   */}
+          {/* TAB 2: CƯ DÂN & NHÂN KHẨU                                   */}
           {/* ----------------------------------------------------------- */}
           {activeTab === 'RESIDENT_MEMBERS' && (
             <div className="space-y-5 animate-fadeIn">
               
               {unit.status === 'OCCUPIED' && unit.owner ? (
                 <>
-                  {/* Tháº» thÃ´ng tin chá»§ há»™ chÃ­nh thá»©c */}
+                  {/* Thẻ thông tin chủ hộ chính thức */}
                   <div className="p-4 sm:p-5 bg-gradient-to-r from-[#161D26] to-[#121820] border border-emerald-500/50 space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
                         <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                        {t('Chá»§ Sá»Ÿ Há»¯u / Chá»§ Há»™ Äang Sinh Sá»‘ng', 'Primary Owner / Currently Living')}
+                        {t('Chủ Sở Hữu / Chủ Hộ Đang Sinh Sống', 'Primary Owner / Currently Living')}
                       </span>
                       
                       <div className="flex items-center gap-2">
                         <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase bg-emerald-950 text-emerald-300 border border-emerald-500">
-                          {t('e-KYC ÄÃ£ XÃ¡c Thá»±c âœ“', 'e-KYC Verified âœ“')}
+                          {t('e-KYC Đã Xác Thực ✓', 'e-KYC Verified ✓')}
                         </span>
                         {isAdmin && (
                           <button
@@ -453,7 +453,7 @@ export default function ApartmentDetailModal({
                             onClick={() => setIsConfirmingEvict(true)}
                             className="px-2.5 py-1 text-[11px] font-semibold bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-600 transition-colors"
                           >
-                            {t('Thu Há»“i / CÆ° DÃ¢n Chuyá»ƒn Äi', 'Revoke / Resident Relocation')}
+                            {t('Thu Hồi / Cư Dân Chuyển Đi', 'Revoke / Resident Relocation')}
                           </button>
                         )}
                       </div>
@@ -485,77 +485,77 @@ export default function ApartmentDetailModal({
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#222B35] text-xs">
                       <div>
-                        <span className="text-gray-400">{t('NgÃ y BÃ n Giao:', 'Handover Date:')}</span>{' '}
-                        <strong className="text-white font-mono">{unit.owner.handoverDate || t('ChÆ°a cáº­p nháº­t', 'Not updated')}</strong>
+                        <span className="text-gray-400">{t('Ngày Bàn Giao:', 'Handover Date:')}</span>{' '}
+                        <strong className="text-white font-mono">{unit.owner.handoverDate || t('Chưa cập nhật', 'Not updated')}</strong>
                       </div>
                       <div>
-                        <span className="text-gray-400">{t('NgÃ y Sinh:', 'Date of Birth:')}</span>{' '}
-                        <strong className="text-white">{unit.owner.dob || t('ChÆ°a cáº­p nháº­t', 'Not updated')}</strong>
+                        <span className="text-gray-400">{t('Ngày Sinh:', 'Date of Birth:')}</span>{' '}
+                        <strong className="text-white">{unit.owner.dob || t('Chưa cập nhật', 'Not updated')}</strong>
                       </div>
                       <div className="truncate">
-                        <span className="text-gray-400">{t('NÆ¡i Cáº¥p:', 'Issue Place:')}</span>{' '}
-                        <strong className="text-white">{unit.owner.pob || t('ChÆ°a cáº­p nháº­t', 'Not updated')}</strong>
+                        <span className="text-gray-400">{t('Nơi Cấp:', 'Issue Place:')}</span>{' '}
+                        <strong className="text-white">{unit.owner.pob || t('Chưa cập nhật', 'Not updated')}</strong>
                       </div>
                     </div>
                   </div>
 
-                  {/* BiÃªn Báº£n BÃ n Giao Ká»¹ Thuáº­t (Smart Handover Protocol) */}
+                  {/* Biên Bản Bàn Giao Kỹ Thuật (Smart Handover Protocol) */}
                   {(unit.handoverProtocol || unit.owner?.handoverProtocol) && (
                     <div className="p-4 bg-[#161B22] border border-[#C5A880]/60 space-y-2.5">
                       <div className="font-mono text-xs text-[#C5A880] uppercase tracking-wider flex items-center justify-between font-bold">
                         <span className="flex items-center gap-1.5">
-                          <FileCheck2 className="w-4 h-4 text-[#C5A880]" /> {t('Há»“ SÆ¡ BiÃªn Báº£n BÃ n Giao CÄƒn Há»™', 'Apartment Handover Protocol Dossier')}
+                          <FileCheck2 className="w-4 h-4 text-[#C5A880]" /> {t('Hồ Sơ Biên Bản Bàn Giao Căn Hộ', 'Apartment Handover Protocol Dossier')}
                         </span>
                         <span className="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-500 text-[10px] font-mono">
-                          {t('âœ“ ÄÃƒ NGHIá»†M THU', 'âœ“ ACCEPTED')}
+                          {t('✓ ĐÃ NGHIỆM THU', '✓ ACCEPTED')}
                         </span>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
                         <div className="p-2 bg-[#0D1117] border border-[#222B35]">
-                          <span className="text-gray-400 block text-[10px]">{t('MÃ£ BiÃªn Báº£n BQL:', 'Management Protocol Code:')}</span>
+                          <span className="text-gray-400 block text-[10px]">{t('Mã Biên Bản BQL:', 'Management Protocol Code:')}</span>
                           <strong className="text-[#C5A880]">
                             {unit.handoverProtocol?.protocolCode || unit.owner?.handoverProtocol?.protocolCode}
                           </strong>
                         </div>
                         <div className="p-2 bg-[#0D1117] border border-[#222B35]">
-                          <span className="text-gray-400 block text-[10px]">{t('CÃ¡n Bá»™ BÃ n Giao:', 'Handover Officer:')}</span>
+                          <span className="text-gray-400 block text-[10px]">{t('Cán Bộ Bàn Giao:', 'Handover Officer:')}</span>
                           <strong className="text-white">
-                            {unit.handoverProtocol?.handoverOfficer || unit.owner?.handoverProtocol?.handoverOfficer || t('BQL Chung CÆ°', 'Building Management')}
+                            {unit.handoverProtocol?.handoverOfficer || unit.owner?.handoverProtocol?.handoverOfficer || t('BQL Chung Cư', 'Building Management')}
                           </strong>
                         </div>
                         <div className="p-2 bg-[#0D1117] border border-[#222B35]">
-                          <span className="text-gray-400 block text-[10px]">{t('ChÃ¬a KhÃ³a CÆ¡ & Tháº» Tá»«:', 'Keys & RFID Cards:')}</span>
+                          <span className="text-gray-400 block text-[10px]">{t('Chìa Khóa Cơ & Thẻ Từ:', 'Keys & RFID Cards:')}</span>
                           <strong className="text-emerald-400">
-                            {unit.handoverProtocol?.keysCount ?? 3} {t('ChÃ¬a cÆ¡', 'Keys')} â€¢ {unit.handoverProtocol?.cardsCount ?? 2} {t('Tháº» tá»« RFID', 'RFID Cards')}
+                            {unit.handoverProtocol?.keysCount ?? 3} {t('Chìa cơ', 'Keys')} • {unit.handoverProtocol?.cardsCount ?? 2} {t('Thẻ từ RFID', 'RFID Cards')}
                           </strong>
                         </div>
                         <div className="p-2 bg-[#0D1117] border border-[#222B35]">
-                          <span className="text-gray-400 block text-[10px]">{t('Chá»‰ Sá»‘ BÃ n Giao Ban Äáº§u:', 'Initial Handover Meters:')}</span>
+                          <span className="text-gray-400 block text-[10px]">{t('Chỉ Số Bàn Giao Ban Đầu:', 'Initial Handover Meters:')}</span>
                           <strong className="text-amber-400">
-                            âš¡ {unit.handoverProtocol?.initialElectricMeter ?? 0} kWh â€¢ ðŸ’§ {unit.handoverProtocol?.initialWaterMeter ?? 0} mÂ³
+                            ⚡ {unit.handoverProtocol?.initialElectricMeter ?? 0} kWh • 💧 {unit.handoverProtocol?.initialWaterMeter ?? 0} m³
                           </strong>
                         </div>
                       </div>
 
                       {(unit.handoverProtocol?.notes || unit.owner?.handoverProtocol?.notes) && (
                         <div className="text-[11px] text-gray-300 p-2 bg-[#0D1117] border border-[#222B35] leading-relaxed">
-                          <span className="text-gray-400">{t('Ghi chÃº hiá»‡n tráº¡ng nghiá»‡m thu:', 'Handover inspection notes:')}</span>{' '}
+                          <span className="text-gray-400">{t('Ghi chú hiện trạng nghiệm thu:', 'Handover inspection notes:')}</span>{' '}
                           {unit.handoverProtocol?.notes || unit.owner?.handoverProtocol?.notes}
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* Há»™p xÃ¡c nháº­n thu há»“i cÄƒn há»™ */}
+                  {/* Hộp xác nhận thu hồi căn hộ */}
                   {isConfirmingEvict && (
                     <div className="p-4 bg-rose-950/90 border border-rose-500 text-rose-200 text-xs space-y-3 animate-fadeIn">
                       <div className="flex items-center gap-2 font-bold text-sm text-white">
                         <AlertTriangle className="w-4 h-4 text-rose-400" />
-                        {t('XÃ¡c Nháº­n Thu Há»“i CÄƒn Há»™', 'Confirm Revoking Apartment')} {unit.code} & {t('Chuyá»ƒn Vá» CÄƒn Trá»‘ng?', 'Reset to Vacant?')}
+                        {t('Xác Nhận Thu Hồi Căn Hộ', 'Confirm Revoking Apartment')} {unit.code} & {t('Chuyển Về Căn Trống?', 'Reset to Vacant?')}
                       </div>
                       <p className="leading-relaxed">
-                        {t('Thao tÃ¡c nÃ y sáº½ giáº£i phÃ³ng tráº¡ng thÃ¡i cÆ° trÃº cá»§a cÄƒn há»™, gá»¡ bá» thÃ´ng tin cÆ° dÃ¢n hiá»‡n táº¡i vÃ  chuyá»ƒn mÃ£ cÄƒn sang tráº¡ng thÃ¡i CÄ‚N Há»˜ TRá»NG sáºµn sÃ ng bÃ n giao cho chá»§ má»›i.', 'This action will release the residency status, detach the current resident info and set the unit to VACANT ready for handover to a new owner.')}
+                        {t('Thao tác này sẽ giải phóng trạng thái cư trú của căn hộ, gỡ bỏ thông tin cư dân hiện tại và chuyển mã căn sang trạng thái CĂN HỘ TRỐNG sẵn sàng bàn giao cho chủ mới.', 'This action will release the residency status, detach the current resident info and set the unit to VACANT ready for handover to a new owner.')}
                       </p>
                       <div className="flex items-center gap-2 pt-1">
                         <button
@@ -563,33 +563,33 @@ export default function ApartmentDetailModal({
                           onClick={handleEvict}
                           className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold uppercase text-[11px] transition-colors"
                         >
-                          {t('XÃ¡c Nháº­n Thu Há»“i CÄƒn Há»™', 'Confirm Revoking Apartment')}
+                          {t('Xác Nhận Thu Hồi Căn Hộ', 'Confirm Revoking Apartment')}
                         </button>
                         <button
                           type="button"
                           onClick={() => setIsConfirmingEvict(false)}
                           className="px-3 py-1.5 bg-black/50 hover:bg-black text-gray-300 hover:text-white border border-gray-600 text-[11px] transition-colors"
                         >
-                          {t('Há»§y Bá»', 'Cancel')}
+                          {t('Hủy Bỏ', 'Cancel')}
                         </button>
                       </div>
                     </div>
                   )}
 
-                  {/* Danh sÃ¡ch thÃ nh viÃªn gia Ä‘Ã¬nh (nhÃ¢n kháº©u) */}
+                  {/* Danh sách thành viên gia đình (nhân khẩu) */}
                   <div className="space-y-3.5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-[#222B35]">
                       <div>
                         <span className="text-xs font-mono font-bold uppercase tracking-wider text-gray-200 flex items-center gap-1.5">
                           <Users className="w-4 h-4 text-cyan-400" />
-                          {t('NhÃ¢n Kháº©u & NgÆ°á»i NhÃ  CÃ¹ng CÆ° TrÃº', 'Co-occupants & Family Members')} ({membersList.length} {t('ngÆ°á»i thÃ¢n', 'members')})
+                          {t('Nhân Khẩu & Người Nhà Cùng Cư Trú', 'Co-occupants & Family Members')} ({membersList.length} {t('người thân', 'members')})
                         </span>
                         <div className="flex items-center gap-3 text-[11px] text-gray-400 mt-1 font-mono">
-                          <span>{t('Tá»•ng sá»‘:', 'Total:')} <strong className="text-white">{1 + membersList.length}</strong></span>
-                          <span>â€¢</span>
-                          <span className="text-emerald-400">{t('ÄÃ£ cáº¥p FaceID:', 'FaceID Active:')} <strong>{1 + membersList.filter(m => m.faceStatus.includes('ÄÃ£')).length}</strong></span>
-                          <span>â€¢</span>
-                          <span className="text-amber-400">{t('Chá» BQL duyá»‡t:', 'Pending BQL:')} <strong>{membersList.filter(m => m.faceStatus.includes('Chá» BQL') || m.faceStatus.includes('Chá»') || !m.faceStatus.includes('ÄÃ£')).length}</strong></span>
+                          <span>{t('Tổng số:', 'Total:')} <strong className="text-white">{1 + membersList.length}</strong></span>
+                          <span>•</span>
+                          <span className="text-emerald-400">{t('Đã cấp FaceID:', 'FaceID Active:')} <strong>{1 + membersList.filter(m => m.faceStatus.includes('Đã')).length}</strong></span>
+                          <span>•</span>
+                          <span className="text-amber-400">{t('Chờ BQL duyệt:', 'Pending BQL:')} <strong>{membersList.filter(m => m.faceStatus.includes('Chờ BQL') || m.faceStatus.includes('Chờ') || !m.faceStatus.includes('Đã')).length}</strong></span>
                         </div>
                       </div>
 
@@ -603,7 +603,7 @@ export default function ApartmentDetailModal({
                           className="px-3 py-1.5 bg-[#C5A880] hover:bg-white text-[#0D1117] font-bold text-xs uppercase tracking-wider rounded-none flex items-center gap-1.5 transition-all shadow active:scale-95 cursor-pointer self-start sm:self-auto"
                         >
                           <UserPlus className="w-3.5 h-3.5 text-[#0D1117]" />
-                          <span>{t('ÄÄƒng KÃ½ NgÆ°á»i NhÃ ', 'Add Family Member')}</span>
+                          <span>{t('Đăng Ký Người Nhà', 'Add Family Member')}</span>
                         </button>
                       )}
                     </div>
@@ -611,9 +611,9 @@ export default function ApartmentDetailModal({
                     <div className="grid grid-cols-1 gap-3">
                       {membersList && membersList.length > 0 ? (
                         membersList.map(member => {
-                          const isApproved = member.faceStatus.includes('ÄÃ£');
-                          const isPending = member.faceStatus.includes('Chá»') || !isApproved;
-                          const isRejected = member.faceStatus.includes('YÃªu Cáº§u') || member.faceStatus.includes('Tá»« Chá»‘i');
+                          const isApproved = member.faceStatus.includes('Đã');
+                          const isPending = member.faceStatus.includes('Chờ') || !isApproved;
+                          const isRejected = member.faceStatus.includes('Yêu Cầu') || member.faceStatus.includes('Từ Chối');
 
                           return (
                             <div key={member.id} className="p-3.5 bg-[#121820] border border-[#222B35] flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-[#C5A880]/50 transition-colors">
@@ -646,16 +646,16 @@ export default function ApartmentDetailModal({
                                   </div>
 
                                   <div className="text-xs text-gray-400 flex flex-wrap items-center gap-x-3 gap-y-0.5 font-mono">
-                                    <span>{t('SÄT:', 'Tel:')} <strong className="text-gray-200">{member.phone}</strong></span>
-                                    {member.idCard && <span>â€¢ {t('CCCD:', 'ID:')} <strong className="text-[#C5A880]">{member.idCard}</strong></span>}
-                                    {member.licensePlate && <span>â€¢ {t('Biá»ƒn sá»‘:', 'Plate:')} <strong className="text-cyan-400">{member.licensePlate}</strong></span>}
-                                    {member.dob && <span>â€¢ {t('Sinh:', 'DOB:')} <strong className="text-gray-300">{member.dob}</strong></span>}
+                                    <span>{t('SĐT:', 'Tel:')} <strong className="text-gray-200">{member.phone}</strong></span>
+                                    {member.idCard && <span>• {t('CCCD:', 'ID:')} <strong className="text-[#C5A880]">{member.idCard}</strong></span>}
+                                    {member.licensePlate && <span>• {t('Biển số:', 'Plate:')} <strong className="text-cyan-400">{member.licensePlate}</strong></span>}
+                                    {member.dob && <span>• {t('Sinh:', 'DOB:')} <strong className="text-gray-300">{member.dob}</strong></span>}
                                   </div>
 
                                   <div className="text-[11px] text-gray-300 flex flex-wrap items-center gap-x-3 gap-y-0.5 pt-0.5">
-                                    <span>{t('CÆ° trÃº:', 'Residence:')} <strong className="text-gray-200">{member.residenceType || 'ThÆ°á»ng trÃº cÃ¹ng chá»§ há»™'}</strong></span>
-                                    <span>â€¢ {t('Táº¡m trÃº:', 'Status:')} <strong className="text-emerald-400">{member.temporaryResidenceStatus || 'Äang lÃ m thá»§ tá»¥c'}</strong></span>
-                                    {member.addedDate && <span className="text-gray-400 font-mono">â€¢ {t('NgÃ y thÃªm:', 'Added:')} {member.addedDate}</span>}
+                                    <span>{t('Cư trú:', 'Residence:')} <strong className="text-gray-200">{member.residenceType || 'Thường trú cùng chủ hộ'}</strong></span>
+                                    <span>• {t('Tạm trú:', 'Status:')} <strong className="text-emerald-400">{member.temporaryResidenceStatus || 'Đang làm thủ tục'}</strong></span>
+                                    {member.addedDate && <span className="text-gray-400 font-mono">• {t('Ngày thêm:', 'Added:')} {member.addedDate}</span>}
                                   </div>
                                 </div>
                               </div>
@@ -671,16 +671,16 @@ export default function ApartmentDetailModal({
                                         className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-none flex items-center gap-1.5 transition-all shadow active:scale-95 cursor-pointer"
                                       >
                                         <Check className="w-3.5 h-3.5" />
-                                        <span>{t('Duyá»‡t FaceID', 'Approve FaceID')}</span>
+                                        <span>{t('Duyệt FaceID', 'Approve FaceID')}</span>
                                       </button>
                                       <button
                                         type="button"
                                         onClick={() => setRejectingMember(member)}
                                         className="px-2.5 py-1.5 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700 font-semibold text-xs rounded-none transition-colors cursor-pointer"
-                                        title={t('YÃªu cáº§u chá»¥p láº¡i / Tá»« chá»‘i')}
+                                        title={t('Yêu cầu chụp lại / Từ chối')}
                                       >
                                         <X className="w-3.5 h-3.5" />
-                                        <span>{t('Tá»« Chá»‘i', 'Reject')}</span>
+                                        <span>{t('Từ Chối', 'Reject')}</span>
                                       </button>
                                     </>
                                   )}
@@ -690,11 +690,11 @@ export default function ApartmentDetailModal({
                                       type="button"
                                       onClick={() => {
                                         setRejectingMember(member);
-                                        setRejectReasonInput('VinHomes Manager táº¡m khÃ³a / thu há»“i quyá»n FaceID theo quy Ä‘á»‹nh');
+                                        setRejectReasonInput('VinHomes Manager tạm khóa / thu hồi quyền FaceID theo quy định');
                                       }}
                                       className="px-2.5 py-1.5 bg-[#161B22] hover:bg-[#1E2631] text-amber-400 border border-amber-600/60 font-semibold text-xs rounded-none transition-colors cursor-pointer"
                                     >
-                                      {t('Táº¡m KhÃ³a Quyá»n', 'Suspend Access')}
+                                      {t('Tạm Khóa Quyền', 'Suspend Access')}
                                     </button>
                                   )}
 
@@ -705,7 +705,7 @@ export default function ApartmentDetailModal({
                                       className="px-3 py-1.5 bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider rounded-none flex items-center gap-1.5 transition-all cursor-pointer"
                                     >
                                       <Check className="w-3.5 h-3.5" />
-                                      <span>{t('Duyá»‡t Láº¡i', 'Re-approve')}</span>
+                                      <span>{t('Duyệt Lại', 'Re-approve')}</span>
                                     </button>
                                   )}
 
@@ -713,7 +713,7 @@ export default function ApartmentDetailModal({
                                     type="button"
                                     onClick={() => handleRemoveMember(member.id, member.fullName)}
                                     className="p-1.5 text-rose-400 hover:text-white hover:bg-rose-950 border border-rose-900/40 rounded-none transition-colors cursor-pointer"
-                                    title={t('XÃ³a thÃ nh viÃªn khá»i cÄƒn há»™', 'Remove from apartment')}
+                                    title={t('Xóa thành viên khỏi căn hộ', 'Remove from apartment')}
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
@@ -725,14 +725,14 @@ export default function ApartmentDetailModal({
                       ) : (
                         <div className="p-6 text-center text-gray-500 text-xs bg-[#121820] border border-[#222B35] space-y-2">
                           <Users className="w-8 h-8 text-gray-600 mx-auto" />
-                          <p>{t('ChÆ°a Ä‘Äƒng kÃ½ thÃªm thÃ nh viÃªn gia Ä‘Ã¬nh cho cÄƒn há»™ nÃ y.', 'No family members registered for this apartment yet.')}</p>
+                          <p>{t('Chưa đăng ký thêm thành viên gia đình cho căn hộ này.', 'No family members registered for this apartment yet.')}</p>
                           {isAdmin && (
                             <button
                               type="button"
                               onClick={() => setShowAddMemberModal(true)}
                               className="text-[#C5A880] underline hover:text-white font-bold cursor-pointer"
                             >
-                              + {t('ÄÄƒng kÃ½ ngÆ°á»i nhÃ  ngay', 'Register family member now')}
+                              + {t('Đăng ký người nhà ngay', 'Register family member now')}
                             </button>
                           )}
                         </div>
@@ -741,15 +741,15 @@ export default function ApartmentDetailModal({
                   </div>
                 </>
               ) : (
-                /* TRÆ¯á»œNG Há»¢P CÄ‚N TRá»NG */
+                /* TRƯỜNG HỢP CĂN TRỐNG */
                 <div className="p-6 bg-[#161B22] border border-amber-500/40 text-center space-y-4">
                   <div className="w-12 h-12 bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
                     <Key className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-base font-bold text-white">{t('CÄƒn Há»™ Hiá»‡n Äang Trá»‘ng', 'Apartment is Currently Vacant')}</h4>
+                    <h4 className="text-base font-bold text-white">{t('Căn Hộ Hiện Đang Trống', 'Apartment is Currently Vacant')}</h4>
                     <p className="text-xs text-gray-400 max-w-md mx-auto mt-1">
-                      {t('CÄƒn há»™ chÆ°a cÃ³ cÆ° dÃ¢n nháº­n bÃ n giao hoáº·c Ä‘Äƒng kÃ½ sinh sá»‘ng. Báº¡n cÃ³ thá»ƒ tiáº¿n hÃ nh bÃ n giao vÃ  gÃ¡n chá»§ sá»Ÿ há»¯u má»›i ngay bÃ¢y giá».', 'Apartment has not been handed over. You can perform handover and assign a new owner now.')}
+                      {t('Căn hộ chưa có cư dân nhận bàn giao hoặc đăng ký sinh sống. Bạn có thể tiến hành bàn giao và gán chủ sở hữu mới ngay bây giờ.', 'Apartment has not been handed over. You can perform handover and assign a new owner now.')}
                     </p>
                   </div>
                   {isAdmin && (
@@ -758,7 +758,7 @@ export default function ApartmentDetailModal({
                       onClick={() => onAssignResident(unit)}
                       className="px-5 py-2.5 bg-[#C5A880] hover:bg-white text-[#0D1117] font-bold text-xs uppercase tracking-wider transition-colors inline-flex items-center gap-2 shadow-lg"
                     >
-                      <UserPlus className="w-4 h-4" /> {t('BÃ n Giao ChÃ¬a KhÃ³a Cho Chá»§ Há»™ Má»›i', 'Handover Keys to New Owner')}
+                      <UserPlus className="w-4 h-4" /> {t('Bàn Giao Chìa Khóa Cho Chủ Hộ Mới', 'Handover Keys to New Owner')}
                     </button>
                   )}
                 </div>
@@ -768,14 +768,14 @@ export default function ApartmentDetailModal({
           )}
 
           {/* ----------------------------------------------------------- */}
-          {/* TAB 3: PHÆ¯Æ NG TIá»†N & THáºº Háº¦M                                */}
+          {/* TAB 3: PHƯƠNG TIỆN & THẺ HẦM                                */}
           {/* ----------------------------------------------------------- */}
           {activeTab === 'VEHICLES' && (
             <div className="space-y-4 animate-fadeIn">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono font-bold uppercase tracking-wider text-gray-300 flex items-center gap-1.5">
                   <Car className="w-4 h-4 text-[#C5A880]" />
-                  {t('Danh SÃ¡ch PhÆ°Æ¡ng Tiá»‡n ÄÄƒng KÃ½ Äáº­u Táº§ng Háº§m (B1/B2)', 'Basement (B1/B2) Parking Vehicle Registry')}
+                  {t('Danh Sách Phương Tiện Đăng Ký Đậu Tầng Hầm (B1/B2)', 'Basement (B1/B2) Parking Vehicle Registry')}
                 </span>
               </div>
 
@@ -792,13 +792,13 @@ export default function ApartmentDetailModal({
                             {v.plate}
                           </div>
                           <div className="text-xs text-gray-400">
-                            {v.brand || (v.type === 'CAR' ? t('Xe Ã” tÃ´', 'Car') : t('Xe MÃ¡y', 'Motorbike'))} â€¢ {t('Vá»‹ trÃ­:', 'Slot:')} <strong className="text-[#C5A880]">{v.slot || t('Tá»± do', 'Open slot')}</strong>
+                            {v.brand || (v.type === 'CAR' ? t('Xe Ô tô', 'Car') : t('Xe Máy', 'Motorbike'))} • {t('Vị trí:', 'Slot:')} <strong className="text-[#C5A880]">{v.slot || t('Tự do', 'Open slot')}</strong>
                           </div>
                         </div>
                       </div>
 
                       <div className="text-right text-[11px] font-mono text-gray-400">
-                        <div className="text-emerald-400 font-bold">{t('Äang Hoáº¡t Äá»™ng', 'Active')}</div>
+                        <div className="text-emerald-400 font-bold">{t('Đang Hoạt Động', 'Active')}</div>
                         <div className="text-[10px] text-gray-500">{v.cardNo}</div>
                       </div>
                     </div>
@@ -807,14 +807,14 @@ export default function ApartmentDetailModal({
               ) : (
                 <div className="p-8 text-center text-gray-400 text-xs bg-[#121820] border border-[#222B35] space-y-2">
                   <Car className="w-8 h-8 text-gray-600 mx-auto" />
-                  <div>{t('CÄƒn há»™ chÆ°a Ä‘Äƒng kÃ½ phÆ°Æ¡ng tiá»‡n Ä‘áº­u táº¡i táº§ng háº§m.', 'No registered vehicles for basement parking.')}</div>
+                  <div>{t('Căn hộ chưa đăng ký phương tiện đậu tại tầng hầm.', 'No registered vehicles for basement parking.')}</div>
                 </div>
               )}
             </div>
           )}
 
           {/* ----------------------------------------------------------- */}
-          {/* TAB 4: PHÃ QUáº¢N LÃ & HÃ“A ÄÆ N                                */}
+          {/* TAB 4: PHÍ QUẢN LÝ & HÓA ĐƠN                                */}
           {/* ----------------------------------------------------------- */}
           {activeTab === 'BILLING' && (
             <div className="space-y-4 animate-fadeIn">
@@ -822,7 +822,7 @@ export default function ApartmentDetailModal({
                 <div className="p-5 bg-[#121820] border border-[#222B35] space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[11px] uppercase tracking-wider text-gray-400 font-mono">{t('Ká»³ PhÃ­ Quáº£n LÃ½ & Dá»‹ch Vá»¥', 'Management Fee & Service Period')}</span>
+                      <span className="text-[11px] uppercase tracking-wider text-gray-400 font-mono">{t('Kỳ Phí Quản Lý & Dịch Vụ', 'Management Fee & Service Period')}</span>
                       <h4 className="text-lg font-bold font-serif text-white">{unit.billing.period}</h4>
                     </div>
 
@@ -832,7 +832,7 @@ export default function ApartmentDetailModal({
                           ? 'bg-emerald-950 text-emerald-300 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]'
                           : 'bg-amber-950 text-amber-300 border-amber-500'
                       }`}>
-                        {unit.billing.status === 'PAID' ? t('âœ“ ÄÃ£ Thanh ToÃ¡n', 'âœ“ Paid') : t('ChÆ°a Thanh ToÃ¡n', 'Unpaid')}
+                        {unit.billing.status === 'PAID' ? t('✓ Đã Thanh Toán', '✓ Paid') : t('Chưa Thanh Toán', 'Unpaid')}
                       </span>
 
                       {isAdmin && (
@@ -847,56 +847,56 @@ export default function ApartmentDetailModal({
                           }`}
                         >
                           {isUpdatingBill ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                          {unit.billing.status === 'PAID' ? t('Äá»•i ThÃ nh ChÆ°a Ná»™p', 'Mark as Unpaid') : t('XÃ¡c Nháº­n ÄÃ£ Thu Tiá»n', 'Confirm Payment')}
+                          {unit.billing.status === 'PAID' ? t('Đổi Thành Chưa Nộp', 'Mark as Unpaid') : t('Xác Nhận Đã Thu Tiền', 'Confirm Payment')}
                         </button>
                       )}
                     </div>
                   </div>
 
-                  {/* Báº£ng chi tiáº¿t tá»«ng khoáº£n thu */}
+                  {/* Bảng chi tiết từng khoản thu */}
                   <div className="border border-[#222B35] divide-y divide-[#222B35] text-xs">
                     <div className="p-3 flex items-center justify-between bg-[#161B22]/50">
-                      <span className="text-gray-300">{t('PhÃ­ quáº£n lÃ½ váº­n hÃ nh chung cÆ°', 'Building operational management fee')} ({unit.area} mÂ² x 18.500Ä‘)</span>
-                      <span className="font-mono font-bold text-white">{unit.billing.monthlyFee.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'Ä‘'}</span>
+                      <span className="text-gray-300">{t('Phí quản lý vận hành chung cư', 'Building operational management fee')} ({unit.area} m² x 18.500đ)</span>
+                      <span className="font-mono font-bold text-white">{unit.billing.monthlyFee.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                     </div>
                     <div className="p-3 flex items-center justify-between bg-[#161B22]/50">
-                      <span className="text-gray-300">{t('PhÃ­ trÃ´ng giá»¯ phÆ°Æ¡ng tiá»‡n táº§ng háº§m', 'Basement vehicle parking fee')}</span>
-                      <span className="font-mono font-bold text-white">{unit.billing.parkingFee.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'Ä‘'}</span>
+                      <span className="text-gray-300">{t('Phí trông giữ phương tiện tầng hầm', 'Basement vehicle parking fee')}</span>
+                      <span className="font-mono font-bold text-white">{unit.billing.parkingFee.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                     </div>
                     <div className="p-3 flex items-center justify-between bg-[#161B22]/50">
-                      <span className="text-gray-300">{t('PhÃ­ dá»‹ch vá»¥ tiá»‡n Ã­ch phÃ¡t sinh', 'Incidental utility service fees')}</span>
-                      <span className="font-mono font-bold text-white">{unit.billing.serviceFee.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'Ä‘'}</span>
+                      <span className="text-gray-300">{t('Phí dịch vụ tiện ích phát sinh', 'Incidental utility service fees')}</span>
+                      <span className="font-mono font-bold text-white">{unit.billing.serviceFee.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                     </div>
                     <div className="p-3.5 flex items-center justify-between bg-[#1C2533] font-bold">
-                      <span className="text-white uppercase tracking-wider font-mono">{t('Tá»•ng Cá»™ng Cáº§n Thu', 'Total Due')}</span>
-                      <span className="font-mono text-base text-[#C5A880]">{unit.billing.totalAmount.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'Ä‘'}</span>
+                      <span className="text-white uppercase tracking-wider font-mono">{t('Tổng Cộng Cần Thu', 'Total Due')}</span>
+                      <span className="font-mono text-base text-[#C5A880]">{unit.billing.totalAmount.toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                     </div>
                   </div>
 
                   <div className="text-[11px] text-gray-400 flex items-center justify-between pt-1">
-                    <span>{t('Háº¡n ná»™p Ä‘á»‹nh ká»³:', 'Due date:')} <strong className="text-white font-mono">{unit.billing.dueDate}</strong></span>
+                    <span>{t('Hạn nộp định kỳ:', 'Due date:')} <strong className="text-white font-mono">{unit.billing.dueDate}</strong></span>
                     {unit.billing.lastPaidDate && (
-                      <span>{t('NgÃ y ná»™p gáº§n nháº¥t:', 'Last payment date:')} <strong className="text-emerald-400 font-mono">{unit.billing.lastPaidDate}</strong></span>
+                      <span>{t('Ngày nộp gần nhất:', 'Last payment date:')} <strong className="text-emerald-400 font-mono">{unit.billing.lastPaidDate}</strong></span>
                     )}
                   </div>
                 </div>
               ) : (
                 <div className="p-6 text-center text-gray-500 text-xs bg-[#121820] border border-[#222B35]">
-                  {t('ChÆ°a phÃ¡t sinh báº£ng kÃª hÃ³a Ä‘Æ¡n cho cÄƒn há»™ nÃ y.', 'No billing invoices generated yet for this apartment.')}
+                  {t('Chưa phát sinh bảng kê hóa đơn cho căn hộ này.', 'No billing invoices generated yet for this apartment.')}
                 </div>
               )}
             </div>
           )}
 
           {/* ----------------------------------------------------------- */}
-          {/* TAB 5: Lá»ŠCH Sá»¬ Ká»¸ THUáº¬T & Báº¢O TRÃŒ                           */}
+          {/* TAB 5: LỊCH SỬ KỸ THUẬT & BẢO TRÌ                           */}
           {/* ----------------------------------------------------------- */}
           {activeTab === 'MAINTENANCE' && (
             <div className="space-y-4 animate-fadeIn">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono font-bold uppercase tracking-wider text-gray-300 flex items-center gap-1.5">
                   <Wrench className="w-4 h-4 text-[#C5A880]" />
-                  {t('Nháº­t KÃ½ Kiá»ƒm Tra Ká»¹ Thuáº­t & Báº£o TrÃ¬ Äá»‹nh Ká»³', 'Technical Inspection & Maintenance Log')}
+                  {t('Nhật Ký Kiểm Tra Kỹ Thuật & Bảo Trì Định Kỳ', 'Technical Inspection & Maintenance Log')}
                 </span>
               </div>
 
@@ -910,7 +910,7 @@ export default function ApartmentDetailModal({
                           <span className={`text-[10px] px-2 py-0.5 uppercase font-mono border ${
                             rec.status === 'COMPLETED' ? 'bg-emerald-950 text-emerald-300 border-emerald-600' : 'bg-amber-950 text-amber-300 border-amber-600'
                           }`}>
-                            {rec.status === 'COMPLETED' ? t('ÄÃ£ HoÃ n ThÃ nh', 'Completed') : t('Äang Xá»­ LÃ½', 'In Progress')}
+                            {rec.status === 'COMPLETED' ? t('Đã Hoàn Thành', 'Completed') : t('Đang Xử Lý', 'In Progress')}
                           </span>
                         </div>
                         <div className="font-mono text-gray-400 text-[11px] flex items-center gap-1">
@@ -919,13 +919,13 @@ export default function ApartmentDetailModal({
                       </div>
 
                       <div className="flex flex-wrap items-center justify-between gap-2 text-gray-400 pt-1 border-t border-[#222B35]">
-                        <div>{t('Ká»¹ thuáº­t viÃªn phá»¥ trÃ¡ch:', 'Technician in charge:')} <strong className="text-gray-200">{rec.technician}</strong></div>
-                        <div>{t('Chi phÃ­:', 'Cost:')} <strong className="text-[#C5A880] font-mono">{rec.cost > 0 ? `${rec.cost.toLocaleString('vi-VN')} Ä‘` : t('Miá»…n phÃ­ báº£o hÃ nh', 'Free under warranty')}</strong></div>
+                        <div>{t('Kỹ thuật viên phụ trách:', 'Technician in charge:')} <strong className="text-gray-200">{rec.technician}</strong></div>
+                        <div>{t('Chi phí:', 'Cost:')} <strong className="text-[#C5A880] font-mono">{rec.cost > 0 ? `${rec.cost.toLocaleString('vi-VN')} đ` : t('Miễn phí bảo hành', 'Free under warranty')}</strong></div>
                       </div>
 
                       {rec.note && (
                         <div className="text-[11px] text-gray-400 italic">
-                          {t('Ghi chÃº:', 'Note:')} {t(rec.note)}
+                          {t('Ghi chú:', 'Note:')} {t(rec.note)}
                         </div>
                       )}
                     </div>
@@ -933,7 +933,7 @@ export default function ApartmentDetailModal({
                 </div>
               ) : (
                 <div className="p-8 text-center text-gray-400 text-xs bg-[#121820] border border-[#222B35]">
-                  {t('ChÆ°a ghi nháº­n lá»‹ch sá»­ báº£o trÃ¬ cho cÄƒn há»™ nÃ y.', 'No maintenance history recorded for this apartment.')}
+                  {t('Chưa ghi nhận lịch sử bảo trì cho căn hộ này.', 'No maintenance history recorded for this apartment.')}
                 </div>
               )}
             </div>
@@ -946,17 +946,17 @@ export default function ApartmentDetailModal({
         {/* ============================================================= */}
         <div className="p-3 sm:p-4 bg-[#121820] border-t border-[#222B35] flex items-center justify-between select-none">
           <div className="text-xs text-gray-400 font-mono">
-            {t('MÃ£ Ä‘á»‹nh danh:', 'ID Code:')} <strong className="text-white">SKYLINE-{unit.tower}-{unit.code}</strong>
+            {t('Mã định danh:', 'ID Code:')} <strong className="text-white">SKYLINE-{unit.tower}-{unit.code}</strong>
           </div>
           <div className="text-[11px] text-[#C5A880]/80 font-mono tracking-wider hidden sm:block">
-            {t('Há»† THá»NG QUáº¢N LÃ DÃ‚N CÆ¯', 'RESIDENT MANAGEMENT SYSTEM')}
+            {t('HỆ THỐNG QUẢN LÝ DÂN CƯ', 'RESIDENT MANAGEMENT SYSTEM')}
           </div>
         </div>
 
       </div>
 
       {/* ============================================================= */}
-      {/* 5. SUB-MODAL: BQL THÃŠM NGÆ¯á»œI NHÃ€ TRá»°C TIáº¾P                    */}
+      {/* 5. SUB-MODAL: BQL THÊM NGƯỜI NHÀ TRỰC TIẾP                    */}
       {/* ============================================================= */}
       {showAddMemberModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
@@ -965,7 +965,7 @@ export default function ApartmentDetailModal({
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-[#C5A880]" />
                 <h3 className="font-bold text-white text-sm">
-                  {t('BQL ÄÄƒng KÃ½ NgÆ°á»i NhÃ  Má»›i', 'BQL Register New Family Member')} - CÄƒn {unit.code}
+                  {t('BQL Đăng Ký Người Nhà Mới', 'BQL Register New Family Member')} - Căn {unit.code}
                 </h3>
               </div>
               <button
@@ -990,14 +990,14 @@ export default function ApartmentDetailModal({
 
               <div className="space-y-1">
                 <label className="text-xs font-mono text-gray-300">
-                  {t('Há» vÃ  TÃªn ThÃ nh ViÃªn', 'Full Name')} <span className="text-rose-400">*</span>
+                  {t('Họ và Tên Thành Viên', 'Full Name')} <span className="text-rose-400">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={newMemName}
                   onChange={(e) => setNewMemName(e.target.value)}
-                  placeholder={isEn ? 'e.g. John Doe' : 'VÃ­ dá»¥: Nguyá»…n VÄƒn An'}
+                  placeholder={isEn ? 'e.g. John Doe' : 'Ví dụ: Nguyễn Văn An'}
                   className="w-full bg-[#141B24] border border-[#2A3644] focus:border-[#C5A880] px-3 py-2 text-white text-xs rounded-none outline-none"
                 />
               </div>
@@ -1005,7 +1005,7 @@ export default function ApartmentDetailModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-gray-300">
-                    {t('Sá»‘ Äiá»‡n Thoáº¡i', 'Phone Number')} <span className="text-rose-400">*</span>
+                    {t('Số Điện Thoại', 'Phone Number')} <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="tel"
@@ -1019,13 +1019,13 @@ export default function ApartmentDetailModal({
 
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-gray-300">
-                    {t('Sá»‘ CCCD / Há»™ Chiáº¿u', 'Citizen ID / Passport')}
+                    {t('Số CCCD / Hộ Chiếu', 'Citizen ID / Passport')}
                   </label>
                   <input
                     type="text"
                     value={newMemCccd}
                     onChange={(e) => setNewMemCccd(e.target.value)}
-                    placeholder={isEn ? '12-digit ID card' : '12 chá»¯ sá»‘ CCCD'}
+                    placeholder={isEn ? '12-digit ID card' : '12 chữ số CCCD'}
                     className="w-full bg-[#141B24] border border-[#2A3644] focus:border-[#C5A880] px-3 py-2 text-white text-xs rounded-none outline-none font-mono"
                   />
                 </div>
@@ -1034,25 +1034,25 @@ export default function ApartmentDetailModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-gray-300">
-                    {t('Quan Há»‡ Vá»›i Chá»§ Há»™', 'Relationship')}
+                    {t('Quan Hệ Với Chủ Hộ', 'Relationship')}
                   </label>
                   <select
                     value={newMemRel}
                     onChange={(e) => setNewMemRel(e.target.value)}
                     className="w-full bg-[#141B24] border border-[#2A3644] focus:border-[#C5A880] px-3 py-2 text-white text-xs rounded-none outline-none"
                   >
-                    <option value="Vá»£ / Chá»“ng">{t('Vá»£ / Chá»“ng', 'Spouse')}</option>
-                    <option value="Con ruá»™t / Con nuÃ´i">{t('Con ruá»™t / Con nuÃ´i', 'Child')}</option>
-                    <option value="Bá»‘ / Máº¹">{t('Bá»‘ / Máº¹', 'Parent')}</option>
-                    <option value="Anh / Chá»‹ / Em">{t('Anh / Chá»‹ / Em', 'Sibling')}</option>
-                    <option value="NgÆ°á»i thÃ¢n khÃ¡c">{t('NgÆ°á»i thÃ¢n khÃ¡c', 'Other Relative')}</option>
-                    <option value="NgÆ°á»i giÃºp viá»‡c">{t('NgÆ°á»i giÃºp viá»‡c', 'Helper / Maid')}</option>
+                    <option value="Vợ / Chồng">{t('Vợ / Chồng', 'Spouse')}</option>
+                    <option value="Con ruột / Con nuôi">{t('Con ruột / Con nuôi', 'Child')}</option>
+                    <option value="Bố / Mẹ">{t('Bố / Mẹ', 'Parent')}</option>
+                    <option value="Anh / Chị / Em">{t('Anh / Chị / Em', 'Sibling')}</option>
+                    <option value="Người thân khác">{t('Người thân khác', 'Other Relative')}</option>
+                    <option value="Người giúp việc">{t('Người giúp việc', 'Helper / Maid')}</option>
                   </select>
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-mono text-gray-300">
-                    {t('Biá»ƒn Sá»‘ Xe (Náº¿u cÃ³)', 'License Plate')}
+                    {t('Biển Số Xe (Nếu có)', 'License Plate')}
                   </label>
                   <input
                     type="text"
@@ -1073,7 +1073,7 @@ export default function ApartmentDetailModal({
                   className="w-4 h-4 accent-[#C5A880] cursor-pointer"
                 />
                 <label htmlFor="bqlAutoApprove" className="text-xs text-gray-300 cursor-pointer select-none">
-                  {t('PhÃª duyá»‡t & kÃ­ch hoáº¡t quyá»n FaceID ngay láº­p tá»©c (BQL cáº¥p trá»±c tiáº¿p)', 'Approve & activate FaceID access immediately (Direct BQL issue)')}
+                  {t('Phê duyệt & kích hoạt quyền FaceID ngay lập tức (BQL cấp trực tiếp)', 'Approve & activate FaceID access immediately (Direct BQL issue)')}
                 </label>
               </div>
 
@@ -1086,13 +1086,13 @@ export default function ApartmentDetailModal({
                   }}
                   className="px-4 py-2 bg-[#1A232E] hover:bg-[#222D3A] text-gray-300 text-xs font-semibold rounded-none cursor-pointer"
                 >
-                  {t('Há»§y Bá»', 'Cancel')}
+                  {t('Hủy Bỏ', 'Cancel')}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-[#C5A880] hover:bg-white text-[#0A0E14] text-xs font-bold uppercase tracking-wider rounded-none transition-all cursor-pointer shadow active:scale-95"
                 >
-                  {t('XÃ¡c Nháº­n ThÃªm NgÆ°á»i NhÃ ', 'Confirm Add Member')}
+                  {t('Xác Nhận Thêm Người Nhà', 'Confirm Add Member')}
                 </button>
               </div>
             </form>
@@ -1101,7 +1101,7 @@ export default function ApartmentDetailModal({
       )}
 
       {/* ============================================================= */}
-      {/* 6. SUB-MODAL: BQL Tá»ª CHá»I / Táº M KHÃ“A QUYá»€N                    */}
+      {/* 6. SUB-MODAL: BQL TỪ CHỐI / TẠM KHÓA QUYỀN                    */}
       {/* ============================================================= */}
       {rejectingMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
@@ -1110,7 +1110,7 @@ export default function ApartmentDetailModal({
               <div className="flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4 text-rose-400" />
                 <h3 className="font-bold text-rose-300 text-sm">
-                  {t('Tá»« Chá»‘i / Táº¡m KhÃ³a FaceID', 'Reject / Suspend FaceID')}
+                  {t('Từ Chối / Tạm Khóa FaceID', 'Reject / Suspend FaceID')}
                 </h3>
               </div>
               <button
@@ -1124,22 +1124,22 @@ export default function ApartmentDetailModal({
 
             <div className="p-5 space-y-4">
               <div className="text-xs text-gray-300">
-                {t('ThÃ nh viÃªn: ', 'Member: ')}
+                {t('Thành viên: ', 'Member: ')}
                 <strong className="text-white font-bold">{rejectingMember.fullName}</strong> ({t(rejectingMember.relationship)})
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-mono text-gray-300">
-                  {t('LÃ½ do yÃªu cáº§u bá»• sung / tá»« chá»‘i:', 'Reason for rejection/suspension:')}
+                  {t('Lý do yêu cầu bổ sung / từ chối:', 'Reason for rejection/suspension:')}
                 </label>
                 
-                {/* Gá»£i Ã½ lÃ½ do nhanh */}
+                {/* Gợi ý lý do nhanh */}
                 <div className="flex flex-wrap gap-1.5 pb-1">
                   {[
-                    'áº¢nh chá»¥p CCCD bá»‹ má»/lÃ³a sÃ¡ng, Ä‘á» nghá»‹ quÃ©t láº¡i rÃµ nÃ©t',
-                    'áº¢nh chÃ¢n dung nghiÃªng/khÃ´ng khá»›p vá»›i tháº» CCCD',
-                    'ChÆ°a Ä‘á»§ giáº¥y tá» chá»©ng minh quan há»‡ cÆ° trÃº theo quy Ä‘á»‹nh',
-                    'VinHomes Manager táº¡m khÃ³a / thu há»“i quyá»n FaceID theo quy Ä‘á»‹nh'
+                    'Ảnh chụp CCCD bị mờ/lóa sáng, đề nghị quét lại rõ nét',
+                    'Ảnh chân dung nghiêng/không khớp với thẻ CCCD',
+                    'Chưa đủ giấy tờ chứng minh quan hệ cư trú theo quy định',
+                    'VinHomes Manager tạm khóa / thu hồi quyền FaceID theo quy định'
                   ].map((preset, idx) => (
                     <button
                       key={idx}
@@ -1160,7 +1160,7 @@ export default function ApartmentDetailModal({
                   rows={3}
                   value={rejectReasonInput}
                   onChange={(e) => setRejectReasonInput(e.target.value)}
-                  placeholder={isEn ? 'Enter detailed reason...' : 'Nháº­p lÃ½ do chi tiáº¿t...'}
+                  placeholder={isEn ? 'Enter detailed reason...' : 'Nhập lý do chi tiết...'}
                   className="w-full bg-[#141B24] border border-[#2A3644] focus:border-rose-500 p-2.5 text-white text-xs rounded-none outline-none resize-none font-mono"
                 />
               </div>
@@ -1171,14 +1171,14 @@ export default function ApartmentDetailModal({
                   onClick={() => setRejectingMember(null)}
                   className="px-4 py-2 bg-[#1A232E] hover:bg-[#222D3A] text-gray-300 text-xs font-semibold rounded-none cursor-pointer"
                 >
-                  {t('Há»§y', 'Cancel')}
+                  {t('Hủy', 'Cancel')}
                 </button>
                 <button
                   type="button"
                   onClick={handleConfirmRejectMember}
                   className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold uppercase tracking-wider rounded-none transition-all cursor-pointer shadow active:scale-95"
                 >
-                  {t('XÃ¡c Nháº­n Quyáº¿t Äá»‹nh', 'Confirm Decision')}
+                  {t('Xác Nhận Quyết Định', 'Confirm Decision')}
                 </button>
               </div>
             </div>
@@ -1186,21 +1186,21 @@ export default function ApartmentDetailModal({
         </div>
       )}
 
-      {/* Modal XÃ¡c Nháº­n XÃ³a ThÃ nh ViÃªn */}
+      {/* Modal Xác Nhận Xóa Thành Viên */}
       {deleteMemberTarget && (
         <ConfirmDeleteModal
           isOpen={!!deleteMemberTarget}
           onClose={() => setDeleteMemberTarget(null)}
           onConfirm={confirmDeleteMember}
-          title={t('XÃ¡c nháº­n xÃ³a thÃ nh viÃªn cÆ° trÃº', 'Confirm Removing Resident Member')}
+          title={t('Xác nhận xóa thành viên cư trú', 'Confirm Removing Resident Member')}
           itemName={deleteMemberTarget.name}
           itemCode={unit.code}
           message={t(
-            `Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a thÃ nh viÃªn "${deleteMemberTarget.name}" khá»i cÄƒn há»™ ${unit.code}? Quyá»n FaceID vÃ  quyá»n ra vÃ o thang mÃ¡y, tiá»‡n Ã­ch sáº½ bá»‹ thu há»“i ngay láº­p tá»©c.`,
+            `Bạn có chắc chắn muốn xóa thành viên "${deleteMemberTarget.name}" khỏi căn hộ ${unit.code}? Quyền FaceID và quyền ra vào thang máy, tiện ích sẽ bị thu hồi ngay lập tức.`,
             `Are you sure you want to remove member "${deleteMemberTarget.name}" from apartment ${unit.code}? FaceID access and building amenity permissions will be revoked immediately.`
           )}
-          confirmText={t('XÃ¡c Nháº­n XÃ³a ThÃ nh ViÃªn', 'Confirm Remove Member')}
-          cancelText={t('Há»§y Bá»', 'Cancel')}
+          confirmText={t('Xác Nhận Xóa Thành Viên', 'Confirm Remove Member')}
+          cancelText={t('Hủy Bỏ', 'Cancel')}
           isDanger={true}
         />
       )}

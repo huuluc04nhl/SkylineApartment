@@ -55,3 +55,9 @@
   - Tòa nhà: The Tropical (BS-07, BS-08, BS-09, BS-10) thuộc phân khu Beverly Solari.
   - Khái niệm: Dùng đúng thuật ngữ "Chung cư" và "Căn hộ".
   - Hotline kỹ thuật: 1900 8899 (Hỗ trợ 24/7).
+
+---
+
+## 5. Mã hóa tệp (File Encoding)
+* Mọi tệp mã nguồn và tài liệu phải lưu dưới dạng **UTF-8 không BOM**, kết thúc dòng `LF` (`.editorconfig`, `.gitattributes`).
+* Tuyệt đối **không** dùng `PowerShell` `Set-Content` / `Out-File` mặc định (codepage CP1252) để ghi hoặc chỉnh sửa file code. Luôn dùng công cụ hỗ trợ UTF-8 tường minh (Node/Python UTF-8) và chạy `npm run check:encoding` trước khi commit.

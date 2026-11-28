@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -36,7 +36,7 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
       }`} />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 w-full">
-        {/* Khi chÆ°a Ä‘Äƒng nháº­p: Layout 2 cá»™t vá»›i video full-width */}
+        {/* Khi chưa đăng nhập: Layout 2 cột với video full-width */}
         {!isAuthenticated || !currentUser ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
             {/* Left Column: Text */}
@@ -47,7 +47,7 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                   : 'border-[#C5A880]/60 text-amber-800 bg-white/90 shadow-sm'
               }`}>
                 <Sparkles className="w-3.5 h-3.5 text-[#C5A880]" />
-                {t('Kiáº¿n TrÃºc ÄÆ°Æ¡ng Äáº¡i TÃ­ch Há»£p LÃµi AI', 'Contemporary Architecture with AI Core')}
+                {t('Kiến Trúc Đương Đại Tích Hợp Lõi AI', 'Contemporary Architecture with AI Core')}
               </div>
 
               <h1 className={`text-3xl sm:text-5xl lg:text-6xl font-serif font-normal leading-[1.15] tracking-tight ${
@@ -60,8 +60,8 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                   </>
                 ) : (
                   <>
-                    NÆ¡i Chuáº©n Má»±c Kiáº¿n TrÃºc Gáº·p Gá»¡ <br />
-                    <span className="italic text-[#C5A880] font-light">{isEn ? 'Artificial Intelligence 4.0' : 'TrÃ­ Tuá»‡ NhÃ¢n Táº¡o 4.0'}</span>
+                    Nơi Chuẩn Mực Kiến Trúc Gặp Gỡ <br />
+                    <span className="italic text-[#C5A880] font-light">{isEn ? 'Artificial Intelligence 4.0' : 'Trí Tuệ Nhân Tạo 4.0'}</span>
                   </>
                 )}
               </h1>
@@ -72,21 +72,21 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                 {isEn ? (
                   <>
                     Luxury apartment project <strong>SKYLINE Smart Residence</strong> at 4 towers of{' '}
-                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> â€” smart FaceID door access, 
+                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> — smart FaceID door access, 
                     intelligent security, and 24/7 resident assistance.
                   </>
                 ) : (
                   <>
-                    Dá»± Ã¡n cÄƒn há»™ háº¡ng sang <strong>SKYLINE Smart Residence</strong> táº¡i cá»¥m 4 chung cÆ°{' '}
-                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> â€” má»Ÿ cá»­a nhanh báº±ng khuÃ´n máº·t FaceID, 
-                    an ninh thÃ´ng minh vÃ  há»— trá»£ cÆ° dÃ¢n 24/7.
+                    Dự án căn hộ hạng sang <strong>SKYLINE Smart Residence</strong> tại cụm 4 chung cư{' '}
+                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> — mở cửa nhanh bằng khuôn mặt FaceID, 
+                    an ninh thông minh và hỗ trợ cư dân 24/7.
                   </>
                 )}
               </p>
 
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <a href="#floorplans" className="hendon-btn-gold text-[12px] shadow-lg rounded-none">
-                  {t('Xem Máº·t Báº±ng CÄƒn Há»™', 'View Apartment Layouts')}
+                  {t('Xem Mặt Bằng Căn Hộ', 'View Apartment Layouts')}
                 </a>
                 <button
                   onClick={() => onOpenLogin()}
@@ -97,7 +97,7 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                   }`}
                 >
                   <KeyRound className="w-4 h-4 text-[#C5A880]" />
-                  {t('ÄÄƒng Nháº­p Há»‡ Thá»‘ng', 'Sign In System')}
+                  {t('Đăng Nhập Hệ Thống', 'Sign In System')}
                 </button>
               </div>
 
@@ -105,27 +105,27 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                 isDark ? 'border-[#222B35]' : 'border-gray-200'
               }`}>
                 <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-serif text-[#C5A880] font-bold">34 - 39 {t('Táº§ng', 'Floors')}</div>
+                  <div className="text-xl sm:text-2xl font-serif text-[#C5A880] font-bold">34 - 39 {t('Tầng', 'Floors')}</div>
                   <div className={`text-[11px] uppercase tracking-wider mt-1 break-words leading-tight ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {t('4 Chung CÆ° (BS-07 Ä‘áº¿n BS-10)', '4 Towers (BS-07 ~ BS-10)')}
+                    {t('4 Chung Cư (BS-07 đến BS-10)', '4 Towers (BS-07 ~ BS-10)')}
                   </div>
                 </div>
                 <div className="min-w-0">
                   <div className="text-xl sm:text-2xl font-serif text-[#C5A880] font-bold">&lt; 0.5s</div>
                   <div className={`text-[11px] uppercase tracking-wider mt-1 break-words leading-tight ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {t('Tá»‘c Äá»™ Má»Ÿ Cá»­a & Cá»•ng Xe', 'Door & Gate FaceID Speed')}
+                    {t('Tốc Độ Mở Cửa & Cổng Xe', 'Door & Gate FaceID Speed')}
                   </div>
                 </div>
                 <div className="min-w-0">
                   <div className="text-xl sm:text-2xl font-serif text-[#C5A880] font-bold">15 {t('Module', 'Modules')}</div>
                   <div className={`text-[11px] uppercase tracking-wider mt-1 break-words leading-tight ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {t('Há»‡ Thá»‘ng Váº­n HÃ nh AI', 'AI Operating System')}
+                    {t('Hệ Thống Vận Hành AI', 'AI Operating System')}
                   </div>
                 </div>
                 <div className="min-w-0">
                   <div className="text-xl sm:text-2xl font-serif text-[#C5A880] font-bold">100%</div>
                   <div className={`text-[11px] uppercase tracking-wider mt-1 break-words leading-tight ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {t('Sá»• Há»“ng & SPA Minh Báº¡ch', 'Pink Book & SPA Transparency')}
+                    {t('Sổ Hồng & SPA Minh Bạch', 'Pink Book & SPA Transparency')}
                   </div>
                 </div>
               </div>
@@ -136,14 +136,14 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
               <div className={`rounded-none overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.7)] border ${
                 isDark ? 'border-[#C5A880]/25' : 'border-gray-300'
               }`}>
-                {/* Caption bar phÃ­a trÃªn video */}
+                {/* Caption bar phía trên video */}
                 <div className={`flex items-center justify-between px-4 py-2.5 border-b ${
                   isDark ? 'border-[#1E293B] bg-[#0E131B]' : 'border-gray-200 bg-slate-50'
                 }`}>
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 bg-rose-500 rounded-none animate-pulse" />
                     <span className="font-mono text-[11px] font-semibold text-[#C5A880] uppercase tracking-wider">
-                      {t('ThÆ°á»›c Phim Thá»±c Táº¿ â€¢ BÃ n Giao Chung CÆ°', 'Actual Footage â€¢ Handover Towers')}
+                      {t('Thước Phim Thực Tế • Bàn Giao Chung Cư', 'Actual Footage • Handover Towers')}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-[10px] font-mono text-gray-400">
@@ -152,24 +152,24 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                   </div>
                 </div>
 
-                {/* Video 16:9 â€” loáº¡i bá» border iframe báº±ng cÃ¡ch che Ä‘Ã¨ trá»±c tiáº¿p */}
+                {/* Video 16:9 — loại bỏ border iframe bằng cách che đè trực tiếp */}
                 <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                   <iframe
                     className="absolute inset-0 w-full h-full border-0"
                     src="https://www.youtube.com/embed/NjkWg9gaHfE?autoplay=1&mute=1&controls=1&loop=1&playlist=NjkWg9gaHfE&rel=0&modestbranding=1&iv_load_policy=3"
-                    title={isEn ? 'Official showcase video of The Tropical - Beverly Solari Complex' : 'ThÆ°á»›c phim thá»±c táº¿ Cá»¥m Chung CÆ° The Tropical - Beverly Solari'}
+                    title={isEn ? 'Official showcase video of The Tropical - Beverly Solari Complex' : 'Thước phim thực tế Cụm Chung Cư The Tropical - Beverly Solari'}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
                     style={{ border: 'none', outline: 'none' }}
                   />
                 </div>
 
-                {/* Caption bar phÃ­a dÆ°á»›i video */}
+                {/* Caption bar phía dưới video */}
                 <div className={`px-4 py-3 flex items-center justify-between ${
                   isDark ? 'bg-[#0E131B]' : 'bg-slate-50'
                 }`}>
                   <p className={`text-[11px] font-light leading-relaxed max-w-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {t('Tráº£i nghiá»‡m khÃ´ng gian sá»‘ng xanh nhiá»‡t Ä‘á»›i, cá»¥m há»“ bÆ¡i resort vÃ  háº¡ táº§ng váº­n hÃ nh AI hiá»‡n Ä‘áº¡i.', 'Experience tropical green living spaces, resort pool complex, and modern AI operations infrastructure.')}
+                    {t('Trải nghiệm không gian sống xanh nhiệt đới, cụm hồ bơi resort và hạ tầng vận hành AI hiện đại.', 'Experience tropical green living spaces, resort pool complex, and modern AI operations infrastructure.')}
                   </p>
                   <span className="text-[10px] font-mono text-[#C5A880] uppercase shrink-0 ml-4">Beverly Solari</span>
                 </div>
@@ -177,7 +177,7 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
             </div>
           </div>
         ) : (
-          /* KHI ÄÃƒ ÄÄ‚NG NHáº¬P: Layout 2 cá»™t â€” Text trÃ¡i, Tháº» phiÃªn pháº£i */
+          /* KHI ĐÃ ĐĂNG NHẬP: Layout 2 cột — Text trái, Thẻ phiên phải */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             <div className="lg:col-span-7 space-y-6 sm:space-y-8">
               <div className={`inline-flex items-center gap-2.5 px-3 py-1.5 border text-[11px] uppercase tracking-[0.25em] font-medium backdrop-blur-sm rounded-none ${
@@ -186,7 +186,7 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                   : 'border-[#C5A880]/60 text-amber-800 bg-white/90 shadow-sm'
               }`}>
                 <Sparkles className="w-3.5 h-3.5 text-[#C5A880]" />
-                {t('Kiáº¿n TrÃºc ÄÆ°Æ¡ng Äáº¡i TÃ­ch Há»£p LÃµi AI', 'Contemporary Architecture with AI Core')}
+                {t('Kiến Trúc Đương Đại Tích Hợp Lõi AI', 'Contemporary Architecture with AI Core')}
               </div>
 
               <h1 className={`text-3xl sm:text-5xl lg:text-6xl font-serif font-normal leading-[1.15] tracking-tight ${
@@ -199,8 +199,8 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                   </>
                 ) : (
                   <>
-                    NÆ¡i Chuáº©n Má»±c Kiáº¿n TrÃºc Gáº·p Gá»¡ <br />
-                    <span className="italic text-[#C5A880] font-light">{isEn ? 'Artificial Intelligence 4.0' : 'TrÃ­ Tuá»‡ NhÃ¢n Táº¡o 4.0'}</span>
+                    Nơi Chuẩn Mực Kiến Trúc Gặp Gỡ <br />
+                    <span className="italic text-[#C5A880] font-light">{isEn ? 'Artificial Intelligence 4.0' : 'Trí Tuệ Nhân Tạo 4.0'}</span>
                   </>
                 )}
               </h1>
@@ -216,16 +216,16 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                   </>
                 ) : (
                   <>
-                    Dá»± Ã¡n cÄƒn há»™ háº¡ng sang <strong>SKYLINE Smart Residence</strong> táº¡i cá»¥m 4 chung cÆ°{' '}
-                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> kiáº¿n táº¡o chuáº©n sá»‘ng tiá»‡n nghi 
-                    hoÃ n chá»‰nh: Má»Ÿ cá»­a báº±ng khuÃ´n máº·t FaceID &lt;0.5s, an ninh thÃ´ng minh vÃ  há»— trá»£ cÆ° dÃ¢n chu Ä‘Ã¡o.
+                    Dự án căn hộ hạng sang <strong>SKYLINE Smart Residence</strong> tại cụm 4 chung cư{' '}
+                    <strong>The Tropical (BS-07, BS-08, BS-09, BS-10)</strong> kiến tạo chuẩn sống tiện nghi 
+                    hoàn chỉnh: Mở cửa bằng khuôn mặt FaceID &lt;0.5s, an ninh thông minh và hỗ trợ cư dân chu đáo.
                   </>
                 )}
               </p>
 
               <div className="flex flex-wrap items-center gap-3 sm:gap-4 pt-1">
                 <a href="#floorplans" className="hendon-btn-gold text-[12px] shadow-lg rounded-none">
-                  {t('Xem Máº·t Báº±ng CÄƒn Há»™', 'View Apartment Layouts')}
+                  {t('Xem Mặt Bằng Căn Hộ', 'View Apartment Layouts')}
                 </a>
                 <Link
                   href={currentUser.role === 'ADMIN' ? '/portal?tab=admin-dashboard' : currentUser.role === 'TECHNICIAN' ? '/portal?tab=admin-kanban' : '/portal?tab=resident-home'}
@@ -237,10 +237,10 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                 >
                   <LayoutDashboard className="w-4 h-4 shrink-0" />
                   {currentUser.role === 'ADMIN' 
-                    ? t('VÃ o Báº£ng Quáº£n Trá»‹ VinHomes Manager', 'Go to VinHomes Manager Dashboard') 
+                    ? t('Vào Bảng Quản Trị VinHomes Manager', 'Go to VinHomes Manager Dashboard') 
                     : currentUser.role === 'TECHNICIAN' 
-                    ? t('VÃ o Báº£ng Viá»‡c Ká»¹ Thuáº­t', 'Go to Technician Board') 
-                    : t('VÃ o Báº£ng Äiá»u Khiá»ƒn CÄƒn Há»™', 'Go to Resident Portal')}
+                    ? t('Vào Bảng Việc Kỹ Thuật', 'Go to Technician Board') 
+                    : t('Vào Bảng Điều Khiển Căn Hộ', 'Go to Resident Portal')}
                 </Link>
               </div>
 
@@ -248,33 +248,33 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                 isDark ? 'border-[#222B35]' : 'border-gray-200'
               }`}>
                 <div className="min-w-0">
-                  <div className="text-xl sm:text-2xl font-serif text-[#C5A880] font-bold">34 - 39 {t('Táº§ng', 'Floors')}</div>
+                  <div className="text-xl sm:text-2xl font-serif text-[#C5A880] font-bold">34 - 39 {t('Tầng', 'Floors')}</div>
                   <div className={`text-[11px] uppercase tracking-wider mt-1 break-words leading-tight ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {t('4 Chung CÆ° (BS-07 Ä‘áº¿n BS-10)', '4 Towers (BS-07 ~ BS-10)')}
+                    {t('4 Chung Cư (BS-07 đến BS-10)', '4 Towers (BS-07 ~ BS-10)')}
                   </div>
                 </div>
                 <div className="min-w-0">
                   <div className="text-xl sm:text-2xl font-serif text-[#C5A880] font-bold">&lt; 0.5s</div>
                   <div className={`text-[11px] uppercase tracking-wider mt-1 break-words leading-tight ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {t('Tá»‘c Äá»™ Má»Ÿ Cá»­a & Cá»•ng Xe', 'Door & Gate FaceID Speed')}
+                    {t('Tốc Độ Mở Cửa & Cổng Xe', 'Door & Gate FaceID Speed')}
                   </div>
                 </div>
                 <div className="min-w-0">
                   <div className="text-xl sm:text-2xl font-serif text-[#C5A880] font-bold">15 {t('Module', 'Modules')}</div>
                   <div className={`text-[11px] uppercase tracking-wider mt-1 break-words leading-tight ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {t('Há»‡ Thá»‘ng Váº­n HÃ nh AI', 'AI Operating System')}
+                    {t('Hệ Thống Vận Hành AI', 'AI Operating System')}
                   </div>
                 </div>
                 <div className="min-w-0">
                   <div className="text-xl sm:text-2xl font-serif text-[#C5A880] font-bold">100%</div>
                   <div className={`text-[11px] uppercase tracking-wider mt-1 break-words leading-tight ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {t('Sá»• Há»“ng & SPA Minh Báº¡ch', 'Pink Book & SPA Transparency')}
+                    {t('Sổ Hồng & SPA Minh Bạch', 'Pink Book & SPA Transparency')}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Tháº» phiÃªn Ä‘Äƒng nháº­p */}
+            {/* Thẻ phiên đăng nhập */}
             <div className="lg:col-span-5 w-full">
               <div className={`border p-6 space-y-4 shadow-2xl rounded-none transition-colors ${
                 isDark 
@@ -284,38 +284,38 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                 <div className={`text-[11px] uppercase tracking-[0.2em] text-[#C5A880] font-semibold border-b pb-3 flex items-center justify-between ${
                   isDark ? 'border-[#222B35]' : 'border-gray-100'
                 }`}>
-                  <span>{t('ThÃ´ng Tin PhiÃªn ÄÄƒng Nháº­p', 'Session Information')}</span>
+                  <span>{t('Thông Tin Phiên Đăng Nhập', 'Session Information')}</span>
                   <span className="text-gray-400 font-mono">ID: {currentUser.apartment_code || 'BQL_OFFICE'}</span>
                 </div>
                 
                 <div className="space-y-3 text-sm">
                   <div className={`flex justify-between py-1.5 border-b ${isDark ? 'border-[#1E2631]' : 'border-gray-100'}`}>
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('Há» vÃ  tÃªn:', 'Full Name:')}</span>
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('Họ và tên:', 'Full Name:')}</span>
                     <span className={`font-semibold text-right text-xs sm:text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {currentUser.full_name}
                     </span>
                   </div>
                   <div className={`flex justify-between py-1.5 border-b ${isDark ? 'border-[#1E2631]' : 'border-gray-100'}`}>
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('Vai trÃ²:', 'Role:')}</span>
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('Vai trò:', 'Role:')}</span>
                     <span className="font-semibold text-right text-xs text-[#C5A880]">
                       {currentUser.role === 'ADMIN' 
                         ? 'VinHomes Manager' 
                         : currentUser.role === 'TECHNICIAN' 
-                        ? t('Ká»¹ Thuáº­t ViÃªn', 'Technician') 
-                        : `${t('Chá»§ Há»™ CÄƒn', 'Apartment Owner')} ${currentUser.apartment_code || t('Chưa gán căn hộ', 'Unassigned')}`}
+                        ? t('Kỹ Thuật Viên', 'Technician') 
+                        : `${t('Chủ Hộ Căn', 'Apartment Owner')} ${currentUser.apartment_code || t('Chưa gán căn hộ', 'Unassigned')}`}
                     </span>
                   </div>
                   <div className={`flex justify-between py-1.5 border-b ${isDark ? 'border-[#1E2631]' : 'border-gray-100'}`}>
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('Vá»‹ trÃ­:', 'Location:')}</span>
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('Vị trí:', 'Location:')}</span>
                     <span className={`font-medium text-right text-xs sm:text-sm ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {t('Chung CÆ° BS-07 â€¢ The Tropical, TP. Thá»§ Äá»©c', 'BS-07 Tower â€¢ The Tropical, Thu Duc City')}
+                      {t('Chung Cư BS-07 • The Tropical, TP. Thủ Đức', 'BS-07 Tower • The Tropical, Thu Duc City')}
                     </span>
                   </div>
                   <div className="flex justify-between py-1.5">
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('Tráº¡ng thÃ¡i:', 'Status:')}</span>
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('Trạng thái:', 'Status:')}</span>
                     <span className="font-medium text-emerald-500 flex items-center gap-1.5 text-xs">
                       <span className="w-2 h-2 bg-emerald-500 rounded-none animate-pulse" />
-                      {t('Äang Hoáº¡t Äá»™ng', 'Active')}
+                      {t('Đang Hoạt Động', 'Active')}
                     </span>
                   </div>
                 </div>
@@ -327,10 +327,10 @@ export default function HeroSection({ onOpenLogin }: HeroSectionProps) {
                   >
                     <LayoutDashboard className="w-4 h-4" />
                     {currentUser.role === 'ADMIN' 
-                      ? t('VÃ o Báº£ng Quáº£n Trá»‹ VinHomes Manager', 'Go to VinHomes Manager Dashboard') 
+                      ? t('Vào Bảng Quản Trị VinHomes Manager', 'Go to VinHomes Manager Dashboard') 
                       : currentUser.role === 'TECHNICIAN' 
-                      ? t('VÃ o Báº£ng Viá»‡c Ká»¹ Thuáº­t', 'Go to Technician Board') 
-                      : t('VÃ o Báº£ng Äiá»u Khiá»ƒn CÄƒn Há»™', 'Go to Resident Portal')}
+                      ? t('Vào Bảng Việc Kỹ Thuật', 'Go to Technician Board') 
+                      : t('Vào Bảng Điều Khiển Căn Hộ', 'Go to Resident Portal')}
                   </Link>
                 </div>
               </div>

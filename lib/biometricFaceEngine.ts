@@ -184,7 +184,6 @@ export function extractFaceDescriptorFromBase64(base64Image: string): Float32Arr
       const buf = Buffer.from(cleanData, 'base64');
       // Kiểm tra định dạng JPEG (FF D8)
       if (buf.length > 4 && buf[0] === 0xff && buf[1] === 0xd8) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const jpeg = require('jpeg-js');
         const decoded = jpeg.decode(buf, { useTArray: true });
         if (decoded && decoded.width > 0 && decoded.height > 0) {
@@ -193,7 +192,6 @@ export function extractFaceDescriptorFromBase64(base64Image: string): Float32Arr
       }
       // Kiểm tra định dạng PNG (89 50 4E 47)
       if (buf.length > 8 && buf[0] === 0x89 && buf[1] === 0x50) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const png = require('fast-png');
         const decoded = png.decode(buf);
         if (decoded && decoded.width > 0 && decoded.height > 0) {

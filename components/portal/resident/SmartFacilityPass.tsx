@@ -1,6 +1,7 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import QrImage from '@/components/ui/QrImage';
 import { useResidentApartment } from '@/lib/hooks/useResidentApartment';
 import MissingApartmentNotice from '@/components/portal/resident/MissingApartmentNotice';
 import { 
@@ -70,9 +71,9 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
   const { t, isEn } = useLanguage();
   const { aptCode, missing: missingApartment } = useResidentApartment(currentUser);
   const isOwner = currentUser.role === 'OWNER';
-  const userName = currentUser?.full_name || (currentUser as any)?.fullname || 'CÆ° DÃ¢n';
+  const userName = currentUser?.full_name || (currentUser as any)?.fullname || 'Cư Dân';
 
-  // 3 Chá»©c nÄƒng rÃµ rÃ ng
+  // 3 Chức năng rõ ràng
   const [activeTab, setActiveTab] = useState<'DISCOVER' | 'BOOKING' | 'LOGS'>('DISCOVER');
   const [filterCategory, setFilterCategory] = useState<'ALL' | 'SPORTS' | 'WELLNESS' | 'PARTY' | 'PARK'>('ALL');
   const [logFilter, setLogFilter] = useState<string>('ALL');
@@ -84,235 +85,235 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
   const [isTurnstileScanning, setIsTurnstileScanning] = useState(false);
   const [turnstileSuccessMsg, setTurnstileSuccessMsg] = useState<string | null>(null);
 
-  // 14 tiá»‡n Ã­ch chuáº©n phÃ¢n khu The Tropical Vinhomes Grand Park
+  // 14 tiện ích chuẩn phân khu The Tropical Vinhomes Grand Park
   const amenitiesList = [
     // ===== SPORTS =====
     {
       id: 'fac-pool-resort',
-      name: 'Bá»ƒ BÆ¡i Nhiá»‡t Äá»›i Resort',
+      name: 'Bể Bơi Nhiệt Đới Resort',
       category: 'SPORTS',
-      location: 'Trung TÃ¢m PhÃ¢n Khu (Giá»¯a BS-08/BS-09)',
+      location: 'Trung Tâm Phân Khu (Giữa BS-08/BS-09)',
       hours: '06:00 - 22:00',
-      density: 'Ozone xá»­ lÃ½ â€¢ 29Â°C',
-      temp: 'Chuáº©n Resort 5â˜…',
+      density: 'Ozone xử lý • 29°C',
+      temp: 'Chuẩn Resort 5★',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: Waves,
       accessType: 'FREE_ENTRY',
-      accessBadge: 'VÃ o Tá»± Do (NFC / FaceID)',
-      price: 'Miá»…n phÃ­ theo Tháº» CÆ° DÃ¢n'
+      accessBadge: 'Vào Tự Do (NFC / FaceID)',
+      price: 'Miễn phí theo Thẻ Cư Dân'
     },
     {
       id: 'fac-pool-malibu',
-      name: 'Bá»ƒ BÆ¡i Malibu California',
+      name: 'Bể Bơi Malibu California',
       category: 'SPORTS',
-      location: 'Cá»¥m PhÃ­a TÃ¢y (Cáº¡nh SÃ¢n Thá»ƒ Thao BS-10)',
+      location: 'Cụm Phía Tây (Cạnh Sân Thể Thao BS-10)',
       hours: '06:00 - 21:30',
-      density: 'Phong cÃ¡ch Bá» TÃ¢y nÆ°á»›c Má»¹',
-      temp: 'Ozone lá»c 3 cáº¥p',
+      density: 'Phong cách Bờ Tây nước Mỹ',
+      temp: 'Ozone lọc 3 cấp',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: Waves,
       accessType: 'FREE_ENTRY',
-      accessBadge: 'VÃ o Tá»± Do (NFC / FaceID)',
-      price: 'Miá»…n phÃ­ theo Tháº» CÆ° DÃ¢n'
+      accessBadge: 'Vào Tự Do (NFC / FaceID)',
+      price: 'Miễn phí theo Thẻ Cư Dân'
     },
     {
       id: 'fac-gym',
-      name: 'PhÃ²ng Gym Technogym',
+      name: 'Phòng Gym Technogym',
       category: 'SPORTS',
-      location: 'Táº§ng 3 (Khu Thá»ƒ Thao)',
-      hours: 'Má»Ÿ cá»­a 24/7',
-      density: '38% (BÃ¬nh thÆ°á»ng)',
-      temp: '22Â°C â€¢ Äiá»u hÃ²a ion',
+      location: 'Tầng 3 (Khu Thể Thao)',
+      hours: 'Mở cửa 24/7',
+      density: '38% (Bình thường)',
+      temp: '22°C • Điều hòa ion',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: Dumbbell,
       accessType: 'FREE_ENTRY',
-      accessBadge: 'VÃ o Tá»± Do 24/7',
-      price: 'Miá»…n phÃ­ theo Tháº» CÆ° DÃ¢n'
+      accessBadge: 'Vào Tự Do 24/7',
+      price: 'Miễn phí theo Thẻ Cư Dân'
     },
     {
       id: 'fac-gym-outdoor',
-      name: 'SÃ¢n Gym NgoÃ i Trá»i',
+      name: 'Sân Gym Ngoài Trời',
       category: 'SPORTS',
-      location: 'Cáº¡nh BS-09 (PhÃ­a ÄÃ´ng Há»“ BÆ¡i)',
+      location: 'Cạnh BS-09 (Phía Đông Hồ Bơi)',
       hours: '06:00 - 21:30',
-      density: 'MÃ¡y táº­p Ä‘a nÄƒng ngoÃ i trá»i',
-      temp: 'Trá»i thoÃ¡ng mÃ¡t',
+      density: 'Máy tập đa năng ngoài trời',
+      temp: 'Trời thoáng mát',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: Dumbbell,
       accessType: 'FREE_ENTRY',
-      accessBadge: 'VÃ o Tá»± Do (KhÃ´ng cáº§n tháº»)',
-      price: 'HoÃ n toÃ n miá»…n phÃ­'
+      accessBadge: 'Vào Tự Do (Không cần thẻ)',
+      price: 'Hoàn toàn miễn phí'
     },
     {
       id: 'fac-sports-malibu',
-      name: 'SÃ¢n Thá»ƒ Thao Malibu (Tennis & BÃ³ng Rá»•)',
+      name: 'Sân Thể Thao Malibu (Tennis & Bóng Rổ)',
       category: 'SPORTS',
-      location: 'Cá»¥m Malibu PhÃ­a TÃ¢y (BS-10)',
+      location: 'Cụm Malibu Phía Tây (BS-10)',
       hours: '06:00 - 21:30',
-      density: 'SÃ¢n Tennis ATP + SÃ¢n BÃ³ng Rá»• FIBA',
-      temp: 'ÄÃ¨n chiáº¿u sÃ¡ng ban Ä‘Ãªm',
+      density: 'Sân Tennis ATP + Sân Bóng Rổ FIBA',
+      temp: 'Đèn chiếu sáng ban đêm',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: Flame,
       accessType: 'BOOKING_REQUIRED',
-      accessBadge: 'Äáº·t SÃ¢n Giá»¯ Chá»— (Tab Äáº·t Chá»—)',
-      price: 'Miá»…n phÃ­ theo Tháº» CÆ° DÃ¢n (Tá»‘i Ä‘a 2 ca/tuáº§n)'
+      accessBadge: 'Đặt Sân Giữ Chỗ (Tab Đặt Chỗ)',
+      price: 'Miễn phí theo Thẻ Cư Dân (Tối đa 2 ca/tuần)'
     },
     {
       id: 'fac-yoga',
-      name: 'SÃ¢n Yoga NgoÃ i Trá»i & Thiá»n',
+      name: 'Sân Yoga Ngoài Trời & Thiền',
       category: 'WELLNESS',
-      location: 'Cáº¡nh BS-07 (Liá»n ká» Phá»‘ Cá» Rodeo)',
+      location: 'Cạnh BS-07 (Liền kề Phố Cọ Rodeo)',
       hours: '06:00 - 20:00',
-      density: 'KhÃ´ng gian tÄ©nh láº·ng, tháº£m táº­p outdoor',
-      temp: 'CÃ¢y xanh bÃ³ng mÃ¡t tá»± nhiÃªn',
+      density: 'Không gian tĩnh lặng, thảm tập outdoor',
+      temp: 'Cây xanh bóng mát tự nhiên',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: Smile,
       accessType: 'BOOKING_REQUIRED',
-      accessBadge: 'ÄÄƒng KÃ½ Khung Giá» (Tab Äáº·t Chá»—)',
-      price: 'Miá»…n phÃ­ theo Tháº» CÆ° DÃ¢n'
+      accessBadge: 'Đăng Ký Khung Giờ (Tab Đặt Chỗ)',
+      price: 'Miễn phí theo Thẻ Cư Dân'
     },
     {
       id: 'fac-sauna',
-      name: 'PhÃ²ng XÃ´ng HÆ¡i ÄÃ¡ Muá»‘i VIP',
+      name: 'Phòng Xông Hơi Đá Muối VIP',
       category: 'WELLNESS',
-      location: 'Táº§ng 3 (Khu ChÄƒm SÃ³c Sá»©c Khá»e)',
-      hours: '09:00 - 21:00 (Theo giá» Ä‘áº·t)',
-      density: 'PhÃ²ng riÃªng gia Ä‘Ã¬nh',
-      temp: '48Â°C â€¢ Tinh dáº§u tháº£o má»™c Himalaya',
+      location: 'Tầng 3 (Khu Chăm Sóc Sức Khỏe)',
+      hours: '09:00 - 21:00 (Theo giờ đặt)',
+      density: 'Phòng riêng gia đình',
+      temp: '48°C • Tinh dầu thảo mộc Himalaya',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: Flame,
       accessType: 'BOOKING_REQUIRED',
-      accessBadge: 'Äáº·t PhÃ²ng VIP (Tá»‘i Äa 2 NgÆ°á»i)',
-      price: 'PhÃ²ng riÃªng tÆ° VIP â€¢ 500.000 Ä‘/giá»'
+      accessBadge: 'Đặt Phòng VIP (Tối Đa 2 Người)',
+      price: 'Phòng riêng tư VIP • 500.000 đ/giờ'
     },
     {
       id: 'fac-kids',
-      name: 'Khu Vui ChÆ¡i Tráº» Em',
+      name: 'Khu Vui Chơi Trẻ Em',
       category: 'WELLNESS',
-      location: 'Táº§ng 1 (Sáº£nh Chung CÆ° A) & NgoÃ i Trá»i',
+      location: 'Tầng 1 (Sảnh Chung Cư A) & Ngoài Trời',
       hours: '07:00 - 21:00',
-      density: '30% (Vá»«a)',
-      temp: '24Â°C â€¢ SÃ n khÃ¡ng khuáº©n nháº­p kháº©u',
+      density: '30% (Vừa)',
+      temp: '24°C • Sàn kháng khuẩn nhập khẩu',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: Smile,
       accessType: 'FREE_ENTRY',
-      accessBadge: 'VÃ o Tá»± Do (Tráº» Em & Gia ÄÃ¬nh)',
-      price: 'Miá»…n phÃ­ theo Tháº» CÆ° DÃ¢n'
+      accessBadge: 'Vào Tự Do (Trẻ Em & Gia Đình)',
+      price: 'Miễn phí theo Thẻ Cư Dân'
     },
     // ===== PARK & GARDEN =====
     {
       id: 'fac-rodeo-street',
-      name: 'Phá»‘ Cá» Rodeo & Dáº¡o Bá»™',
+      name: 'Phố Cọ Rodeo & Dạo Bộ',
       category: 'PARK',
-      location: 'Liá»n Ká» BS-07 (Trá»¥c PhÃ­a TÃ¢y)',
-      hours: '00:00 - 24:00 (Má»Ÿ cá»­a cáº£ ngÃ y)',
-      density: 'Shophouse & CÃ  phÃª nhiá»‡t Ä‘á»›i',
-      temp: 'BÃ³ng cá» tá»± nhiÃªn thoÃ¡ng mÃ¡t',
+      location: 'Liền Kề BS-07 (Trục Phía Tây)',
+      hours: '00:00 - 24:00 (Mở cửa cả ngày)',
+      density: 'Shophouse & Cà phê nhiệt đới',
+      temp: 'Bóng cọ tự nhiên thoáng mát',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: UtensilsCrossed,
       accessType: 'FREE_ENTRY',
-      accessBadge: 'KhÃ´ng Gian CÃ´ng Cá»™ng',
-      price: 'Tá»± do ra vÃ o cáº£ ngÃ y'
+      accessBadge: 'Không Gian Công Cộng',
+      price: 'Tự do ra vào cả ngày'
     },
     {
       id: 'fac-california-garden',
-      name: 'VÆ°á»n California & Dáº¡o Bá»™',
+      name: 'Vườn California & Dạo Bộ',
       category: 'PARK',
-      location: 'Giá»¯a BS-07 & BS-08 (Trung TÃ¢m)',
+      location: 'Giữa BS-07 & BS-08 (Trung Tâm)',
       hours: '06:00 - 22:00',
-      density: 'Cáº£nh quan cÃ¢y xanh Bá» TÃ¢y',
-      temp: 'Há»‡ thá»‘ng tÆ°á»›i nhá» giá»t tá»± Ä‘á»™ng',
+      density: 'Cảnh quan cây xanh Bờ Tây',
+      temp: 'Hệ thống tưới nhỏ giọt tự động',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: Trees,
       accessType: 'FREE_ENTRY',
-      accessBadge: 'KhÃ´ng Gian Xanh CÃ´ng Cá»™ng',
-      price: 'Tá»± do ra vÃ o cáº£ ngÃ y'
+      accessBadge: 'Không Gian Xanh Công Cộng',
+      price: 'Tự do ra vào cả ngày'
     },
     {
       id: 'fac-stream-waterfall',
-      name: 'Suá»‘i Báº­c Thang & ThÃ¡c Cáº£nh Quan',
+      name: 'Suối Bậc Thang & Thác Cảnh Quan',
       category: 'PARK',
-      location: 'Trung TÃ¢m PhÃ¢n Khu (Ven Há»“ BÆ¡i)',
+      location: 'Trung Tâm Phân Khu (Ven Hồ Bơi)',
       hours: '06:00 - 23:00',
-      density: 'Há»‡ thá»‘ng thÃ¡c nÆ°á»›c tá»± Ä‘á»™ng',
-      temp: 'Ã‚m thanh suá»‘i tá»± nhiÃªn',
+      density: 'Hệ thống thác nước tự động',
+      temp: 'Âm thanh suối tự nhiên',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: Waves,
       accessType: 'FREE_ENTRY',
-      accessBadge: 'KhÃ´ng Gian CÃ´ng Cá»™ng',
-      price: 'Tá»± do ngáº¯m cáº£nh & chá»¥p áº£nh'
+      accessBadge: 'Không Gian Công Cộng',
+      price: 'Tự do ngắm cảnh & chụp ảnh'
     },
     {
       id: 'fac-cabana',
-      name: 'ChÃ²i Nghá»‰ Cabana Ven Há»“',
+      name: 'Chòi Nghỉ Cabana Ven Hồ',
       category: 'PARK',
-      location: 'Ven Há»“ BÆ¡i Resort BS-09',
-      hours: '08:00 - 21:00 (Äáº·t trÆ°á»›c)',
-      density: 'ChÃ²i riÃªng tÆ°, view há»“ bÆ¡i',
-      temp: 'MÃ¡i lÃ¡ tá»± nhiÃªn chá»‘ng náº¯ng',
+      location: 'Ven Hồ Bơi Resort BS-09',
+      hours: '08:00 - 21:00 (Đặt trước)',
+      density: 'Chòi riêng tư, view hồ bơi',
+      temp: 'Mái lá tự nhiên chống nắng',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: Smile,
       accessType: 'BOOKING_REQUIRED',
-      accessBadge: 'Äáº·t ChÃ²i RiÃªng (Tá»‘i Äa 4 NgÆ°á»i)',
-      price: 'Miá»…n phÃ­ â€¢ Äáº·t trÆ°á»›c qua Tháº» CÆ° DÃ¢n'
+      accessBadge: 'Đặt Chòi Riêng (Tối Đa 4 Người)',
+      price: 'Miễn phí • Đặt trước qua Thẻ Cư Dân'
     },
     // ===== PARTY =====
     {
       id: 'fac-bbq',
-      name: 'VÆ°á»n Tiá»‡c NÆ°á»›ng BBQ SÃ¢n ThÆ°á»£ng',
+      name: 'Vườn Tiệc Nướng BBQ Sân Thượng',
       category: 'PARTY',
-      location: 'Táº§ng 25 (Khu VÆ°á»n NÆ°á»›ng NgoÃ i Trá»i)',
+      location: 'Tầng 25 (Khu Vườn Nướng Ngoài Trời)',
       hours: '17:00 - 23:00 (Theo ca)',
-      density: 'Sáºµn sÃ ng 4/6 khu báº¿p Weber',
-      temp: 'View Panorama 360Â° toÃ n khu',
+      density: 'Sẵn sàng 4/6 khu bếp Weber',
+      temp: 'View Panorama 360° toàn khu',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: UtensilsCrossed,
       accessType: 'BOOKING_REQUIRED',
-      accessBadge: 'ÄÄƒng KÃ½ Theo Ca Tiá»‡c',
-      price: 'Báº¿p Weber & dá»n sau tiá»‡c â€¢ 600.000 Ä‘/ca (Ca 3 giá»)'
+      accessBadge: 'Đăng Ký Theo Ca Tiệc',
+      price: 'Bếp Weber & dọn sau tiệc • 600.000 đ/ca (Ca 3 giờ)'
     },
     {
       id: 'fac-multipurpose-lawn',
-      name: 'SÃ¢n Cá» Äa NÄƒng Y-01 (Malibu)',
+      name: 'Sân Cỏ Đa Năng Y-01 (Malibu)',
       category: 'PARTY',
-      location: 'Cá»¥m Malibu PhÃ­a TÃ¢y (Cáº¡nh BS-10)',
+      location: 'Cụm Malibu Phía Tây (Cạnh BS-10)',
       hours: '07:00 - 21:00',
-      density: '800mÂ² cá» nhÃ¢n táº¡o tháº¿ há»‡ 4',
-      temp: 'Há»‡ thá»‘ng thoÃ¡t nÆ°á»›c tá»± Ä‘á»™ng',
+      density: '800m² cỏ nhân tạo thế hệ 4',
+      temp: 'Hệ thống thoát nước tự động',
       image: '/masterplan/vinhomes-amenities-map.jpg',
       icon: Flame,
       accessType: 'BOOKING_REQUIRED',
-      accessBadge: 'Äáº·t SÃ¢n NhÃ³m (â‰¤ 20 NgÆ°á»i)',
-      price: 'Miá»…n phÃ­ theo Tháº» CÆ° DÃ¢n (ÄÄƒng kÃ½ ca 2 giá»)'
+      accessBadge: 'Đặt Sân Nhóm (≤ 20 Người)',
+      price: 'Miễn phí theo Thẻ Cư Dân (Đăng ký ca 2 giờ)'
     },
   ];
 
-  // Dá»¯ liá»‡u thá»±c táº¿ tá»« Store (KhÃ´ng dá»¯ liá»‡u áº£o)
+  // Dữ liệu thực tế từ Store (Không dữ liệu ảo)
   const [accessLogs, setAccessLogs] = useState<FacilityCheckinLog[]>(() => getFacilityCheckinLogs(aptCode));
   const [bookings, setBookings] = useState<FacilityBooking[]>(() => getFacilityBookings(aptCode));
   const [quota, setQuota] = useState(() => getFacilityMonthlyQuota(aptCode));
 
-  // State Form Ä‘áº·t chá»—
+  // State Form đặt chỗ
   const todayStr = new Date().toISOString().split('T')[0];
   const [bookingFacilityId, setBookingFacilityId] = useState('fac-sauna');
   const [bookingDate, setBookingDate] = useState(todayStr);
-  const [bookingTimeSlot, setBookingTimeSlot] = useState('18:00 - 20:00 (Buá»•i tá»‘i - Giá» Ä‘áº¹p)');
+  const [bookingTimeSlot, setBookingTimeSlot] = useState('18:00 - 20:00 (Buổi tối - Giờ đẹp)');
   const [bookingGuestCount, setBookingGuestCount] = useState(2);
   const [bookingDurationHours, setBookingDurationHours] = useState(2);
-  const [bookingPaymentMethod, setBookingPaymentMethod] = useState('Trá»« vÃ o hÃ³a Ä‘Æ¡n sinh hoáº¡t thÃ¡ng tá»›i');
+  const [bookingPaymentMethod, setBookingPaymentMethod] = useState('Trừ vào hóa đơn sinh hoạt tháng tới');
   const [bookingNotes, setBookingNotes] = useState('');
   const [bookingSuccessMsg, setBookingSuccessMsg] = useState<string | null>(null);
   const [bookingErrorMsg, setBookingErrorMsg] = useState<string | null>(null);
 
-  // Danh sÃ¡ch khung giá» tá»‘i Æ°u theo tá»«ng loáº¡i tiá»‡n Ã­ch (Há»— trá»£ chuyá»ƒn ngá»¯ VI / EN)
+  // Danh sách khung giờ tối ưu theo từng loại tiện ích (Hỗ trợ chuyển ngữ VI / EN)
   const facilityTimeSlots = useMemo(() => {
     if (bookingFacilityId === 'fac-bbq') {
       return isEn ? [
         '17:00 - 19:30 (Sunset Rooftop BBQ Session)',
         '19:30 - 22:00 (Starlight Night BBQ Session)',
       ] : [
-        '17:00 - 19:30 (Ca Tiá»‡c HoÃ ng HÃ´n SÃ¢n ThÆ°á»£ng)',
-        '19:30 - 22:00 (Ca Tiá»‡c ÄÃªm Ãnh Sao SÃ¢n ThÆ°á»£ng)',
+        '17:00 - 19:30 (Ca Tiệc Hoàng Hôn Sân Thượng)',
+        '19:30 - 22:00 (Ca Tiệc Đêm Ánh Sao Sân Thượng)',
       ];
     }
     if (bookingFacilityId === 'fac-sauna') {
@@ -324,12 +325,12 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
         '18:00 - 20:00 (Evening VIP - Prime Time)',
         '20:00 - 21:30 (Night Serenity)',
       ] : [
-        '09:00 - 11:00 (Buá»•i sÃ¡ng thanh lá»c)',
-        '11:00 - 13:00 (TrÆ°a thÆ° giÃ£n)',
-        '14:00 - 16:00 (Äáº§u giá» chiá»u)',
-        '16:00 - 18:00 (HoÃ ng hÃ´n phá»¥c há»“i)',
-        '18:00 - 20:00 (Buá»•i tá»‘i VIP - Giá» Ä‘áº¹p)',
-        '20:00 - 21:30 (ÄÃªm thÆ° thÃ¡i)',
+        '09:00 - 11:00 (Buổi sáng thanh lọc)',
+        '11:00 - 13:00 (Trưa thư giãn)',
+        '14:00 - 16:00 (Đầu giờ chiều)',
+        '16:00 - 18:00 (Hoàng hôn phục hồi)',
+        '18:00 - 20:00 (Buổi tối VIP - Giờ đẹp)',
+        '20:00 - 21:30 (Đêm thư thái)',
       ];
     }
     return isEn ? [
@@ -341,42 +342,42 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
       '18:00 - 20:00 (Evening Prime Time)',
       '20:00 - 22:00 (Night Workout & Recovery)',
     ] : [
-      '06:00 - 08:00 (SÃ¡ng sá»›m bÃ¬nh minh)',
-      '08:00 - 10:00 (Buá»•i sÃ¡ng thÆ° giÃ£n)',
-      '10:00 - 12:00 (TrÆ°a thanh tá»‹nh)',
-      '14:00 - 16:00 (Äáº§u giá» chiá»u)',
-      '16:00 - 18:00 (HoÃ ng hÃ´n)',
-      '18:00 - 20:00 (Buá»•i tá»‘i - Giá» Ä‘áº¹p)',
-      '20:00 - 22:00 (Phá»¥c há»“i thá»ƒ lá»±c Ä‘Ãªm)',
+      '06:00 - 08:00 (Sáng sớm bình minh)',
+      '08:00 - 10:00 (Buổi sáng thư giãn)',
+      '10:00 - 12:00 (Trưa thanh tịnh)',
+      '14:00 - 16:00 (Đầu giờ chiều)',
+      '16:00 - 18:00 (Hoàng hôn)',
+      '18:00 - 20:00 (Buổi tối - Giờ đẹp)',
+      '20:00 - 22:00 (Phục hồi thể lực đêm)',
     ];
   }, [bookingFacilityId, isEn]);
 
-  // Tá»± Ä‘á»™ng chuyá»ƒn khung giá» há»£p lá»‡ khi Ä‘á»•i tiá»‡n Ã­ch
+  // Tự động chuyển khung giờ hợp lệ khi đổi tiện ích
   useEffect(() => {
     if (!facilityTimeSlots.includes(bookingTimeSlot)) {
       setBookingTimeSlot(facilityTimeSlots[0] || '18:00 - 20:00');
     }
   }, [facilityTimeSlots, bookingTimeSlot]);
 
-  // Tra cá»©u tráº¡ng thÃ¡i sá»‘ chá»— kháº£ dá»¥ng trong thá»i gian thá»±c (Bilingual)
+  // Tra cứu trạng thái số chỗ khả dụng trong thời gian thực (Bilingual)
   const currentSlotStatus = useMemo(() => {
     return getFacilitySlotStatus(bookingFacilityId, bookingDate, bookingTimeSlot, aptCode, isEn);
   }, [bookingFacilityId, bookingDate, bookingTimeSlot, aptCode, bookings, isEn]);
 
   const currentLimitRule = FACILITY_LIMIT_RULES[bookingFacilityId] || {
     facilityId: bookingFacilityId,
-    facilityName: 'Tiá»‡n Ã­ch',
+    facilityName: 'Tiện ích',
     facilityNameEn: 'Facility',
     maxSlotsPerTime: 2,
     maxGuests: 10,
     isPrivate: false,
-    description: 'Tiá»‡n Ã­ch chung cÆ° (Tá»‘i Ä‘a 2 lÆ°á»£t / khung giá»)',
+    description: 'Tiện ích chung cư (Tối đa 2 lượt / khung giờ)',
     descriptionEn: 'Apartment facility (Max 2 slots / time slot)'
   };
 
-  // State Modal HoÃ n Tiá»n Khi Báº­n Äá»™t Xuáº¥t
+  // State Modal Hoàn Tiền Khi Bận Đột Xuất
   const [refundModalBooking, setRefundModalBooking] = useState<FacilityBooking | null>(null);
-  const [refundReason, setRefundReason] = useState('Báº­n Ä‘á»™t xuáº¥t khÃ´ng thá»ƒ sáº¯p xáº¿p tham gia');
+  const [refundReason, setRefundReason] = useState('Bận đột xuất không thể sắp xếp tham gia');
   const [isProcessingRefund, setIsProcessingRefund] = useState(false);
   const [refundResultAlert, setRefundResultAlert] = useState<{ type: 'success' | 'warning' | 'error'; message: string } | null>(null);
 
@@ -386,7 +387,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
         setBookings(list);
         setQuota(getFacilityMonthlyQuota(aptCode));
       })
-      .catch((err) => console.error('Lá»—i Ä‘á»“ng bá»™ lá»‹ch sá»­ Ä‘áº·t tiá»‡n Ã­ch:', err));
+      .catch((err) => console.error('Lỗi đồng bộ lịch sử đặt tiện ích:', err));
 
     const handleLogAdded = () => setAccessLogs(getFacilityCheckinLogs(aptCode));
     const handleBooked = () => {
@@ -421,29 +422,29 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     };
   }, [aptCode]);
 
-  // Xá»­ lÃ½ xÃ¡c nháº­n check-in qua cá»•ng Turnstile
+  // Xử lý xác nhận check-in qua cổng Turnstile
   const handleExecuteTurnstileCheckin = () => {
     if (!turnstileModalFac || isTurnstileScanning) return;
     setIsTurnstileScanning(true);
 
     setTimeout(() => {
       setIsTurnstileScanning(false);
-      const methodText = turnstileMethod === 'NFC' ? 'Tháº» CÆ° DÃ¢n' : 'Nháº­n Diá»‡n KhuÃ´n Máº·t';
+      const methodText = turnstileMethod === 'NFC' ? 'Thẻ Cư Dân' : 'Nhận Diện Khuôn Mặt';
       
-      // Ghi log thá»±c táº¿ vÃ o Store
+      // Ghi log thực tế vào Store
       const updated = addFacilityCheckinLog(aptCode, {
         facilityId: turnstileModalFac.id,
         facilityName: turnstileModalFac.name,
         userName: userName,
-        role: isOwner ? 'Chá»§ Há»™ (Master)' : 'NgÆ°á»i NhÃ ',
+        role: isOwner ? 'Chủ Hộ (Master)' : 'Người Nhà',
         method: turnstileMethod === 'NFC' ? 'NFC_CARD' : 'FACE_ID',
         cardUid: `NFC-SKY-${aptCode}-01`,
         status: 'SUCCESS',
-        detail: `XÃ¡c thá»±c thÃ nh cÃ´ng báº±ng ${methodText} táº¡i cá»•ng kiá»ƒm soÃ¡t ${turnstileModalFac.name} (${turnstileModalFac.location}) â€¢ Cá»•ng má»Ÿ 0.3s`
+        detail: `Xác thực thành công bằng ${methodText} tại cổng kiểm soát ${turnstileModalFac.name} (${turnstileModalFac.location}) • Cổng mở 0.3s`
       });
       setAccessLogs(updated);
 
-      setTurnstileSuccessMsg(`ðŸŽ‰ BÃP! Cá»•ng kiá»ƒm soÃ¡t ${turnstileModalFac.name} Ä‘Ã£ má»Ÿ tá»± Ä‘á»™ng (0.28s). Xin chÃ o cÆ° dÃ¢n ${userName}!`);
+      setTurnstileSuccessMsg(`🎉 BÍP! Cổng kiểm soát ${turnstileModalFac.name} đã mở tự động (0.28s). Xin chào cư dân ${userName}!`);
       setTimeout(() => {
         setTurnstileSuccessMsg(null);
         setTurnstileModalFac(null);
@@ -451,7 +452,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     }, 700);
   };
 
-  // Quáº¹t vÃ© Ä‘iá»‡n tá»­ QR Ä‘á»ƒ vÃ o cá»­a
+  // Quẹt vé điện tử QR để vào cửa
   const handleCheckinTicket = (ticketCode: string) => {
     const result = checkinWithTicket(aptCode, ticketCode);
     if (result.success) {
@@ -463,7 +464,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     }
   };
 
-  // Táº¡o Ä‘áº·t chá»— má»›i - ÄÃ£ tÃ­ch há»£p báº«y lá»—i trÃ¹ng giá», duplicate vÃ  giá»›i háº¡n sá»©c chá»©a
+  // Tạo đặt chỗ mới - Đã tích hợp bẫy lỗi trùng giờ, duplicate và giới hạn sức chứa
   const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
     setBookingErrorMsg(null);
@@ -474,8 +475,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     const isBbq = fac.id === 'fac-bbq';
     const depositAmount = isPrivate ? bookingDurationHours * 500000 : (isBbq ? 600000 : 0);
     const pricingText = isPrivate 
-      ? `${(bookingDurationHours * 500000).toLocaleString('vi-VN')} Ä‘ (${bookingDurationHours} tiáº¿ng phÃ²ng VIP)` 
-      : (isBbq ? '600.000 Ä‘ / ca tiá»‡c BBQ' : 'Miá»…n phÃ­ theo Tháº» CÆ° DÃ¢n');
+      ? `${(bookingDurationHours * 500000).toLocaleString('vi-VN')} đ (${bookingDurationHours} tiếng phòng VIP)` 
+      : (isBbq ? '600.000 đ / ca tiệc BBQ' : 'Miễn phí theo Thẻ Cư Dân');
 
     const result = createFacilityBooking(
       aptCode,
@@ -494,7 +495,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     );
 
     if (!result.success || !result.newBooking) {
-      setBookingErrorMsg(result.error || 'Äáº·t chá»— khÃ´ng thÃ nh cÃ´ng. Vui lÃ²ng kiá»ƒm tra láº¡i khung giá» vÃ  giá»›i háº¡n sá»©c chá»©a.');
+      setBookingErrorMsg(result.error || 'Đặt chỗ không thành công. Vui lòng kiểm tra lại khung giờ và giới hạn sức chứa.');
       return;
     }
 
@@ -502,22 +503,22 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
     setQuota(getFacilityMonthlyQuota(aptCode));
     setBookingNotes('');
     setBookingSuccessMsg(
-      `ðŸŽ‰ Äáº·t chá»— thÃ nh cÃ´ng! MÃ£ vÃ© Ä‘iá»‡n tá»­: [${result.newBooking.ticketCode}]. ` +
+      `🎉 Đặt chỗ thành công! Mã vé điện tử: [${result.newBooking.ticketCode}]. ` +
       (depositAmount > 0 
-        ? `ÄÃ£ xÃ¡c nháº­n thanh toÃ¡n giá»¯ chá»— ${depositAmount.toLocaleString('vi-VN')} Ä‘ (${bookingPaymentMethod}). ` 
+        ? `Đã xác nhận thanh toán giữ chỗ ${depositAmount.toLocaleString('vi-VN')} đ (${bookingPaymentMethod}). ` 
         : '') +
-      `QuÃ½ cÆ° dÃ¢n cÃ³ thá»ƒ quáº¹t vÃ© QR táº¡i cá»•ng hoáº·c há»§y hoÃ n tiá»n náº¿u cÃ³ viá»‡c báº­n Ä‘á»™t xuáº¥t.`
+      `Quý cư dân có thể quẹt vé QR tại cổng hoặc hủy hoàn tiền nếu có việc bận đột xuất.`
     );
     setTimeout(() => setBookingSuccessMsg(null), 8000);
   };
 
-  // Má»Ÿ modal hoÃ n tiá»n khi báº­n Ä‘á»™t xuáº¥t
+  // Mở modal hoàn tiền khi bận đột xuất
   const handleOpenRefundModal = (booking: FacilityBooking) => {
     setRefundModalBooking(booking);
-    setRefundReason('Báº­n viá»‡c gia Ä‘Ã¬nh Ä‘á»™t xuáº¥t khÃ´ng thá»ƒ tham gia');
+    setRefundReason('Bận việc gia đình đột xuất không thể tham gia');
   };
 
-  // XÃ¡c nháº­n xá»­ lÃ½ hoÃ n tiá»n
+  // Xác nhận xử lý hoàn tiền
   const handleConfirmRefund = () => {
     if (!refundModalBooking) return;
     setIsProcessingRefund(true);
@@ -550,23 +551,23 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
   return (
     <div className="space-y-6 w-full animate-fadeIn">
       {/* ============================================================= */}
-      {/* 1. HEADER CHÃNH: Äá»ŠNH DANH & THá»NG KÃŠ QUYá»€N Lá»¢I THá»°C Táº¾       */}
+      {/* 1. HEADER CHÍNH: ĐỊNH DANH & THỐNG KÊ QUYỀN LỢI THỰC TẾ       */}
       {/* ============================================================= */}
       <div className="p-5 bg-gradient-to-r from-[#121820] via-[#161F2C] to-[#121820] border border-[#2A374A] rounded-none shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="text-[11px] uppercase tracking-[0.2em] text-[#C5A880] font-bold flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#C5A880]" />
-            <span>{isEn ? 'Resident Amenities â€¢ Unit' : 'Tiá»‡n Ãch CÆ° DÃ¢n â€¢ CÄƒn'} {aptCode}</span>
+            <span>{isEn ? 'Resident Amenities • Unit' : 'Tiện Ích Cư Dân • Căn'} {aptCode}</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-serif font-bold text-white flex items-center gap-2">
-            <span>{isEn ? 'Internal Amenities' : 'Tiá»‡n Ãch Ná»™i Khu'}</span>
+            <span>{isEn ? 'Internal Amenities' : 'Tiện Ích Nội Khu'}</span>
           </h2>
           <p className="text-xs text-gray-400 font-mono flex flex-wrap items-center gap-2">
-            <span>{isEn ? 'Host Resident:' : 'Chá»§ Há»™:'} <strong className="text-white">{userName}</strong></span>
-            <span className="text-gray-600">â€¢</span>
-            <span className="text-emerald-400">{isEn ? 'Gym, Pool, Malibu Court: Free for Residents' : 'Gym, Bá»ƒ bÆ¡i, SÃ¢n Malibu: Miá»…n phÃ­ CÆ° DÃ¢n'}</span>
-            <span className="text-gray-600">â€¢</span>
-            <span>{isEn ? 'Fast gate unlock 0.28s' : 'Má»Ÿ cá»•ng 0.28s'}</span>
+            <span>{isEn ? 'Host Resident:' : 'Chủ Hộ:'} <strong className="text-white">{userName}</strong></span>
+            <span className="text-gray-600">•</span>
+            <span className="text-emerald-400">{isEn ? 'Gym, Pool, Malibu Court: Free for Residents' : 'Gym, Bể bơi, Sân Malibu: Miễn phí Cư Dân'}</span>
+            <span className="text-gray-600">•</span>
+            <span>{isEn ? 'Fast gate unlock 0.28s' : 'Mở cổng 0.28s'}</span>
           </p>
         </div>
 
@@ -575,8 +576,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
           <div className="h-11 px-3 bg-[#0D1117] border border-[#2A374A] rounded-none text-xs flex items-center justify-center gap-2 sm:gap-2.5 truncate">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <div className="leading-tight truncate">
-              <div className="text-[9px] uppercase tracking-wider text-gray-400 font-mono truncate">{isEn ? 'Monthly BBQ Quota' : 'Háº¡n Má»©c BBQ ThÃ¡ng'}</div>
-              <div className="font-mono font-bold text-[#C5A880] text-xs truncate">{quota.remaining} / {quota.max} {isEn ? 'turns' : 'lÆ°á»£t'}</div>
+              <div className="text-[9px] uppercase tracking-wider text-gray-400 font-mono truncate">{isEn ? 'Monthly BBQ Quota' : 'Hạn Mức BBQ Tháng'}</div>
+              <div className="font-mono font-bold text-[#C5A880] text-xs truncate">{quota.remaining} / {quota.max} {isEn ? 'turns' : 'lượt'}</div>
             </div>
           </div>
 
@@ -586,16 +587,16 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
             className="h-11 px-3 sm:px-4 bg-[#1A2332] hover:bg-[#253247] border border-[#C5A880]/50 hover:border-[#C5A880] text-white text-xs font-bold uppercase rounded-none transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 truncate"
           >
             <CreditCard className="w-4 h-4 text-[#C5A880] shrink-0" />
-            <span className="truncate">{isEn ? '3D Resident Card' : 'Tháº» CÆ° DÃ¢n 3D'}</span>
+            <span className="truncate">{isEn ? '3D Resident Card' : 'Thẻ Cư Dân 3D'}</span>
           </button>
         </div>
       </div>
 
       {/* ============================================================= */}
-      {/* 2. THANH ÄIá»€U HÆ¯á»šNG 3 CHá»¨C NÄ‚NG (WORKFLOW TABS)               */}
+      {/* 2. THANH ĐIỀU HƯỚNG 3 CHỨC NĂNG (WORKFLOW TABS)               */}
       {/* ============================================================= */}
       <div className="flex items-center gap-2 border-b border-[#222B35] pb-2 overflow-x-auto no-scrollbar whitespace-nowrap">
-        {/* Chá»©c nÄƒng 1 */}
+        {/* Chức năng 1 */}
         <button
           type="button"
           onClick={() => setActiveTab('DISCOVER')}
@@ -606,10 +607,10 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
           }`}
         >
           <DoorOpen className="w-4 h-4" />
-          <span><span className="sm:hidden">{isEn ? 'Amenities' : 'Tiá»‡n Ãch'}</span><span className="hidden sm:inline">{isEn ? '1. Amenities Catalog' : '1. Danh Má»¥c Tiá»‡n Ãch'}</span> ({amenitiesList.length})</span>
+          <span><span className="sm:hidden">{isEn ? 'Amenities' : 'Tiện Ích'}</span><span className="hidden sm:inline">{isEn ? '1. Amenities Catalog' : '1. Danh Mục Tiện Ích'}</span> ({amenitiesList.length})</span>
         </button>
 
-        {/* Chá»©c nÄƒng 2 */}
+        {/* Chức năng 2 */}
         <button
           type="button"
           onClick={() => setActiveTab('BOOKING')}
@@ -620,10 +621,10 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
           }`}
         >
           <CalendarCheck className="w-4 h-4" />
-          <span><span className="sm:hidden">{isEn ? 'Bookings' : 'Äáº·t Chá»—'}</span><span className="hidden sm:inline">{isEn ? '2. Bookings & Passes' : '2. Äáº·t Chá»— & VÃ© VÃ o'}</span> ({bookings.filter(b => b.status === 'CONFIRMED').length})</span>
+          <span><span className="sm:hidden">{isEn ? 'Bookings' : 'Đặt Chỗ'}</span><span className="hidden sm:inline">{isEn ? '2. Bookings & Passes' : '2. Đặt Chỗ & Vé Vào'}</span> ({bookings.filter(b => b.status === 'CONFIRMED').length})</span>
         </button>
 
-        {/* Chá»©c nÄƒng 3 */}
+        {/* Chức năng 3 */}
         <button
           type="button"
           onClick={() => setActiveTab('LOGS')}
@@ -634,16 +635,16 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
           }`}
         >
           <History className="w-4 h-4" />
-          <span><span className="sm:hidden">{isEn ? 'History' : 'Lá»‹ch Sá»­'}</span><span className="hidden sm:inline">{isEn ? '3. Access Log' : '3. Nháº­t KÃ½ Ra VÃ o'}</span> ({accessLogs.length})</span>
+          <span><span className="sm:hidden">{isEn ? 'History' : 'Lịch Sử'}</span><span className="hidden sm:inline">{isEn ? '3. Access Log' : '3. Nhật Ký Ra Vào'}</span> ({accessLogs.length})</span>
         </button>
       </div>
 
       {/* ============================================================= */}
-      {/* CHá»¨C NÄ‚NG 1: KHÃM PHÃ TIá»†N ÃCH & CHECK-IN Cá»”NG TURNSTILE      */}
+      {/* CHỨC NĂNG 1: KHÁM PHÁ TIỆN ÍCH & CHECK-IN CỔNG TURNSTILE      */}
       {/* ============================================================= */}
       {activeTab === 'DISCOVER' && (
         <div className="space-y-4">
-          {/* Bá»™ lá»c loáº¡i tiá»‡n Ã­ch */}
+          {/* Bộ lọc loại tiện ích */}
           <div className="flex items-center gap-1.5 bg-[#121820] p-2 border border-[#222B35] rounded-none overflow-x-auto no-scrollbar whitespace-nowrap">
             <button
               type="button"
@@ -652,7 +653,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                 filterCategory === 'ALL' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
               }`}
             >
-              {isEn ? `All (${amenitiesList.length})` : `Táº¥t Cáº£ (${amenitiesList.length})`}
+              {isEn ? `All (${amenitiesList.length})` : `Tất Cả (${amenitiesList.length})`}
             </button>
             <button
               type="button"
@@ -661,8 +662,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                 filterCategory === 'SPORTS' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
               }`}
             >
-              <span className="sm:hidden">{isEn ? 'Sports' : 'Thá»ƒ Thao'}</span>
-              <span className="hidden sm:inline">{isEn ? 'Sports & Swimming Pool' : 'Thá»ƒ Thao & Há»“ BÆ¡i'}</span> ({amenitiesList.filter(a => a.category === 'SPORTS').length})
+              <span className="sm:hidden">{isEn ? 'Sports' : 'Thể Thao'}</span>
+              <span className="hidden sm:inline">{isEn ? 'Sports & Swimming Pool' : 'Thể Thao & Hồ Bơi'}</span> ({amenitiesList.filter(a => a.category === 'SPORTS').length})
             </button>
             <button
               type="button"
@@ -671,8 +672,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                 filterCategory === 'WELLNESS' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
               }`}
             >
-              <span className="sm:hidden">{isEn ? 'Wellness' : 'Sá»©c Khá»e'}</span>
-              <span className="hidden sm:inline">{isEn ? 'Wellness & Children' : 'Sá»©c Khá»e & Tráº» Em'}</span> ({amenitiesList.filter(a => a.category === 'WELLNESS').length})
+              <span className="sm:hidden">{isEn ? 'Wellness' : 'Sức Khỏe'}</span>
+              <span className="hidden sm:inline">{isEn ? 'Wellness & Children' : 'Sức Khỏe & Trẻ Em'}</span> ({amenitiesList.filter(a => a.category === 'WELLNESS').length})
             </button>
             <button
               type="button"
@@ -681,8 +682,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                 filterCategory === 'PARK' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
               }`}
             >
-              <span className="sm:hidden">{isEn ? 'Parks' : 'CÃ´ng ViÃªn'}</span>
-              <span className="hidden sm:inline">{isEn ? 'Parks & Landscape' : 'CÃ´ng ViÃªn & Cáº£nh Quan'}</span> ({amenitiesList.filter(a => a.category === 'PARK').length})
+              <span className="sm:hidden">{isEn ? 'Parks' : 'Công Viên'}</span>
+              <span className="hidden sm:inline">{isEn ? 'Parks & Landscape' : 'Công Viên & Cảnh Quan'}</span> ({amenitiesList.filter(a => a.category === 'PARK').length})
             </button>
             <button
               type="button"
@@ -691,12 +692,12 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                 filterCategory === 'PARTY' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
               }`}
             >
-              <span className="sm:hidden">{isEn ? 'BBQ' : 'Tiá»‡c BBQ'}</span>
-              <span className="hidden sm:inline">{isEn ? 'BBQ Party & Social Area' : 'Tiá»‡c BBQ & SÃ¢n NhÃ³m'}</span> ({amenitiesList.filter(a => a.category === 'PARTY').length})
+              <span className="sm:hidden">{isEn ? 'BBQ' : 'Tiệc BBQ'}</span>
+              <span className="hidden sm:inline">{isEn ? 'BBQ Party & Social Area' : 'Tiệc BBQ & Sân Nhóm'}</span> ({amenitiesList.filter(a => a.category === 'PARTY').length})
             </button>
           </div>
 
-          {/* LÆ°á»›i hiá»ƒn thá»‹ cÃ¡c tiá»‡n Ã­ch */}
+          {/* Lưới hiển thị các tiện ích */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredAmenities.map((fac) => {
               const Icon = fac.icon;
@@ -716,24 +717,24 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#121820] via-[#121820]/30 to-transparent" />
 
-                    {/* Badge Giá» Hoáº¡t Äá»™ng */}
+                    {/* Badge Giờ Hoạt Động */}
                     <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-sm border border-[#222B35] px-2.5 py-1 text-[10px] text-white flex items-center gap-1.5 font-mono rounded-none">
                       <Clock className="w-3 h-3 text-[#C5A880]" />
                       <span>{fac.hours}</span>
                     </div>
 
-                    {/* Badge Quyá»n Truy Cáº­p */}
+                    {/* Badge Quyền Truy Cập */}
                     <div className="absolute top-3 right-3">
                       <span className={`px-2 py-0.5 text-[9px] font-mono font-bold uppercase rounded-none border ${
                         isFreeEntry 
                           ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/50' 
                           : 'bg-amber-950/90 text-amber-300 border-amber-500/50'
                       }`}>
-                        {isFreeEntry ? t('Cá»”NG Tá»° Äá»˜NG') : t('Cáº¦N Äáº¶T Lá»ŠCH')}
+                        {isFreeEntry ? t('CỔNG TỰ ĐỘNG') : t('CẦN ĐẶT LỊCH')}
                       </span>
                     </div>
 
-                    {/* TÃªn & Vá»‹ trÃ­ */}
+                    {/* Tên & Vị trí */}
                     <div className="absolute bottom-2.5 left-3.5 right-3 text-white">
                       <div className="text-sm font-bold font-serif flex items-center gap-1.5">
                         <Icon className="w-4 h-4 text-[#C5A880] shrink-0" />
@@ -745,29 +746,29 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     </div>
                   </div>
 
-                  {/* Body ThÃ´ng sá»‘ chi tiáº¿t */}
+                  {/* Body Thông số chi tiết */}
                   <div className="p-4 space-y-3.5 flex-1 flex flex-col justify-between">
                     <div className="space-y-2">
                       <div className="grid grid-cols-2 gap-2 text-[11px] bg-[#0D1117] p-2.5 rounded-none border border-[#1F2937]">
                         <div>
-                          <div className="text-[9.5px] text-gray-400 uppercase">{t('Máº­t Ä‘á»™ hiá»‡n táº¡i:')}</div>
+                          <div className="text-[9.5px] text-gray-400 uppercase">{t('Mật độ hiện tại:')}</div>
                           <div className="font-semibold text-emerald-400 mt-0.5 flex items-center gap-1">
                             <Users className="w-3 h-3" /> {t(fac.density)}
                           </div>
                         </div>
                         <div>
-                          <div className="text-[9.5px] text-gray-400 uppercase">{t('MÃ´i trÆ°á»ng:')}</div>
+                          <div className="text-[9.5px] text-gray-400 uppercase">{t('Môi trường:')}</div>
                           <div className="font-semibold text-gray-200 mt-0.5">{t(fac.temp)}</div>
                         </div>
                       </div>
 
                       <div className="text-[11px] text-gray-400 flex items-center justify-between pt-1">
-                        <span>{t('Biá»ƒu phÃ­:')}</span>
+                        <span>{t('Biểu phí:')}</span>
                         <strong className="text-[#C5A880]">{t(fac.price)}</strong>
                       </div>
                     </div>
 
-                    {/* NÃºt hÃ nh Ä‘á»™ng rÃµ rÃ ng theo loáº¡i tiá»‡n Ã­ch */}
+                    {/* Nút hành động rõ ràng theo loại tiện ích */}
                     <div className="pt-2 border-t border-[#1F2937]">
                       {isFreeEntry ? (
                         <button
@@ -779,7 +780,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                           className="w-full h-10 px-3 bg-gradient-to-r from-[#C5A880] to-[#E2D4BF] hover:from-[#d5b991] hover:to-white text-[#0D1117] text-xs font-bold uppercase rounded-none transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
                         >
                           <DoorOpen className="w-4 h-4 shrink-0" />
-                          <span className="truncate">{isEn ? 'Check-in Amenity' : 'VÃ o Cá»­a Tiá»‡n Ãch (Check-in)'}</span>
+                          <span className="truncate">{isEn ? 'Check-in Amenity' : 'Vào Cửa Tiện Ích (Check-in)'}</span>
                         </button>
                       ) : (
                         <button
@@ -791,7 +792,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                           className="w-full h-10 px-3 bg-[#1A2332] hover:bg-[#253247] border border-amber-500/50 hover:border-amber-400 text-amber-300 text-xs font-bold uppercase rounded-none transition-all flex items-center justify-center gap-2 shadow-md active:scale-95"
                         >
                           <CalendarCheck className="w-4 h-4 text-amber-400 shrink-0" />
-                          <span className="truncate">{isEn ? 'Book Amenity Slot' : 'ÄÄƒng KÃ½ Äáº·t Lá»‹ch Giá»¯ Chá»—'}</span>
+                          <span className="truncate">{isEn ? 'Book Amenity Slot' : 'Đăng Ký Đặt Lịch Giữ Chỗ'}</span>
                         </button>
                       )}
                     </div>
@@ -804,19 +805,19 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
       )}
 
       {/* ============================================================= */}
-      {/* CHá»¨C NÄ‚NG 2: Äáº¶T CHá»– TIá»†N ÃCH & VÃ‰ ÄIá»†N Tá»¬ QR                   */}
+      {/* CHỨC NĂNG 2: ĐẶT CHỖ TIỆN ÍCH & VÉ ĐIỆN TỬ QR                   */}
       {/* ============================================================= */}
       {activeTab === 'BOOKING' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          {/* BÃªn TrÃ¡i: Form ÄÄƒng KÃ½ Äáº·t Chá»— (6 Cá»™t - CÃ¢n Xá»©ng) */}
+          {/* Bên Trái: Form Đăng Ký Đặt Chỗ (6 Cột - Cân Xứng) */}
           <div className="lg:col-span-6">
             <form onSubmit={handleCreateBooking} className="p-4 sm:p-5 bg-[#121820] border border-[#2A374A] rounded-none space-y-3.5 shadow-xl">
               <div className="border-b border-[#222B35] pb-2.5">
                 <div className="text-[10px] uppercase tracking-[0.2em] text-[#C5A880] font-bold">
-                  {isEn ? `Advance Amenity Reservation â€¢ Apt ${aptCode}` : `Dá»‹ch Vá»¥ Tiá»‡n Ãch Äáº·t TrÆ°á»›c â€¢ CÄƒn Há»™ ${aptCode}`}
+                  {isEn ? `Advance Amenity Reservation • Apt ${aptCode}` : `Dịch Vụ Tiện Ích Đặt Trước • Căn Hộ ${aptCode}`}
                 </div>
                 <h3 className="font-serif text-lg text-white font-bold">
-                  {isEn ? 'VIP Amenity Reservation Registration' : 'ÄÄƒng KÃ½ Äáº·t Chá»— Tiá»‡n Ãch VIP'}
+                  {isEn ? 'VIP Amenity Reservation Registration' : 'Đăng Ký Đặt Chỗ Tiện Ích VIP'}
                 </h3>
               </div>
 
@@ -831,17 +832,17 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                   <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
                   <div className="space-y-0.5">
                     <div className="font-bold text-rose-300 uppercase tracking-wide text-[11px]">
-                      {isEn ? 'Cannot Complete Reservation:' : 'KhÃ´ng Thá»ƒ HoÃ n Táº¥t Giá»¯ Chá»—:'}
+                      {isEn ? 'Cannot Complete Reservation:' : 'Không Thể Hoàn Tất Giữ Chỗ:'}
                     </div>
                     <div>{bookingErrorMsg}</div>
                   </div>
                 </div>
               )}
 
-              {/* BÆ°á»›c 1: Tiá»‡n Ã­ch */}
+              {/* Bước 1: Tiện ích */}
               <div className="space-y-1">
                 <label className="text-[10.5px] text-gray-300 font-semibold uppercase block">
-                  {isEn ? '1. Select facility to reserve:' : '1. Chá»n tiá»‡n Ã­ch muá»‘n Ä‘áº·t:'}
+                  {isEn ? '1. Select facility to reserve:' : '1. Chọn tiện ích muốn đặt:'}
                 </label>
                 <select
                   value={bookingFacilityId}
@@ -849,46 +850,46 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                   className="w-full bg-[#161D26] border border-[#2A374A] p-2.5 text-white text-xs rounded-none focus:outline-none focus:border-[#C5A880]"
                 >
                   <option value="fac-bbq">
-                    {isEn ? 'Panoramic Rooftop BBQ Garden (25F) â€¢ 600,000 VND/slot' : 'VÆ°á»n Tiá»‡c NÆ°á»›ng BBQ Panoramic (SÃ¢n ThÆ°á»£ng Táº§ng 25) â€¢ 600.000 Ä‘/ca'}
+                    {isEn ? 'Panoramic Rooftop BBQ Garden (25F) • 600,000 VND/slot' : 'Vườn Tiệc Nướng BBQ Panoramic (Sân Thượng Tầng 25) • 600.000 đ/ca'}
                   </option>
                   <option value="fac-sports-malibu">
-                    {isEn ? 'Malibu Sports Court (Tennis & Basketball) â€¢ Free for Residents' : 'SÃ¢n Thá»ƒ Thao Malibu (Tennis & BÃ³ng Rá»•) â€¢ Miá»…n PhÃ­ CÆ° DÃ¢n'}
+                    {isEn ? 'Malibu Sports Court (Tennis & Basketball) • Free for Residents' : 'Sân Thể Thao Malibu (Tennis & Bóng Rổ) • Miễn Phí Cư Dân'}
                   </option>
                   <option value="fac-yoga">
-                    {isEn ? 'Outdoor Yoga & Meditation Lawn BS-07 â€¢ Free for Residents' : 'SÃ¢n Yoga NgoÃ i Trá»i & Thiá»n TÄ©nh BS-07 â€¢ Miá»…n PhÃ­ CÆ° DÃ¢n'}
+                    {isEn ? 'Outdoor Yoga & Meditation Lawn BS-07 • Free for Residents' : 'Sân Yoga Ngoài Trời & Thiền Tĩnh BS-07 • Miễn Phí Cư Dân'}
                   </option>
                   <option value="fac-cabana">
-                    {isEn ? 'Cabana Lounge by Resort Pool BS-09 â€¢ Free for Residents' : 'ChÃ²i Nghá»‰ Cabana Ven Há»“ BÆ¡i Resort BS-09 â€¢ Miá»…n PhÃ­ CÆ° DÃ¢n'}
+                    {isEn ? 'Cabana Lounge by Resort Pool BS-09 • Free for Residents' : 'Chòi Nghỉ Cabana Ven Hồ Bơi Resort BS-09 • Miễn Phí Cư Dân'}
                   </option>
                   <option value="fac-multipurpose-lawn">
-                    {isEn ? 'Multipurpose Lawn Y-01 Malibu (Mini-football/Pickleball) â€¢ Free for Residents' : 'SÃ¢n Cá» Äa NÄƒng Y-01 Malibu (BÃ³ng Ä‘Ã¡/Pickleball) â€¢ Miá»…n PhÃ­ CÆ° DÃ¢n'}
+                    {isEn ? 'Multipurpose Lawn Y-01 Malibu (Mini-football/Pickleball) • Free for Residents' : 'Sân Cỏ Đa Năng Y-01 Malibu (Bóng đá/Pickleball) • Miễn Phí Cư Dân'}
                   </option>
                   <option value="fac-sauna">
-                    {isEn ? 'Himalayan Rock Salt Sauna (VIP 3F) â€¢ 500,000 VND/hr' : 'PhÃ²ng XÃ´ng HÆ¡i ÄÃ¡ Muá»‘i Himalaya (VIP Táº§ng 3) â€¢ 500.000 Ä‘/giá»'}
+                    {isEn ? 'Himalayan Rock Salt Sauna (VIP 3F) • 500,000 VND/hr' : 'Phòng Xông Hơi Đá Muối Himalaya (VIP Tầng 3) • 500.000 đ/giờ'}
                   </option>
                 </select>
               </div>
 
-              {/* ThÃ´ng bÃ¡o phÃ²ng riÃªng tÆ° VIP náº¿u chá»n XÃ´ng hÆ¡i */}
+              {/* Thông báo phòng riêng tư VIP nếu chọn Xông hơi */}
               {bookingFacilityId === 'fac-sauna' && (
                 <div className="p-2.5 bg-gradient-to-r from-[#C5A880]/15 to-transparent border-l-2 border-[#C5A880] rounded-none space-y-1 text-xs text-gray-200 animate-fadeIn">
                   <div className="font-bold text-[#C5A880] flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>{isEn ? 'VIP Private Family Suite' : 'Dá»‹ch Vá»¥ PhÃ²ng RiÃªng TÆ° Gia ÄÃ¬nh VIP'}</span>
+                    <span>{isEn ? 'VIP Private Family Suite' : 'Dịch Vụ Phòng Riêng Tư Gia Đình VIP'}</span>
                   </div>
                   <div className="text-[11px] text-gray-300 leading-relaxed">
                     {isEn
                       ? '100% private, pre-heated Himalayan rock salt sauna, premium plush towels and natural aromatherapy prepared for your appointment.'
-                      : 'KhÃ©p kÃ­n 100%, Ä‘Æ°á»£c báº­t lÃ² gia nhiá»‡t Ä‘Ã¡ muá»‘i Himalaya, chuáº©n bá»‹ khÄƒn bÃ´ng cao cáº¥p vÃ  tinh dáº§u tháº£o má»™c tá»± nhiÃªn theo Ä‘Ãºng giá» háº¹n.'}
+                      : 'Khép kín 100%, được bật lò gia nhiệt đá muối Himalaya, chuẩn bị khăn bông cao cấp và tinh dầu thảo mộc tự nhiên theo đúng giờ hẹn.'}
                   </div>
                 </div>
               )}
 
-              {/* Chá»n sá»‘ tiáº¿ng sá»­ dá»¥ng náº¿u lÃ  phÃ²ng xÃ´ng hÆ¡i riÃªng tÆ° */}
+              {/* Chọn số tiếng sử dụng nếu là phòng xông hơi riêng tư */}
               {bookingFacilityId === 'fac-sauna' && (
                 <div className="space-y-1">
                   <label className="text-[10.5px] text-gray-300 font-semibold uppercase block">
-                    {isEn ? 'VIP Room Duration:' : 'Sá»‘ tiáº¿ng Ä‘áº·t phÃ²ng VIP:'}
+                    {isEn ? 'VIP Room Duration:' : 'Số tiếng đặt phòng VIP:'}
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {[1, 2, 3].map((h) => (
@@ -902,19 +903,19 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                             : 'bg-[#161D26] text-gray-300 border-[#2A374A] hover:border-[#C5A880]/60'
                         }`}
                       >
-                        <span>{h} {isEn ? (h > 1 ? 'Hours' : 'Hour') : 'Tiáº¿ng'}</span>
-                        <span className="text-[10px] font-mono font-normal">{(h * 500000).toLocaleString('vi-VN')} {isEn ? 'VND' : 'Ä‘'}</span>
+                        <span>{h} {isEn ? (h > 1 ? 'Hours' : 'Hour') : 'Tiếng'}</span>
+                        <span className="text-[10px] font-mono font-normal">{(h * 500000).toLocaleString('vi-VN')} {isEn ? 'VND' : 'đ'}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* BÆ°á»›c 2: NgÃ y & Giá» */}
+              {/* Bước 2: Ngày & Giờ */}
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
                   <label className="text-[10.5px] text-gray-300 font-semibold uppercase block">
-                    {isEn ? '2. Reservation Date:' : '2. NgÃ y Ä‘áº·t:'}
+                    {isEn ? '2. Reservation Date:' : '2. Ngày đặt:'}
                   </label>
                   <input
                     type="date"
@@ -928,7 +929,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
 
                 <div className="space-y-1">
                   <label className="text-[10.5px] text-gray-300 font-semibold uppercase block">
-                    {isEn ? 'Time Slot:' : 'Khung giá»:'}
+                    {isEn ? 'Time Slot:' : 'Khung giờ:'}
                   </label>
                   <select
                     value={bookingTimeSlot}
@@ -943,7 +944,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                           value={slot}
                           disabled={st.isFull || st.isUserBooked || st.isPast}
                         >
-                          {slot} â€¢ [{st.statusBadge}]
+                          {slot} • [{st.statusBadge}]
                         </option>
                       );
                     })}
@@ -951,7 +952,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                 </div>
               </div>
 
-              {/* HUD BÃ¡o Sá»©c Chá»©a & TÃ¬nh Tráº¡ng Giá»¯ Chá»— Realtime */}
+              {/* HUD Báo Sức Chứa & Tình Trạng Giữ Chỗ Realtime */}
               <div className={`p-3 border text-xs rounded-none space-y-1.5 transition-all ${
                 currentSlotStatus.isPast
                   ? 'bg-[#141B24] border-gray-700 text-gray-400'
@@ -964,7 +965,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                 <div className="flex items-center justify-between font-bold flex-wrap gap-2">
                   <span className="flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-[#C5A880]" />
-                    <span>{isEn ? 'Building Reservation Status:' : 'Tráº¡ng ThÃ¡i Giá»¯ Chá»— ToÃ n Khu:'}</span>
+                    <span>{isEn ? 'Building Reservation Status:' : 'Trạng Thái Giữ Chỗ Toàn Khu:'}</span>
                   </span>
                   <span className={`px-2 py-0.5 text-[10px] font-mono font-bold uppercase rounded-none border ${
                     currentSlotStatus.isPast
@@ -980,44 +981,44 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                 </div>
                 <div className="text-[11px] text-gray-300 leading-relaxed">
                   {currentSlotStatus.isPast
-                    ? (isEn ? 'This time slot has already passed today. Please select a later time slot.' : 'Khung giá» nÃ y Ä‘Ã£ trÃ´i qua trong ngÃ y hÃ´m nay. QuÃ½ cÆ° dÃ¢n vui lÃ²ng chá»n khung giá» káº¿ tiáº¿p.')
+                    ? (isEn ? 'This time slot has already passed today. Please select a later time slot.' : 'Khung giờ này đã trôi qua trong ngày hôm nay. Quý cư dân vui lòng chọn khung giờ kế tiếp.')
                     : currentSlotStatus.isUserBooked
-                    ? (isEn ? `Apartment ${aptCode} already has an active reservation in this slot. Duplicate bookings are not allowed.` : `CÄƒn há»™ ${aptCode} Ä‘Ã£ cÃ³ phiáº¿u giá»¯ chá»— Ä‘ang cÃ³ hiá»‡u lá»±c trong khung giá» nÃ y. Há»‡ thá»‘ng khÃ´ng cho phÃ©p táº¡o phiáº¿u trÃ¹ng láº·p.`)
+                    ? (isEn ? `Apartment ${aptCode} already has an active reservation in this slot. Duplicate bookings are not allowed.` : `Căn hộ ${aptCode} đã có phiếu giữ chỗ đang có hiệu lực trong khung giờ này. Hệ thống không cho phép tạo phiếu trùng lặp.`)
                     : currentSlotStatus.isFull
-                    ? (isEn ? `This facility has reached maximum building capacity (${currentLimitRule.maxSlotsPerTime} reservations) in this time slot. Please choose another slot.` : `Tiá»‡n Ã­ch Ä‘Ã£ Ä‘áº¡t tá»‘i Ä‘a sá»©c chá»©a cá»§a toÃ n tÃ²a nhÃ  (${currentLimitRule.maxSlotsPerTime} lÆ°á»£t) trong khung giá» nÃ y. Vui lÃ²ng chá»n khung giá» khÃ¡c Ä‘á»ƒ giá»¯ chá»— thÃ nh cÃ´ng.`)
-                    : (isEn ? `${currentLimitRule.descriptionEn || currentLimitRule.description}. System instantly locks the slot to prevent conflicts upon confirmation.` : `${currentLimitRule.description}. Há»‡ thá»‘ng láº­p tá»©c khÃ³a chá»— chá»‘ng trÃ¹ng giá» toÃ n bá»™ cÆ° dÃ¢n ngay sau khi xÃ¡c nháº­n.`)}
+                    ? (isEn ? `This facility has reached maximum building capacity (${currentLimitRule.maxSlotsPerTime} reservations) in this time slot. Please choose another slot.` : `Tiện ích đã đạt tối đa sức chứa của toàn tòa nhà (${currentLimitRule.maxSlotsPerTime} lượt) trong khung giờ này. Vui lòng chọn khung giờ khác để giữ chỗ thành công.`)
+                    : (isEn ? `${currentLimitRule.descriptionEn || currentLimitRule.description}. System instantly locks the slot to prevent conflicts upon confirmation.` : `${currentLimitRule.description}. Hệ thống lập tức khóa chỗ chống trùng giờ toàn bộ cư dân ngay sau khi xác nhận.`)}
                 </div>
               </div>
 
-              {/* Chá»n phÆ°Æ¡ng thá»©c thanh toÃ¡n giá»¯ chá»— náº¿u tiá»‡n Ã­ch cÃ³ phÃ­ */}
+              {/* Chọn phương thức thanh toán giữ chỗ nếu tiện ích có phí */}
               {(bookingFacilityId === 'fac-sauna' || bookingFacilityId === 'fac-bbq') && (
                 <div className="space-y-1">
                   <label className="text-[10.5px] text-gray-300 font-semibold uppercase block">
-                    {isEn ? 'Reservation deposit payment method:' : 'PhÆ°Æ¡ng thá»©c thanh toÃ¡n giá»¯ chá»—:'}
+                    {isEn ? 'Reservation deposit payment method:' : 'Phương thức thanh toán giữ chỗ:'}
                   </label>
                   <select
                     value={bookingPaymentMethod}
                     onChange={(e) => setBookingPaymentMethod(e.target.value)}
                     className="w-full bg-[#161D26] border border-[#2A374A] p-2 text-white text-xs rounded-none focus:outline-none focus:border-[#C5A880]"
                   >
-                    <option value="Trá»« vÃ o hÃ³a Ä‘Æ¡n sinh hoáº¡t thÃ¡ng tá»›i">
-                      {isEn ? 'Deduct from next month utility invoice' : 'Trá»« vÃ o hÃ³a Ä‘Æ¡n sinh hoáº¡t thÃ¡ng tá»›i cá»§a cÄƒn há»™'}
+                    <option value="Trừ vào hóa đơn sinh hoạt tháng tới">
+                      {isEn ? 'Deduct from next month utility invoice' : 'Trừ vào hóa đơn sinh hoạt tháng tới của căn hộ'}
                     </option>
-                    <option value="QuÃ©t mÃ£ QR chuyá»ƒn khoáº£n ngÃ¢n hÃ ng">
-                      {isEn ? 'Scan QR code for bank transfer' : 'QuÃ©t mÃ£ QR chuyá»ƒn khoáº£n ngÃ¢n hÃ ng BQL'}
+                    <option value="Quét mã QR chuyển khoản ngân hàng">
+                      {isEn ? 'Scan QR code for bank transfer' : 'Quét mã QR chuyển khoản ngân hàng BQL'}
                     </option>
-                    <option value="Trá»« vÃ o sá»‘ dÆ° vÃ­ cÆ° dÃ¢n">
-                      {isEn ? 'Deduct from resident wallet balance' : 'Trá»« vÃ o sá»‘ dÆ° vÃ­ cÆ° dÃ¢n'}
+                    <option value="Trừ vào số dư ví cư dân">
+                      {isEn ? 'Deduct from resident wallet balance' : 'Trừ vào số dư ví cư dân'}
                     </option>
                   </select>
                 </div>
               )}
 
-              {/* BÆ°á»›c 3: Sá»‘ ngÆ°á»i & Ghi chÃº */}
+              {/* Bước 3: Số người & Ghi chú */}
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
                   <label className="text-[10.5px] text-gray-300 font-semibold uppercase block">
-                    {isEn ? '3. Number of participants:' : '3. Sá»‘ ngÆ°á»i tham gia:'}
+                    {isEn ? '3. Number of participants:' : '3. Số người tham gia:'}
                   </label>
                   <input
                     type="number"
@@ -1032,7 +1033,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
 
                 <div className="space-y-1">
                   <label className="text-[10.5px] text-gray-300 font-semibold uppercase block">
-                    {isEn ? 'Representative booker:' : 'NgÆ°á»i Ä‘áº¡i diá»‡n Ä‘áº·t:'}
+                    {isEn ? 'Representative booker:' : 'Người đại diện đặt:'}
                   </label>
                   <input
                     type="text"
@@ -1045,7 +1046,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
 
               <div className="space-y-1">
                 <label className="text-[10.5px] text-gray-300 font-semibold uppercase block">
-                  {isEn ? 'Special requests (optional):' : 'Ghi chÃº yÃªu cáº§u phá»¥c vá»¥ (tÃ¹y chá»n):'}
+                  {isEn ? 'Special requests (optional):' : 'Ghi chú yêu cầu phục vụ (tùy chọn):'}
                 </label>
                 <input
                   type="text"
@@ -1059,25 +1060,25 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                           ? 'e.g. 2 Weber grills, BBQ tongs set...'
                           : 'e.g. Borrow tennis racquets, training balls...')
                       : (bookingFacilityId === 'fac-sauna' 
-                          ? 'VD: Cáº§n thÃªm khÄƒn nhung, tinh dáº§u sáº£ chanh...' 
+                          ? 'VD: Cần thêm khăn nhung, tinh dầu sả chanh...' 
                           : bookingFacilityId === 'fac-bbq'
-                          ? 'VD: Cáº§n 2 báº¿p nÆ°á»›ng Weber, dá»¥ng cá»¥ káº¹p BBQ...'
-                          : 'VD: MÆ°á»£n vá»£t tennis, bÃ³ng táº­p...')
+                          ? 'VD: Cần 2 bếp nướng Weber, dụng cụ kẹp BBQ...'
+                          : 'VD: Mượn vợt tennis, bóng tập...')
                   }
                   className="w-full bg-[#161D26] border border-[#2A374A] p-2 text-white text-xs rounded-none focus:outline-none focus:border-[#C5A880]"
                 />
               </div>
 
-              {/* Chi phÃ­ & ChÃ­nh sÃ¡ch */}
+              {/* Chi phí & Chính sách */}
               <div className="p-3 bg-[#0D1117] border border-[#222B35] rounded-none space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-400 font-medium">{isEn ? 'Reservation Fee:' : 'Chi phÃ­ Ä‘áº·t giá»¯ chá»—:'}</span>
+                  <span className="text-gray-400 font-medium">{isEn ? 'Reservation Fee:' : 'Chi phí đặt giữ chỗ:'}</span>
                   <span className="text-[#C5A880] font-bold text-sm font-mono">
                     {bookingFacilityId === 'fac-sauna'
-                      ? `${(bookingDurationHours * 500000).toLocaleString('vi-VN')} ${isEn ? `VND (${bookingDurationHours} hours VIP room)` : `Ä‘ (${bookingDurationHours} tiáº¿ng phÃ²ng VIP)`}`
+                      ? `${(bookingDurationHours * 500000).toLocaleString('vi-VN')} ${isEn ? `VND (${bookingDurationHours} hours VIP room)` : `đ (${bookingDurationHours} tiếng phòng VIP)`}`
                       : bookingFacilityId === 'fac-bbq'
-                      ? (isEn ? '600,000 VND / slot (Weber grill set & cleanup)' : '600.000 Ä‘ / ca tiá»‡c (Set báº¿p Weber & dá»n sau tiá»‡c)')
-                      : (isEn ? '0 VND (Free with Skyline Resident Pass)' : '0 Ä‘ (Miá»…n phÃ­ theo Tháº» CÆ° DÃ¢n Skyline)')}
+                      ? (isEn ? '600,000 VND / slot (Weber grill set & cleanup)' : '600.000 đ / ca tiệc (Set bếp Weber & dọn sau tiệc)')
+                      : (isEn ? '0 VND (Free with Skyline Resident Pass)' : '0 đ (Miễn phí theo Thẻ Cư Dân Skyline)')}
                   </span>
                 </div>
 
@@ -1085,20 +1086,20 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                   <div className="pt-2 border-t border-[#1F2937] space-y-1 text-[11px] leading-relaxed">
                     <div className="text-[#C5A880] font-bold flex items-center gap-1.5">
                       <RotateCcw className="w-3.5 h-3.5" />
-                      <span>{isEn ? 'Refund Policy for Unforeseen Circumstances:' : 'ChÃ­nh sÃ¡ch hoÃ n tiá»n khi cÃ³ viá»‡c báº­n Ä‘á»™t xuáº¥t:'}</span>
+                      <span>{isEn ? 'Refund Policy for Unforeseen Circumstances:' : 'Chính sách hoàn tiền khi có việc bận đột xuất:'}</span>
                     </div>
                     <div className="space-y-0.5 text-gray-300">
                       <div className="flex items-start gap-1.5 text-emerald-400">
-                        <span className="font-bold">âœ“</span>
-                        <span><strong>{isEn ? '> 30 mins before appointment:' : 'TrÆ°á»›c giá» háº¹n > 30 phÃºt:'}</strong>{isEn ? <> REFUND <strong>100%</strong> slot deposit.</> : <> HoÃ n tráº£ <strong>100%</strong> tiá»n giá»¯ chá»—.</>}</span>
+                        <span className="font-bold">✓</span>
+                        <span><strong>{isEn ? '> 30 mins before appointment:' : 'Trước giờ hẹn > 30 phút:'}</strong>{isEn ? <> REFUND <strong>100%</strong> slot deposit.</> : <> Hoàn trả <strong>100%</strong> tiền giữ chỗ.</>}</span>
                       </div>
                       <div className="flex items-start gap-1.5 text-amber-300">
-                        <span className="font-bold">âš¡</span>
-                        <span><strong>{isEn ? 'Upcoming (within 30 mins):' : 'Cáº­n giá» (trong 30 phÃºt):'}</strong>{isEn ? <> REFUND <strong>50%</strong> (50% compensation for preparation costs).</> : <> HoÃ n tráº£ <strong>50%</strong> (50% bÃ¹ Ä‘áº¯p chi phÃ­ chuáº©n bá»‹).</>}</span>
+                        <span className="font-bold">⚡</span>
+                        <span><strong>{isEn ? 'Upcoming (within 30 mins):' : 'Cận giờ (trong 30 phút):'}</strong>{isEn ? <> REFUND <strong>50%</strong> (50% compensation for preparation costs).</> : <> Hoàn trả <strong>50%</strong> (50% bù đắp chi phí chuẩn bị).</>}</span>
                       </div>
                       <div className="flex items-start gap-1.5 text-gray-400">
-                        <span className="font-bold">âœ•</span>
-                        <span><strong>{isEn ? 'Appointment overtime starts:' : 'QuÃ¡ giá» háº¹n báº¯t Ä‘áº§u:'}</strong>{isEn ? ' No refund; amenity is reserved.' : ' KhÃ´ng hoÃ n tiá»n do tiá»‡n Ã­ch Ä‘Ã£ khÃ³a giá»¯ chá»—.'}</span>
+                        <span className="font-bold">✕</span>
+                        <span><strong>{isEn ? 'Appointment overtime starts:' : 'Quá giờ hẹn bắt đầu:'}</strong>{isEn ? ' No refund; amenity is reserved.' : ' Không hoàn tiền do tiện ích đã khóa giữ chỗ.'}</span>
                       </div>
                     </div>
                   </div>
@@ -1106,12 +1107,12 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                   <div className="pt-2 border-t border-[#1F2937] space-y-1 text-[11px] text-gray-400 leading-relaxed">
                     <div className="text-emerald-400 font-semibold flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{isEn ? 'Exclusive resident amenity privilege' : 'Äáº·c quyá»n tiá»‡n Ã­ch thá»ƒ thao miá»…n phÃ­ dÃ nh riÃªng cho CÆ° DÃ¢n'}</span>
+                      <span>{isEn ? 'Exclusive resident amenity privilege' : 'Đặc quyền tiện ích thể thao miễn phí dành riêng cho Cư Dân'}</span>
                     </div>
                     <p>
                       {isEn
                         ? 'QR electronic pass is generated automatically for turnstile access. If your plans change, please cancel in the pass list to release the slot for other residents.'
-                        : 'VÃ© Ä‘iá»‡n tá»­ QR sáº½ Ä‘Æ°á»£c táº¡o tá»± Ä‘á»™ng Ä‘á»ƒ quÃ©t táº¡i cá»•ng kiá»ƒm soÃ¡t. Náº¿u cÃ³ thay Ä‘á»•i lá»‹ch, vui lÃ²ng báº¥m há»§y vÃ© trong danh sÃ¡ch Ä‘á»ƒ nhÆ°á»ng khung giá» cho cÆ° dÃ¢n khÃ¡c.'}
+                        : 'Vé điện tử QR sẽ được tạo tự động để quét tại cổng kiểm soát. Nếu có thay đổi lịch, vui lòng bấm hủy vé trong danh sách để nhường khung giờ cho cư dân khác.'}
                     </p>
                   </div>
                 )}
@@ -1129,20 +1130,20 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                 <Check className="w-4 h-4 shrink-0" />
                 <span className="truncate">
                   {currentSlotStatus.isPast
-                    ? (isEn ? 'Time Slot Has Passed' : 'Khung Giá» ÄÃ£ Qua')
+                    ? (isEn ? 'Time Slot Has Passed' : 'Khung Giờ Đã Qua')
                     : currentSlotStatus.isUserBooked
-                    ? (isEn ? 'Already Reserved By Your Apt' : 'CÄƒn Há»™ ÄÃ£ Äáº·t Khung Giá» NÃ y')
+                    ? (isEn ? 'Already Reserved By Your Apt' : 'Căn Hộ Đã Đặt Khung Giờ Này')
                     : currentSlotStatus.isFull
-                    ? (isEn ? 'Time Slot Fully Booked' : 'Khung Giá» ÄÃ£ Háº¿t Chá»— (KÃ­n Lá»‹ch)')
-                    : (isEn ? 'Confirm Reservation & Generate QR Pass' : 'XÃ¡c Nháº­n Äáº·t Giá»¯ Chá»— & Táº¡o VÃ© QR')}
+                    ? (isEn ? 'Time Slot Fully Booked' : 'Khung Giờ Đã Hết Chỗ (Kín Lịch)')
+                    : (isEn ? 'Confirm Reservation & Generate QR Pass' : 'Xác Nhận Đặt Giữ Chỗ & Tạo Vé QR')}
                 </span>
               </button>
             </form>
           </div>
 
-          {/* BÃªn Pháº£i: Quáº£n LÃ½ VÃ© Äiá»‡n Tá»­ Cá»§a CÄƒn Há»™ (6 Cá»™t - CÃ¢n Xá»©ng) */}
+          {/* Bên Phải: Quản Lý Vé Điện Tử Của Căn Hộ (6 Cột - Cân Xứng) */}
           <div className="lg:col-span-6 space-y-3.5">
-            {/* ThÃ´ng bÃ¡o káº¿t quáº£ hoÃ n tiá»n náº¿u cÃ³ */}
+            {/* Thông báo kết quả hoàn tiền nếu có */}
             {refundResultAlert && (
               <div className={`p-3 rounded-none border text-xs leading-relaxed animate-fadeIn flex items-center justify-between gap-3 ${
                 refundResultAlert.type === 'success'
@@ -1167,10 +1168,10 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
               <div className="flex items-center justify-between border-b border-[#222B35] pb-2.5">
                 <div className="text-xs uppercase tracking-wider text-[#C5A880] font-bold flex items-center gap-2">
                   <QrCode className="w-4 h-4" /> 
-                  <span>{isEn ? `Digital Passes Wallet Unit ${aptCode} (${bookings.length} Passes)` : `VÃ­ VÃ© Äiá»‡n Tá»­ Tiá»‡n Ãch CÄƒn Há»™ ${aptCode} (${bookings.length} VÃ©)`}</span>
+                  <span>{isEn ? `Digital Passes Wallet Unit ${aptCode} (${bookings.length} Passes)` : `Ví Vé Điện Tử Tiện Ích Căn Hộ ${aptCode} (${bookings.length} Vé)`}</span>
                 </div>
                 <div className="text-[11px] text-gray-400 font-mono">
-                  QuÃ©t vÃ© táº¡i cá»•ng tiá»‡n Ã­ch
+                  Quét vé tại cổng tiện ích
                 </div>
               </div>
 
@@ -1179,9 +1180,9 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                   <div className="w-10 h-10 rounded-none bg-[#161D26] border border-[#2A374A] flex items-center justify-center mx-auto text-gray-400">
                     <Calendar className="w-5 h-5 text-[#C5A880]" />
                   </div>
-                  <div className="text-xs font-bold text-white">{isEn ? 'No booking passes yet' : 'ChÆ°a cÃ³ vÃ© Ä‘áº·t chá»— nÃ o'}</div>
+                  <div className="text-xs font-bold text-white">{isEn ? 'No booking passes yet' : 'Chưa có vé đặt chỗ nào'}</div>
                   <div className="text-[11px] text-gray-400 max-w-sm mx-auto leading-relaxed">
-                    HÃ£y Ä‘iá»n thÃ´ng tin bÃªn trÃ¡i Ä‘á»ƒ Ä‘Äƒng kÃ½ PhÃ²ng xÃ´ng hÆ¡i VIP hoáº·c VÆ°á»n tiá»‡c nÆ°á»›ng BBQ Panoramic cho gia Ä‘Ã¬nh.
+                    Hãy điền thông tin bên trái để đăng ký Phòng xông hơi VIP hoặc Vườn tiệc nướng BBQ Panoramic cho gia đình.
                   </div>
                 </div>
               ) : (
@@ -1204,25 +1205,25 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                               <span>{b.facilityName}</span>
                               {isCheckedIn && (
                                 <span className="text-[10px] text-emerald-400 font-mono font-normal">
-                                  (ÄÃ£ quÃ©t vÃ© vÃ o cá»­a)
+                                  (Đã quét vé vào cửa)
                                 </span>
                               )}
                             </div>
                             <div className="text-[11px] text-gray-300 mt-0.5">
-                              NgÃ y: <strong className="text-white">{b.bookingDate}</strong> â€¢ Khung: <strong className="text-white">{b.timeSlot}</strong>
+                              Ngày: <strong className="text-white">{b.bookingDate}</strong> • Khung: <strong className="text-white">{b.timeSlot}</strong>
                             </div>
                             <div className="text-[10px] text-gray-400">
-                              NgÆ°á»i Ä‘áº·t: {b.bookerName} â€¢ Sá»‘ lÆ°á»£ng: {b.guestCount || 2} ngÆ°á»i {b.notes ? `â€¢ Ghi chÃº: ${b.notes}` : ''}
+                              Người đặt: {b.bookerName} • Số lượng: {b.guestCount || 2} người {b.notes ? `• Ghi chú: ${b.notes}` : ''}
                             </div>
 
-                            {/* ThÃ´ng tin phÃ²ng riÃªng tÆ° & sá»‘ tiá»n Ä‘áº·t giá»¯ chá»— */}
+                            {/* Thông tin phòng riêng tư & số tiền đặt giữ chỗ */}
                             {(b.isPrivate || b.facilityId === 'fac-sauna' || b.depositAmount) && (
                               <div className="flex flex-wrap items-center gap-2 mt-1">
                                 <span className="px-2 py-0.5 bg-[#C5A880]/15 text-[#C5A880] text-[9.5px] font-bold rounded-none">
-                                  ðŸ‘‘ TIá»†N ÃCH VIP â€¢ {b.durationHours ? `${b.durationHours} TIáº¾NG` : 'THEO CA'}
+                                  👑 TIỆN ÍCH VIP • {b.durationHours ? `${b.durationHours} TIẾNG` : 'THEO CA'}
                                 </span>
                                 <span className="text-[10px] text-gray-300 font-mono">
-                                  {isEn ? 'Reserved deposit:' : 'ÄÃ£ giá»¯ chá»—:'} <strong className="text-[#C5A880]">{(b.depositAmount || 1000000).toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'Ä‘'}</strong>
+                                  {isEn ? 'Reserved deposit:' : 'Đã giữ chỗ:'} <strong className="text-[#C5A880]">{(b.depositAmount || 1000000).toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'đ'}</strong>
                                 </span>
                               </div>
                             )}
@@ -1235,42 +1236,43 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                                 ? 'bg-emerald-950 text-emerald-300 border-emerald-500/40'
                                 : 'bg-gray-800 text-gray-400 border-gray-600'
                           }`}>
-                            {isConfirmed ? 'ÄÃƒ XÃC NHáº¬N' : isCheckedIn ? 'âœ“ ÄÃƒ CHECK-IN' : 'âœ• ÄÃƒ Há»¦Y Lá»ŠCH'}
+                            {isConfirmed ? 'ĐÃ XÁC NHẬN' : isCheckedIn ? '✓ ĐÃ CHECK-IN' : '✕ ĐÃ HỦY LỊCH'}
                           </span>
                         </div>
 
-                        {/* MÃ£ QR & Code Strip */}
+                        {/* Mã QR & Code Strip */}
                         <div className="p-2.5 bg-[#161D26] border border-[#222B35] rounded-none flex items-center justify-between gap-3">
                           <div className="space-y-0.5">
-                            <div className="text-[9px] text-gray-400 uppercase font-mono">{isEn ? 'Digital Pass Check-in Code:' : 'MÃ£ VÃ© Äiá»‡n Tá»­ Check-in:'}</div>
+                            <div className="text-[9px] text-gray-400 uppercase font-mono">{isEn ? 'Digital Pass Check-in Code:' : 'Mã Vé Điện Tử Check-in:'}</div>
                             <div className="text-sm font-mono font-bold text-[#C5A880]">{b.ticketCode}</div>
                             <div className="text-[10px] text-gray-400">
-                              {isCancelled ? 'VÃ© nÃ y Ä‘Ã£ Ä‘Æ°á»£c há»§y vÃ  thanh lÃ½' : 'Xuáº¥t trÃ¬nh táº¡i Ä‘áº§u Ä‘á»c mÃ£ QR cá»•ng vÃ o tiá»‡n Ã­ch'}
+                              {isCancelled ? 'Vé này đã được hủy và thanh lý' : 'Xuất trình tại đầu đọc mã QR cổng vào tiện ích'}
                             </div>
                           </div>
 
                           <div className={`p-1 bg-white rounded-none shrink-0 shadow ${isCancelled ? 'opacity-30' : ''}`}>
-                            <img
-                              src={`https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${b.ticketCode}`}
+                            <QrImage
+                              value={b.ticketCode}
+                              size={70}
                               alt="Ticket QR"
                               className="w-14 h-14 object-contain"
                             />
                           </div>
                         </div>
 
-                        {/* Chi tiáº¿t hoÃ n tiá»n náº¿u vÃ© Ä‘Ã£ há»§y */}
+                        {/* Chi tiết hoàn tiền nếu vé đã hủy */}
                         {isCancelled && (
                           <div className="p-2.5 bg-[#141B24] border border-[#222B35] rounded-none text-xs space-y-1">
                             <div className="flex items-center gap-1.5 font-semibold">
                               {b.refundRate && b.refundRate > 0 ? (
                                 <span className="text-emerald-400 flex items-center gap-1">
                                   <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>{isEn ? `Refunded ${b.refundRate}% (+${(b.refundAmount || 0).toLocaleString('en-US')} VND)` : `ÄÃ£ hoÃ n tiá»n ${b.refundRate}% (+${(b.refundAmount || 0).toLocaleString('vi-VN')} Ä‘)`}</span>
+                                  <span>{isEn ? `Refunded ${b.refundRate}% (+${(b.refundAmount || 0).toLocaleString('en-US')} VND)` : `Đã hoàn tiền ${b.refundRate}% (+${(b.refundAmount || 0).toLocaleString('vi-VN')} đ)`}</span>
                                 </span>
                               ) : (
                                 <span className="text-gray-400 flex items-center gap-1">
                                   <XCircle className="w-3.5 h-3.5 text-gray-500" />
-                                  <span>{isEn ? 'No refund applicable' : 'KhÃ´ng Ã¡p dá»¥ng hoÃ n tiá»n'}</span>
+                                  <span>{isEn ? 'No refund applicable' : 'Không áp dụng hoàn tiền'}</span>
                                 </span>
                               )}
                             </div>
@@ -1292,7 +1294,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                                 className="w-full sm:w-auto h-9 px-3 bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 text-red-300 text-xs font-semibold rounded-none transition-colors flex items-center justify-center gap-1.5 shadow-sm active:scale-95 truncate"
                               >
                                 <RotateCcw className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                                <span className="truncate">{isEn ? 'Cancel & Refund' : 'Há»§y Lá»‹ch & HoÃ n Tiá»n'}</span>
+                                <span className="truncate">{isEn ? 'Cancel & Refund' : 'Hủy Lịch & Hoàn Tiền'}</span>
                               </button>
 
                               <button
@@ -1301,12 +1303,12 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                                 className="w-full sm:w-auto h-9 px-3.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-none transition-colors flex items-center justify-center gap-1.5 shadow active:scale-95 truncate"
                               >
                                 <DoorOpen className="w-3.5 h-3.5 shrink-0" /> 
-                                <span className="truncate">{isEn ? 'Scan Gate Pass Now' : 'Quáº¹t VÃ© VÃ o Cá»•ng Ngay'}</span>
+                                <span className="truncate">{isEn ? 'Scan Gate Pass Now' : 'Quẹt Vé Vào Cổng Ngay'}</span>
                               </button>
                             </>
                           ) : (
                             <span className="text-[10px] text-gray-500 italic">
-                              {isCheckedIn ? 'VÃ© Ä‘Ã£ Ä‘Æ°á»£c sá»­ dá»¥ng thÃ nh cÃ´ng.' : 'Lá»‹ch Ä‘áº·t Ä‘Ã£ Ä‘Æ°á»£c thanh lÃ½ theo quy cháº¿.'}
+                              {isCheckedIn ? 'Vé đã được sử dụng thành công.' : 'Lịch đặt đã được thanh lý theo quy chế.'}
                             </span>
                           )}
                         </div>
@@ -1321,7 +1323,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
       )}
 
       {/* ============================================================= */}
-      {/* CHá»¨C NÄ‚NG 3: NHáº¬T KÃ Sá»¬ Dá»¤NG TIá»†N ÃCH THá»œI GIAN THá»°C          */}
+      {/* CHỨC NĂNG 3: NHẬT KÝ SỬ DỤNG TIỆN ÍCH THỜI GIAN THỰC          */}
       {/* ============================================================= */}
       {activeTab === 'LOGS' && (
         <div className="p-4 sm:p-5 bg-[#121820] border border-[#2A374A] rounded-none space-y-4 shadow-xl">
@@ -1329,10 +1331,10 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
             <div>
               <div className="text-xs uppercase tracking-wider text-[#C5A880] font-bold flex items-center gap-2">
                 <History className="w-4 h-4" />
-                <span>{isEn ? `Real-Time Facility Access Log Unit ${aptCode}` : `Nháº­t KÃ½ Ra VÃ o Tiá»‡n Ãch Thá»i Gian Thá»±c CÄƒn Há»™ ${aptCode}`}</span>
+                <span>{isEn ? `Real-Time Facility Access Log Unit ${aptCode}` : `Nhật Ký Ra Vào Tiện Ích Thời Gian Thực Căn Hộ ${aptCode}`}</span>
               </div>
               <div className="text-[11px] text-gray-400 mt-0.5">
-                Dá»¯ liá»‡u ghi nháº­n tá»± Ä‘á»™ng theo thá»i gian thá»±c khi cÆ° dÃ¢n qua cá»•ng tiá»‡n Ã­ch
+                Dữ liệu ghi nhận tự động theo thời gian thực khi cư dân qua cổng tiện ích
               </div>
             </div>
 
@@ -1345,7 +1347,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                   logFilter === 'ALL' ? 'bg-[#C5A880] text-[#0D1117]' : 'bg-[#161D26] text-gray-400 hover:text-white'
                 }`}
               >
-                Táº¥t Cáº£ ({accessLogs.length})
+                Tất Cả ({accessLogs.length})
               </button>
               <button
                 type="button"
@@ -1354,7 +1356,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                   logFilter === 'fac-pool' ? 'bg-cyan-600 text-white' : 'bg-[#161D26] text-gray-400 hover:text-white'
                 }`}
               >
-                Há»“ BÆ¡i
+                Hồ Bơi
               </button>
               <button
                 type="button"
@@ -1382,9 +1384,9 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
               <div className="w-10 h-10 rounded-none bg-[#161D26] border border-[#2A374A] flex items-center justify-center mx-auto text-gray-400">
                 <History className="w-5 h-5 text-[#C5A880]" />
               </div>
-              <div className="text-xs font-bold text-white">{isEn ? 'No facility access events yet' : 'ChÆ°a cÃ³ lÆ°á»£t ra vÃ o tiá»‡n Ã­ch nÃ o'}</div>
+              <div className="text-xs font-bold text-white">{isEn ? 'No facility access events yet' : 'Chưa có lượt ra vào tiện ích nào'}</div>
               <div className="text-[11px] text-gray-400 max-w-sm mx-auto leading-relaxed">
-                Khi cÆ° dÃ¢n quáº¹t tháº» hoáº·c dÃ¹ng nháº­n diá»‡n khuÃ´n máº·t qua cá»•ng táº¡i Há»“ bÆ¡i, Gym, BBQ, há»‡ thá»‘ng sáº½ tá»± Ä‘á»™ng hiá»ƒn thá»‹ nháº­t kÃ½ táº¡i Ä‘Ã¢y.
+                Khi cư dân quẹt thẻ hoặc dùng nhận diện khuôn mặt qua cổng tại Hồ bơi, Gym, BBQ, hệ thống sẽ tự động hiển thị nhật ký tại đây.
               </div>
             </div>
           ) : (
@@ -1398,7 +1400,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     <div>
                       <div className="font-bold text-white text-sm">{log.facilityName}</div>
                       <div className="text-[11px] text-gray-400">
-                        {isEn ? 'Resident:' : 'CÆ° dÃ¢n:'} <strong className="text-gray-200">{log.userName}</strong> ({log.role}) â€¢ {isEn ? 'Auth:' : 'XÃ¡c thá»±c:'} <span className="text-[#C5A880]">{log.method === 'NFC_CARD' ? (isEn ? 'Resident Card' : 'Tháº» CÆ° DÃ¢n') : (isEn ? 'Face Recognition' : 'Nháº­n Diá»‡n KhuÃ´n Máº·t')}</span>
+                        {isEn ? 'Resident:' : 'Cư dân:'} <strong className="text-gray-200">{log.userName}</strong> ({log.role}) • {isEn ? 'Auth:' : 'Xác thực:'} <span className="text-[#C5A880]">{log.method === 'NFC_CARD' ? (isEn ? 'Resident Card' : 'Thẻ Cư Dân') : (isEn ? 'Face Recognition' : 'Nhận Diện Khuôn Mặt')}</span>
                       </div>
                       <div className="text-[10px] text-gray-500 font-mono mt-0.5">
                         {log.detail}
@@ -1408,7 +1410,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
 
                   <div className="text-right sm:shrink-0 font-mono text-[11px]">
                     <div className="text-[#C5A880] font-bold">{log.timestamp}</div>
-                    <div className="text-[9.5px] text-emerald-400 uppercase">{isEn ? 'âœ“ GATE UNLOCKED SUCCESSFULLY' : 'âœ“ Cá»”NG Má»ž THÃ€NH CÃ”NG'}</div>
+                    <div className="text-[9.5px] text-emerald-400 uppercase">{isEn ? '✓ GATE UNLOCKED SUCCESSFULLY' : '✓ CỔNG MỞ THÀNH CÔNG'}</div>
                   </div>
                 </div>
               ))}
@@ -1418,7 +1420,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
       )}
 
       {/* ============================================================= */}
-      {/* MODAL 1: Cá»”NG VÃ€O TIá»†N ÃCH THÃ”NG MINH (QUáº¸T THáºº / KHUÃ”N Máº¶T) */}
+      {/* MODAL 1: CỔNG VÀO TIỆN ÍCH THÔNG MINH (QUẸT THẺ / KHUÔN MẶT) */}
       {/* ============================================================= */}
       {turnstileModalFac && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-fadeIn p-4">
@@ -1429,7 +1431,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                 <DoorOpen className="w-5 h-5 text-[#C5A880]" />
                 <div>
                   <h4 className="font-serif text-sm font-bold text-white">
-                    Cá»•ng VÃ o Tiá»‡n Ãch: {turnstileModalFac.name}
+                    Cổng Vào Tiện Ích: {turnstileModalFac.name}
                   </h4>
                   <div className="text-[10px] text-gray-400 font-mono">{turnstileModalFac.location}</div>
                 </div>
@@ -1453,7 +1455,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
               ) : (
                 <>
                   <div className="text-xs text-gray-300 leading-relaxed">
-                    Chá»n cÃ¡ch má»Ÿ cá»­a Ä‘á»ƒ vÃ o tiá»‡n Ã­ch:
+                    Chọn cách mở cửa để vào tiện ích:
                   </div>
 
                   {/* Method Switcher */}
@@ -1468,8 +1470,8 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                       }`}
                     >
                       <CreditCard className="w-6 h-6" />
-                      <span>{isEn ? 'Tap Resident Card' : 'Quáº¹t Tháº» CÆ° DÃ¢n'}</span>
-                      <span className="text-[9px] font-mono font-normal">{isEn ? 'Tap card to sensor' : 'Cháº¡m tháº» vÃ o mÃ¡y quÃ©t'}</span>
+                      <span>{isEn ? 'Tap Resident Card' : 'Quẹt Thẻ Cư Dân'}</span>
+                      <span className="text-[9px] font-mono font-normal">{isEn ? 'Tap card to sensor' : 'Chạm thẻ vào máy quét'}</span>
                     </button>
 
                     <button
@@ -1482,16 +1484,16 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                       }`}
                     >
                       <ScanFace className="w-6 h-6" />
-                      <span>{isEn ? 'Face Recognition' : 'Nháº­n Diá»‡n KhuÃ´n Máº·t'}</span>
-                      <span className="text-[9px] font-mono font-normal">{isEn ? 'Look at camera' : 'NhÃ¬n vÃ o camera'}</span>
+                      <span>{isEn ? 'Face Recognition' : 'Nhận Diện Khuôn Mặt'}</span>
+                      <span className="text-[9px] font-mono font-normal">{isEn ? 'Look at camera' : 'Nhìn vào camera'}</span>
                     </button>
                   </div>
 
                   {/* Visual Card / Biometric Preview */}
                   <div className="p-3 bg-[#0D1117] border border-[#222B35] rounded-none text-xs font-mono text-gray-300 space-y-1">
-                    <div className="text-white font-bold">{userName} ({isEn ? 'Unit' : 'CÄƒn'} {aptCode})</div>
+                    <div className="text-white font-bold">{userName} ({isEn ? 'Unit' : 'Căn'} {aptCode})</div>
                     <div className="text-[10px] text-gray-400">
-                      {turnstileMethod === 'NFC' ? 'Tháº» cÆ° dÃ¢n chÃ­nh cá»§a cÄƒn há»™' : 'KhuÃ´n máº·t cÆ° dÃ¢n Ä‘Ã£ kÃ­ch hoáº¡t'}
+                      {turnstileMethod === 'NFC' ? 'Thẻ cư dân chính của căn hộ' : 'Khuôn mặt cư dân đã kích hoạt'}
                     </div>
                   </div>
 
@@ -1505,12 +1507,12 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     {isTurnstileScanning ? (
                       <>
                         <Wifi className="w-4 h-4 animate-spin rotate-90" />
-                        <span>{isEn ? 'Unlocking Amenity Gate...' : 'Äang Má»Ÿ Cá»­a VÃ o Tiá»‡n Ãch...'}</span>
+                        <span>{isEn ? 'Unlocking Amenity Gate...' : 'Đang Mở Cửa Vào Tiện Ích...'}</span>
                       </>
                     ) : (
                       <>
                         <Check className="w-4 h-4" />
-                        <span>{isEn ? 'Unlock Amenity Gate' : 'Má»Ÿ Cá»­a VÃ o Tiá»‡n Ãch'}</span>
+                        <span>{isEn ? 'Unlock Amenity Gate' : 'Mở Cửa Vào Tiện Ích'}</span>
                       </>
                     )}
                   </button>
@@ -1522,7 +1524,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
       )}
 
       {/* ============================================================= */}
-      {/* MODAL 2: XEM THáºº CÆ¯ DÃ‚N KIM LOáº I VIP 3D                       */}
+      {/* MODAL 2: XEM THẺ CƯ DÂN KIM LOẠI VIP 3D                       */}
       {/* ============================================================= */}
       {showSmartCardModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md animate-fadeIn p-4">
@@ -1530,7 +1532,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
             <div className="p-4 bg-[#161F2C] border-b border-[#2A374A] flex items-center justify-between">
               <div className="text-xs uppercase tracking-[0.2em] text-[#C5A880] font-bold flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-[#C5A880]" />
-                <span>{isEn ? `Gold-Plated Resident Card Unit ${aptCode}` : `Tháº» CÆ° DÃ¢n Kim Loáº¡i Máº¡ VÃ ng CÄƒn ${aptCode}`}</span>
+                <span>{isEn ? `Gold-Plated Resident Card Unit ${aptCode}` : `Thẻ Cư Dân Kim Loại Mạ Vàng Căn ${aptCode}`}</span>
               </div>
               <button
                 type="button"
@@ -1545,7 +1547,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
               <ResidentSmartCard 
                 currentUser={currentUser} 
                 onTapSuccess={(fac) => {
-                  toast.success(`Cá»•ng ${fac} Ä‘Ã£ má»Ÿ tá»± Ä‘á»™ng cho cÆ° dÃ¢n CÄƒn ${aptCode}!`);
+                  toast.success(`Cổng ${fac} đã mở tự động cho cư dân Căn ${aptCode}!`);
                   setAccessLogs(getFacilityCheckinLogs(aptCode));
                 }}
               />
@@ -1554,7 +1556,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
         </div>
       )}
       {/* ============================================================= */}
-      {/* MODAL 3: Há»¦Y Lá»ŠCH TIá»†N ÃCH & HOÃ€N TIá»€N KHI Báº¬N Äá»˜T XUáº¤T       */}
+      {/* MODAL 3: HỦY LỊCH TIỆN ÍCH & HOÀN TIỀN KHI BẬN ĐỘT XUẤT       */}
       {/* ============================================================= */}
       {refundModalBooking && (() => {
         const refundEstimate = calculateRefundEstimate(refundModalBooking);
@@ -1569,7 +1571,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
               <div className="p-4 bg-[#161F2C] border-b border-[#2A374A] flex items-center justify-between">
                 <div className="text-xs uppercase tracking-[0.15em] text-[#C5A880] font-bold flex items-center gap-2">
                   <RotateCcw className="w-4 h-4 text-[#C5A880]" />
-                  <span>{isEn ? 'Refund Request For Schedule Conflict' : 'YÃªu Cáº§u HoÃ n Tiá»n Khi Báº­n Äá»™t Xuáº¥t'}</span>
+                  <span>{isEn ? 'Refund Request For Schedule Conflict' : 'Yêu Cầu Hoàn Tiền Khi Bận Đột Xuất'}</span>
                 </div>
                 <button
                   type="button"
@@ -1583,21 +1585,21 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
 
               {/* Body */}
               <div className="p-5 space-y-4 text-xs">
-                {/* ThÃ´ng tin vÃ© Ä‘áº·t */}
+                {/* Thông tin vé đặt */}
                 <div className="p-3 bg-[#0D1117] border border-[#222B35] rounded-none space-y-1.5">
                   <div className="text-white font-bold text-sm flex items-center justify-between">
                     <span>{refundModalBooking.facilityName}</span>
                     <span className="text-[10px] text-[#C5A880] font-mono">{refundModalBooking.ticketCode}</span>
                   </div>
                   <div className="text-gray-300">
-                    Thá»i gian háº¹n: <strong className="text-white">{refundModalBooking.bookingDate} ({refundModalBooking.timeSlot})</strong>
+                    Thời gian hẹn: <strong className="text-white">{refundModalBooking.bookingDate} ({refundModalBooking.timeSlot})</strong>
                   </div>
                   <div className="text-gray-400">
-                    {isEn ? 'Deposit amount paid:' : 'Sá»‘ tiá»n Ä‘Ã£ Ä‘áº·t giá»¯ chá»—:'} <strong className="text-[#C5A880]">{(refundModalBooking.depositAmount || 500000).toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'VNÄ'}</strong> ({refundModalBooking.paymentMethod || (isEn ? 'Next month bill' : 'HÃ³a Ä‘Æ¡n thÃ¡ng tá»›i')})
+                    {isEn ? 'Deposit amount paid:' : 'Số tiền đã đặt giữ chỗ:'} <strong className="text-[#C5A880]">{(refundModalBooking.depositAmount || 500000).toLocaleString(isEn ? 'en-US' : 'vi-VN')} {isEn ? 'VND' : 'VNĐ'}</strong> ({refundModalBooking.paymentMethod || (isEn ? 'Next month bill' : 'Hóa đơn tháng tới')})
                   </div>
                 </div>
 
-                {/* PhÃ¢n tÃ­ch tá»· lá»‡ hoÃ n tiá»n thá»i gian thá»±c */}
+                {/* Phân tích tỷ lệ hoàn tiền thời gian thực */}
                 <div className={`p-4 rounded-none border space-y-2 ${
                   isFull 
                     ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-200' 
@@ -1615,7 +1617,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     <span className={`px-2 py-0.5 rounded-none font-mono font-bold text-xs ${
                       isFull ? 'bg-emerald-600 text-white' : isPartial ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300'
                     }`}>
-                      HOÃ€N {refundEstimate.refundRate}%
+                      HOÀN {refundEstimate.refundRate}%
                     </span>
                   </div>
 
@@ -1624,34 +1626,34 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                   </div>
 
                   <div className="pt-2 border-t border-white/10 flex items-center justify-between font-mono">
-                    <span className="text-gray-400">{isEn ? 'Refund credited to unit:' : 'Sá»‘ tiá»n hoÃ n tráº£ vá» cÄƒn há»™:'}</span>
+                    <span className="text-gray-400">{isEn ? 'Refund credited to unit:' : 'Số tiền hoàn trả về căn hộ:'}</span>
                     <span className={`text-base font-bold ${
                       isFull ? 'text-emerald-400' : isPartial ? 'text-amber-400' : 'text-gray-400'
                     }`}>
-                      +{refundEstimate.refundAmount.toLocaleString('vi-VN')} VNÄ
+                      +{refundEstimate.refundAmount.toLocaleString('vi-VN')} VNĐ
                     </span>
                   </div>
                 </div>
 
-                {/* Chá»n hoáº·c nháº­p lÃ½ do báº­n */}
+                {/* Chọn hoặc nhập lý do bận */}
                 <div className="space-y-1.5">
                   <label className="text-[10.5px] text-gray-300 font-semibold uppercase block">
-                    LÃ½ do há»§y lá»‹ch (tÃ¹y chá»n):
+                    Lý do hủy lịch (tùy chọn):
                   </label>
                   <select
                     value={refundReason}
                     onChange={(e) => setRefundReason(e.target.value)}
                     className="w-full bg-[#161D26] border border-[#2A374A] p-2 text-white text-xs rounded-none focus:outline-none focus:border-[#C5A880]"
                   >
-                    <option value="Báº­n viá»‡c gia Ä‘Ã¬nh Ä‘á»™t xuáº¥t khÃ´ng thá»ƒ tham gia">{isEn ? 'Family emergency' : 'Báº­n viá»‡c gia Ä‘Ã¬nh Ä‘á»™t xuáº¥t'}</option>
-                    <option value="Lá»‹ch cÃ´ng tÃ¡c / Ä‘i xa phÃ¡t sinh ngoÃ i dá»± kiáº¿n">{isEn ? 'Unexpected business trip' : 'Lá»‹ch cÃ´ng tÃ¡c / Ä‘i xa Ä‘á»™t xuáº¥t'}</option>
-                    <option value="Sá»©c khá»e khÃ´ng Ä‘áº£m báº£o, cáº§n nghá»‰ ngÆ¡i">{isEn ? 'Health condition, needing rest' : 'Sá»©c khá»e khÃ´ng Ä‘áº£m báº£o, cáº§n nghá»‰ ngÆ¡i'}</option>
-                    <option value="Thay Ä‘á»•i káº¿ hoáº¡ch khÃ¡c cÃ¹ng báº¡n bÃ¨/ngÆ°á»i thÃ¢n">{isEn ? 'Schedule changed' : 'Thay Ä‘á»•i káº¿ hoáº¡ch khÃ¡c'}</option>
+                    <option value="Bận việc gia đình đột xuất không thể tham gia">{isEn ? 'Family emergency' : 'Bận việc gia đình đột xuất'}</option>
+                    <option value="Lịch công tác / đi xa phát sinh ngoài dự kiến">{isEn ? 'Unexpected business trip' : 'Lịch công tác / đi xa đột xuất'}</option>
+                    <option value="Sức khỏe không đảm bảo, cần nghỉ ngơi">{isEn ? 'Health condition, needing rest' : 'Sức khỏe không đảm bảo, cần nghỉ ngơi'}</option>
+                    <option value="Thay đổi kế hoạch khác cùng bạn bè/người thân">{isEn ? 'Schedule changed' : 'Thay đổi kế hoạch khác'}</option>
                   </select>
                 </div>
 
                 <div className="text-[10.5px] text-gray-400 italic">
-                  * Sá»‘ tiá»n hoÃ n tráº£ sáº½ Ä‘Æ°á»£c VinHomes Manager tá»± Ä‘á»™ng káº¿t chuyá»ƒn vÃ  giáº£m trá»« trá»±c tiáº¿p vÃ o hÃ³a Ä‘Æ¡n sinh hoáº¡t ká»³ káº¿ tiáº¿p cá»§a cÄƒn há»™ {aptCode}.
+                  * Số tiền hoàn trả sẽ được VinHomes Manager tự động kết chuyển và giảm trừ trực tiếp vào hóa đơn sinh hoạt kỳ kế tiếp của căn hộ {aptCode}.
                 </div>
 
                 {/* Buttons */}
@@ -1662,7 +1664,7 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     disabled={isProcessingRefund}
                     className="h-10 px-3 bg-[#161D26] hover:bg-[#1E2633] text-gray-300 text-xs font-bold rounded-none border border-[#2A374A] transition-colors flex items-center justify-center active:scale-95"
                   >
-                    <span>{isEn ? 'Keep Booking' : 'Giá»¯ Láº¡i Lá»‹ch Äáº·t'}</span>
+                    <span>{isEn ? 'Keep Booking' : 'Giữ Lại Lịch Đặt'}</span>
                   </button>
 
                   <button
@@ -1674,12 +1676,12 @@ export default function SmartFacilityPass({ currentUser, onNavigateModule }: Sma
                     {isProcessingRefund ? (
                       <>
                         <Wifi className="w-3.5 h-3.5 animate-spin rotate-90 shrink-0" />
-                        <span className="truncate">{isEn ? 'Processing Refund...' : 'Äang Xá»­ LÃ½ HoÃ n Tiá»n...'}</span>
+                        <span className="truncate">{isEn ? 'Processing Refund...' : 'Đang Xử Lý Hoàn Tiền...'}</span>
                       </>
                     ) : (
                       <>
                         <RotateCcw className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">{isEn ? 'Confirm Cancel & Refund' : 'XÃ¡c Nháº­n Há»§y & HoÃ n Tiá»n'}</span>
+                        <span className="truncate">{isEn ? 'Confirm Cancel & Refund' : 'Xác Nhận Hủy & Hoàn Tiền'}</span>
                       </>
                     )}
                   </button>
