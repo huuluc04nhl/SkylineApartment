@@ -164,8 +164,8 @@ export async function POST(req: Request) {
       message: 'Đăng nhập thành công',
       user: formattedUser,
     });
-  } catch (error: any) {
-    console.error('Login route error:', error?.message || error);
+  } catch (error: unknown) {
+    console.error('Login route error:', (error instanceof Error ? error.message : String(error)) || error);
     return NextResponse.json(
       { success: false, message: 'Lỗi máy chủ xử lý đăng nhập.' },
       { status: 500 }

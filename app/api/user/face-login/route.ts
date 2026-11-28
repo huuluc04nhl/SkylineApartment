@@ -255,8 +255,8 @@ export async function POST(req: Request) {
       sampleScores: matchResult.sampleScores,
       user: formattedUser,
     });
-  } catch (error: any) {
-    logFailedAttempt(ip, 'INTERNAL_ERROR', { error: error?.message });
+  } catch (error: unknown) {
+    logFailedAttempt(ip, 'INTERNAL_ERROR', { error: (error instanceof Error ? error.message : String(error)) });
     console.error('FaceID login error:', error);
     return NextResponse.json(
       { success: false, message: 'Lỗi máy chủ xác thực khuôn mặt.' },

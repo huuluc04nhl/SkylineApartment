@@ -116,12 +116,12 @@ export async function POST(req: Request) {
       },
       protocol: finalProtocol
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Handover provision API error:', error);
     return NextResponse.json(
       { 
         success: false, 
-        message: 'Lỗi máy chủ khi xử lý cấp tài khoản bàn giao: ' + (error?.message || '') 
+        message: 'Lỗi máy chủ khi xử lý cấp tài khoản bàn giao: ' + ((error instanceof Error ? error.message : String(error)) || '') 
       },
       { status: 500 }
     );

@@ -110,10 +110,10 @@ export async function POST(req: Request) {
       billId: bill.id,
       amount,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Lỗi khởi tạo thanh toán VNPAY:', error);
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi tạo liên kết thanh toán VNPAY.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi tạo liên kết thanh toán VNPAY.' },
       { status: 500 }
     );
   }

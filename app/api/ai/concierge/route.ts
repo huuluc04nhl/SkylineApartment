@@ -64,9 +64,17 @@ export async function POST(req: NextRequest) {
       targetApt ? listApartmentMembersDb(targetApt) : Promise.resolve([]),
       targetApt
         ? supabaseAdmin.from('facility_bookings').select('*').ilike('apartment_code', targetApt).order('created_at', { ascending: false }).limit(10)
-        : Promise.resolve({ data: [] as any[] }),
+        : Promise.resolve({ data: [] }),
     ]);
-    const actualBookings = bookingsRes?.data || [];
+    const actualBookings: NonNullable<ConciergeContext['bookings']> = (bookingsRes?.data || []).map((b) => ({
+      id: b.id,
+      facilityId: b.facility_id,
+      facilityName: b.facility_id,
+      bookingDate: b.booking_date,
+      timeSlot: b.time_slot,
+      ticketCode: b.ticket_code,
+      status: (b.status as 'CONFIRMED' | 'CHECKED_IN' | 'CANCELLED') || 'CONFIRMED',
+    }));
 
     const context: ConciergeContext = {
       aptCode: targetApt,
@@ -97,7 +105,7 @@ export async function POST(req: NextRequest) {
       action,
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Handled error in /api/ai/concierge:', error);
     // Never fail the user: return instant smart project data answer using resident's prompt!
     const fallbackAnswer = generateSmartProjectFallback(userMessage || '', fallbackContext);

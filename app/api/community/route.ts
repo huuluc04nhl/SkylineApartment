@@ -21,9 +21,9 @@ export async function GET() {
 
     const posts = await listCommunityPostsDb();
     return NextResponse.json({ success: true, posts });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi tải bài viết cộng đồng.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi tải bài viết cộng đồng.' },
       { status: 500 }
     );
   }
@@ -65,9 +65,9 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true, post }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi đăng bài viết cộng đồng.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi đăng bài viết cộng đồng.' },
       { status: 500 }
     );
   }
@@ -90,9 +90,9 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ success: false, message: 'Không tìm thấy bài viết.' }, { status: 404 });
     }
     return NextResponse.json({ success: true, post });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi cập nhật bài viết.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi cập nhật bài viết.' },
       { status: 500 }
     );
   }
@@ -118,9 +118,9 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ success: false, message: 'Không tìm thấy bài viết.' }, { status: 404 });
     }
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi xóa bài viết.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi xóa bài viết.' },
       { status: 500 }
     );
   }

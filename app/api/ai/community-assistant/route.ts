@@ -22,7 +22,7 @@ async function callGemini(
     throw new Error('GEMINI_API_KEY not configured');
   }
 
-  let lastError: any = null;
+  let lastError: unknown = null;
 
   for (const model of GEMINI_MODELS) {
     const controller = new AbortController();
@@ -62,10 +62,10 @@ async function callGemini(
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error(`No text returned from ${model}`);
       return text.trim();
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(timer);
       lastError = err;
-      console.warn(`Community AI call to ${model} failed (${err.message}), trying next model...`);
+      console.warn(`Community AI call to ${model} failed (${(err instanceof Error ? err.message : String(err))}), trying next model...`);
     }
   }
 
@@ -192,8 +192,8 @@ Tác giả: ${authorRole || 'Cư dân'} (Căn hộ: ${aptCode || 'N/A'})`;
           source: 'GEMINI_AI',
           data: parsed,
         });
-      } catch (aiErr: any) {
-        console.warn('Gemini community analysis failed, falling back to local engine:', aiErr.message);
+      } catch (aiErr: unknown) {
+        console.warn('Gemini community analysis failed, falling back to local engine:', (aiErr instanceof Error ? aiErr.message : String(aiErr)));
         const fallback = localDeterministicAnalysis(title || '', content || '');
         return NextResponse.json({
           success: true,
@@ -241,8 +241,8 @@ Nhiệm vụ: Phân tích danh sách các bài viết diễn đàn cư dân gầ
         const rawJson = await callGemini(`Danh sách bài viết:\n${promptPosts}`, systemInstruction);
         const parsed = JSON.parse(rawJson);
         return NextResponse.json({ success: true, source: 'GEMINI_AI', data: parsed });
-      } catch (aiErr: any) {
-        console.warn('Gemini report generation failed, using local aggregate:', aiErr.message);
+      } catch (aiErr: unknown) {
+        console.warn('Gemini report generation failed, using local aggregate:', (aiErr instanceof Error ? aiErr.message : String(aiErr)));
         return NextResponse.json({
           success: true,
           source: 'LOCAL_ENGINE_FALLBACK',
@@ -260,7 +260,7 @@ Nhiệm vụ: Phân tích danh sách các bài viết diễn đàn cư dân gầ
     }
 
     return NextResponse.json({ success: false, message: 'Hành động không hợp lệ' }, { status: 400 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message || 'Lỗi xử lý AI' }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi xử lý AI' }, { status: 500 });
   }
 }

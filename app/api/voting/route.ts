@@ -17,9 +17,9 @@ export async function GET() {
 
     const topics = await listVotingTopicsDb();
     return NextResponse.json({ success: true, topics });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi tải danh sách biểu quyết.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi tải danh sách biểu quyết.' },
       { status: 500 }
     );
   }
@@ -104,15 +104,15 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true, topic }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof VoteConflictError) {
-      return NextResponse.json({ success: false, message: error.message }, { status: 409 });
+      return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 409 });
     }
     if (error instanceof VoteValidationError) {
-      return NextResponse.json({ success: false, message: error.message }, { status: error.status });
+      return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: error.status });
     }
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi xử lý biểu quyết.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi xử lý biểu quyết.' },
       { status: 500 }
     );
   }
@@ -134,9 +134,9 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ success: false, message: 'Không tìm thấy chủ đề biểu quyết.' }, { status: 404 });
     }
     return NextResponse.json({ success: true, topic });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi cập nhật trạng thái biểu quyết.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi cập nhật trạng thái biểu quyết.' },
       { status: 500 }
     );
   }

@@ -43,8 +43,8 @@ export async function GET(req: Request) {
       guestPins: pinsRes.data || [],
       doorAccessLogs: logsRes.data || [],
     });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
 
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
           last_active: new Date().toISOString(),
         }))
       );
-      if (error) throw new Error(error.message);
+      if (error) throw new Error((error instanceof Error ? error.message : String(error)));
     }
 
     if (body.guestPin) {
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
         used_count: p.usedCount ?? 0,
         expires_at: p.expiresAt,
       });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error((error instanceof Error ? error.message : String(error)));
     }
 
     if (body.doorLog) {
@@ -105,11 +105,11 @@ export async function POST(req: Request) {
         detail: l.detail,
         timestamp: l.timestamp || new Date().toISOString(),
       });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error((error instanceof Error ? error.message : String(error)));
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

@@ -28,7 +28,7 @@ export async function GET(req: Request) {
         .select('*')
         .or(`user_id.eq.${userId},auth_user_id.eq.${userId}`)
         .maybeSingle();
-      if (error) throw new Error(error.message);
+      if (error) throw new Error((error instanceof Error ? error.message : String(error)));
       return NextResponse.json({ success: true, profile: data || null });
     }
 
@@ -37,12 +37,12 @@ export async function GET(req: Request) {
       query = query.eq('auth_user_id', session.authUserId);
     }
     const { data, error } = await query;
-    if (error) throw new Error(error.message);
+    if (error) throw new Error((error instanceof Error ? error.message : String(error)));
     return NextResponse.json({ success: true, profiles: data || [] });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Lỗi GET face-enroll:', error);
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi tải thông tin FaceID.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi tải thông tin FaceID.' },
       { status: 500 }
     );
   }
@@ -261,10 +261,10 @@ export async function POST(req: Request) {
         details: analysis.details,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Lỗi API face-enroll:', error);
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi hệ thống khi lưu trữ mẫu FaceID.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi hệ thống khi lưu trữ mẫu FaceID.' },
       { status: 500 }
     );
   }

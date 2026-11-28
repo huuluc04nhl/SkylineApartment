@@ -108,8 +108,8 @@ export async function POST(req: NextRequest) {
           source: 'Google Gemini Vision AI (Dual-Side Verified)',
         });
       }
-    } catch (visionErr: any) {
-      console.warn('Gemini Vision OCR attempt failed, checking fallback:', visionErr?.message);
+    } catch (visionErr: unknown) {
+      console.warn('Gemini Vision OCR attempt failed, checking fallback:', (visionErr instanceof Error ? visionErr.message : String(visionErr)));
     }
 
     // 3. Fallback: Nhận diện chữ trực tiếp trên ảnh thẻ qua OCR dự phòng
@@ -163,8 +163,8 @@ export async function POST(req: NextRequest) {
           source: 'Skyline OCR Dual-Side Engine (Card Verified)',
         });
       }
-    } catch (ocrErr: any) {
-      console.warn('Server Tesseract OCR error:', ocrErr?.message);
+    } catch (ocrErr: unknown) {
+      console.warn('Server Tesseract OCR error:', (ocrErr instanceof Error ? ocrErr.message : String(ocrErr)));
     }
 
     return NextResponse.json({
@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
       },
       message: 'Ảnh chụp thẻ đã được lưu. Do ảnh chụp có thể bị lóa sáng, Quý cư dân vui lòng hỗ trợ kiểm tra hoặc điền thông tin vào các ô bên dưới.',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in /api/ai/ocr-cccd:', error);
     return NextResponse.json({
       success: true,

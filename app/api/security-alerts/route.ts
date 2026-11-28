@@ -13,11 +13,11 @@ export async function GET() {
       .from('security_alerts')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) throw new Error((error instanceof Error ? error.message : String(error)));
 
     return NextResponse.json({ success: true, alerts: data ?? [] });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error?.message || 'Lỗi tải cảnh báo an ninh.' }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi tải cảnh báo an ninh.' }, { status: 500 });
   }
 }
 
@@ -38,13 +38,13 @@ export async function PATCH(req: Request) {
       .eq('id', id)
       .select('*')
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error((error instanceof Error ? error.message : String(error)));
     if (!data) {
       return NextResponse.json({ success: false, message: 'Không tìm thấy cảnh báo.' }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, alert: data });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error?.message || 'Lỗi cập nhật cảnh báo.' }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi cập nhật cảnh báo.' }, { status: 500 });
   }
 }

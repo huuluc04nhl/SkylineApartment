@@ -61,9 +61,9 @@ async function resolveCurrentUserResponse() {
 export async function POST() {
   try {
     return await resolveCurrentUserResponse();
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi xác thực người dùng.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi xác thực người dùng.' },
       { status: 500 }
     );
   }
@@ -72,9 +72,9 @@ export async function POST() {
 export async function GET() {
   try {
     return await resolveCurrentUserResponse();
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi xác thực người dùng.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi xác thực người dùng.' },
       { status: 500 }
     );
   }

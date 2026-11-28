@@ -24,9 +24,9 @@ export async function GET(req: Request) {
     const block = searchParams.get('block') || undefined;
     const apartments = await listApartmentsDb(block);
     return NextResponse.json({ success: true, apartments });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi tải danh sách căn hộ.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi tải danh sách căn hộ.' },
       { status: 500 }
     );
   }
@@ -88,9 +88,9 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true, apartment }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi tạo căn hộ mới.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi tạo căn hộ mới.' },
       { status: 500 }
     );
   }
@@ -110,7 +110,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const patch: Record<string, any> = {};
+    const patch: Record<string, unknown> = {};
     if (body.status !== undefined) patch.status = body.status;
     if (body.price_billion !== undefined || body.priceBillion !== undefined) {
       patch.price_billion = Number(body.price_billion ?? body.priceBillion);
@@ -140,9 +140,9 @@ export async function PATCH(req: Request) {
       );
     }
     return NextResponse.json({ success: true, apartment });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi cập nhật căn hộ.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi cập nhật căn hộ.' },
       { status: 500 }
     );
   }
@@ -175,9 +175,9 @@ export async function DELETE(req: Request) {
       );
     }
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi xóa căn hộ.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi xóa căn hộ.' },
       { status: 500 }
     );
   }

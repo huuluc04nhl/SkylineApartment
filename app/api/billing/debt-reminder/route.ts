@@ -144,7 +144,7 @@ export async function POST(req: Request) {
       }
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Debt reminder API error:', err);
     return NextResponse.json({ success: false, message: 'Lỗi soạn thảo thông báo nhắc nợ' }, { status: 500 });
   }

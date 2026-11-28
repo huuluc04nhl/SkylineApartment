@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     }
 
     const { data, error } = await query;
-    if (error) throw new Error(`Supabase facility_bookings select error: ${error.message}`);
+    if (error) throw new Error(`Supabase facility_bookings select error: ${(error instanceof Error ? error.message : String(error))}`);
 
     const bookings = (data || []).map((row: any) => ({
       id: row.id,
@@ -48,8 +48,8 @@ export async function GET(req: Request) {
     }));
 
     return NextResponse.json({ success: true, bookings });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
 
@@ -109,16 +109,16 @@ export async function POST(req: Request) {
 
       const isUniqueViolation =
         (error as { code?: string }).code === '23505' ||
-        /duplicate key|unique constraint/i.test(error.message || '');
+        /duplicate key|unique constraint/i.test((error instanceof Error ? error.message : String(error)) || '');
       if (!isUniqueViolation || attempt === 4) {
-        throw new Error(`Supabase facility_bookings upsert error: ${error.message}`);
+        throw new Error(`Supabase facility_bookings upsert error: ${(error instanceof Error ? error.message : String(error))}`);
       }
       ticketCode = generateFacilityTicketCode(aptCode);
     }
 
     return NextResponse.json({ success: false, message: 'Không thể cấp mã vé tiện ích duy nhất.' }, { status: 500 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
 
@@ -142,12 +142,12 @@ export async function PATCH(req: Request) {
       .select('*')
       .maybeSingle();
 
-    if (error) throw new Error(`Supabase facility_bookings update error: ${error.message}`);
+    if (error) throw new Error(`Supabase facility_bookings update error: ${(error instanceof Error ? error.message : String(error))}`);
     if (!data) {
       return NextResponse.json({ success: false, message: 'Không tìm thấy lượt đặt tiện ích.' }, { status: 404 });
     }
     return NextResponse.json({ success: true, booking: data });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

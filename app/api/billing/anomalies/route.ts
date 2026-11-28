@@ -22,9 +22,9 @@ export async function GET() {
       low_severity_count: anomalies.filter(a => a.severity === 'LOW').length,
       anomalies,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { success: false, message: err?.message || 'Lỗi quét kiểm tra bất thường.' },
+      { success: false, message: (err instanceof Error ? err.message : String(err)) || 'Lỗi quét kiểm tra bất thường.' },
       { status: 500 }
     );
   }

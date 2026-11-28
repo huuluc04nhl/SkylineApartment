@@ -74,7 +74,7 @@ export async function POST(req: Request) {
       message: 'Cập nhật mật khẩu tài khoản thành công.',
       updated_at: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating password:', error);
     return NextResponse.json(
       { success: false, message: 'Lỗi máy chủ khi cập nhật mật khẩu.' },

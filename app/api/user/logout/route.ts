@@ -6,7 +6,7 @@ async function handleLogout() {
   const { error } = await supabase.auth.signOut();
   if (error) {
     return NextResponse.json(
-      { success: false, message: `Lỗi đăng xuất: ${error.message}` },
+      { success: false, message: `Lỗi đăng xuất: ${(error instanceof Error ? error.message : String(error))}` },
       { status: 500 }
     );
   }

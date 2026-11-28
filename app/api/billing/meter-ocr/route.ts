@@ -224,10 +224,10 @@ export async function POST(req: Request) {
       }
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Meter OCR API error:', err);
     return NextResponse.json(
-      { success: false, message: 'Lỗi xử lý OCR: ' + (err.message || 'Lỗi không xác định') },
+      { success: false, message: 'Lỗi xử lý OCR: ' + ((err instanceof Error ? err.message : String(err)) || 'Lỗi không xác định') },
       { status: 500 }
     );
   }

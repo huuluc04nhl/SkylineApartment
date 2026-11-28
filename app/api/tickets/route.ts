@@ -113,8 +113,8 @@ export async function GET(req: Request) {
       total: tickets.length,
       updatedAt: new Date().toISOString(),
     });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
 
@@ -368,11 +368,11 @@ export async function POST(req: Request) {
       message: 'Tạo phiếu hỗ trợ thành công',
       ticket: created,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof TicketRpcError) {
-      return NextResponse.json({ success: false, message: error.message }, { status: error.status });
+      return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: error.status });
     }
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
 
@@ -476,7 +476,7 @@ export async function PUT(req: Request) {
       });
     }
 
-    const patch: Record<string, any> = {};
+    const patch: Record<string, unknown> = {};
     let eventToLog: Parameters<typeof insertTicketEventDb>[0] | null = null;
 
     if (guard.session.role === 'ADMIN') {
@@ -541,11 +541,11 @@ export async function PUT(req: Request) {
       message: 'Cập nhật phiếu thành công',
       ticket: updated,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof TicketRpcError) {
-      return NextResponse.json({ success: false, message: error.message }, { status: error.status });
+      return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: error.status });
     }
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
 
@@ -570,7 +570,7 @@ export async function DELETE(req: Request) {
       success: true,
       message: 'Đã hủy phiếu thành công',
     });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

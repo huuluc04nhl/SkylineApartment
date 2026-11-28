@@ -27,7 +27,7 @@ async function callGemini(
   }
 
   const timeoutMs = options?.timeoutMs ?? GEMINI_TIMEOUT_MS;
-  let lastError: any = null;
+  let lastError: unknown = null;
 
   for (const model of GEMINI_MODELS) {
     const controller = new AbortController();
@@ -66,10 +66,10 @@ async function callGemini(
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error(`No text returned from ${model}`);
       return text.trim();
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(timer);
       lastError = err;
-      console.warn(`Call to Gemini ${model} failed (${err.message}), trying next model...`);
+      console.warn(`Call to Gemini ${model} failed (${(err instanceof Error ? err.message : String(err))}), trying next model...`);
     }
   }
 
@@ -96,7 +96,7 @@ async function callGeminiVision(
     },
   }));
 
-  let lastError: any = null;
+  let lastError: unknown = null;
 
   for (const model of GEMINI_MODELS) {
     const controller = new AbortController();
@@ -139,10 +139,10 @@ async function callGeminiVision(
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error(`No vision text returned from ${model}`);
       return text.trim();
-    } catch (err: any) {
+    } catch (err: unknown) {
       clearTimeout(timer);
       lastError = err;
-      console.warn(`Call to Gemini Vision ${model} failed (${err.message}), trying next model...`);
+      console.warn(`Call to Gemini Vision ${model} failed (${(err instanceof Error ? err.message : String(err))}), trying next model...`);
     }
   }
 
@@ -589,10 +589,10 @@ Hãy soạn thư phản hồi chính thức từ BQL.`;
     }
 
     return NextResponse.json({ success: false, error: 'Action không hỗ trợ' }, { status: 400 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Lỗi API AI Ticket Assistant:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Lỗi xử lý AI' },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) || 'Lỗi xử lý AI' },
       { status: 500 }
     );
   }

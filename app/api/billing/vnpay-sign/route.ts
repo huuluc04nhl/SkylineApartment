@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const transNo = `VNP${Date.now().toString().slice(-8)}`;
 
     const cfg = getVnpayConfig();
-    const vnp_Params: Record<string, any> = {
+    const vnp_Params: Record<string, unknown> = {
       vnp_Amount: amountVal,
       vnp_BankCode: bankCode || 'NCB',
       vnp_BankTranNo: `VNP${Date.now().toString().slice(-6)}`,
@@ -45,8 +45,8 @@ export async function POST(req: Request) {
 
     const redirectUrl = `${returnUrl || '/api/billing/vnpay-return'}?${signData}&vnp_SecureHash=${signed}`;
     return NextResponse.json({ success: true, redirectUrl, transNo });
-  } catch (e: any) {
-    return NextResponse.json({ success: false, message: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ success: false, message: (e instanceof Error ? e.message : String(e)) }, { status: 500 });
   }
 }
 

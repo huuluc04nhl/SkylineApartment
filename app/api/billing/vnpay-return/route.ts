@@ -43,7 +43,7 @@ export async function GET(req: Request) {
         `${baseUrl}/portal?tab=resident-finance&vnp_status=failed&code=${encodeURIComponent(vnp_ResponseCode || '99')}&billId=${encodeURIComponent(billId)}`
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Lỗi xử lý VNPAY Return URL:', error);
     const origin = new URL(req.url).origin;
     return NextResponse.redirect(`${origin}/portal?tab=resident-finance&vnp_status=error`);

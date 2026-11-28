@@ -181,10 +181,10 @@ export async function POST(req: Request) {
       ai_disclaimer: 'Nội dung do AI hỗ trợ tổng hợp từ cơ sở dữ liệu hệ thống, vui lòng đối chiếu sổ kế toán gốc.'
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Admin Report API error:', err);
     return NextResponse.json(
-      { success: false, message: 'Lỗi truy vấn báo cáo: ' + (err.message || 'Lỗi không xác định') },
+      { success: false, message: 'Lỗi truy vấn báo cáo: ' + ((err instanceof Error ? err.message : String(err)) || 'Lỗi không xác định') },
       { status: 500 }
     );
   }

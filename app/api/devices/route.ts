@@ -14,11 +14,11 @@ export async function GET() {
       .from('building_devices')
       .select('*')
       .order('id', { ascending: true });
-    if (error) throw new Error(error.message);
+    if (error) throw new Error((error instanceof Error ? error.message : String(error)));
 
     return NextResponse.json({ success: true, devices: data ?? [] });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error?.message || 'Lỗi tải thiết bị.' }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi tải thiết bị.' }, { status: 500 });
   }
 }
 
@@ -47,11 +47,11 @@ export async function POST(req: Request) {
       })
       .select('*')
       .single();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error((error instanceof Error ? error.message : String(error)));
 
     return NextResponse.json({ success: true, device: data }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error?.message || 'Lỗi thêm thiết bị.' }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi thêm thiết bị.' }, { status: 500 });
   }
 }
 
@@ -81,13 +81,13 @@ export async function PATCH(req: Request) {
       .eq('id', id)
       .select('*')
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error((error instanceof Error ? error.message : String(error)));
     if (!data) {
       return NextResponse.json({ success: false, message: 'Không tìm thấy thiết bị.' }, { status: 404 });
     }
     return NextResponse.json({ success: true, device: data });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error?.message || 'Lỗi cập nhật thiết bị.' }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi cập nhật thiết bị.' }, { status: 500 });
   }
 }
 
@@ -103,9 +103,9 @@ export async function DELETE(req: Request) {
     }
 
     const { error } = await supabaseAdmin.from('building_devices').delete().eq('id', id);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error((error instanceof Error ? error.message : String(error)));
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error?.message || 'Lỗi xóa thiết bị.' }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi xóa thiết bị.' }, { status: 500 });
   }
 }

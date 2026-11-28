@@ -62,7 +62,7 @@ async function handleIpn(queryParams: Record<string, string>) {
     const failCode = vnp_ResponseCode || vnp_TransactionStatus || '99';
     await recordFailedBillIpnDb(billId, failCode, vnp_TransactionNo);
     return NextResponse.json({ RspCode: failCode, Message: 'Payment failed' }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Lỗi IPN VNPAY:', error);
     return NextResponse.json({ RspCode: '99', Message: 'Unknown error' }, { status: 200 });
   }

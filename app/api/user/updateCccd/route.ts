@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     const resolvedName = (fullName || fullname || '').toUpperCase().trim();
     const cleanDob = normalizeDate(dob);
 
-    const updates: Record<string, any> = {
+    const updates: Record<string, unknown> = {
       id_number: cleanNumber || undefined,
       id_card_no: cleanNumber || undefined,
       id_date: cleanDate || undefined,

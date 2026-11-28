@@ -26,9 +26,9 @@ export async function GET(req: Request) {
       bills,
       bankInfo: SKYLINE_BANK_INFO,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi tải danh sách hóa đơn.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi tải danh sách hóa đơn.' },
       { status: 500 }
     );
   }
@@ -64,9 +64,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: false, message: 'Hành động không hợp lệ.' }, { status: 400 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi xử lý hóa đơn.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi xử lý hóa đơn.' },
       { status: 500 }
     );
   }

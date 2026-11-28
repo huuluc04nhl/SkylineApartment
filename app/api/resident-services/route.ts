@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     }
 
     const { data, error } = await query;
-    if (error) throw new Error(`Supabase resident_service_bookings select error: ${error.message}`);
+    if (error) throw new Error(`Supabase resident_service_bookings select error: ${(error instanceof Error ? error.message : String(error))}`);
 
     const bookings = (data || []).map((r) => ({
       id: r.id,
@@ -47,8 +47,8 @@ export async function GET(req: Request) {
     }));
 
     return NextResponse.json({ success: true, bookings });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
 
@@ -92,10 +92,10 @@ export async function POST(req: Request) {
       .select('*')
       .single();
 
-    if (error) throw new Error(`Supabase resident_service_bookings upsert error: ${error.message}`);
+    if (error) throw new Error(`Supabase resident_service_bookings upsert error: ${(error instanceof Error ? error.message : String(error))}`);
     return NextResponse.json({ success: true, booking: data });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
 
@@ -116,12 +116,12 @@ export async function PATCH(req: Request) {
       .select('*')
       .maybeSingle();
 
-    if (error) throw new Error(`Supabase resident_service_bookings update error: ${error.message}`);
+    if (error) throw new Error(`Supabase resident_service_bookings update error: ${(error instanceof Error ? error.message : String(error))}`);
     if (!data) {
       return NextResponse.json({ success: false, message: 'Không tìm thấy đơn dịch vụ.' }, { status: 404 });
     }
     return NextResponse.json({ success: true, booking: data });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

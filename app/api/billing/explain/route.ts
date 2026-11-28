@@ -122,9 +122,9 @@ export async function POST(req: Request) {
       success: true,
       explanation: validated.success ? validated.data : explanationResult,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { success: false, message: err?.message || 'Lỗi phân tích giải thích hóa đơn.' },
+      { success: false, message: (err instanceof Error ? err.message : String(err)) || 'Lỗi phân tích giải thích hóa đơn.' },
       { status: 500 }
     );
   }

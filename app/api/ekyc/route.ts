@@ -281,10 +281,10 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: false, message: 'Action không hợp lệ' }, { status: 400 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof EkycRpcError) {
-      return NextResponse.json({ success: false, message: error.message }, { status: error.status });
+      return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: error.status });
     }
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }

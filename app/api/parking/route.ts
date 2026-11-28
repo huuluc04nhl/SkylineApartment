@@ -19,9 +19,9 @@ export async function GET(req: Request) {
 
     const slots = await listParkingSlotsDb(aptFilter);
     return NextResponse.json({ success: true, slots });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi tải dữ liệu bãi đỗ xe.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi tải dữ liệu bãi đỗ xe.' },
       { status: 500 }
     );
   }
@@ -60,12 +60,12 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true, slot }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof ParkingConflictError) {
-      return NextResponse.json({ success: false, message: error.message }, { status: 409 });
+      return NextResponse.json({ success: false, message: (error instanceof Error ? error.message : String(error)) }, { status: 409 });
     }
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi gán vị trí đỗ xe.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi gán vị trí đỗ xe.' },
       { status: 500 }
     );
   }
@@ -97,9 +97,9 @@ export async function DELETE(req: Request) {
       );
     }
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Lỗi thu hồi vị trí đỗ xe.' },
+      { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Lỗi thu hồi vị trí đỗ xe.' },
       { status: 500 }
     );
   }

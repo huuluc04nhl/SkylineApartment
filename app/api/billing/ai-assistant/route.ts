@@ -172,9 +172,9 @@ export async function POST(req: Request) {
         'X-Content-Type-Options': 'nosniff',
       },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { success: false, message: err?.message || 'Lỗi xử lý trợ lý hóa đơn.' },
+      { success: false, message: (err instanceof Error ? err.message : String(err)) || 'Lỗi xử lý trợ lý hóa đơn.' },
       { status: 500 }
     );
   }
