@@ -1099,7 +1099,6 @@ export async function askGeminiConcierge(
   }
   // If API key is not configured or too short/placeholder, use smart project fallback
   if (!GEMINI_API_KEY || GEMINI_API_KEY.length < 20) {
-    console.info('GEMINI_API_KEY is not configured. Using smart project data engine.');
     return generateSmartProjectFallback(message, contextOrAptCode);
   }
 
